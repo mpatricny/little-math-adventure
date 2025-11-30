@@ -2,18 +2,20 @@ import Phaser from 'phaser';
 import { BattleState, BattlePhase, EnemyDefinition } from '../types';
 import { MathEngine } from '../systems/MathEngine';
 import { MathBoard } from '../ui/MathBoard';
+import { GameStateManager } from '../systems/GameStateManager';
+import { ProgressionSystem } from '../systems/ProgressionSystem';
 
 class HUD {
     private playerHpText: Phaser.GameObjects.Text;
     private enemyHpText: Phaser.GameObjects.Text;
 
-    constructor(private scene: Phaser.Scene, state: BattleState) {
-        this.playerHpText = this.scene.add.text(20, 20, `HP: ${state.playerHp}/10`, { fontSize: '20px', color: '#fff' });
+    constructor(private scene: Phaser.Scene, state: BattleState, private playerMaxHp: number) {
+        this.playerHpText = this.scene.add.text(20, 20, `HP: ${state.playerHp}/${playerMaxHp}`, { fontSize: '20px', color: '#fff' });
         this.enemyHpText = this.scene.add.text(600, 20, `Enemy: ${state.enemyHp}/${state.enemyMaxHp}`, { fontSize: '20px', color: '#fff' });
     }
 
-    updatePlayerHp(hp: number) {
-        this.playerHpText.setText(`HP: ${hp}/10`);
+    updatePlayerHp(hp: number, maxHp: number) {
+        this.playerHpText.setText(`HP: ${hp}/${maxHp}`);
     }
 
     updateEnemyHp(hp: number, maxHp: number) {
@@ -33,6 +35,7 @@ export class BattleScene extends Phaser.Scene {
 
     // Systems
     private mathEngine!: MathEngine;
+    private gameState!: GameStateManager;
 
     // State
     private battleState!: BattleState;
@@ -43,16 +46,20 @@ export class BattleScene extends Phaser.Scene {
     }
 
     init(data: { enemyId: string }): void {
+        // Get global game state
+        this.gameState = GameStateManager.getInstance();
+        const player = this.gameState.getPlayer();
+
         // Get enemy data from JSON
         const enemies = this.cache.json.get('enemies') as EnemyDefinition[];
         this.currentEnemy = enemies.find(e => e.id === data.enemyId) || enemies[0];
 
-        // Initialize battle state with requested test values
+        // Initialize battle state with actual player stats
         this.battleState = {
             phase: 'start',
-            playerHp: 10,       // Requested: 10 HP
-            enemyHp: 3,         // Requested: 3 HP
-            enemyMaxHp: 3,
+            playerHp: player.hp,
+            enemyHp: this.currentEnemy.hp,
+            enemyMaxHp: this.currentEnemy.hp,
             currentProblem: null,
             turnCount: 0,
         };
@@ -76,10 +83,11 @@ export class BattleScene extends Phaser.Scene {
         this.mathEngine = new MathEngine(this.registry);
 
         // Create UI
-        this.hud = new HUD(this, this.battleState);
+        const player = this.gameState.getPlayer();
+        this.hud = new HUD(this, this.battleState, player.maxHp);
 
         // Force HUD update immediately to show correct starting HP
-        this.hud.updatePlayerHp(this.battleState.playerHp);
+        this.hud.updatePlayerHp(this.battleState.playerHp, player.maxHp);
         this.hud.updateEnemyHp(this.battleState.enemyHp, this.battleState.enemyMaxHp);
 
         this.mathBoard = new MathBoard(this, this.onAnswerSelected.bind(this));
@@ -179,7 +187,8 @@ export class BattleScene extends Phaser.Scene {
             onComplete: () => {
                 // Landed - Impact!
                 // Damage enemy
-                const damage = 1; // Requested: 1 damage
+                const player = this.gameState.getPlayer();
+                const damage = player.attack;
                 this.battleState.enemyHp -= damage;
                 this.hud.updateEnemyHp(this.battleState.enemyHp, this.battleState.enemyMaxHp);
 
@@ -253,9 +262,10 @@ export class BattleScene extends Phaser.Scene {
             ease: 'Quad.easeIn',
             onComplete: () => {
                 // Impact
-                const damage = 1; // Requested: 1 damage
+                const damage = this.currentEnemy.attack;
                 this.battleState.playerHp -= damage;
-                this.hud.updatePlayerHp(this.battleState.playerHp);
+                const player = this.gameState.getPlayer();
+                this.hud.updatePlayerHp(this.battleState.playerHp, player.maxHp);
 
                 // Hero hurt effect
                 this.tweens.add({
@@ -297,21 +307,42 @@ export class BattleScene extends Phaser.Scene {
     private onVictory(): void {
         // this.sound.play('sfx-victory');
 
-        // Calculate rewards
+        // Update player state with battle results
+        const player = this.gameState.getPlayer();
+        player.hp = this.battleState.playerHp; // Save current HP
+
+        // Calculate and award rewards
         const xpReward = this.currentEnemy.xpReward;
         const [minGold, maxGold] = this.currentEnemy.goldReward;
-        const goldReward = Phaser.Math.Between(minGold, maxGold);
+        const goldReward = ProgressionSystem.getRandomGold(minGold, maxGold);
+
+        // Award XP and check for level-up
+        const levelUpResult = ProgressionSystem.awardXp(player, xpReward);
+
+        // Award gold
+        ProgressionSystem.awardGold(player, goldReward);
+
+        // Save game state
+        this.gameState.save();
 
         // Pass to victory scene
         this.scene.start('VictoryScene', {
             xpReward,
             goldReward,
             enemyName: this.currentEnemy.name,
+            levelUpResult,
         });
     }
 
     private onDefeat(): void {
-        // Fade to black, return to town with reduced gold
+        // Set player to defeated state
+        const player = this.gameState.getPlayer();
+        ProgressionSystem.setDefeated(player);
+
+        // Save game state
+        this.gameState.save();
+
+        // Fade to black, return to town
         this.cameras.main.fadeOut(1000, 0, 0, 0);
         this.time.delayedCall(1000, () => {
             this.scene.start('TownScene', { defeated: true });
