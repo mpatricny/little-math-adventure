@@ -396,6 +396,63 @@ export class TownScene extends Phaser.Scene {
                 console.log('===========================');
             }
         });
+
+        this.input.keyboard!.on('keydown-S', () => {
+            if (this.debugMode) {
+                this.saveDebugValues();
+            }
+        });
+    }
+
+    private saveDebugValues(): void {
+        const json = JSON.stringify(this.debugValues, null, 2);
+
+        // Save to localStorage
+        localStorage.setItem('townSceneDebugValues', json);
+
+        // Create modal overlay to display values
+        const overlay = this.add.container(400, 300).setDepth(2000).setScrollFactor(0);
+
+        const bg = this.add.rectangle(0, 0, 700, 500, 0x000000, 0.95);
+        overlay.add(bg);
+
+        const title = this.add.text(0, -220, 'Debug Values Saved!', {
+            fontSize: '24px',
+            color: '#00ff00',
+            fontStyle: 'bold'
+        }).setOrigin(0.5);
+        overlay.add(title);
+
+        const instructions = this.add.text(0, -190, 'Values saved to localStorage. Copy from below:', {
+            fontSize: '14px',
+            color: '#ffffff'
+        }).setOrigin(0.5);
+        overlay.add(instructions);
+
+        const text = this.add.text(0, -50, json, {
+            fontSize: '12px',
+            color: '#00ff00',
+            fontFamily: 'monospace',
+            backgroundColor: '#222222',
+            padding: { x: 15, y: 15 }
+        }).setOrigin(0.5);
+        overlay.add(text);
+
+        const closeBtn = this.add.text(0, 210, 'Press SPACE or ESC to close', {
+            fontSize: '16px',
+            color: '#ffff00'
+        }).setOrigin(0.5);
+        overlay.add(closeBtn);
+
+        // Add close handlers
+        const closeHandler = () => {
+            overlay.destroy();
+            this.input.keyboard!.off('keydown-SPACE', closeHandler);
+            this.input.keyboard!.off('keydown-ESC', closeHandler);
+        };
+
+        this.input.keyboard!.once('keydown-SPACE', closeHandler);
+        this.input.keyboard!.once('keydown-ESC', closeHandler);
     }
 
     private updateDebugDisplay(): void {
@@ -417,7 +474,7 @@ export class TownScene extends Phaser.Scene {
             '  ←/→: Move X (Left/Right for buildings/knight)',
             '  ↑/↓: Move Y position',
             '  P/L: Scale up/down',
-            '  SHIFT+D: Print all values to console',
+            '  S: Save & show values',
             '',
             `Current:${valueDisplay}`,
         ].join('\n'));
