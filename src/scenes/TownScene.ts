@@ -39,6 +39,19 @@ export class TownScene extends Phaser.Scene {
     private interiorOverlay!: Phaser.GameObjects.Container;
     private walkTween: Phaser.Tweens.Tween | null = null;
 
+    // Debug mode
+    private debugMode: boolean = false;
+    private debugText!: Phaser.GameObjects.Text;
+    private debugSelection: number = 0;
+    private debugElements = ['buildings', 'bgGrass', 'fgGrass', 'background'];
+    private debugValues = {
+        groundY: GROUND_Y,
+        buildingScale: BUILDING_SCALE,
+        bgGrassOffset: 40,  // Current offset from GROUND_Y
+        grassScale: GRASS_SCALE,
+        bgScale: 0.5,
+    };
+
     constructor() {
         super({ key: 'TownScene' });
     }
@@ -63,6 +76,9 @@ export class TownScene extends Phaser.Scene {
 
         // Start floating animation for labels
         this.animateLabels();
+
+        // Setup debug mode
+        this.setupDebugMode();
     }
 
     private createBackground(): void {
@@ -109,14 +125,14 @@ export class TownScene extends Phaser.Scene {
     private createBackgroundGrass(): void {
         // Background grass layer - sits behind buildings
         // Positioned slightly higher than foreground grass for depth
-        const bgGrassY = GROUND_Y + 40;  // Moved down 50px from previous (-10 + 50 = +40)
+        const bgGrassY = this.debugValues.groundY + this.debugValues.bgGrassOffset;
         this.bgGrassLayer = this.add.tileSprite(0, bgGrassY, WORLD_WIDTH * 2, BG_GRASS_HEIGHT, 'town-grass')
             .setOrigin(0, 1)
             .setScrollFactor(0)
             .setAlpha(0.8);  // Slightly transparent for depth
 
         // Scale the grass texture
-        this.bgGrassLayer.setTileScale(GRASS_SCALE, BG_GRASS_HEIGHT / 427);
+        this.bgGrassLayer.setTileScale(this.debugValues.grassScale, BG_GRASS_HEIGHT / 427);
     }
 
     private createForegroundGrass(): void {
@@ -341,18 +357,167 @@ export class TownScene extends Phaser.Scene {
         });
     }
 
+    private setupDebugMode(): void {
+        // Create debug text overlay (hidden by default)
+        this.debugText = this.add.text(10, 10, '', {
+            fontSize: '14px',
+            color: '#00ff00',
+            backgroundColor: '#000000',
+            padding: { x: 10, y: 10 }
+        }).setDepth(1000).setScrollFactor(0).setVisible(false);
+
+        // Keyboard controls
+        this.input.keyboard!.on('keydown-D', () => {
+            this.debugMode = !this.debugMode;
+            this.debugText.setVisible(this.debugMode);
+            if (this.debugMode) {
+                this.updateDebugDisplay();
+            }
+        });
+
+        this.input.keyboard!.on('keydown-TAB', (event: KeyboardEvent) => {
+            event.preventDefault();
+            if (this.debugMode) {
+                this.debugSelection = (this.debugSelection + 1) % this.debugElements.length;
+                this.updateDebugDisplay();
+            }
+        });
+
+        this.input.keyboard!.on('keydown-P', () => {
+            if (this.debugMode) {
+                console.log('=== CURRENT DEBUG VALUES ===');
+                console.log('GROUND_Y:', this.debugValues.groundY);
+                console.log('BUILDING_SCALE:', this.debugValues.buildingScale);
+                console.log('BG_GRASS_OFFSET:', this.debugValues.bgGrassOffset);
+                console.log('GRASS_SCALE:', this.debugValues.grassScale);
+                console.log('BG_SCALE:', this.debugValues.bgScale);
+                console.log('===========================');
+            }
+        });
+    }
+
+    private updateDebugDisplay(): void {
+        const element = this.debugElements[this.debugSelection];
+        this.debugText.setText([
+            '=== DEBUG MODE (Press D to toggle) ===',
+            `Selected: ${element.toUpperCase()} (TAB to cycle)`,
+            '',
+            'Controls:',
+            '  ↑/↓: Move Y position (5px)',
+            '  +/-: Scale (0.01)',
+            '  P: Print values to console',
+            '',
+            'Current Values:',
+            `  Ground Y: ${this.debugValues.groundY.toFixed(0)}`,
+            `  Building Scale: ${this.debugValues.buildingScale.toFixed(3)}`,
+            `  BG Grass Offset: ${this.debugValues.bgGrassOffset.toFixed(0)}`,
+            `  Grass Scale: ${this.debugValues.grassScale.toFixed(3)}`,
+            `  BG Scale: ${this.debugValues.bgScale.toFixed(2)}`,
+        ].join('\n'));
+    }
+
+    private applyDebugChanges(): void {
+        // Update buildings
+        this.buildingSprites.forEach((building) => {
+            building.setY(this.debugValues.groundY);
+            building.setScale(this.debugValues.buildingScale);
+        });
+
+        // Update labels
+        this.nameLabels.forEach((label, id) => {
+            const building = this.buildingSprites.get(id);
+            if (building) {
+                label.setY(this.debugValues.groundY - building.displayHeight - 10);
+            }
+        });
+
+        // Update knight
+        this.knight.setY(this.debugValues.groundY);
+
+        // Update background grass
+        const bgGrassY = this.debugValues.groundY + this.debugValues.bgGrassOffset;
+        this.bgGrassLayer.setY(bgGrassY);
+        this.bgGrassLayer.setTileScale(this.debugValues.grassScale, BG_GRASS_HEIGHT / 427);
+
+        // Update foreground grass
+        this.grassLayer.setTileScale(this.debugValues.grassScale, GRASS_DISPLAY_HEIGHT / 427);
+
+        // Update background
+        this.bgLayer.setTileScale(1, this.debugValues.bgScale);
+    }
+
     update(): void {
-        // Update parallax based on camera scroll
+        if (!this.debugMode) {
+            // Normal update logic (parallax)
+            const scrollX = this.cameras.main.scrollX;
+            this.bgLayer.tilePositionX = scrollX * PARALLAX_BG;
+            this.grassLayer.tilePositionX = scrollX;
+            return;
+        }
+
+        // Debug mode controls
+        const cursors = this.input.keyboard!.createCursorKeys();
+        const element = this.debugElements[this.debugSelection];
+        let changed = false;
+
+        // Shift key for larger adjustments
+        const step = this.input.keyboard!.checkDown(this.input.keyboard!.addKey('SHIFT'), 0) ? 10 : 5;
+        const scaleStep = 0.01;
+
+        if (Phaser.Input.Keyboard.JustDown(cursors.up!)) {
+            if (element === 'buildings') {
+                this.debugValues.groundY -= step;
+                changed = true;
+            } else if (element === 'bgGrass') {
+                this.debugValues.bgGrassOffset -= step;
+                changed = true;
+            }
+        }
+
+        if (Phaser.Input.Keyboard.JustDown(cursors.down!)) {
+            if (element === 'buildings') {
+                this.debugValues.groundY += step;
+                changed = true;
+            } else if (element === 'bgGrass') {
+                this.debugValues.bgGrassOffset += step;
+                changed = true;
+            }
+        }
+
+        if (this.input.keyboard!.addKey('PLUS').isDown || this.input.keyboard!.addKey('EQUALS').isDown) {
+            if (element === 'buildings') {
+                this.debugValues.buildingScale += scaleStep;
+                changed = true;
+            } else if (element === 'bgGrass' || element === 'fgGrass') {
+                this.debugValues.grassScale += scaleStep;
+                changed = true;
+            } else if (element === 'background') {
+                this.debugValues.bgScale += 0.05;
+                changed = true;
+            }
+        }
+
+        if (this.input.keyboard!.addKey('MINUS').isDown) {
+            if (element === 'buildings') {
+                this.debugValues.buildingScale = Math.max(0.1, this.debugValues.buildingScale - scaleStep);
+                changed = true;
+            } else if (element === 'bgGrass' || element === 'fgGrass') {
+                this.debugValues.grassScale = Math.max(0.05, this.debugValues.grassScale - scaleStep);
+                changed = true;
+            } else if (element === 'background') {
+                this.debugValues.bgScale = Math.max(0.1, this.debugValues.bgScale - 0.05);
+                changed = true;
+            }
+        }
+
+        if (changed) {
+            this.applyDebugChanges();
+            this.updateDebugDisplay();
+        }
+
+        // Still update parallax in debug mode
         const scrollX = this.cameras.main.scrollX;
-
-        // Background parallax (slowest)
         this.bgLayer.tilePositionX = scrollX * PARALLAX_BG;
-
-        // Grass parallax (foreground, moves with camera)
         this.grassLayer.tilePositionX = scrollX;
-
-        // Buildings move with a medium parallax factor
-        // Since buildings have normal scrollFactor, we adjust their visual position
-        // Actually buildings should scroll naturally, so we don't need to adjust
     }
 }
