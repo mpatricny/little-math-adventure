@@ -44,8 +44,8 @@ export class BootScene extends Phaser.Scene {
         this.load.image('bg-battle', 'assets/backgrounds/field.png');
 
         // === TOWN ASSETS ===
-        this.load.image('town-bg', 'assets/town/town-bg-mountains.png');
-        this.load.image('town-grass', 'assets/town/town-grass.png');
+        this.load.image('town-bg', 'assets/town/background.png');
+        this.load.image('town-grass', 'assets/town/grass.png');
         this.load.image('witch-hut-interior', 'assets/town/witch-hut-interior.png');
         this.load.image('building-witch', 'assets/town/witch-hut.png');
         this.load.image('building-guild', 'assets/town/guild.png');
