@@ -72,7 +72,7 @@ export class BattleScene extends Phaser.Scene {
 
         // Enemy (right side)
         this.enemy = this.add.sprite(650, 400, 'slime')
-            .setScale(2)
+            .setScale(0.5)
             .play('slime-idle');
 
         // Initialize systems

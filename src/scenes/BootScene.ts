@@ -28,10 +28,10 @@ export class BootScene extends Phaser.Scene {
             frameHeight: 256,
         });
 
-        // Slime: 2 frames for idle
+        // Slime: 8 frames (attack animation used as base)
         this.load.spritesheet('slime', 'assets/sprites/slime.png', {
-            frameWidth: 64,  // Adjust based on actual sprite
-            frameHeight: 64,
+            frameWidth: 256,
+            frameHeight: 256,
         });
 
         // Visual hints for math
