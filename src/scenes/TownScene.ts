@@ -76,6 +76,7 @@ export class TownScene extends Phaser.Scene {
         this.createForegroundGrass();  // Grass in front
         this.createKnight();
         this.createInteriorOverlay();
+        this.createBattleButton();
 
         // Camera is static - everything fits on one screen
         // No follow or deadzone needed
@@ -173,6 +174,68 @@ export class TownScene extends Phaser.Scene {
         this.interiorOverlay.add(bg);
 
         // Content will be added dynamically when entering a building
+    }
+
+    private createBattleButton(): void {
+        // Battle button on the right side with arrow
+        const button = this.add.container(720, 300).setDepth(50);
+
+        // Arrow shape (pointing right)
+        const arrow = this.add.triangle(0, 0,
+            -20, -30,  // top left
+            -20, 30,   // bottom left
+            20, 0,     // tip
+            0xff6600
+        );
+
+        // Text
+        const text = this.add.text(0, 50, 'SOUBOJ', {
+            fontSize: '18px',
+            color: '#ffffff',
+            fontStyle: 'bold',
+            stroke: '#000000',
+            strokeThickness: 4
+        }).setOrigin(0.5);
+
+        button.add([arrow, text]);
+        button.setSize(60, 100);
+        button.setInteractive({ useHandCursor: true });
+
+        // Hover effects
+        button.on('pointerover', () => {
+            arrow.setFillStyle(0xff8833);
+            this.tweens.add({
+                targets: button,
+                x: 730,
+                duration: 200,
+                ease: 'Back.easeOut'
+            });
+        });
+
+        button.on('pointerout', () => {
+            arrow.setFillStyle(0xff6600);
+            this.tweens.add({
+                targets: button,
+                x: 720,
+                duration: 200
+            });
+        });
+
+        button.on('pointerdown', () => {
+            // Start battle with green slime
+            this.scene.start('BattleScene', { enemyId: 'slime_green' });
+        });
+
+        // Pulsing animation
+        this.tweens.add({
+            targets: arrow,
+            scaleX: 1.1,
+            scaleY: 1.1,
+            duration: 1000,
+            yoyo: true,
+            repeat: -1,
+            ease: 'Sine.easeInOut'
+        });
     }
 
     private onBuildingHover(buildingId: string, isOver: boolean): void {

@@ -3,8 +3,8 @@
         "id": "slime_green",
         "name": "Zelený Sliz",
         "spriteKey": "slime",
-        "hp": 30,
-        "attack": 5,
+        "hp": 3,
+        "attack": 1,
         "defense": 0,
         "xpReward": 20,
         "goldReward": [
