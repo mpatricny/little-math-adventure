@@ -17,10 +17,11 @@ const BUILDINGS: BuildingConfig[] = [
 
 // Scene constants
 const WORLD_WIDTH = 800;
-const BUILDING_SCALE = 0.28;
-const GRASS_SCALE = 0.33;     // Zoom out grass 3x
-const GRASS_DISPLAY_HEIGHT = 140;  // How tall grass appears on screen
-const GROUND_Y = 600 - GRASS_DISPLAY_HEIGHT + 30;  // Where ground level is
+const BUILDING_SCALE = 0.224;  // 20% smaller than original 0.28
+const GRASS_SCALE = 0.165;     // 50% smaller than original 0.33
+const GRASS_DISPLAY_HEIGHT = 70;  // 50% of original 140
+const BG_GRASS_HEIGHT = 80;  // Background grass slightly higher
+const GROUND_Y = 600 - GRASS_DISPLAY_HEIGHT + 15;  // Where ground level is
 const KNIGHT_SPEED = 200;
 const PARALLAX_BG = 0.3;
 
@@ -28,7 +29,8 @@ type TownState = 'exploring' | 'walking' | 'inside';
 
 export class TownScene extends Phaser.Scene {
     private bgLayer!: Phaser.GameObjects.TileSprite;
-    private grassLayer!: Phaser.GameObjects.TileSprite;
+    private bgGrassLayer!: Phaser.GameObjects.TileSprite;  // Grass behind buildings
+    private grassLayer!: Phaser.GameObjects.TileSprite;    // Grass in front
     private knight!: Phaser.GameObjects.Sprite;
     private buildingSprites: Map<string, Phaser.GameObjects.Image> = new Map();
     private nameLabels: Map<string, Phaser.GameObjects.Text> = new Map();
@@ -48,10 +50,11 @@ export class TownScene extends Phaser.Scene {
         // Set up world bounds (single screen, no scrolling needed)
         this.cameras.main.setBounds(0, 0, WORLD_WIDTH, 600);
 
-        // Create parallax layers
+        // Create parallax layers (order matters for depth)
         this.createBackground();
+        this.createBackgroundGrass();  // Grass behind buildings
         this.createBuildings();
-        this.createGrass();
+        this.createForegroundGrass();  // Grass in front
         this.createKnight();
         this.createInteriorOverlay();
 
@@ -103,9 +106,21 @@ export class TownScene extends Phaser.Scene {
         });
     }
 
-    private createGrass(): void {
-        // Grass layer - foreground (tiles horizontally)
-        // Original is 5000x427, scale down to ~1/3 size
+    private createBackgroundGrass(): void {
+        // Background grass layer - sits behind buildings
+        // Positioned slightly higher than foreground grass for depth
+        const bgGrassY = GROUND_Y - 10;  // Slightly higher than ground
+        this.bgGrassLayer = this.add.tileSprite(0, bgGrassY, WORLD_WIDTH * 2, BG_GRASS_HEIGHT, 'town-grass')
+            .setOrigin(0, 1)
+            .setScrollFactor(0)
+            .setAlpha(0.8);  // Slightly transparent for depth
+
+        // Scale the grass texture
+        this.bgGrassLayer.setTileScale(GRASS_SCALE, BG_GRASS_HEIGHT / 427);
+    }
+
+    private createForegroundGrass(): void {
+        // Foreground grass layer - sits in front of buildings (at character feet level)
         this.grassLayer = this.add.tileSprite(0, 600, WORLD_WIDTH * 2, GRASS_DISPLAY_HEIGHT, 'town-grass')
             .setOrigin(0, 1)
             .setScrollFactor(0);
