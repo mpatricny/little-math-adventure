@@ -34,19 +34,27 @@ export class BootScene extends Phaser.Scene {
             frameHeight: 256,
         });
 
-        // Visual hints for math
-        this.load.spritesheet('hints', 'assets/sprites/visual-hints.png', {
-            frameWidth: 32,
-            frameHeight: 32,
+        // Visual hints for math (8 items: apple, sword, hammer, stone, coin, shield, potion, coin)
+        this.load.spritesheet('hints', 'assets/sprites/hint-items.png', {
+            frameWidth: 200,
+            frameHeight: 200,
         });
 
         // === BACKGROUNDS ===
         this.load.image('bg-battle', 'assets/backgrounds/field.png');
-        // this.load.image('bg-town', 'assets/backgrounds/town.png');
-        // this.load.image('bg-shop', 'assets/backgrounds/shop.png');
+
+        // === TOWN ASSETS ===
+        this.load.image('town-bg', 'assets/town/background.png');
+        this.load.image('town-grass', 'assets/town/grass.png');
+        this.load.image('building-witch', 'assets/town/witch-hut.png');
+        this.load.image('building-guild', 'assets/town/guild.png');
+        this.load.image('building-tavern', 'assets/town/tavern.png');
+        this.load.image('building-shop', 'assets/town/weapon-shop.png');
 
         // === UI ===
         this.load.image('math-board', 'assets/ui/math-board.png');
+        this.load.image('btn-answer', 'assets/ui/small_board_button.png');
+        this.load.image('btn-answer-pressed', 'assets/ui/small_board_button_pressed.png');
         // this.load.spritesheet('buttons', 'assets/ui/buttons.png', {
         //   frameWidth: 120,
         //   frameHeight: 50,

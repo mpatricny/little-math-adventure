@@ -1,6 +1,12 @@
 import Phaser from 'phaser';
 import { MathProblem } from '../types';
 
+// Visual hint configuration
+const HINT_ITEM_COUNT = 8;      // Total items in spritesheet
+const HINT_APPEAR_DELAY = 5000; // 5 second delay before hints appear
+const HINT_ITEM_SCALE = 0.12;   // Scale down 200px items to ~24px display size
+const HINT_SPACING = 30;        // Spacing between hint items
+
 export class MathBoard {
     private scene: Phaser.Scene;
     private container!: Phaser.GameObjects.Container;
@@ -8,6 +14,8 @@ export class MathBoard {
     private buttons: Phaser.GameObjects.Container[] = [];
     private hintContainer!: Phaser.GameObjects.Container;
     private onAnswer: (isCorrect: boolean) => void;
+    private answerText: Phaser.GameObjects.Text | null = null;
+    private hintTimer: Phaser.Time.TimerEvent | null = null;
 
     constructor(scene: Phaser.Scene, onAnswer: (isCorrect: boolean) => void) {
         this.scene = scene;
@@ -38,9 +46,9 @@ export class MathBoard {
         this.hintContainer = this.scene.add.container(0, -20);
         this.container.add(this.hintContainer);
 
-        // Answer buttons (3 buttons in a row)
-        const buttonY = 80;
-        const buttonSpacing = 140;
+        // Answer buttons (3 buttons in a row, centered on light wood area)
+        const buttonY = 65;
+        const buttonSpacing = 115;
         const startX = -buttonSpacing;
 
         for (let i = 0; i < 3; i++) {
@@ -51,12 +59,14 @@ export class MathBoard {
     }
 
     private createAnswerButton(x: number, y: number, index: number): Phaser.GameObjects.Container {
-        const bg = this.scene.add.rectangle(0, 0, 100, 60, 0x4488cc, 1)
+        // Use image instead of rectangle, scaled to fit the board
+        const bg = this.scene.add.image(0, 0, 'btn-answer')
+            .setScale(0.35)
             .setInteractive({ useHandCursor: true });
 
-        const text = this.scene.add.text(0, 0, '', {
-            fontSize: '32px',
-            color: '#ffffff',
+        const text = this.scene.add.text(0, -3, '', {
+            fontSize: '28px',
+            color: '#5a3825',
             fontStyle: 'bold',
         }).setOrigin(0.5);
 
@@ -65,9 +75,17 @@ export class MathBoard {
         container.setData('text', text);
         container.setData('bg', bg);
 
-        bg.on('pointerover', () => bg.setFillStyle(0x5599dd));
-        bg.on('pointerout', () => bg.setFillStyle(0x4488cc));
-        bg.on('pointerdown', () => this.handleAnswer(index));
+        // Hover: slight scale up from base 0.35
+        bg.on('pointerover', () => bg.setScale(0.38));
+        bg.on('pointerout', () => {
+            bg.setScale(0.35);
+            bg.setTexture('btn-answer');
+        });
+        // Pressed state: swap texture
+        bg.on('pointerdown', () => {
+            bg.setTexture('btn-answer-pressed');
+            this.handleAnswer(index);
+        });
 
         return container;
     }
@@ -102,61 +120,112 @@ export class MathBoard {
     }
 
     private showVisualHints(problem: MathProblem): void {
+        // Clear any existing hints and cancel pending timer
         this.hintContainer.removeAll(true);
+        if (this.hintTimer) {
+            this.hintTimer.destroy();
+            this.hintTimer = null;
+        }
 
         if (!problem.showVisualHint) return;
 
-        const spacing = 28;
-        const group1Start = -((problem.operand1 - 1) * spacing) / 2 - 40;
-        const group2Start = ((problem.operand2 - 1) * spacing) / 2 + 40;
+        // Delay hint appearance by 5 seconds
+        this.hintTimer = this.scene.time.delayedCall(HINT_APPEAR_DELAY, () => {
+            this.displayHintItems(problem);
+        });
+    }
 
-        // First operand (apples on left)
+    private displayHintItems(problem: MathProblem): void {
+        // Select a random item type for this problem
+        const randomFrame = Phaser.Math.Between(0, HINT_ITEM_COUNT - 1);
+
+        const group1Start = -((problem.operand1 - 1) * HINT_SPACING) / 2 - 40;
+        const group2Start = ((problem.operand2 - 1) * HINT_SPACING) / 2 + 40;
+
+        let itemIndex = 0;
+
+        // First operand (items on left)
         for (let i = 0; i < problem.operand1; i++) {
-            const apple = this.scene.add.image(
-                group1Start + i * spacing,
+            const item = this.scene.add.image(
+                group1Start + i * HINT_SPACING,
                 0,
                 'hints',
-                0  // Frame 0 = apple
-            ).setScale(0.8);
-            this.hintContainer.add(apple);
+                randomFrame
+            );
+            // Start invisible and small for animation
+            item.setScale(0).setAlpha(0);
+            this.hintContainer.add(item);
+
+            // Animate in with stagger
+            this.scene.tweens.add({
+                targets: item,
+                scale: HINT_ITEM_SCALE,
+                alpha: 1,
+                duration: 200,
+                delay: itemIndex * 50,
+                ease: 'Back.easeOut',
+            });
+            itemIndex++;
         }
 
         // Operator symbol
         const opSymbol = this.scene.add.text(0, 0, problem.operator, {
             fontSize: '32px',
             color: '#666666',
-        }).setOrigin(0.5);
+        }).setOrigin(0.5).setAlpha(0);
         this.hintContainer.add(opSymbol);
 
-        // Second operand (apples on right)
+        // Fade in operator
+        this.scene.tweens.add({
+            targets: opSymbol,
+            alpha: 1,
+            duration: 200,
+            delay: itemIndex * 50,
+        });
+        itemIndex++;
+
+        // Second operand (items on right)
         for (let i = 0; i < problem.operand2; i++) {
-            const apple = this.scene.add.image(
-                group2Start + i * spacing,
+            const item = this.scene.add.image(
+                group2Start + i * HINT_SPACING,
                 0,
                 'hints',
-                0
-            ).setScale(0.8);
-            this.hintContainer.add(apple);
+                randomFrame
+            );
+            // Start invisible and small for animation
+            item.setScale(0).setAlpha(0);
+            this.hintContainer.add(item);
+
+            // Animate in with stagger
+            this.scene.tweens.add({
+                targets: item,
+                scale: HINT_ITEM_SCALE,
+                alpha: 1,
+                duration: 200,
+                delay: itemIndex * 50,
+                ease: 'Back.easeOut',
+            });
+            itemIndex++;
         }
     }
 
     private handleAnswer(index: number): void {
         const btn = this.buttons[index];
         const isCorrect = btn.getData('isCorrect') as boolean;
-        const bg = btn.getData('bg') as Phaser.GameObjects.Rectangle;
+        const bg = btn.getData('bg') as Phaser.GameObjects.Image;
 
-        // Visual feedback
+        // Visual feedback with tint
         if (isCorrect) {
-            bg.setFillStyle(0x44aa44);
+            bg.setTint(0x88ff88);  // Green tint
             // this.scene.sound.play('sfx-correct');
         } else {
-            bg.setFillStyle(0xaa4444);
+            bg.setTint(0xff8888);  // Red tint
             // this.scene.sound.play('sfx-wrong');
         }
 
         // Disable all buttons
         this.buttons.forEach(b => {
-            (b.getData('bg') as Phaser.GameObjects.Rectangle).disableInteractive();
+            (b.getData('bg') as Phaser.GameObjects.Image).disableInteractive();
         });
 
         // Delay then callback
@@ -166,16 +235,17 @@ export class MathBoard {
     }
 
     showCorrectAnswer(problem: MathProblem): void {
-        // Highlight the correct button
+        // Highlight the correct button with scale animation and tint
         this.buttons.forEach(btn => {
             if (btn.getData('isCorrect')) {
-                const bg = btn.getData('bg') as Phaser.GameObjects.Rectangle;
+                const bg = btn.getData('bg') as Phaser.GameObjects.Image;
                 this.scene.tweens.add({
                     targets: bg,
-                    fillColor: 0x44aa44,
+                    scale: 0.4,
                     duration: 200,
                     yoyo: true,
                     repeat: 2,
+                    onStart: () => bg.setTint(0x88ff88),
                 });
             }
         });
@@ -186,16 +256,16 @@ export class MathBoard {
 
     private animateCorrectAnswer(problem: MathProblem): void {
         // Simple animation showing the answer
-        const answerText = this.scene.add.text(0, 120, `= ${problem.answer}`, {
+        this.answerText = this.scene.add.text(0, 120, `= ${problem.answer}`, {
             fontSize: '36px',
             color: '#44aa44',
             fontStyle: 'bold',
         }).setOrigin(0.5);
 
-        this.container.add(answerText);
+        this.container.add(this.answerText);
 
         this.scene.tweens.add({
-            targets: answerText,
+            targets: this.answerText,
             scale: 1.2,
             duration: 300,
             yoyo: true,
@@ -203,6 +273,12 @@ export class MathBoard {
     }
 
     hide(): void {
+        // Cancel pending hint timer
+        if (this.hintTimer) {
+            this.hintTimer.destroy();
+            this.hintTimer = null;
+        }
+
         this.scene.tweens.add({
             targets: this.container,
             alpha: 0,
@@ -210,12 +286,21 @@ export class MathBoard {
             duration: 150,
             onComplete: () => {
                 this.container.setVisible(false);
-                // Re-enable buttons and reset colors
+                // Re-enable buttons and reset image state
                 this.buttons.forEach(btn => {
-                    const bg = btn.getData('bg') as Phaser.GameObjects.Rectangle;
+                    const bg = btn.getData('bg') as Phaser.GameObjects.Image;
                     bg.setInteractive({ useHandCursor: true });
-                    bg.setFillStyle(0x4488cc);
+                    bg.setTexture('btn-answer');
+                    bg.setScale(0.35);
+                    bg.clearTint();
                 });
+                // Remove answer text if it exists
+                if (this.answerText) {
+                    this.answerText.destroy();
+                    this.answerText = null;
+                }
+                // Clear hints
+                this.hintContainer.removeAll(true);
             },
         });
     }

@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(cat:*)",
+      "Bash(sips:*)",
+      "Bash(for f in /Users/datamole/little-math-adventure/public/assets/town/*.png)",
+      "Bash(do echo '=== $(basename $f) ===')",
+      "Bash(done)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
