@@ -95,7 +95,7 @@ export class TownScene extends Phaser.Scene {
             .setScrollFactor(0);
 
         // Scale the tile to show more of the sky (smaller scale = more visible)
-        this.bgLayer.setTileScale(1, 0.5);
+        this.bgLayer.setTileScale(1, 0.66);
     }
 
     private createBuildings(): void {
