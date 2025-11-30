@@ -19,6 +19,7 @@ export interface PlayerState {
     hp: number;
     maxHp: number;
     gold: number;
+    status: 'healthy' | 'přizabitý';  // Health status
     attack: number;
     defense: number;
     equippedWeapon: string | null;
