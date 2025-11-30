@@ -16,12 +16,21 @@ class MathBoard {
 }
 
 class HUD {
-    constructor(private scene: Phaser.Scene, _state: BattleState) {
-        this.scene.add.text(20, 20, 'HP: 100/100', { fontSize: '20px', color: '#fff' });
-        this.scene.add.text(600, 20, 'Enemy: ???', { fontSize: '20px', color: '#fff' });
+    private playerHpText: Phaser.GameObjects.Text;
+    private enemyHpText: Phaser.GameObjects.Text;
+
+    constructor(private scene: Phaser.Scene, state: BattleState) {
+        this.playerHpText = this.scene.add.text(20, 20, `HP: ${state.playerHp}/10`, { fontSize: '20px', color: '#fff' });
+        this.enemyHpText = this.scene.add.text(600, 20, `Enemy: ${state.enemyHp}/${state.enemyMaxHp}`, { fontSize: '20px', color: '#fff' });
     }
-    updatePlayerHp(_hp: number) { }
-    updateEnemyHp(_hp: number, _maxHp: number) { }
+
+    updatePlayerHp(hp: number) {
+        this.playerHpText.setText(`HP: ${hp}/10`);
+    }
+
+    updateEnemyHp(hp: number, maxHp: number) {
+        this.enemyHpText.setText(`Enemy: ${hp}/${maxHp}`);
+    }
 }
 
 export class BattleScene extends Phaser.Scene {
@@ -50,12 +59,12 @@ export class BattleScene extends Phaser.Scene {
         const enemies = this.cache.json.get('enemies') as EnemyDefinition[];
         this.currentEnemy = enemies.find(e => e.id === data.enemyId) || enemies[0];
 
-        // Initialize battle state
+        // Initialize battle state with requested test values
         this.battleState = {
             phase: 'start',
-            playerHp: this.registry.get('playerHp') || 100,
-            enemyHp: this.currentEnemy.hp,
-            enemyMaxHp: this.currentEnemy.hp,
+            playerHp: 10,       // Requested: 10 HP
+            enemyHp: 3,         // Requested: 3 HP
+            enemyMaxHp: 3,
             currentProblem: null,
             turnCount: 0,
         };
@@ -80,6 +89,11 @@ export class BattleScene extends Phaser.Scene {
 
         // Create UI
         this.hud = new HUD(this, this.battleState);
+
+        // Force HUD update immediately to show correct starting HP
+        this.hud.updatePlayerHp(this.battleState.playerHp);
+        this.hud.updateEnemyHp(this.battleState.enemyHp, this.battleState.enemyMaxHp);
+
         this.mathBoard = new MathBoard(this, this.onAnswerSelected.bind(this));
         this.createAttackButton();
 
@@ -177,7 +191,7 @@ export class BattleScene extends Phaser.Scene {
             onComplete: () => {
                 // Landed - Impact!
                 // Damage enemy
-                const damage = this.registry.get('playerAttack') || 10;
+                const damage = 1; // Requested: 1 damage
                 this.battleState.enemyHp -= damage;
                 this.hud.updateEnemyHp(this.battleState.enemyHp, this.battleState.enemyMaxHp);
 
@@ -251,7 +265,7 @@ export class BattleScene extends Phaser.Scene {
             ease: 'Quad.easeIn',
             onComplete: () => {
                 // Impact
-                const damage = this.currentEnemy.attack;
+                const damage = 1; // Requested: 1 damage
                 this.battleState.playerHp -= damage;
                 this.hud.updatePlayerHp(this.battleState.playerHp);
 
