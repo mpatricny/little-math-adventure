@@ -49,7 +49,9 @@ export type MathOperator = '+' | '-';
 export interface MathProblem {
     operand1: number;
     operand2: number;
+    operand3?: number;        // Optional 3rd operand
     operator: MathOperator;
+    operator2?: MathOperator; // Optional 2nd operator
     answer: number;
     choices: number[];        // 3 options (shuffled)
     showVisualHint: boolean;
@@ -61,6 +63,7 @@ export interface DifficultyConfig {
     minNumber: number;
     maxNumber: number;
     operators: MathOperator[];
+    allowThreeOperands: boolean; // New flag
     showVisualHint: boolean;
     hintFadeDelay: number;    // ms before hint fades (0 = always show)
 }

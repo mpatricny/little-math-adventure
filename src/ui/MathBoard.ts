@@ -92,7 +92,13 @@ export class MathBoard {
 
     show(problem: MathProblem): void {
         // Set problem text
-        this.problemText.setText(`${problem.operand1} ${problem.operator} ${problem.operand2} = ?`);
+        let problemString = `${problem.operand1} ${problem.operator} ${problem.operand2}`;
+        if (problem.operand3 !== undefined && problem.operator2) {
+            problemString += ` ${problem.operator2} ${problem.operand3}`;
+        }
+        problemString += ' = ?';
+
+        this.problemText.setText(problemString);
 
         // Set button values
         problem.choices.forEach((choice, i) => {
@@ -139,73 +145,76 @@ export class MathBoard {
         // Select a random item type for this problem
         const randomFrame = Phaser.Math.Between(0, HINT_ITEM_COUNT - 1);
 
-        const group1Start = -((problem.operand1 - 1) * HINT_SPACING) / 2 - 40;
-        const group2Start = ((problem.operand2 - 1) * HINT_SPACING) / 2 + 40;
+        // Calculate total width to center everything
+        const itemWidth = HINT_SPACING;
+        const groupGap = 80;
 
-        let itemIndex = 0;
+        let totalItems = problem.operand1 + problem.operand2;
+        if (problem.operand3) totalItems += problem.operand3;
 
-        // First operand (items on left)
-        for (let i = 0; i < problem.operand1; i++) {
-            const item = this.scene.add.image(
-                group1Start + i * HINT_SPACING,
-                0,
-                'hints',
-                randomFrame
-            );
-            // Start invisible and small for animation
-            item.setScale(0).setAlpha(0);
-            this.hintContainer.add(item);
+        // Simple centering strategy: 
+        // Group 1 | Op | Group 2 [| Op2 | Group 3]
 
-            // Animate in with stagger
-            this.scene.tweens.add({
-                targets: item,
-                scale: HINT_ITEM_SCALE,
-                alpha: 1,
-                duration: 200,
-                delay: itemIndex * 50,
-                ease: 'Back.easeOut',
-            });
-            itemIndex++;
+        let startX = -((problem.operand1 * itemWidth) + groupGap + (problem.operand2 * itemWidth)) / 2;
+        if (problem.operand3) {
+            startX -= (groupGap + (problem.operand3 * itemWidth)) / 2;
         }
 
-        // Operator symbol
-        const opSymbol = this.scene.add.text(0, 0, problem.operator, {
-            fontSize: '32px',
-            color: '#666666',
-        }).setOrigin(0.5).setAlpha(0);
-        this.hintContainer.add(opSymbol);
+        let currentX = startX;
+        let itemIndex = 0;
 
-        // Fade in operator
-        this.scene.tweens.add({
-            targets: opSymbol,
-            alpha: 1,
-            duration: 200,
-            delay: itemIndex * 50,
-        });
-        itemIndex++;
+        // Helper to add a group of items
+        const addGroup = (count: number) => {
+            for (let i = 0; i < count; i++) {
+                const item = this.scene.add.image(
+                    currentX + (i * HINT_SPACING),
+                    0,
+                    'hints',
+                    randomFrame
+                );
+                item.setScale(0).setAlpha(0);
+                this.hintContainer.add(item);
 
-        // Second operand (items on right)
-        for (let i = 0; i < problem.operand2; i++) {
-            const item = this.scene.add.image(
-                group2Start + i * HINT_SPACING,
-                0,
-                'hints',
-                randomFrame
-            );
-            // Start invisible and small for animation
-            item.setScale(0).setAlpha(0);
-            this.hintContainer.add(item);
+                this.scene.tweens.add({
+                    targets: item,
+                    scale: HINT_ITEM_SCALE,
+                    alpha: 1,
+                    duration: 200,
+                    delay: itemIndex * 50,
+                    ease: 'Back.easeOut',
+                });
+                itemIndex++;
+            }
+            currentX += (count * HINT_SPACING);
+        };
 
-            // Animate in with stagger
+        // Helper to add operator
+        const addOp = (op: string) => {
+            currentX += groupGap / 2;
+            const opSymbol = this.scene.add.text(currentX - 15, 0, op, {
+                fontSize: '32px',
+                color: '#666666',
+            }).setOrigin(0.5).setAlpha(0);
+            this.hintContainer.add(opSymbol);
+
             this.scene.tweens.add({
-                targets: item,
-                scale: HINT_ITEM_SCALE,
+                targets: opSymbol,
                 alpha: 1,
                 duration: 200,
                 delay: itemIndex * 50,
-                ease: 'Back.easeOut',
             });
             itemIndex++;
+            currentX += groupGap / 2;
+        };
+
+        // Render groups
+        addGroup(problem.operand1);
+        addOp(problem.operator);
+        addGroup(problem.operand2);
+
+        if (problem.operand3 && problem.operator2) {
+            addOp(problem.operator2);
+            addGroup(problem.operand3);
         }
     }
 
