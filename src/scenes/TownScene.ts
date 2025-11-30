@@ -21,7 +21,7 @@ const BUILDING_SCALE = 0.224;  // 20% smaller than original 0.28
 const GRASS_SCALE = 0.165;     // 50% smaller than original 0.33
 const GRASS_DISPLAY_HEIGHT = 70;  // 50% of original 140
 const BG_GRASS_HEIGHT = 80;  // Background grass slightly higher
-const GROUND_Y = 600 - GRASS_DISPLAY_HEIGHT + 15;  // Where ground level is
+const GROUND_Y = 600 - GRASS_DISPLAY_HEIGHT + 65;  // Where ground level is (moved down 50px)
 const KNIGHT_SPEED = 200;
 const PARALLAX_BG = 0.3;
 
@@ -67,13 +67,13 @@ export class TownScene extends Phaser.Scene {
 
     private createBackground(): void {
         // Background layer - sky and mountains (1456x816)
-        // Scale to fill screen height, tile horizontally
+        // Scale to show more of the background (smaller = more visible)
         this.bgLayer = this.add.tileSprite(0, 0, WORLD_WIDTH * 2, 600, 'town-bg')
             .setOrigin(0, 0)
             .setScrollFactor(0);
 
-        // Scale the tile to show more of the sky (zoom out vertically)
-        this.bgLayer.setTileScale(1, 600 / 816);
+        // Scale the tile to show more of the sky (smaller scale = more visible)
+        this.bgLayer.setTileScale(1, 0.5);
     }
 
     private createBuildings(): void {
@@ -109,7 +109,7 @@ export class TownScene extends Phaser.Scene {
     private createBackgroundGrass(): void {
         // Background grass layer - sits behind buildings
         // Positioned slightly higher than foreground grass for depth
-        const bgGrassY = GROUND_Y - 10;  // Slightly higher than ground
+        const bgGrassY = GROUND_Y + 40;  // Moved down 50px from previous (-10 + 50 = +40)
         this.bgGrassLayer = this.add.tileSprite(0, bgGrassY, WORLD_WIDTH * 2, BG_GRASS_HEIGHT, 'town-grass')
             .setOrigin(0, 1)
             .setScrollFactor(0)
