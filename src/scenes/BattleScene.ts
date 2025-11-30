@@ -160,35 +160,37 @@ export class BattleScene extends Phaser.Scene {
     private playHeroAttack(): void {
         const startX = this.hero.x;
         const startY = this.hero.y;
-        const targetX = this.enemy.x - 80; // Land slightly in front of enemy
+        const targetX = this.enemy.x - 50; // Overlap slightly or get very close
 
-        // X movement (linear)
+        // Start animation immediately (windup during jump)
+        this.hero.play('knight-attack');
+
+        // Jump duration synced to reach impact frame (approx frame 4-5)
+        const jumpDuration = 400;
+
+        // X movement (Jump forward)
         this.tweens.add({
             targets: this.hero,
             x: targetX,
-            duration: 400,
+            duration: jumpDuration,
             ease: 'Power1',
             onComplete: () => {
-                // Landed, play attack animation
-                this.hero.play('knight-attack');
+                // Landed - Impact!
+                // Damage enemy
+                const damage = this.registry.get('playerAttack') || 10;
+                this.battleState.enemyHp -= damage;
+                this.hud.updateEnemyHp(this.battleState.enemyHp, this.battleState.enemyMaxHp);
 
-                // Impact frame logic (approximate)
-                this.time.delayedCall(200, () => {
-                    // Damage enemy
-                    const damage = this.registry.get('playerAttack') || 10;
-                    this.battleState.enemyHp -= damage;
-                    this.hud.updateEnemyHp(this.battleState.enemyHp, this.battleState.enemyMaxHp);
-
-                    // Enemy hit effect
-                    this.tweens.add({
-                        targets: this.enemy,
-                        tint: 0xff0000,
-                        duration: 100,
-                        yoyo: true,
-                        onComplete: () => this.enemy.clearTint(),
-                    });
+                // Enemy hit effect
+                this.tweens.add({
+                    targets: this.enemy,
+                    tint: 0xff0000,
+                    duration: 100,
+                    yoyo: true,
+                    onComplete: () => this.enemy.clearTint(),
                 });
 
+                // Wait for animation to finish (last few frames play at enemy position)
                 this.hero.once('animationcomplete', () => {
                     this.hero.play('knight-idle');
 
@@ -196,11 +198,9 @@ export class BattleScene extends Phaser.Scene {
                     this.tweens.add({
                         targets: this.hero,
                         x: startX,
-                        y: startY, // Ensure Y is reset
                         duration: 400,
                         ease: 'Power2',
                         onComplete: () => {
-                            // Check victory
                             if (this.battleState.enemyHp <= 0) {
                                 this.setPhase('victory');
                             } else {
@@ -212,11 +212,11 @@ export class BattleScene extends Phaser.Scene {
             }
         });
 
-        // Y movement (Jump arc) - separate tween for arc effect
+        // Y movement (Jump arc)
         this.tweens.add({
             targets: this.hero,
-            y: startY - 100,
-            duration: 200,
+            y: startY - 60,
+            duration: jumpDuration / 2, // Up then down
             yoyo: true,
             ease: 'Sine.easeOut',
         });
@@ -241,16 +241,16 @@ export class BattleScene extends Phaser.Scene {
 
     private playEnemyAttack(): void {
         const startX = this.enemy.x;
-        const targetX = this.hero.x + 80; // Stop in front of hero
+        const targetX = this.hero.x; // Overlap hero
 
-        // Slide to hero
+        // 1. Fast Rush
         this.tweens.add({
             targets: this.enemy,
             x: targetX,
-            duration: 600,
-            ease: 'Power2', // Rush in
+            duration: 250, // Fast!
+            ease: 'Quad.easeIn',
             onComplete: () => {
-                // Attack impact
+                // Impact
                 const damage = this.currentEnemy.attack;
                 this.battleState.playerHp -= damage;
                 this.hud.updatePlayerHp(this.battleState.playerHp);
@@ -264,21 +264,28 @@ export class BattleScene extends Phaser.Scene {
                     onComplete: () => this.hero.clearTint(),
                 });
 
-                // Slide back
+                // 2. Quick Retract (Bounce)
                 this.tweens.add({
                     targets: this.enemy,
-                    x: startX,
-                    duration: 600,
-                    delay: 200, // Wait a moment at impact
-                    ease: 'Power2',
+                    x: targetX + 100, // Bounce back a bit
+                    duration: 150,
+                    ease: 'Quad.easeOut',
                     onComplete: () => {
-                        // Check defeat
-                        if (this.battleState.playerHp <= 0) {
-                            this.setPhase('defeat');
-                        } else {
-                            this.battleState.turnCount++;
-                            this.setPhase('player_turn');
-                        }
+                        // 3. Slow Return
+                        this.tweens.add({
+                            targets: this.enemy,
+                            x: startX,
+                            duration: 600,
+                            ease: 'Linear',
+                            onComplete: () => {
+                                if (this.battleState.playerHp <= 0) {
+                                    this.setPhase('defeat');
+                                } else {
+                                    this.battleState.turnCount++;
+                                    this.setPhase('player_turn');
+                                }
+                            }
+                        });
                     }
                 });
             }
