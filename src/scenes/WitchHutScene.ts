@@ -14,21 +14,20 @@ export class WitchHutScene extends Phaser.Scene {
         this.gameState = GameStateManager.getInstance();
         const player = this.gameState.getPlayer();
 
-        // Dark background overlay
-        this.add.rectangle(400, 300, 800, 600, 0x000000, 0.85);
+        // Background Image
+        this.add.image(400, 300, 'witch-hut-interior').setDisplaySize(800, 600);
+
+        // Semi-transparent overlay for readability
+        this.add.rectangle(400, 300, 800, 600, 0x000000, 0.4);
 
         // Title
-        this.add.text(400, 100, 'CHALOUPKA ČARODĚJNICE', {
+        this.add.text(400, 50, 'CHALOUPKA ČARODĚJNICE', {
             fontSize: '32px',
             color: '#aa55ff',
             fontStyle: 'bold',
             stroke: '#000000',
             strokeThickness: 4
         }).setOrigin(0.5);
-
-        // Witch Sprite (Placeholder or reuse existing)
-        // Using witch building texture as a placeholder for now, scaled up
-        this.add.image(400, 250, 'building-witch').setScale(0.5);
 
         // Player Stats
         this.add.text(200, 400, `HP: ${player.hp}/${player.maxHp}`, {
