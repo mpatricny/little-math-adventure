@@ -65,13 +65,13 @@ export class BattleScene extends Phaser.Scene {
         // Background
         this.add.image(400, 300, 'bg-battle').setDisplaySize(800, 600);
 
-        // Hero (left side)
-        this.hero = this.add.sprite(150, 400, 'knight')
+        // Hero (left side) - moved closer
+        this.hero = this.add.sprite(250, 400, 'knight')
             .setScale(0.5)
             .play('knight-idle');
 
-        // Enemy (right side)
-        this.enemy = this.add.sprite(650, 400, 'slime')
+        // Enemy (right side) - moved closer
+        this.enemy = this.add.sprite(550, 400, 'slime')
             .setScale(0.5)
             .play('slime-idle');
 
@@ -158,32 +158,67 @@ export class BattleScene extends Phaser.Scene {
     }
 
     private playHeroAttack(): void {
-        this.hero.play('knight-attack');
+        const startX = this.hero.x;
+        const startY = this.hero.y;
+        const targetX = this.enemy.x - 80; // Land slightly in front of enemy
 
-        this.hero.once('animationcomplete', () => {
-            // Damage enemy
-            const damage = this.registry.get('playerAttack') || 10;
-            this.battleState.enemyHp -= damage;
-            this.hud.updateEnemyHp(this.battleState.enemyHp, this.battleState.enemyMaxHp);
+        // X movement (linear)
+        this.tweens.add({
+            targets: this.hero,
+            x: targetX,
+            duration: 400,
+            ease: 'Power1',
+            onComplete: () => {
+                // Landed, play attack animation
+                this.hero.play('knight-attack');
 
-            // Enemy hit effect
-            // this.sound.play('sfx-hit'); // Audio not loaded yet
-            this.tweens.add({
-                targets: this.enemy,
-                tint: 0xff0000,
-                duration: 100,
-                yoyo: true,
-                onComplete: () => this.enemy.clearTint(),
-            });
+                // Impact frame logic (approximate)
+                this.time.delayedCall(200, () => {
+                    // Damage enemy
+                    const damage = this.registry.get('playerAttack') || 10;
+                    this.battleState.enemyHp -= damage;
+                    this.hud.updateEnemyHp(this.battleState.enemyHp, this.battleState.enemyMaxHp);
 
-            this.hero.play('knight-idle');
+                    // Enemy hit effect
+                    this.tweens.add({
+                        targets: this.enemy,
+                        tint: 0xff0000,
+                        duration: 100,
+                        yoyo: true,
+                        onComplete: () => this.enemy.clearTint(),
+                    });
+                });
 
-            // Check victory
-            if (this.battleState.enemyHp <= 0) {
-                this.setPhase('victory');
-            } else {
-                this.setPhase('enemy_turn');
+                this.hero.once('animationcomplete', () => {
+                    this.hero.play('knight-idle');
+
+                    // Slide back
+                    this.tweens.add({
+                        targets: this.hero,
+                        x: startX,
+                        y: startY, // Ensure Y is reset
+                        duration: 400,
+                        ease: 'Power2',
+                        onComplete: () => {
+                            // Check victory
+                            if (this.battleState.enemyHp <= 0) {
+                                this.setPhase('victory');
+                            } else {
+                                this.setPhase('enemy_turn');
+                            }
+                        }
+                    });
+                });
             }
+        });
+
+        // Y movement (Jump arc) - separate tween for arc effect
+        this.tweens.add({
+            targets: this.hero,
+            y: startY - 100,
+            duration: 200,
+            yoyo: true,
+            ease: 'Sine.easeOut',
         });
     }
 
@@ -205,36 +240,47 @@ export class BattleScene extends Phaser.Scene {
     }
 
     private playEnemyAttack(): void {
-        // Enemy attack animation
+        const startX = this.enemy.x;
+        const targetX = this.hero.x + 80; // Stop in front of hero
+
+        // Slide to hero
         this.tweens.add({
             targets: this.enemy,
-            x: this.enemy.x - 100,
-            duration: 200,
-            yoyo: true,
-            ease: 'Power2',
-        });
+            x: targetX,
+            duration: 600,
+            ease: 'Power2', // Rush in
+            onComplete: () => {
+                // Attack impact
+                const damage = this.currentEnemy.attack;
+                this.battleState.playerHp -= damage;
+                this.hud.updatePlayerHp(this.battleState.playerHp);
 
-        this.time.delayedCall(200, () => {
-            const damage = this.currentEnemy.attack;
-            this.battleState.playerHp -= damage;
-            this.hud.updatePlayerHp(this.battleState.playerHp);
-            // this.sound.play('sfx-hit');
+                // Hero hurt effect
+                this.tweens.add({
+                    targets: this.hero,
+                    tint: 0xff0000,
+                    duration: 100,
+                    yoyo: true,
+                    onComplete: () => this.hero.clearTint(),
+                });
 
-            // Hero hurt effect
-            this.tweens.add({
-                targets: this.hero,
-                tint: 0xff0000,
-                duration: 100,
-                yoyo: true,
-                onComplete: () => this.hero.clearTint(),
-            });
-
-            // Check defeat
-            if (this.battleState.playerHp <= 0) {
-                this.setPhase('defeat');
-            } else {
-                this.battleState.turnCount++;
-                this.setPhase('player_turn');
+                // Slide back
+                this.tweens.add({
+                    targets: this.enemy,
+                    x: startX,
+                    duration: 600,
+                    delay: 200, // Wait a moment at impact
+                    ease: 'Power2',
+                    onComplete: () => {
+                        // Check defeat
+                        if (this.battleState.playerHp <= 0) {
+                            this.setPhase('defeat');
+                        } else {
+                            this.battleState.turnCount++;
+                            this.setPhase('player_turn');
+                        }
+                    }
+                });
             }
         });
     }
