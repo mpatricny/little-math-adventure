@@ -9,19 +9,19 @@ interface BuildingConfig {
 }
 
 const BUILDINGS: BuildingConfig[] = [
-    { id: 'witch', name: 'Chaloupka čarodějnice', textureKey: 'building-witch', x: 150 },
-    { id: 'guild', name: 'Cech', textureKey: 'building-guild', x: 300 },
-    { id: 'tavern', name: 'Hospoda', textureKey: 'building-tavern', x: 500 },
-    { id: 'shop', name: 'Obchod', textureKey: 'building-shop', x: 650 },
+    { id: 'witch', name: 'Chaloupka čarodějnice', textureKey: 'building-witch', x: 130 },
+    { id: 'guild', name: 'Cech', textureKey: 'building-guild', x: 315 },
+    { id: 'tavern', name: 'Hospoda', textureKey: 'building-tavern', x: 485 },
+    { id: 'shop', name: 'Obchod', textureKey: 'building-shop', x: 675 },
 ];
 
 // Scene constants
 const WORLD_WIDTH = 800;
-const BUILDING_SCALE = 0.224;  // 20% smaller than original 0.28
-const GRASS_SCALE = 0.165;     // 50% smaller than original 0.33
-const GRASS_DISPLAY_HEIGHT = 70;  // 50% of original 140
-const BG_GRASS_HEIGHT = 80;  // Background grass slightly higher
-const GROUND_Y = 600 - GRASS_DISPLAY_HEIGHT + 65;  // Where ground level is (moved down 50px)
+const BUILDING_SCALE = 0.224;
+const GRASS_SCALE = 0.14;
+const GRASS_DISPLAY_HEIGHT = 70;
+const BG_GRASS_HEIGHT = 80;
+const GROUND_Y = 575;  // Base ground level
 const KNIGHT_SPEED = 200;
 const PARALLAX_BG = 0.3;
 
@@ -48,14 +48,14 @@ export class TownScene extends Phaser.Scene {
         'knight', 'bgGrass', 'fgGrass', 'background'
     ];
     private debugValues = {
-        witch: { x: 150, y: GROUND_Y, scale: BUILDING_SCALE },
-        guild: { x: 300, y: GROUND_Y, scale: BUILDING_SCALE },
-        tavern: { x: 500, y: GROUND_Y, scale: BUILDING_SCALE },
-        shop: { x: 650, y: GROUND_Y, scale: BUILDING_SCALE },
-        knight: { x: 80, y: GROUND_Y, scale: 0.4 },
-        bgGrass: { y: GROUND_Y + 40, scale: GRASS_SCALE },
-        fgGrass: { scale: GRASS_SCALE },
-        background: { scale: 0.5 },
+        witch: { x: 130, y: 575, scale: 0.224 },
+        guild: { x: 315, y: 605, scale: 0.224 },
+        tavern: { x: 485, y: 570, scale: 0.224 },
+        shop: { x: 675, y: 580, scale: 0.184 },
+        knight: { x: 80, y: 565, scale: 0.4 },
+        bgGrass: { y: 575, scale: 0.14 },
+        fgGrass: { scale: 0.14 },
+        background: { scale: 0.66 },
     };
 
     constructor() {
