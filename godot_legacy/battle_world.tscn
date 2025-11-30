@@ -1,0 +1,22 @@
+[gd_scene load_steps=4 format=3 uid="uid://g3wvpwnwlpr2"]
+
+[ext_resource type="Texture2D" uid="uid://c3vndat2uvphp" path="res://field.png" id="1_adqlk"]
+[ext_resource type="PackedScene" uid="uid://bt7aw02bo6cb4" path="res://player.tscn" id="2_1cwjj"]
+[ext_resource type="PackedScene" uid="uid://cij303p8v0fr7" path="res://slime.tscn" id="3_dk0kf"]
+
+[node name="BattleScene" type="Node2D"]
+position = Vector2(7, 10)
+
+[node name="Field" type="Sprite2D" parent="."]
+position = Vector2(-7, -12)
+scale = Vector2(0.7967033, 0.8333333)
+texture = ExtResource("1_adqlk")
+
+[node name="Camera2D" type="Camera2D" parent="Field"]
+
+[node name="Player1" parent="." node_paths=PackedStringArray("cil_utoku") instance=ExtResource("2_1cwjj")]
+position = Vector2(-31, 79)
+cil_utoku = NodePath("../Slime1")
+
+[node name="Slime1" parent="." instance=ExtResource("3_dk0kf")]
+position = Vector2(125, 97)

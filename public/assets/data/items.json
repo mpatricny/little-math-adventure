@@ -1,0 +1,38 @@
+[
+    {
+        "id": "potion_small",
+        "name": "Malý Lektvar",
+        "type": "consumable",
+        "description": "Obnoví 25 HP",
+        "price": 20,
+        "iconFrame": 0,
+        "healAmount": 25
+    },
+    {
+        "id": "potion_large",
+        "name": "Velký Lektvar",
+        "type": "consumable",
+        "description": "Obnoví 75 HP",
+        "price": 50,
+        "iconFrame": 1,
+        "healAmount": 75
+    },
+    {
+        "id": "sword_wooden",
+        "name": "Dřevěný Meč",
+        "type": "weapon",
+        "description": "+3 Útok",
+        "price": 30,
+        "iconFrame": 10,
+        "attackBonus": 3
+    },
+    {
+        "id": "sword_iron",
+        "name": "Železný Meč",
+        "type": "weapon",
+        "description": "+8 Útok",
+        "price": 100,
+        "iconFrame": 11,
+        "attackBonus": 8
+    }
+]

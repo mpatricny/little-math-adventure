@@ -1,0 +1,35 @@
+[gd_scene load_steps=6 format=3 uid="uid://cij303p8v0fr7"]
+
+[ext_resource type="Texture2D" uid="uid://dqljh5q0luop5" path="res://Sprites/blob attack.png" id="1_2d52u"]
+[ext_resource type="Script" uid="uid://drx0i8krvqcqp" path="res://slime.gd" id="1_5jc4t"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_n7ghd"]
+atlas = ExtResource("1_2d52u")
+region = Rect2(0, 0, 256, 256)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_nvl01"]
+atlas = ExtResource("1_2d52u")
+region = Rect2(1536, 0, 256, 256)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_2d52u"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_n7ghd")
+}, {
+"duration": 0.91,
+"texture": SubResource("AtlasTexture_nvl01")
+}],
+"loop": true,
+"name": &"idle",
+"speed": 5.0
+}]
+
+[node name="Slime" type="CharacterBody2D"]
+script = ExtResource("1_5jc4t")
+
+[node name="AnimatedSprite2D2" type="AnimatedSprite2D" parent="."]
+position = Vector2(-7, -19)
+sprite_frames = SubResource("SpriteFrames_2d52u")
+animation = &"idle"
+frame_progress = 0.038348522

@@ -1,0 +1,44 @@
+[
+    {
+        "id": "slime_green",
+        "name": "Zelený Sliz",
+        "spriteKey": "slime",
+        "hp": 30,
+        "attack": 5,
+        "defense": 0,
+        "xpReward": 20,
+        "goldReward": [
+            5,
+            15
+        ],
+        "difficulty": 1
+    },
+    {
+        "id": "slime_blue",
+        "name": "Modrý Sliz",
+        "spriteKey": "slime",
+        "hp": 50,
+        "attack": 8,
+        "defense": 2,
+        "xpReward": 35,
+        "goldReward": [
+            10,
+            25
+        ],
+        "difficulty": 3
+    },
+    {
+        "id": "slime_red",
+        "name": "Červený Sliz",
+        "spriteKey": "slime",
+        "hp": 80,
+        "attack": 12,
+        "defense": 5,
+        "xpReward": 60,
+        "goldReward": [
+            20,
+            40
+        ],
+        "difficulty": 5
+    }
+]

@@ -1,0 +1,65 @@
+[gd_scene load_steps=3 format=3 uid="uid://ig18ht32bnw1"]
+
+[ext_resource type="Texture2D" uid="uid://bo1osgw10vfta" path="res://math board.png" id="1_8t3fq"]
+
+[sub_resource type="LabelSettings" id="LabelSettings_6pe88"]
+font_size = 120
+font_color = Color(0.046624858, 0.046624865, 0.046624865, 1)
+
+[node name="MathUI" type="CanvasLayer"]
+
+[node name="Control" type="Control" parent="."]
+layout_mode = 3
+anchors_preset = 10
+anchor_right = 1.0
+grow_horizontal = 2
+size_flags_horizontal = 4
+
+[node name="CenterContainer" type="CenterContainer" parent="Control"]
+layout_mode = 1
+anchors_preset = -1
+anchor_right = 1.0
+anchor_bottom = 0.5
+offset_left = 50.0
+offset_top = 50.0
+offset_right = 50.0
+offset_bottom = 667.0
+grow_horizontal = 2
+
+[node name="TextureRect" type="TextureRect" parent="Control/CenterContainer"]
+layout_mode = 2
+texture = ExtResource("1_8t3fq")
+
+[node name="VBoxContainer" type="VBoxContainer" parent="Control/CenterContainer/TextureRect"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 200.5
+offset_top = 110.0
+offset_right = 200.5
+offset_bottom = 110.0
+grow_horizontal = 2
+grow_vertical = 2
+scale = Vector2(0.7, 0.7)
+
+[node name="Label" type="Label" parent="Control/CenterContainer/TextureRect/VBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 4
+text = "2+1 = ?"
+label_settings = SubResource("LabelSettings_6pe88")
+
+[node name="HBoxContainer" type="HBoxContainer" parent="Control/CenterContainer/TextureRect/VBoxContainer"]
+layout_mode = 2
+
+[node name="Button" type="Button" parent="Control/CenterContainer/TextureRect/VBoxContainer/HBoxContainer"]
+layout_mode = 2
+text = "3"
+
+[node name="Button2" type="Button" parent="Control/CenterContainer/TextureRect/VBoxContainer/HBoxContainer"]
+layout_mode = 2
+text = "5"
+
+[node name="Button3" type="Button" parent="Control/CenterContainer/TextureRect/VBoxContainer/HBoxContainer"]
+layout_mode = 2
+text = "4"
