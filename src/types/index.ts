@@ -116,3 +116,13 @@ export interface ItemDefinition {
     attackBonus?: number;
     defenseBonus?: number;
 }
+
+// ===== TOWN SCENE =====
+export interface BuildingConfig {
+    id: string;
+    name: string;
+    textureKey: string;
+    x: number;
+}
+
+export type TownState = 'exploring' | 'entering_building' | 'inside';

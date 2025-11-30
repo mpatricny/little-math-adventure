@@ -1,12 +1,6 @@
 import Phaser from 'phaser';
-
-// Building configuration
-interface BuildingConfig {
-    id: string;
-    name: string;
-    textureKey: string;
-    x: number;
-}
+import { BuildingConfig, TownState } from '../types';
+import { CharacterUI } from '../ui/CharacterUI';
 
 const BUILDINGS: BuildingConfig[] = [
     { id: 'witch', name: 'Chaloupka čarodějnice', textureKey: 'building-witch', x: 130 },
@@ -25,7 +19,7 @@ const GROUND_Y = 575;  // Base ground level
 const KNIGHT_SPEED = 200;
 const PARALLAX_BG = 0.3;
 
-type TownState = 'exploring' | 'walking' | 'inside';
+
 
 export class TownScene extends Phaser.Scene {
     private bgLayer!: Phaser.GameObjects.TileSprite;
@@ -38,6 +32,7 @@ export class TownScene extends Phaser.Scene {
     private currentBuilding: string | null = null;
     private interiorOverlay!: Phaser.GameObjects.Container;
     private walkTween: Phaser.Tweens.Tween | null = null;
+    private characterUI!: CharacterUI;
 
     // Debug mode
     private debugMode: boolean = false;
@@ -77,6 +72,9 @@ export class TownScene extends Phaser.Scene {
         this.createKnight();
         this.createInteriorOverlay();
         this.createBattleButton();
+
+        // UI Overlays
+        this.characterUI = new CharacterUI(this);
 
         // Camera is static - everything fits on one screen
         // No follow or deadzone needed
@@ -287,14 +285,21 @@ export class TownScene extends Phaser.Scene {
     private onBuildingClick(buildingId: string): void {
         if (this.townState !== 'exploring') return;
 
-        const building = this.buildingSprites.get(buildingId);
-        if (!building) return;
+        // Handle building interactions
+        if (buildingId === 'witch') {
+            this.scene.start('WitchHutScene');
+            return;
+        }
 
-        this.townState = 'walking';
+        // For other buildings, show placeholder overlay
+        this.townState = 'entering_building';
         this.currentBuilding = buildingId;
 
         // Disable all building interactions while walking
         this.buildingSprites.forEach(b => b.disableInteractive());
+
+        const building = this.buildingSprites.get(buildingId);
+        if (!building) return;
 
         // Calculate target position (in front of building door)
         const targetX = building.x;
@@ -322,6 +327,7 @@ export class TownScene extends Phaser.Scene {
             }
         });
     }
+
 
     private enterBuilding(buildingId: string): void {
         this.townState = 'inside';
