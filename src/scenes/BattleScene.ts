@@ -1,19 +1,7 @@
 import Phaser from 'phaser';
 import { BattleState, BattlePhase, EnemyDefinition } from '../types';
-
-// Stub classes for Phase 1
-class MathEngine {
-    constructor(_registry: Phaser.Data.DataManager) { }
-    generateProblem() { return null; }
-    recordResult(_isCorrect: boolean) { }
-}
-
-class MathBoard {
-    constructor(_scene: Phaser.Scene, _onAnswer: (isCorrect: boolean) => void) { }
-    show(_problem: any) { }
-    hide() { }
-    showCorrectAnswer(_problem: any) { }
-}
+import { MathEngine } from '../systems/MathEngine';
+import { MathBoard } from '../ui/MathBoard';
 
 class HUD {
     private playerHpText: Phaser.GameObjects.Text;
@@ -127,9 +115,9 @@ export class BattleScene extends Phaser.Scene {
                 break;
 
             case 'player_math':
-                // For Phase 1, skip math and go straight to attack
                 this.attackButton.setVisible(false);
-                this.setPhase('player_attack');
+                this.battleState.currentProblem = this.mathEngine.generateProblem();
+                this.mathBoard.show(this.battleState.currentProblem);
                 break;
 
             case 'player_attack':

@@ -35,11 +35,10 @@ export class BootScene extends Phaser.Scene {
         });
 
         // Visual hints for math
-        // this.load.spritesheet('hints', 'assets/sprites/visual-hints.png', {
-        //   frameWidth: 32,
-        //   frameHeight: 32,
-        // });
-        // Commented out as we don't have this asset yet, will use placeholder or skip
+        this.load.spritesheet('hints', 'assets/sprites/visual-hints.png', {
+            frameWidth: 32,
+            frameHeight: 32,
+        });
 
         // === BACKGROUNDS ===
         this.load.image('bg-battle', 'assets/backgrounds/field.png');
