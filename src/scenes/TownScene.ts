@@ -242,13 +242,16 @@ export class TownScene extends Phaser.Scene {
         const building = this.buildingSprites.get(buildingId);
         const label = this.nameLabels.get(buildingId);
 
+        // Get base scale for this specific building
+        const baseScale = (this.debugValues as any)[buildingId]?.scale || BUILDING_SCALE;
+
         if (building && label) {
             if (isOver) {
                 // Scale up and brighten
                 this.tweens.add({
                     targets: building,
-                    scaleX: BUILDING_SCALE * 1.05,
-                    scaleY: BUILDING_SCALE * 1.05,
+                    scaleX: baseScale * 1.05,
+                    scaleY: baseScale * 1.05,
                     duration: 150,
                     ease: 'Back.easeOut'
                 });
@@ -266,8 +269,8 @@ export class TownScene extends Phaser.Scene {
                 // Reset
                 this.tweens.add({
                     targets: building,
-                    scaleX: BUILDING_SCALE,
-                    scaleY: BUILDING_SCALE,
+                    scaleX: baseScale,
+                    scaleY: baseScale,
                     duration: 150
                 });
                 building.clearTint();
