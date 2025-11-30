@@ -59,7 +59,11 @@ export class WitchHutScene extends Phaser.Scene {
 
     private createHealButton(player: any): void {
         const canHeal = player.hp < player.maxHp || player.status === 'přizabitý';
-        const canAfford = player.gold >= this.healCost;
+
+        // Free healing if HP <= 3
+        const currentCost = player.hp <= 3 ? 0 : this.healCost;
+
+        const canAfford = player.gold >= currentCost;
         const btnColor = (canHeal && canAfford) ? 0x00aa00 : 0x555555;
 
         const button = this.add.container(400, 480);
@@ -67,7 +71,8 @@ export class WitchHutScene extends Phaser.Scene {
         const bg = this.add.rectangle(0, 0, 200, 60, btnColor)
             .setStrokeStyle(2, 0xffffff);
 
-        const text = this.add.text(0, 0, `Vyléčit (${this.healCost} zlata)`, {
+        const costText = currentCost === 0 ? 'ZDARMA' : `${currentCost} zlata`;
+        const text = this.add.text(0, 0, `Vyléčit (${costText})`, {
             fontSize: '20px',
             color: '#ffffff'
         }).setOrigin(0.5);
@@ -78,7 +83,7 @@ export class WitchHutScene extends Phaser.Scene {
             bg.setInteractive({ useHandCursor: true })
                 .on('pointerover', () => bg.setFillStyle(0x00cc00))
                 .on('pointerout', () => bg.setFillStyle(0x00aa00))
-                .on('pointerdown', () => this.healPlayer());
+                .on('pointerdown', () => this.healPlayer(currentCost));
         } else {
             button.setAlpha(0.7);
             if (!canHeal) text.setText('Jsi zdravý');
@@ -105,9 +110,9 @@ export class WitchHutScene extends Phaser.Scene {
             .on('pointerdown', () => this.scene.start('TownScene'));
     }
 
-    private healPlayer(): void {
+    private healPlayer(cost: number): void {
         const player = this.gameState.getPlayer();
-        const success = ProgressionSystem.heal(player, this.healCost);
+        const success = ProgressionSystem.heal(player, cost);
 
         if (success) {
             this.gameState.save();
