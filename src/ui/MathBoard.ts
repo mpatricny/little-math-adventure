@@ -37,6 +37,7 @@ export class MathBoard {
         // Problem text
         this.problemText = this.scene.add.text(0, -80, '', {
             fontSize: '48px',
+            fontFamily: 'Arial, sans-serif',
             color: '#333333',
             fontStyle: 'bold',
         }).setOrigin(0.5);
@@ -66,6 +67,7 @@ export class MathBoard {
 
         const text = this.scene.add.text(0, -3, '', {
             fontSize: '28px',
+            fontFamily: 'Arial, sans-serif',
             color: '#5a3825',
             fontStyle: 'bold',
         }).setOrigin(0.5);
@@ -193,6 +195,7 @@ export class MathBoard {
             currentX += groupGap / 2;
             const opSymbol = this.scene.add.text(currentX - 15, 0, op, {
                 fontSize: '32px',
+                fontFamily: 'Arial, sans-serif',
                 color: '#666666',
             }).setOrigin(0.5).setAlpha(0);
             this.hintContainer.add(opSymbol);
@@ -267,6 +270,7 @@ export class MathBoard {
         // Simple animation showing the answer
         this.answerText = this.scene.add.text(0, 120, `= ${problem.answer}`, {
             fontSize: '36px',
+            fontFamily: 'Arial, sans-serif',
             color: '#44aa44',
             fontStyle: 'bold',
         }).setOrigin(0.5);

@@ -24,6 +24,8 @@ export interface PlayerState {
     defense: number;
     equippedWeapon: string | null;
     equippedArmor: string | null;
+    equippedShield: string | null;
+    equippedHelmet: string | null;
 }
 
 export interface MathStats {
@@ -104,7 +106,7 @@ export interface EnemyDefinition {
 }
 
 // ===== ITEMS =====
-export type ItemType = 'consumable' | 'weapon' | 'armor';
+export type ItemType = 'consumable' | 'weapon' | 'armor' | 'shield' | 'helmet';
 
 export interface ItemDefinition {
     id: string;
@@ -113,11 +115,15 @@ export interface ItemDefinition {
     description: string;
     price: number;
     iconFrame: number;
+    spriteKey?: string;  // Which spritesheet (e.g., 'shop-swords')
     // Consumable effects
     healAmount?: number;
     // Equipment stats
     attackBonus?: number;
     defenseBonus?: number;
+    // Shield specific (block mechanic)
+    blockTime?: number;      // Seconds to solve math problems
+    blockAttempts?: number;  // Max problems to attempt
 }
 
 // ===== TOWN SCENE =====

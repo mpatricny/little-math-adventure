@@ -88,12 +88,14 @@ export class ProgressionSystem {
             xpToNextLevel: this.getXpForLevel(1),
             hp: 10,
             maxHp: 10,
-            gold: 0,
+            gold: 100,  // Starting gold for shop testing
             status: 'healthy',
             attack: 1,
             defense: 0,
             equippedWeapon: null,
-            equippedArmor: null
+            equippedArmor: null,
+            equippedShield: null,
+            equippedHelmet: null
         };
     }
 }

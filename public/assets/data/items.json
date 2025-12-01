@@ -19,20 +19,126 @@
     },
     {
         "id": "sword_wooden",
-        "name": "Dřevěný Meč",
+        "name": "Dřevěný meč",
         "type": "weapon",
-        "description": "+3 Útok",
+        "description": "+2 Útok",
         "price": 30,
-        "iconFrame": 10,
-        "attackBonus": 3
+        "iconFrame": 0,
+        "spriteKey": "shop-swords",
+        "attackBonus": 2
     },
     {
         "id": "sword_iron",
-        "name": "Železný Meč",
+        "name": "Železný meč",
+        "type": "weapon",
+        "description": "+5 Útok",
+        "price": 80,
+        "iconFrame": 1,
+        "spriteKey": "shop-swords",
+        "attackBonus": 5
+    },
+    {
+        "id": "sword_steel",
+        "name": "Ocelový meč",
         "type": "weapon",
         "description": "+8 Útok",
-        "price": 100,
-        "iconFrame": 11,
+        "price": 180,
+        "iconFrame": 2,
+        "spriteKey": "shop-swords",
         "attackBonus": 8
+    },
+    {
+        "id": "sword_golden",
+        "name": "Zlatý meč",
+        "type": "weapon",
+        "description": "+12 Útok",
+        "price": 400,
+        "iconFrame": 3,
+        "spriteKey": "shop-swords",
+        "attackBonus": 12
+    },
+    {
+        "id": "shield_wooden",
+        "name": "Dřevěný štít",
+        "type": "shield",
+        "description": "Blok: 4s, 1 pokus",
+        "price": 40,
+        "iconFrame": 0,
+        "spriteKey": "shop-shields",
+        "blockTime": 4,
+        "blockAttempts": 1
+    },
+    {
+        "id": "shield_iron",
+        "name": "Železný štít",
+        "type": "shield",
+        "description": "Blok: 6s, 2 pokusy",
+        "price": 100,
+        "iconFrame": 4,
+        "spriteKey": "shop-shields",
+        "blockTime": 6,
+        "blockAttempts": 2
+    },
+    {
+        "id": "shield_steel",
+        "name": "Ocelový štít",
+        "type": "shield",
+        "description": "Blok: 8s, 2 pokusy",
+        "price": 200,
+        "iconFrame": 5,
+        "spriteKey": "shop-shields",
+        "blockTime": 8,
+        "blockAttempts": 2
+    },
+    {
+        "id": "shield_golden",
+        "name": "Zlatý štít",
+        "type": "shield",
+        "description": "Blok: 10s, 3 pokusy",
+        "price": 450,
+        "iconFrame": 10,
+        "spriteKey": "shop-shields",
+        "blockTime": 10,
+        "blockAttempts": 3
+    },
+    {
+        "id": "helmet_leather",
+        "name": "Kožená helma",
+        "type": "helmet",
+        "description": "+1 Obrana",
+        "price": 25,
+        "iconFrame": 1,
+        "spriteKey": "shop-helmets",
+        "defenseBonus": 1
+    },
+    {
+        "id": "helmet_iron",
+        "name": "Železná helma",
+        "type": "helmet",
+        "description": "+3 Obrana",
+        "price": 70,
+        "iconFrame": 3,
+        "spriteKey": "shop-helmets",
+        "defenseBonus": 3
+    },
+    {
+        "id": "helmet_steel",
+        "name": "Ocelová helma",
+        "type": "helmet",
+        "description": "+5 Obrana",
+        "price": 160,
+        "iconFrame": 7,
+        "spriteKey": "shop-helmets",
+        "defenseBonus": 5
+    },
+    {
+        "id": "helmet_golden",
+        "name": "Zlatá helma",
+        "type": "helmet",
+        "description": "+8 Obrana",
+        "price": 380,
+        "iconFrame": 11,
+        "spriteKey": "shop-helmets",
+        "defenseBonus": 8
     }
 ]

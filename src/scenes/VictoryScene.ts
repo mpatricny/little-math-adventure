@@ -30,6 +30,7 @@ export class VictoryScene extends Phaser.Scene {
         // Victory Title
         const title = this.add.text(400, 100, 'VÍTĚZSTVÍ!', {
             fontSize: '48px',
+            fontFamily: 'Arial, sans-serif',
             color: '#ffd700',
             fontStyle: 'bold',
             stroke: '#000000',
@@ -46,8 +47,9 @@ export class VictoryScene extends Phaser.Scene {
         });
 
         // Enemy Defeated Text
-        this.add.text(400, 180, `Porazil jsi: ${this.victoryData.enemyName}`, {
+        this.add.text(400, 180, `PORAZIL JSI: ${this.victoryData.enemyName.toUpperCase()}`, {
             fontSize: '24px',
+            fontFamily: 'Arial, sans-serif',
             color: '#ffffff'
         }).setOrigin(0.5).setAlpha(0);
 
@@ -57,13 +59,15 @@ export class VictoryScene extends Phaser.Scene {
         // XP Reward
         this.add.text(300, rewardsY, `XP: +${this.victoryData.xpReward}`, {
             fontSize: '32px',
+            fontFamily: 'Arial, sans-serif',
             color: '#44aaff',
             fontStyle: 'bold'
         }).setOrigin(0.5);
 
         // Gold Reward
-        this.add.text(500, rewardsY, `Zlato: +${this.victoryData.goldReward}`, {
+        this.add.text(500, rewardsY, `ZLATO: +${this.victoryData.goldReward}`, {
             fontSize: '32px',
+            fontFamily: 'Arial, sans-serif',
             color: '#ffaa00',
             fontStyle: 'bold'
         }).setOrigin(0.5);
@@ -82,6 +86,7 @@ export class VictoryScene extends Phaser.Scene {
         // Level Up Text
         const levelText = this.add.text(400, startY, `NOVÁ ÚROVEŇ: ${result.newLevel}!`, {
             fontSize: '36px',
+            fontFamily: 'Arial, sans-serif',
             color: '#00ff00',
             fontStyle: 'bold',
             stroke: '#000000',
@@ -98,14 +103,15 @@ export class VictoryScene extends Phaser.Scene {
 
         // Stats Increase
         const statsText = [
-            `Max HP: +${result.hpGain}`,
-            `Útok: +${result.attackGain}`,
-            `Zdraví doplněno!`
+            `MAX HP: +${result.hpGain}`,
+            `ÚTOK: +${result.attackGain}`,
+            `ZDRAVÍ DOPLNĚNO!`
         ];
 
         statsText.forEach((text, index) => {
             this.add.text(400, startY + 60 + (index * 40), text, {
                 fontSize: '24px',
+                fontFamily: 'Arial, sans-serif',
                 color: '#ffffff'
             }).setOrigin(0.5).setAlpha(0);
         });
@@ -128,8 +134,9 @@ export class VictoryScene extends Phaser.Scene {
         const bg = this.add.rectangle(0, 0, 200, 60, 0x444444)
             .setStrokeStyle(2, 0xffffff);
 
-        const text = this.add.text(0, 0, 'Pokračovat', {
+        const text = this.add.text(0, 0, 'POKRAČOVAT', {
             fontSize: '24px',
+            fontFamily: 'Arial, sans-serif',
             color: '#ffffff'
         }).setOrigin(0.5);
 

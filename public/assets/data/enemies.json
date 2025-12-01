@@ -7,11 +7,30 @@
         "attack": 1,
         "defense": 0,
         "xpReward": 20,
-        "goldReward": [
-            5,
-            15
-        ],
+        "goldReward": [5, 15],
         "difficulty": 1
+    },
+    {
+        "id": "purple_demon",
+        "name": "Fialový démon",
+        "spriteKey": "purple-attack",
+        "hp": 10,
+        "attack": 3,
+        "defense": 0,
+        "xpReward": 40,
+        "goldReward": [15, 35],
+        "difficulty": 2
+    },
+    {
+        "id": "pink_beast",
+        "name": "Růžová bestie",
+        "spriteKey": "pink-idle",
+        "hp": 18,
+        "attack": 5,
+        "defense": 1,
+        "xpReward": 70,
+        "goldReward": [30, 55],
+        "difficulty": 4
     },
     {
         "id": "slime_blue",
@@ -21,10 +40,7 @@
         "attack": 8,
         "defense": 2,
         "xpReward": 35,
-        "goldReward": [
-            10,
-            25
-        ],
+        "goldReward": [10, 25],
         "difficulty": 3
     },
     {
@@ -35,10 +51,7 @@
         "attack": 12,
         "defense": 5,
         "xpReward": 60,
-        "goldReward": [
-            20,
-            40
-        ],
+        "goldReward": [20, 40],
         "difficulty": 5
     }
 ]

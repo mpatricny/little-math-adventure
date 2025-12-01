@@ -1,12 +1,13 @@
 import Phaser from 'phaser';
 import { BuildingConfig, TownState } from '../types';
 import { CharacterUI } from '../ui/CharacterUI';
+import { GameStateManager } from '../systems/GameStateManager';
 
 const BUILDINGS: BuildingConfig[] = [
-    { id: 'witch', name: 'Chaloupka čarodějnice', textureKey: 'building-witch', x: 130 },
-    { id: 'guild', name: 'Cech', textureKey: 'building-guild', x: 315 },
-    { id: 'tavern', name: 'Hospoda', textureKey: 'building-tavern', x: 485 },
-    { id: 'shop', name: 'Obchod', textureKey: 'building-shop', x: 675 },
+    { id: 'witch', name: 'ČARODĚJNICE', textureKey: 'building-witch', x: 130 },
+    { id: 'guild', name: 'CECH', textureKey: 'building-guild', x: 315 },
+    { id: 'tavern', name: 'HOSPODA', textureKey: 'building-tavern', x: 485 },
+    { id: 'shop', name: 'OBCHOD', textureKey: 'building-shop', x: 675 },
 ];
 
 // Scene constants
@@ -112,6 +113,7 @@ export class TownScene extends Phaser.Scene {
             // Create name label above building
             const label = this.add.text(debugVal.x, debugVal.y - building.displayHeight - 10, config.name, {
                 fontSize: '18px',
+                fontFamily: 'Arial, sans-serif',
                 color: '#ffffff',
                 fontStyle: 'bold',
                 stroke: '#000000',
@@ -189,6 +191,7 @@ export class TownScene extends Phaser.Scene {
         // Text
         const text = this.add.text(0, 50, 'SOUBOJ', {
             fontSize: '18px',
+            fontFamily: 'Arial, sans-serif',
             color: '#ffffff',
             fontStyle: 'bold',
             stroke: '#000000',
@@ -220,8 +223,13 @@ export class TownScene extends Phaser.Scene {
         });
 
         button.on('pointerdown', () => {
-            // Start battle with green slime
-            this.scene.start('BattleScene', { enemyId: 'slime_green' });
+            // Enemy selection based on player level
+            const playerLevel = GameStateManager.getInstance().getPlayer().level;
+            const enemies = playerLevel >= 3
+                ? ['purple_demon', 'pink_beast']  // Level 3+: demon and beast
+                : ['slime_green', 'purple_demon']; // Level 1-2: slime and demon
+            const enemyId = enemies[Math.floor(Math.random() * enemies.length)];
+            this.scene.start('BattleScene', { enemyId });
         });
 
         // Pulsing animation
@@ -294,6 +302,11 @@ export class TownScene extends Phaser.Scene {
             return;
         }
 
+        if (buildingId === 'shop') {
+            this.scene.start('ShopScene');
+            return;
+        }
+
         // For other buildings, show placeholder overlay
         this.townState = 'entering_building';
         this.currentBuilding = buildingId;
@@ -358,6 +371,7 @@ export class TownScene extends Phaser.Scene {
         // Title
         const title = this.add.text(0, -200, config.name, {
             fontSize: '42px',
+            fontFamily: 'Arial, sans-serif',
             color: '#ffffff',
             fontStyle: 'bold',
             stroke: '#000000',
@@ -366,16 +380,17 @@ export class TownScene extends Phaser.Scene {
         this.interiorOverlay.add(title);
 
         // Placeholder message
-        const message = this.add.text(0, 0, 'Připravujeme...', {
+        const message = this.add.text(0, 0, 'PŘIPRAVUJEME...', {
             fontSize: '28px',
+            fontFamily: 'Arial, sans-serif',
             color: '#cccccc',
-            fontStyle: 'italic'
         }).setOrigin(0.5);
         this.interiorOverlay.add(message);
 
         // Exit button
-        const exitBtn = this.add.text(0, 150, '[ Zpět ]', {
+        const exitBtn = this.add.text(0, 150, '[ ZPĚT ]', {
             fontSize: '24px',
+            fontFamily: 'Arial, sans-serif',
             color: '#ffcc00',
             fontStyle: 'bold'
         }).setOrigin(0.5).setInteractive({ useHandCursor: true });

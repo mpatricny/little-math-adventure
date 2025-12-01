@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { BattleState, BattlePhase, EnemyDefinition } from '../types';
+import { BattleState, BattlePhase, EnemyDefinition, ItemDefinition } from '../types';
 import { MathEngine } from '../systems/MathEngine';
 import { MathBoard } from '../ui/MathBoard';
 import { GameStateManager } from '../systems/GameStateManager';
@@ -10,8 +10,8 @@ class HUD {
     private enemyHpText: Phaser.GameObjects.Text;
 
     constructor(private scene: Phaser.Scene, state: BattleState, private playerMaxHp: number) {
-        this.playerHpText = this.scene.add.text(20, 20, `HP: ${state.playerHp}/${playerMaxHp}`, { fontSize: '20px', color: '#fff' });
-        this.enemyHpText = this.scene.add.text(600, 20, `Enemy: ${state.enemyHp}/${state.enemyMaxHp}`, { fontSize: '20px', color: '#fff' });
+        this.playerHpText = this.scene.add.text(20, 20, `HP: ${state.playerHp}/${playerMaxHp}`, { fontSize: '20px', fontFamily: 'Arial, sans-serif', color: '#fff' });
+        this.enemyHpText = this.scene.add.text(600, 20, `NEPŘÍTEL: ${state.enemyHp}/${state.enemyMaxHp}`, { fontSize: '20px', fontFamily: 'Arial, sans-serif', color: '#fff' });
     }
 
     updatePlayerHp(hp: number, maxHp: number) {
@@ -19,7 +19,7 @@ class HUD {
     }
 
     updateEnemyHp(hp: number, maxHp: number) {
-        this.enemyHpText.setText(`Enemy: ${hp}/${maxHp}`);
+        this.enemyHpText.setText(`NEPŘÍTEL: ${hp}/${maxHp}`);
     }
 }
 
@@ -32,6 +32,10 @@ export class BattleScene extends Phaser.Scene {
     private mathBoard!: MathBoard;
     private hud!: HUD;
     private attackButton!: Phaser.GameObjects.Container;
+    private blockUI!: Phaser.GameObjects.Container;
+    private blockDamageText!: Phaser.GameObjects.Text;
+    private blockTimerText!: Phaser.GameObjects.Text;
+    private blockAttemptsText!: Phaser.GameObjects.Text;
 
     // Systems
     private mathEngine!: MathEngine;
@@ -40,6 +44,16 @@ export class BattleScene extends Phaser.Scene {
     // State
     private battleState!: BattleState;
     private currentEnemy!: EnemyDefinition;
+    private enemyAnimPrefix!: string;
+
+    // Block state
+    private isBlockPhase: boolean = false;
+    private blockCorrectCount: number = 0;
+    private blockMaxAttempts: number = 0;
+    private blockAttemptsMade: number = 0;
+    private blockTimeRemaining: number = 0;
+    private blockTimerEvent: Phaser.Time.TimerEvent | null = null;
+    private pendingDamage: number = 0;
 
     constructor() {
         super({ key: 'BattleScene' });
@@ -53,6 +67,11 @@ export class BattleScene extends Phaser.Scene {
         // Get enemy data from JSON
         const enemies = this.cache.json.get('enemies') as EnemyDefinition[];
         this.currentEnemy = enemies.find(e => e.id === data.enemyId) || enemies[0];
+
+        // Derive animation prefix from spriteKey
+        // e.g., "slime" -> "slime", "purple-attack" -> "purple"
+        const spriteKey = this.currentEnemy.spriteKey;
+        this.enemyAnimPrefix = spriteKey.includes('-') ? spriteKey.split('-')[0] : spriteKey;
 
         // Initialize battle state with actual player stats
         this.battleState = {
@@ -74,10 +93,10 @@ export class BattleScene extends Phaser.Scene {
             .setScale(0.5)
             .play('knight-idle');
 
-        // Enemy (right side) - moved closer
-        this.enemy = this.add.sprite(550, 400, 'slime')
+        // Enemy (right side) - use enemy's sprite and animation
+        this.enemy = this.add.sprite(550, 400, this.currentEnemy.spriteKey)
             .setScale(0.5)
-            .play('slime-idle');
+            .play(`${this.enemyAnimPrefix}-idle`);
 
         // Initialize systems
         this.mathEngine = new MathEngine(this.registry);
@@ -92,9 +111,42 @@ export class BattleScene extends Phaser.Scene {
 
         this.mathBoard = new MathBoard(this, this.onAnswerSelected.bind(this));
         this.createAttackButton();
+        this.createBlockUI();
 
         // Start battle
         this.time.delayedCall(500, () => this.setPhase('player_turn'));
+    }
+
+    private createBlockUI(): void {
+        this.blockUI = this.add.container(400, 80);
+        this.blockUI.setVisible(false);
+        this.blockUI.setDepth(90);
+
+        const bg = this.add.rectangle(0, 0, 340, 70, 0x000000, 0.8)
+            .setStrokeStyle(2, 0x4488ff);
+        this.blockUI.add(bg);
+
+        this.blockDamageText = this.add.text(0, -20, 'ÚTOK: 5 DMG', {
+            fontSize: '16px',
+            fontFamily: 'Arial, sans-serif',
+            color: '#ff6666',
+            fontStyle: 'bold',
+        }).setOrigin(0.5);
+        this.blockUI.add(this.blockDamageText);
+
+        this.blockTimerText = this.add.text(-100, 10, 'ČAS: 10S', {
+            fontSize: '14px',
+            fontFamily: 'Arial, sans-serif',
+            color: '#ffffff',
+        }).setOrigin(0, 0.5);
+        this.blockUI.add(this.blockTimerText);
+
+        this.blockAttemptsText = this.add.text(30, 10, 'BLOKUJI: 0 DMG', {
+            fontSize: '14px',
+            fontFamily: 'Arial, sans-serif',
+            color: '#aaffaa',
+        }).setOrigin(0, 0.5);
+        this.blockUI.add(this.blockAttemptsText);
     }
 
     private createAttackButton(): void {
@@ -103,6 +155,7 @@ export class BattleScene extends Phaser.Scene {
 
         const text = this.add.text(400, 550, 'ÚTOK', {
             fontSize: '24px',
+            fontFamily: 'Arial, sans-serif',
             color: '#ffffff',
             fontStyle: 'bold',
         }).setOrigin(0.5);
@@ -160,11 +213,168 @@ export class BattleScene extends Phaser.Scene {
         this.mathBoard.hide();
         this.mathEngine.recordResult(isCorrect);
 
+        // Check if we're in block phase
+        if (this.isBlockPhase) {
+            this.onBlockAnswer(isCorrect);
+            return;
+        }
+
         if (isCorrect) {
             this.setPhase('player_attack');
         } else {
             this.setPhase('player_miss');
         }
+    }
+
+    private onBlockAnswer(isCorrect: boolean): void {
+        this.blockAttemptsMade++;
+
+        if (isCorrect) {
+            this.blockCorrectCount++;
+        }
+
+        // Update UI - show how much damage is being blocked
+        const currentBlock = Math.min(this.blockCorrectCount, this.pendingDamage);
+        this.blockAttemptsText.setText(`BLOKUJI: ${currentBlock} DMG`);
+
+        // Check if we should continue or end
+        if (this.blockAttemptsMade >= this.blockMaxAttempts || this.blockTimeRemaining <= 0) {
+            this.endBlockPhase();
+        } else {
+            // Show next problem
+            const problem = this.mathEngine.generateProblem();
+            this.mathBoard.show(problem);
+        }
+    }
+
+    private getEquippedShield(): ItemDefinition | null {
+        const player = this.gameState.getPlayer();
+        if (!player.equippedShield) return null;
+
+        const items = this.cache.json.get('items') as ItemDefinition[];
+        return items.find(item => item.id === player.equippedShield) || null;
+    }
+
+    private startBlockPhase(damage: number): void {
+        const shield = this.getEquippedShield();
+        if (!shield) {
+            this.applyDamageToPlayer(damage);
+            return;
+        }
+
+        this.isBlockPhase = true;
+        this.pendingDamage = damage;
+        this.blockCorrectCount = 0;
+        this.blockAttemptsMade = 0;
+        this.blockMaxAttempts = shield.blockAttempts || 1;
+        this.blockTimeRemaining = shield.blockTime || 5;
+
+        // Show block UI
+        this.blockUI.setVisible(true);
+        this.blockDamageText.setText(`ÚTOK: ${damage} DMG`);
+        this.blockTimerText.setText(`ČAS: ${this.blockTimeRemaining}S`);
+        this.blockAttemptsText.setText(`BLOKUJI: 0 DMG`);
+
+        // Start timer
+        this.blockTimerEvent = this.time.addEvent({
+            delay: 1000,
+            callback: () => {
+                this.blockTimeRemaining--;
+                this.blockTimerText.setText(`ČAS: ${this.blockTimeRemaining}S`);
+
+                if (this.blockTimeRemaining <= 0) {
+                    this.mathBoard.hide();
+                    this.endBlockPhase();
+                }
+            },
+            repeat: this.blockTimeRemaining - 1,
+        });
+
+        // Show first problem
+        const problem = this.mathEngine.generateProblem();
+        this.mathBoard.show(problem);
+    }
+
+    private endBlockPhase(): void {
+        this.isBlockPhase = false;
+        this.blockUI.setVisible(false);
+
+        // Stop timer
+        if (this.blockTimerEvent) {
+            this.blockTimerEvent.destroy();
+            this.blockTimerEvent = null;
+        }
+
+        // Each correct answer blocks 1 damage, max is the shield's blockAttempts or incoming damage
+        const damageBlocked = Math.min(this.blockCorrectCount, this.pendingDamage);
+        const finalDamage = this.pendingDamage - damageBlocked;
+
+        // Show block result
+        if (damageBlocked > 0) {
+            const blockMessage = finalDamage === 0
+                ? 'ZABLOKOVÁNO!'
+                : `-${damageBlocked} dmg`;
+
+            const blockText = this.add.text(400, 150, blockMessage.toUpperCase(), {
+                fontSize: '28px',
+                fontFamily: 'Arial, sans-serif',
+                color: '#4488ff',
+                fontStyle: 'bold',
+                stroke: '#000000',
+                strokeThickness: 4,
+            }).setOrigin(0.5).setDepth(200);
+
+            this.tweens.add({
+                targets: blockText,
+                alpha: 0,
+                y: 100,
+                duration: 1500,
+                onComplete: () => blockText.destroy(),
+            });
+        }
+
+        // Apply remaining damage
+        this.applyDamageToPlayer(finalDamage);
+    }
+
+    private applyDamageToPlayer(damage: number): void {
+        if (damage > 0) {
+            this.battleState.playerHp -= damage;
+            const player = this.gameState.getPlayer();
+            this.hud.updatePlayerHp(this.battleState.playerHp, player.maxHp);
+
+            // Hero hurt effect
+            this.tweens.add({
+                targets: this.hero,
+                tint: 0xff0000,
+                duration: 100,
+                yoyo: true,
+                onComplete: () => this.hero.clearTint(),
+            });
+        }
+
+        // Continue with enemy return animation
+        this.finishEnemyAttack();
+    }
+
+    private finishEnemyAttack(): void {
+        const startX = 550; // Enemy start position
+
+        // Slide back to starting position
+        this.tweens.add({
+            targets: this.enemy,
+            x: startX,
+            duration: 500,
+            ease: 'Quad.easeOut',
+            onComplete: () => {
+                if (this.battleState.playerHp <= 0) {
+                    this.setPhase('defeat');
+                } else {
+                    this.battleState.turnCount++;
+                    this.setPhase('player_turn');
+                }
+            }
+        });
     }
 
     private playHeroAttack(): void {
@@ -192,13 +402,20 @@ export class BattleScene extends Phaser.Scene {
                 this.battleState.enemyHp -= damage;
                 this.hud.updateEnemyHp(this.battleState.enemyHp, this.battleState.enemyMaxHp);
 
-                // Enemy hit effect
+                // Enemy hit effect - play hurt animation
+                this.enemy.play(`${this.enemyAnimPrefix}-hurt`);
                 this.tweens.add({
                     targets: this.enemy,
                     tint: 0xff0000,
                     duration: 100,
                     yoyo: true,
-                    onComplete: () => this.enemy.clearTint(),
+                    onComplete: () => {
+                        this.enemy.clearTint();
+                        // Return to idle after hurt animation
+                        this.enemy.once('animationcomplete', () => {
+                            this.enemy.play(`${this.enemyAnimPrefix}-idle`);
+                        });
+                    },
                 });
 
                 // Wait for animation to finish (last few frames play at enemy position)
@@ -213,7 +430,11 @@ export class BattleScene extends Phaser.Scene {
                         ease: 'Power2',
                         onComplete: () => {
                             if (this.battleState.enemyHp <= 0) {
-                                this.setPhase('victory');
+                                // Play enemy death animation
+                                this.enemy.play(`${this.enemyAnimPrefix}-death`);
+                                this.enemy.once('animationcomplete', () => {
+                                    this.setPhase('victory');
+                                });
                             } else {
                                 this.setPhase('enemy_turn');
                             }
@@ -251,55 +472,25 @@ export class BattleScene extends Phaser.Scene {
     }
 
     private playEnemyAttack(): void {
-        const startX = this.enemy.x;
         const targetX = this.hero.x; // Overlap hero
 
-        // 1. Fast Rush
+        // Play attack animation
+        this.enemy.play(`${this.enemyAnimPrefix}-attack-anim`);
+
+        // 1. Rush toward hero (attack animation plays)
         this.tweens.add({
             targets: this.enemy,
             x: targetX,
-            duration: 250, // Fast!
+            duration: 400, // Slower to let animation play
             ease: 'Quad.easeIn',
             onComplete: () => {
-                // Impact
-                const damage = this.currentEnemy.attack;
-                this.battleState.playerHp -= damage;
+                // Impact - switch to idle
+                this.enemy.play(`${this.enemyAnimPrefix}-idle`);
+
+                // Calculate damage (enemy attack minus player defense)
                 const player = this.gameState.getPlayer();
-                this.hud.updatePlayerHp(this.battleState.playerHp, player.maxHp);
-
-                // Hero hurt effect
-                this.tweens.add({
-                    targets: this.hero,
-                    tint: 0xff0000,
-                    duration: 100,
-                    yoyo: true,
-                    onComplete: () => this.hero.clearTint(),
-                });
-
-                // 2. Quick Retract (Bounce)
-                this.tweens.add({
-                    targets: this.enemy,
-                    x: targetX + 100, // Bounce back a bit
-                    duration: 150,
-                    ease: 'Quad.easeOut',
-                    onComplete: () => {
-                        // 3. Slow Return
-                        this.tweens.add({
-                            targets: this.enemy,
-                            x: startX,
-                            duration: 600,
-                            ease: 'Linear',
-                            onComplete: () => {
-                                if (this.battleState.playerHp <= 0) {
-                                    this.setPhase('defeat');
-                                } else {
-                                    this.battleState.turnCount++;
-                                    this.setPhase('player_turn');
-                                }
-                            }
-                        });
-                    }
-                });
+                const damage = Math.max(1, this.currentEnemy.attack - player.defense);
+                this.startBlockPhase(damage);
             }
         });
     }

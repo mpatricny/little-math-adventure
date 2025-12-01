@@ -5,6 +5,7 @@ import { TownScene } from './scenes/TownScene';
 import { BattleScene } from './scenes/BattleScene';
 import { VictoryScene } from './scenes/VictoryScene';
 import { WitchHutScene } from './scenes/WitchHutScene';
+import { ShopScene } from './scenes/ShopScene';
 
 const config: Phaser.Types.Core.GameConfig = {
     type: Phaser.AUTO,  // WebGL with Canvas fallback
@@ -16,7 +17,7 @@ const config: Phaser.Types.Core.GameConfig = {
         mode: Phaser.Scale.FIT,
         autoCenter: Phaser.Scale.CENTER_BOTH,
     },
-    scene: [BootScene, MenuScene, TownScene, BattleScene, VictoryScene, WitchHutScene],
+    scene: [BootScene, MenuScene, TownScene, BattleScene, VictoryScene, WitchHutScene, ShopScene],
 };
 
 new Phaser.Game(config);

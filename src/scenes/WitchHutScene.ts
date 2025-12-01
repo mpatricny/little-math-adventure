@@ -23,6 +23,7 @@ export class WitchHutScene extends Phaser.Scene {
         // Title
         this.add.text(400, 50, 'CHALOUPKA ČARODĚJNICE', {
             fontSize: '32px',
+            fontFamily: 'Arial, sans-serif',
             color: '#aa55ff',
             fontStyle: 'bold',
             stroke: '#000000',
@@ -32,19 +33,22 @@ export class WitchHutScene extends Phaser.Scene {
         // Player Stats
         this.add.text(200, 400, `HP: ${player.hp}/${player.maxHp}`, {
             fontSize: '24px',
+            fontFamily: 'Arial, sans-serif',
             color: '#ff5555'
         }).setOrigin(0.5);
 
-        this.add.text(600, 400, `Zlato: ${player.gold}`, {
+        this.add.text(600, 400, `ZLATO: ${player.gold}`, {
             fontSize: '24px',
+            fontFamily: 'Arial, sans-serif',
             color: '#ffd700'
         }).setOrigin(0.5);
 
         // Status Text
         const statusColor = player.status === 'healthy' ? '#00ff00' : '#ff0000';
-        const statusText = player.status === 'healthy' ? 'Zdravý' : 'Přizabitý!';
-        this.add.text(400, 350, `Stav: ${statusText}`, {
+        const statusText = player.status === 'healthy' ? 'ZDRAVÝ' : 'ZRANĚNÝ!';
+        this.add.text(400, 350, `STAV: ${statusText}`, {
             fontSize: '24px',
+            fontFamily: 'Arial, sans-serif',
             color: statusColor,
             fontStyle: 'bold'
         }).setOrigin(0.5);
@@ -70,9 +74,10 @@ export class WitchHutScene extends Phaser.Scene {
         const bg = this.add.rectangle(0, 0, 200, 60, btnColor)
             .setStrokeStyle(2, 0xffffff);
 
-        const costText = currentCost === 0 ? 'ZDARMA' : `${currentCost} zlata`;
-        const text = this.add.text(0, 0, `Vyléčit (${costText})`, {
+        const costText = currentCost === 0 ? 'ZDARMA' : `${currentCost} ZLATA`;
+        const text = this.add.text(0, 0, `VYLÉČIT (${costText})`, {
             fontSize: '20px',
+            fontFamily: 'Arial, sans-serif',
             color: '#ffffff'
         }).setOrigin(0.5);
 
@@ -85,8 +90,8 @@ export class WitchHutScene extends Phaser.Scene {
                 .on('pointerdown', () => this.healPlayer(currentCost));
         } else {
             button.setAlpha(0.7);
-            if (!canHeal) text.setText('Jsi zdravý');
-            else if (!canAfford) text.setText('Nedostatek zlata');
+            if (!canHeal) text.setText('JSI ZDRAVÝ');
+            else if (!canAfford) text.setText('NEDOSTATEK ZLATA');
         }
     }
 
@@ -96,8 +101,9 @@ export class WitchHutScene extends Phaser.Scene {
         const bg = this.add.rectangle(0, 0, 200, 50, 0x444444)
             .setStrokeStyle(2, 0xffffff);
 
-        const text = this.add.text(0, 0, 'Odejít', {
+        const text = this.add.text(0, 0, 'ODEJÍT', {
             fontSize: '20px',
+            fontFamily: 'Arial, sans-serif',
             color: '#ffffff'
         }).setOrigin(0.5);
 
