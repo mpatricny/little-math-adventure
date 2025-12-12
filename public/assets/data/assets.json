@@ -911,19 +911,19 @@
                 "texture": "shop-coins-sheet",
                 "variants": {
                     "copper": {
-                        "frame": 0,
+                        "frame": 1,
                         "nameKey": "$items.currency.CUR_001",
                         "value": 1
                     },
                     "silver": {
-                        "frame": 1,
+                        "frame": 2,
                         "nameKey": "$items.currency.CUR_002",
-                        "value": 10
+                        "value": 2
                     },
                     "gold": {
-                        "frame": 2,
+                        "frame": 0,
                         "nameKey": "$items.currency.CUR_003",
-                        "value": 100
+                        "value": 5
                     }
                 },
                 "origin": [

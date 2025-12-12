@@ -62,9 +62,9 @@
             "frameHeight": 200
         },
         "shop-coins-sheet": {
-            "path": "town/shop/coins sprite.png",
-            "frameWidth": 221,
-            "frameHeight": 222
+            "path": "town/shop/coins.png",
+            "frameWidth": 239,
+            "frameHeight": 242
         },
         "shop-swords-sheet": {
             "path": "town/shop/sword-set.png",
