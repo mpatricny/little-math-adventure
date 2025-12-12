@@ -1,0 +1,17 @@
+{
+    "defaultLanguage": "cs",
+    "supportedLanguages": [
+        "cs",
+        "en"
+    ],
+    "languages": {
+        "cs": {
+            "name": "Čeština",
+            "file": "cs.json"
+        },
+        "en": {
+            "name": "English",
+            "file": "en.json"
+        }
+    }
+}

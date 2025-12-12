@@ -1,0 +1,155 @@
+{
+    "version": "1.0",
+    "mathBoard": {
+        "presets": {
+            "default": {
+                "name": "Default",
+                "description": "Standard layout matching original game",
+                "params": {
+                    "rowHeight": 80,
+                    "twoColumnThreshold": 3,
+                    "columnWidth": 380,
+                    "buttonSpacing": 75,
+                    "buttonSpacingTwoCol": 50,
+                    "buttonScale": 0.28,
+                    "buttonScaleTwoCol": 0.2,
+                    "hintY": -80,
+                    "hintScale": 0.12,
+                    "hintSpacing": 30,
+                    "problemTextX": -180,
+                    "problemTextXTwoCol": -170,
+                    "buttonStartX": 40,
+                    "buttonStartXTwoCol": 30,
+                    "damageTextYOffset": 25,
+                    "boardWidth": 650,
+                    "boardWidthTwoCol": 850,
+                    "boardHeightPadding": 60,
+                    "boardMinHeight": 200
+                }
+            },
+            "small": {
+                "name": "Small",
+                "params": {
+                    "rowHeight": 80,
+                    "twoColumnThreshold": 3,
+                    "columnWidth": 380,
+                    "buttonSpacing": 75,
+                    "buttonSpacingTwoCol": 50,
+                    "buttonScale": 0.26,
+                    "buttonScaleTwoCol": 0.2,
+                    "hintY": -60,
+                    "hintScale": 0.25,
+                    "hintSpacing": 30,
+                    "problemTextX": -165,
+                    "problemTextXTwoCol": -170,
+                    "buttonStartX": 40,
+                    "buttonStartXTwoCol": 30,
+                    "damageTextYOffset": 40,
+                    "boardWidth": 650,
+                    "boardWidthTwoCol": 850,
+                    "boardHeightPadding": 100,
+                    "boardMinHeight": 220
+                }
+            },
+            "mediom": {
+                "name": "Mediom",
+                "params": {
+                    "rowHeight": 60,
+                    "twoColumnThreshold": 3,
+                    "columnWidth": 380,
+                    "buttonSpacing": 75,
+                    "buttonSpacingTwoCol": 50,
+                    "buttonScale": 0.26,
+                    "buttonScaleTwoCol": 0.2,
+                    "hintY": -85,
+                    "hintScale": 0.25,
+                    "hintSpacing": 30,
+                    "problemTextX": -165,
+                    "problemTextXTwoCol": -170,
+                    "buttonStartX": 40,
+                    "buttonStartXTwoCol": 30,
+                    "damageTextYOffset": 30,
+                    "boardWidth": 650,
+                    "boardWidthTwoCol": 850,
+                    "boardHeightPadding": 100,
+                    "boardMinHeight": 280
+                }
+            },
+            "large": {
+                "name": "Large",
+                "params": {
+                    "rowHeight": 60,
+                    "twoColumnThreshold": 3,
+                    "columnWidth": 350,
+                    "buttonSpacing": 90,
+                    "buttonSpacingTwoCol": 60,
+                    "buttonScale": 0.2,
+                    "buttonScaleTwoCol": 0.2,
+                    "hintY": -105,
+                    "hintScale": 0.21,
+                    "hintSpacing": 30,
+                    "problemTextX": -145,
+                    "problemTextXTwoCol": -170,
+                    "buttonStartX": 60,
+                    "buttonStartXTwoCol": 10,
+                    "damageTextYOffset": 50,
+                    "boardWidth": 650,
+                    "boardWidthTwoCol": 900,
+                    "boardHeightPadding": 100,
+                    "boardMinHeight": 330
+                }
+            },
+            "medium-large": {
+                "name": "Medium-large",
+                "params": {
+                    "rowHeight": 55,
+                    "twoColumnThreshold": 3,
+                    "columnWidth": 380,
+                    "buttonSpacing": 65,
+                    "buttonSpacingTwoCol": 50,
+                    "buttonScale": 0.24,
+                    "buttonScaleTwoCol": 0.2,
+                    "hintY": -110,
+                    "hintScale": 0.25,
+                    "hintSpacing": 30,
+                    "problemTextX": -165,
+                    "problemTextXTwoCol": -170,
+                    "buttonStartX": 40,
+                    "buttonStartXTwoCol": 30,
+                    "damageTextYOffset": 50,
+                    "boardWidth": 650,
+                    "boardWidthTwoCol": 850,
+                    "boardHeightPadding": 100,
+                    "boardMinHeight": 330
+                }
+            }
+        },
+        "problemCountMappings": [
+            {
+                "count": 1,
+                "presetName": "small"
+            },
+            {
+                "count": 2,
+                "presetName": "mediom"
+            },
+            {
+                "count": 3,
+                "presetName": "medium-large"
+            },
+            {
+                "count": 4,
+                "presetName": "large"
+            },
+            {
+                "count": 5,
+                "presetName": "large"
+            },
+            {
+                "count": 6,
+                "presetName": "large"
+            }
+        ],
+        "defaultPreset": "default"
+    }
+}

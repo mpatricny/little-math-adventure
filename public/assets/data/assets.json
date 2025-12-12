@@ -1,0 +1,1135 @@
+{
+    "version": "1.0",
+    "characters": {
+        "player": {
+            "knight": {
+                "type": "animatedSprite",
+                "category": "player",
+                "nameKey": "$characters.player.PLR_001",
+                "origin": [
+                    0.5,
+                    1
+                ],
+                "scale": {
+                    "default": 0.4,
+                    "battle": 0.6,
+                    "arena": 0.79
+                },
+                "depth": 5,
+                "defaultTexture": "knight-idle-sheet",
+                "animations": {
+                    "idle": "knight-idle",
+                    "attack": "knight-attack"
+                },
+                "defaultAnimation": "idle",
+                "hurtEffect": {
+                    "tint": "#ff0000",
+                    "duration": 100
+                }
+            }
+        },
+        "enemies": {
+            "slime": {
+                "type": "animatedSprite",
+                "category": "enemy",
+                "nameKey": "$characters.enemies.ENM_001",
+                "origin": [
+                    0.5,
+                    0.5
+                ],
+                "scale": {
+                    "default": 0.5,
+                    "arena": 1.35
+                },
+                "depth": 5,
+                "defaultTexture": "slime-sheet",
+                "animations": {
+                    "idle": "slime-idle",
+                    "attack": "slime-attack-anim",
+                    "hurt": "slime-hurt",
+                    "death": "slime-death"
+                },
+                "defaultAnimation": "idle"
+            },
+            "pink": {
+                "type": "animatedSprite",
+                "category": "enemy",
+                "nameKey": "$characters.enemies.ENM_002",
+                "origin": [
+                    0.5,
+                    0.5
+                ],
+                "scale": {
+                    "default": 0.5
+                },
+                "depth": 5,
+                "defaultTexture": "pink-idle-sheet",
+                "animations": {
+                    "idle": "pink-idle",
+                    "attack": "pink-attack-anim",
+                    "hurt": "pink-hurt",
+                    "death": "pink-death"
+                },
+                "defaultAnimation": "idle"
+            },
+            "purple": {
+                "type": "animatedSprite",
+                "category": "enemy",
+                "nameKey": "$characters.enemies.ENM_003",
+                "origin": [
+                    0.5,
+                    0.5
+                ],
+                "scale": {
+                    "default": 0.5
+                },
+                "depth": 5,
+                "defaultTexture": "purple-attack-sheet",
+                "animations": {
+                    "idle": "purple-idle",
+                    "attack": "purple-attack-anim",
+                    "hurt": "purple-hurt",
+                    "death": "purple-death"
+                },
+                "defaultAnimation": "idle"
+            },
+            "leafy": {
+                "type": "animatedSprite",
+                "category": "enemy",
+                "nameKey": "$characters.enemies.ENM_004",
+                "origin": [
+                    0.5,
+                    0.5
+                ],
+                "scale": {
+                    "default": 0.5
+                },
+                "depth": 5,
+                "defaultTexture": "leafy-idle-sheet",
+                "animations": {
+                    "idle": "leafy-idle",
+                    "attack": "leafy-attack-anim",
+                    "hurt": "leafy-hurt",
+                    "death": "leafy-death"
+                },
+                "defaultAnimation": "idle"
+            }
+        },
+        "npcs": {
+            "blacksmith": {
+                "type": "staticImage",
+                "category": "npc",
+                "nameKey": "$characters.npcs.NPC_001",
+                "texture": "npc-blacksmith",
+                "origin": [
+                    0.5,
+                    1
+                ],
+                "scale": {
+                    "default": 1
+                },
+                "depth": 5
+            },
+            "guildmaster": {
+                "type": "staticImage",
+                "category": "npc",
+                "nameKey": "$characters.npcs.NPC_002",
+                "texture": "npc-guildmaster",
+                "origin": [
+                    0.5,
+                    0.5
+                ],
+                "scale": {
+                    "default": 0.4
+                },
+                "depth": 10
+            }
+        }
+    },
+    "environments": {
+        "backgrounds": {
+            "battle-field": {
+                "type": "staticImage",
+                "category": "background",
+                "texture": "bg-battle",
+                "origin": [
+                    0.5,
+                    0.5
+                ],
+                "displaySize": [
+                    1280,
+                    720
+                ],
+                "depth": -10
+            },
+            "arena": {
+                "type": "staticImage",
+                "category": "background",
+                "texture": "bg-arena",
+                "origin": [
+                    0.5,
+                    0.5
+                ],
+                "depth": -10
+            },
+            "town": {
+                "type": "staticImage",
+                "category": "background",
+                "texture": "bg-town",
+                "origin": [
+                    0,
+                    0
+                ],
+                "tileScale": [
+                    0.88,
+                    0.88
+                ],
+                "depth": -10,
+                "scrollFactor": 0
+            }
+        },
+        "terrain": {
+            "grass-layer": {
+                "type": "tileSprite",
+                "category": "terrain",
+                "texture": "town-grass",
+                "origin": [
+                    0,
+                    1
+                ],
+                "tileScale": [
+                    0.14,
+                    0.18
+                ],
+                "scrollFactor": 0
+            }
+        },
+        "buildings": {
+            "witch-hut": {
+                "type": "interactiveImage",
+                "category": "building",
+                "labelKey": "$buildings.BLD_001",
+                "texture": "building-witch-hut",
+                "origin": [
+                    0.5,
+                    1
+                ],
+                "scale": {
+                    "default": 0.224
+                },
+                "depth": 0,
+                "interactive": {
+                    "useHandCursor": true
+                },
+                "hoverEffect": {
+                    "scaleMultiplier": 1.05,
+                    "tint": "#ffffcc"
+                },
+                "action": "enterScene:WitchHutScene"
+            },
+            "guild": {
+                "type": "interactiveImage",
+                "category": "building",
+                "labelKey": "$buildings.BLD_002",
+                "texture": "building-guild",
+                "origin": [
+                    0.5,
+                    1
+                ],
+                "scale": {
+                    "default": 0.224
+                },
+                "depth": 0,
+                "interactive": {
+                    "useHandCursor": true
+                },
+                "hoverEffect": {
+                    "scaleMultiplier": 1.05,
+                    "tint": "#ffffcc"
+                },
+                "action": "enterScene:GuildScene"
+            },
+            "tavern": {
+                "type": "interactiveImage",
+                "category": "building",
+                "labelKey": "$buildings.BLD_003",
+                "texture": "building-tavern",
+                "origin": [
+                    0.5,
+                    1
+                ],
+                "scale": {
+                    "default": 0.224
+                },
+                "depth": 0,
+                "interactive": {
+                    "useHandCursor": true
+                },
+                "hoverEffect": {
+                    "scaleMultiplier": 1.05,
+                    "tint": "#ffffcc"
+                },
+                "action": "enterScene:TavernScene"
+            },
+            "shop": {
+                "type": "interactiveImage",
+                "category": "building",
+                "labelKey": "$buildings.BLD_004",
+                "texture": "building-shop",
+                "origin": [
+                    0.5,
+                    1
+                ],
+                "scale": {
+                    "default": 0.184
+                },
+                "depth": 0,
+                "interactive": {
+                    "useHandCursor": true
+                },
+                "hoverEffect": {
+                    "scaleMultiplier": 1.05,
+                    "tint": "#ffffcc"
+                },
+                "action": "enterScene:ShopScene"
+            }
+        },
+        "interiors": {
+            "witch-hut-interior": {
+                "type": "staticImage",
+                "category": "interior",
+                "texture": "interior-witch-hut",
+                "origin": [
+                    0.5,
+                    0.5
+                ],
+                "depth": -10
+            },
+            "guild-interior": {
+                "type": "staticImage",
+                "category": "interior",
+                "texture": "interior-guild",
+                "origin": [
+                    0.5,
+                    0.5
+                ],
+                "depth": -10
+            },
+            "tavern-interior": {
+                "type": "staticImage",
+                "category": "interior",
+                "texture": "interior-tavern",
+                "origin": [
+                    0.5,
+                    0.5
+                ],
+                "depth": -10
+            },
+            "shop-interior": {
+                "type": "staticImage",
+                "category": "interior",
+                "texture": "interior-shop",
+                "origin": [
+                    0.5,
+                    0.5
+                ],
+                "depth": -10
+            }
+        },
+        "props": {
+            "shop-table-pouch": {
+                "type": "staticImage",
+                "category": "prop",
+                "texture": "shop-table-pouch",
+                "origin": [
+                    0.5,
+                    0.5
+                ],
+                "depth": 5
+            },
+            "shop-table-top": {
+                "type": "staticImage",
+                "category": "prop",
+                "texture": "shop-table-top",
+                "origin": [
+                    0.5,
+                    0.5
+                ],
+                "depth": 5
+            },
+            "shop-coin-tray": {
+                "type": "staticImage",
+                "category": "prop",
+                "texture": "shop-coin-tray",
+                "origin": [
+                    0.5,
+                    0.5
+                ],
+                "depth": 5
+            }
+        }
+    },
+    "ui": {
+        "buttons": {
+            "attack-button": {
+                "type": "button",
+                "category": "ui.button",
+                "width": 150,
+                "height": 50,
+                "textKey": "$ui.buttons.BTN_001",
+                "style": {
+                    "fill": "#44aa44",
+                    "hoverFill": "#55bb55",
+                    "pressedFill": "#338833"
+                },
+                "textStyle": {
+                    "fontSize": "24px",
+                    "fontFamily": "Arial, sans-serif",
+                    "color": "#ffffff",
+                    "fontStyle": "bold"
+                },
+                "depth": 50
+            },
+            "back-button": {
+                "type": "button",
+                "category": "ui.button",
+                "width": 150,
+                "height": 50,
+                "textKey": "$ui.buttons.BTN_003",
+                "style": {
+                    "fill": "#444444",
+                    "hoverFill": "#555555",
+                    "stroke": {
+                        "color": "#ffffff",
+                        "width": 2
+                    }
+                },
+                "textStyle": {
+                    "fontSize": "24px",
+                    "fontFamily": "Arial, sans-serif",
+                    "color": "#ffffff"
+                },
+                "depth": 50
+            },
+            "heal-button": {
+                "type": "button",
+                "category": "ui.button",
+                "width": 120,
+                "height": 40,
+                "textKey": "$ui.buttons.BTN_007",
+                "style": {
+                    "fill": "#aa44aa",
+                    "hoverFill": "#bb55bb"
+                },
+                "textStyle": {
+                    "fontSize": "20px",
+                    "fontFamily": "Arial, sans-serif",
+                    "color": "#ffffff",
+                    "fontStyle": "bold"
+                },
+                "depth": 15
+            },
+            "buy-button": {
+                "type": "button",
+                "category": "ui.button",
+                "width": 100,
+                "height": 40,
+                "textKey": "$ui.buttons.BTN_008",
+                "style": {
+                    "fill": "#44aa44",
+                    "hoverFill": "#55bb55"
+                },
+                "textStyle": {
+                    "fontSize": "18px",
+                    "fontFamily": "Arial, sans-serif",
+                    "color": "#ffffff",
+                    "fontStyle": "bold"
+                },
+                "depth": 20
+            },
+            "exam-button": {
+                "type": "button",
+                "category": "ui.button",
+                "width": 180,
+                "height": 60,
+                "textKey": "$ui.buttons.BTN_009",
+                "style": {
+                    "fill": "#228822",
+                    "hoverFill": "#33aa33"
+                },
+                "textStyle": {
+                    "fontSize": "18px",
+                    "fontFamily": "Arial, sans-serif",
+                    "color": "#ffffff",
+                    "fontStyle": "bold"
+                },
+                "depth": 50
+            },
+            "collect-button": {
+                "type": "button",
+                "category": "ui.button",
+                "width": 120,
+                "height": 32,
+                "style": {
+                    "fill": "#4488aa",
+                    "hoverFill": "#5599bb"
+                },
+                "textStyle": {
+                    "fontSize": "14px",
+                    "fontFamily": "Arial, sans-serif",
+                    "color": "#ffffff",
+                    "fontStyle": "bold"
+                },
+                "depth": 15
+            },
+            "answer-button": {
+                "type": "button",
+                "category": "ui.button",
+                "width": 120,
+                "height": 80,
+                "style": {
+                    "fill": "#4466aa",
+                    "hoverFill": "#5577bb"
+                },
+                "textStyle": {
+                    "fontSize": "32px",
+                    "fontFamily": "Arial, sans-serif",
+                    "color": "#ffffff",
+                    "fontStyle": "bold"
+                },
+                "depth": 200
+            },
+            "shop-tab": {
+                "type": "button",
+                "category": "ui.button",
+                "width": 90,
+                "height": 35,
+                "style": {
+                    "fill": "#5a4a3a",
+                    "hoverFill": "#7a6a5a",
+                    "activeFill": "#8a7a6a",
+                    "stroke": {
+                        "color": "#8a7a6a",
+                        "width": 2
+                    }
+                },
+                "textStyle": {
+                    "fontSize": "16px",
+                    "fontFamily": "Arial, sans-serif",
+                    "color": "#ffffff",
+                    "fontStyle": "bold"
+                },
+                "depth": 20
+            },
+            "shop-item-slot": {
+                "type": "button",
+                "category": "ui.button",
+                "width": 70,
+                "height": 70,
+                "style": {
+                    "fill": "#3a3a2a",
+                    "hoverFill": "#4a4a3a",
+                    "stroke": {
+                        "color": "#6a6a5a",
+                        "width": 2
+                    },
+                    "hoverStroke": {
+                        "color": "#ffd700",
+                        "width": 3
+                    }
+                },
+                "depth": 20
+            },
+            "shop-strike-indicator": {
+                "type": "text",
+                "category": "ui.indicator",
+                "text": "❌",
+                "style": {
+                    "fontSize": "20px",
+                    "fontFamily": "Arial, sans-serif"
+                },
+                "origin": [
+                    0.5,
+                    0.5
+                ],
+                "depth": 30
+            }
+        },
+        "containers": {
+            "empty": {
+                "type": "container",
+                "category": "ui.container",
+                "width": 0,
+                "height": 0
+            }
+        },
+        "tables": {
+            "results-table": {
+                "type": "staticImage",
+                "category": "ui.table",
+                "texture": "ui-results-table",
+                "origin": [
+                    0.5,
+                    0.5
+                ],
+                "depth": 5
+            }
+        },
+        "frames": {
+            "timer-frame": {
+                "type": "staticImage",
+                "category": "ui.frame",
+                "texture": "ui-stone-bar-frame",
+                "origin": [
+                    0.5,
+                    0.5
+                ],
+                "depth": 200
+            }
+        },
+        "bars": {
+            "health-bar": {
+                "type": "progressBar",
+                "category": "ui.bar",
+                "width": 100,
+                "height": 12,
+                "style": {
+                    "background": "#333333"
+                },
+                "fillColors": {
+                    "high": "#44cc44",
+                    "medium": "#cccc44",
+                    "low": "#cc4444"
+                },
+                "thresholds": {
+                    "medium": 0.5,
+                    "low": 0.25
+                },
+                "showText": true,
+                "textFormat": "$formats.FMT_001",
+                "textStyle": {
+                    "fontSize": "10px",
+                    "fontFamily": "Arial, sans-serif",
+                    "color": "#ffffff"
+                },
+                "depth": 10,
+                "attachTo": "character",
+                "offset": [
+                    0,
+                    -90
+                ]
+            },
+            "exam-timer-bar": {
+                "type": "progressBar",
+                "category": "ui.bar",
+                "width": 200,
+                "height": 24,
+                "style": {
+                    "background": "#333333"
+                },
+                "fillColors": {
+                    "high": "#44aa44",
+                    "medium": "#aaaa44",
+                    "low": "#aa4444"
+                },
+                "thresholds": {
+                    "medium": 0.5,
+                    "low": 0.25
+                },
+                "showText": true,
+                "textStyle": {
+                    "fontSize": "18px",
+                    "fontFamily": "Arial, sans-serif",
+                    "color": "#ffffff",
+                    "fontStyle": "bold"
+                },
+                "depth": 200
+            }
+        },
+        "panels": {
+            "dark-overlay": {
+                "type": "panel",
+                "category": "ui.panel",
+                "fill": "#000000",
+                "alpha": 0.5,
+                "depth": -5
+            },
+            "info-panel": {
+                "type": "panel",
+                "category": "ui.panel",
+                "fill": "#000000",
+                "alpha": 0.7,
+                "stroke": {
+                    "color": "#886688",
+                    "width": 2
+                },
+                "depth": 5
+            },
+            "dialog-panel": {
+                "type": "panel",
+                "category": "ui.panel",
+                "fill": "#000000",
+                "alpha": 0.85,
+                "stroke": {
+                    "color": "#5a99aa",
+                    "width": 2
+                },
+                "depth": 100
+            },
+            "shop-purchase-panel": {
+                "type": "panel",
+                "category": "ui.panel",
+                "fill": "#2a2a1a",
+                "alpha": 0.95,
+                "stroke": {
+                    "color": "#8a7a6a",
+                    "width": 3
+                },
+                "depth": 25
+            }
+        },
+        "labels": {
+            "title-label": {
+                "type": "text",
+                "category": "ui.label",
+                "style": {
+                    "fontSize": "32px",
+                    "fontFamily": "Arial, sans-serif",
+                    "color": "#ffd700",
+                    "fontStyle": "bold",
+                    "stroke": "#000000",
+                    "strokeThickness": 4
+                },
+                "origin": [
+                    0.5,
+                    0.5
+                ],
+                "depth": 10
+            },
+            "game-title": {
+                "type": "text",
+                "category": "ui.label",
+                "textKey": "$ui.titles.TTL_GAME_TITLE",
+                "style": {
+                    "fontSize": "48px",
+                    "fontFamily": "Arial, sans-serif",
+                    "color": "#ffffff",
+                    "fontStyle": "bold"
+                },
+                "origin": [
+                    0.5,
+                    0.5
+                ],
+                "depth": 10
+            },
+            "game-subtitle": {
+                "type": "text",
+                "category": "ui.label",
+                "textKey": "$ui.titles.TTL_GAME_SUBTITLE",
+                "style": {
+                    "fontSize": "24px",
+                    "fontFamily": "Arial, sans-serif",
+                    "color": "#aaaaaa"
+                },
+                "origin": [
+                    0.5,
+                    0.5
+                ],
+                "depth": 10
+            },
+            "building-label": {
+                "type": "text",
+                "category": "ui.label",
+                "style": {
+                    "fontSize": "18px",
+                    "fontFamily": "Arial, sans-serif",
+                    "color": "#ffffff",
+                    "fontStyle": "bold",
+                    "stroke": "#000000",
+                    "strokeThickness": 4
+                },
+                "origin": [
+                    0.5,
+                    1
+                ],
+                "depth": 10,
+                "floatAnimation": {
+                    "y": -5,
+                    "duration": 1500,
+                    "ease": "Sine.easeInOut"
+                }
+            },
+            "damage-label": {
+                "type": "text",
+                "category": "ui.label",
+                "style": {
+                    "fontSize": "28px",
+                    "fontFamily": "Arial, sans-serif",
+                    "color": "#ff4444",
+                    "fontStyle": "bold",
+                    "stroke": "#000000",
+                    "strokeThickness": 3
+                },
+                "origin": [
+                    0.5,
+                    0.5
+                ],
+                "depth": 200,
+                "animation": {
+                    "type": "floatAndFade",
+                    "y": -40,
+                    "duration": 800
+                }
+            },
+            "gold-label": {
+                "type": "text",
+                "category": "ui.label",
+                "style": {
+                    "fontSize": "16px",
+                    "fontFamily": "Arial, sans-serif",
+                    "color": "#ffd700",
+                    "fontStyle": "bold"
+                },
+                "origin": [
+                    0.5,
+                    0.5
+                ],
+                "depth": 10
+            }
+        },
+        "indicators": {
+            "notification-badge": {
+                "type": "container",
+                "category": "ui.indicator",
+                "components": [
+                    {
+                        "type": "circle",
+                        "radius": 28,
+                        "fill": "#ff3333",
+                        "stroke": {
+                            "color": "#880000",
+                            "width": 4
+                        }
+                    },
+                    {
+                        "type": "text",
+                        "content": "!",
+                        "style": {
+                            "fontSize": "42px",
+                            "fontFamily": "Arial, sans-serif",
+                            "color": "#ffffff",
+                            "fontStyle": "bold"
+                        },
+                        "offsetY": -2
+                    }
+                ],
+                "depth": 80,
+                "pulseAnimation": {
+                    "y": -8,
+                    "scale": 1.1,
+                    "duration": 500
+                }
+            },
+            "close-button": {
+                "type": "text",
+                "category": "ui.indicator",
+                "content": "✕",
+                "style": {
+                    "fontSize": "32px",
+                    "fontFamily": "Arial, sans-serif",
+                    "color": "#ff6666",
+                    "fontStyle": "bold"
+                },
+                "hoverColor": "#ff8888",
+                "depth": 100
+            }
+        }
+    },
+    "items": {
+        "weapons": {
+            "sword": {
+                "type": "spriteItem",
+                "category": "item.weapon",
+                "texture": "shop-swords-sheet",
+                "variants": {
+                    "wooden": {
+                        "frame": 0,
+                        "nameKey": "$items.weapons.WPN_001"
+                    },
+                    "iron": {
+                        "frame": 1,
+                        "nameKey": "$items.weapons.WPN_002"
+                    },
+                    "steel": {
+                        "frame": 2,
+                        "nameKey": "$items.weapons.WPN_003"
+                    }
+                },
+                "origin": [
+                    0.5,
+                    0.5
+                ],
+                "scale": {
+                    "default": 0.3
+                },
+                "depth": 10
+            }
+        },
+        "armor": {
+            "shield": {
+                "type": "spriteItem",
+                "category": "item.armor",
+                "texture": "shop-shields-sheet",
+                "variants": {
+                    "wooden": {
+                        "frame": 0,
+                        "nameKey": "$items.armor.ARM_001"
+                    },
+                    "iron": {
+                        "frame": 1,
+                        "nameKey": "$items.armor.ARM_002"
+                    },
+                    "steel": {
+                        "frame": 2,
+                        "nameKey": "$items.armor.ARM_003"
+                    }
+                },
+                "origin": [
+                    0.5,
+                    0.5
+                ],
+                "scale": {
+                    "default": 0.3
+                },
+                "depth": 10
+            }
+        },
+        "currency": {
+            "coin": {
+                "type": "draggableSprite",
+                "category": "item.currency",
+                "texture": "shop-coins-sheet",
+                "variants": {
+                    "copper": {
+                        "frame": 0,
+                        "nameKey": "$items.currency.CUR_001",
+                        "value": 1
+                    },
+                    "silver": {
+                        "frame": 1,
+                        "nameKey": "$items.currency.CUR_002",
+                        "value": 10
+                    },
+                    "gold": {
+                        "frame": 2,
+                        "nameKey": "$items.currency.CUR_003",
+                        "value": 100
+                    }
+                },
+                "origin": [
+                    0.5,
+                    0.5
+                ],
+                "scale": {
+                    "default": 0.25
+                },
+                "depth": 15,
+                "draggable": true
+            }
+        }
+    },
+    "effects": {
+        "tweens": {
+            "float-and-fade": {
+                "type": "tweenEffect",
+                "props": {
+                    "y": "-=40",
+                    "alpha": 0
+                },
+                "duration": 800,
+                "ease": "Power2"
+            },
+            "pulse": {
+                "type": "tweenEffect",
+                "props": {
+                    "scaleX": 1.1,
+                    "scaleY": 1.1
+                },
+                "duration": 500,
+                "yoyo": true,
+                "repeat": -1,
+                "ease": "Sine.easeInOut"
+            },
+            "bob": {
+                "type": "tweenEffect",
+                "props": {
+                    "y": "-=8"
+                },
+                "duration": 400,
+                "yoyo": true,
+                "repeat": -1,
+                "ease": "Sine.inOut"
+            }
+        },
+        "flashes": {
+            "damage-flash": {
+                "type": "tintEffect",
+                "tint": "#ff0000",
+                "duration": 100,
+                "yoyo": true
+            },
+            "heal-flash": {
+                "type": "tintEffect",
+                "tint": "#00ff00",
+                "duration": 200,
+                "yoyo": true
+            }
+        }
+    },
+    "zones": {
+        "spawns": {
+            "player-spawn-battle": {
+                "type": "playerSpawn",
+                "category": "zone.spawn",
+                "character": "characters.player.knight",
+                "scaleVariant": "battle",
+                "point": [
+                    300,
+                    480
+                ],
+                "facing": "right"
+            },
+            "player-spawn-arena": {
+                "type": "playerSpawn",
+                "category": "zone.spawn",
+                "character": "characters.player.knight",
+                "scaleVariant": "arena",
+                "point": [
+                    235,
+                    575
+                ],
+                "facing": "right"
+            },
+            "player-spawn-town": {
+                "type": "playerSpawn",
+                "category": "zone.spawn",
+                "character": "characters.player.knight",
+                "scaleVariant": "default",
+                "point": [
+                    80,
+                    675
+                ],
+                "facing": "right"
+            },
+            "enemy-spawn-battle": {
+                "type": "enemySpawn",
+                "category": "zone.spawn",
+                "maxEnemies": 3,
+                "points": [
+                    [
+                        695,
+                        445
+                    ],
+                    [
+                        820,
+                        545
+                    ],
+                    [
+                        950,
+                        445
+                    ]
+                ],
+                "facing": "left"
+            },
+            "enemy-spawn-arena": {
+                "type": "enemySpawn",
+                "category": "zone.spawn",
+                "maxEnemies": 3,
+                "points": [
+                    [
+                        850,
+                        425
+                    ],
+                    [
+                        950,
+                        525
+                    ],
+                    [
+                        1050,
+                        425
+                    ]
+                ],
+                "facing": "left"
+            },
+            "npc-spawn-guildmaster": {
+                "type": "npcSpawn",
+                "category": "zone.spawn",
+                "character": "characters.npcs.guildmaster",
+                "point": [
+                    557,
+                    235
+                ]
+            }
+        },
+        "dropZones": {
+            "payment-zone": {
+                "type": "dropZone",
+                "category": "zone.drop",
+                "shape": "rect",
+                "bounds": [
+                    224,
+                    549,
+                    164,
+                    80
+                ],
+                "accepts": [
+                    "items.currency.coin"
+                ],
+                "onDrop": "addToPayment"
+            },
+            "table-zone": {
+                "type": "dropZone",
+                "category": "zone.drop",
+                "shape": "rect",
+                "bounds": [
+                    94,
+                    529,
+                    1044,
+                    206
+                ],
+                "accepts": [
+                    "items.currency.coin"
+                ],
+                "onDrop": "returnToTable"
+            }
+        },
+        "itemSpawns": {
+            "coin-spawn-shop": {
+                "type": "itemSpawn",
+                "category": "zone.spawn",
+                "item": "items.currency.coin",
+                "bounds": [
+                    838,
+                    582,
+                    200,
+                    100
+                ],
+                "spawnPattern": "scattered"
+            }
+        },
+        "triggers": {
+            "arena-trigger": {
+                "type": "trigger",
+                "category": "zone.trigger",
+                "shape": "rect",
+                "bounds": [
+                    1180,
+                    300,
+                    80,
+                    120
+                ],
+                "action": "enterScene:ArenaScene"
+            }
+        }
+    }
+}

@@ -1,0 +1,105 @@
+{
+    "version": "1.0",
+    "language": "cs",
+    "ui": {
+        "buttons": {
+            "BTN_001": "ÚTOK",
+            "BTN_002": "BLOKOVAT",
+            "BTN_003": "ZPĚT",
+            "BTN_004": "POKRAČOVAT",
+            "BTN_005": "NOVÁ HRA",
+            "BTN_006": "NAČÍST HRU",
+            "BTN_007": "LÉČIT",
+            "BTN_008": "KOUPIT",
+            "BTN_009": "VYBRAT"
+        },
+        "labels": {
+            "LBL_001": "ŽIVOTY",
+            "LBL_002": "ÚTOK",
+            "LBL_003": "OBRANA",
+            "LBL_004": "ÚROVEŇ",
+            "LBL_005": "ZKUŠENOSTI",
+            "LBL_006": "ZLATO",
+            "LBL_007": "ČAS",
+            "LBL_008": "BLOKUJI",
+            "LBL_009": "VLNA",
+            "LBL_010": "PŘÍKLAD",
+            "LBL_011": "TVOJE PENÍZE",
+            "LBL_012": "PLATBA",
+            "LBL_013": "CELKEM",
+            "LBL_014": "DNES",
+            "LBL_015": "CELKOVĚ"
+        },
+        "titles": {
+            "TTL_001": "ARÉNA",
+            "TTL_002": "PŘEHLED UČENÍ",
+            "TTL_003": "CHALOUPKA ČARODĚJNICE",
+            "TTL_004": "LÉČENÍ",
+            "TTL_005": "MAZLÍČCI",
+            "TTL_006": "TVOJE DIAMANTY",
+            "TTL_GAME_TITLE": "LITTLE MATH ADVENTURE",
+            "TTL_GAME_SUBTITLE": "MATEMATICKÉ DOBRODRUŽSTVÍ"
+        },
+        "messages": {
+            "MSG_001": "VÍTĚZSTVÍ!",
+            "MSG_002": "PORÁŽKA",
+            "MSG_003": "ZABLOKOVÁNO!",
+            "MSG_004": "PŘIPRAVUJEME...",
+            "MSG_005": "STAV: ZDRAVÝ",
+            "MSG_006": "STAV: ZRANĚNÝ",
+            "MSG_007": "VIDÍM, ŽE JSI ZESÍLIL.\nUKAŽ MI, CO UMÍŠ!"
+        }
+    },
+    "buildings": {
+        "BLD_001": "ČARODĚJNICE",
+        "BLD_002": "CECH",
+        "BLD_003": "HOSPODA",
+        "BLD_004": "OBCHOD"
+    },
+    "items": {
+        "weapons": {
+            "WPN_001": "Dřevěný meč",
+            "WPN_002": "Železný meč",
+            "WPN_003": "Ocelový meč"
+        },
+        "armor": {
+            "ARM_001": "Dřevěný štít",
+            "ARM_002": "Železný štít",
+            "ARM_003": "Ocelový štít"
+        },
+        "currency": {
+            "CUR_001": "měďák",
+            "CUR_002": "stříbrňák",
+            "CUR_003": "zlaťák"
+        }
+    },
+    "characters": {
+        "enemies": {
+            "ENM_001": "Sliz",
+            "ENM_002": "Růžák",
+            "ENM_003": "Fialák",
+            "ENM_004": "Listovák"
+        },
+        "npcs": {
+            "NPC_001": "Kovář",
+            "NPC_002": "Mistr cechu"
+        },
+        "player": {
+            "PLR_001": "Rytíř"
+        }
+    },
+    "stats": {
+        "STT_001": "HP",
+        "STT_002": "útok",
+        "STT_003": "obrana",
+        "STT_004": "blok",
+        "STT_005": "čas bloku"
+    },
+    "formats": {
+        "FMT_001": "{0}/{1}",
+        "FMT_002": "ČAS: {0}S",
+        "FMT_003": "VLNA {0}",
+        "FMT_004": "CELKEM: {0} měďáků",
+        "FMT_005": "ÚROVEŇ: {0}   |   CYKLUS: {1}   |   {2}%"
+    }
+}

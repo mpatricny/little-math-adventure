@@ -1,0 +1,1127 @@
+{
+  "version": "1.0",
+  "scenes": {
+    "TestScene": {
+      "viewport": {
+        "width": 1280,
+        "height": 720
+      },
+      "elements": [],
+      "hotspots": [],
+      "templates": {}
+    },
+    "GuildScene": {
+      "viewport": {
+        "width": 1280,
+        "height": 720
+      },
+      "elements": [
+        {
+          "id": "interior",
+          "type": "image",
+          "asset": "interior-guild",
+          "x": 640,
+          "y": 360,
+          "origin": [
+            0.5,
+            0.5
+          ],
+          "depth": -10,
+          "editable": true,
+          "visible": true,
+          "scale": 1,
+          "width": 1280,
+          "height": 720
+        },
+        {
+          "id": "overlay",
+          "type": "image",
+          "x": 640,
+          "y": 360,
+          "origin": [
+            0.5,
+            0.5
+          ],
+          "depth": -5,
+          "editable": true,
+          "visible": true,
+          "scale": 1
+        },
+        {
+          "id": "guildmaster",
+          "type": "image",
+          "asset": "npc-guildmaster",
+          "x": 176,
+          "y": 174,
+          "origin": [
+            0.5,
+            0.5
+          ],
+          "depth": 10,
+          "editable": true,
+          "visible": true,
+          "scale": 0.4
+        },
+        {
+          "id": "resultsTable",
+          "type": "image",
+          "asset": "ui-results-table",
+          "x": 893,
+          "y": 383,
+          "origin": [
+            0.5,
+            0.5
+          ],
+          "depth": 5,
+          "editable": true,
+          "visible": true,
+          "scaleX": 0.74,
+          "scaleY": 0.475
+        },
+        {
+          "id": "listPanel",
+          "type": "container",
+          "x": 940,
+          "y": 333,
+          "origin": [
+            0.5,
+            0.5
+          ],
+          "depth": 6,
+          "editable": true,
+          "visible": true,
+          "scale": 1
+        },
+        {
+          "id": "title",
+          "type": "image",
+          "x": 890,
+          "y": 39,
+          "origin": [
+            0.5,
+            0.5
+          ],
+          "depth": 10,
+          "editable": true,
+          "visible": true,
+          "scale": 1
+        },
+        {
+          "id": "statsPanel",
+          "type": "image",
+          "x": 891,
+          "y": 86,
+          "origin": [
+            0.5,
+            0.5
+          ],
+          "depth": 5,
+          "editable": true,
+          "visible": true,
+          "scale": 1
+        },
+        {
+          "id": "totalStatsPanel",
+          "type": "image",
+          "x": 848,
+          "y": 577,
+          "origin": [
+            0.5,
+            0.5
+          ],
+          "depth": 6,
+          "editable": true,
+          "visible": true,
+          "scale": 1
+        },
+        {
+          "id": "collectButton",
+          "type": "image",
+          "x": 1041,
+          "y": 574,
+          "origin": [
+            0.5,
+            0.5
+          ],
+          "depth": 15,
+          "editable": true,
+          "visible": true,
+          "scale": 1
+        },
+        {
+          "id": "trialDialog",
+          "type": "image",
+          "x": 203,
+          "y": 267,
+          "origin": [
+            0.5,
+            0.5
+          ],
+          "depth": 10,
+          "editable": true,
+          "visible": false,
+          "scale": 1
+        },
+        {
+          "id": "trialStartButton",
+          "type": "image",
+          "x": 210,
+          "y": 410,
+          "origin": [
+            0.5,
+            0.5
+          ],
+          "depth": 50,
+          "editable": true,
+          "visible": false,
+          "scale": 1
+        },
+        {
+          "id": "trialOverlay",
+          "type": "image",
+          "x": 640,
+          "y": 360,
+          "origin": [
+            0.5,
+            0.5
+          ],
+          "depth": -5,
+          "editable": true,
+          "visible": false,
+          "scale": 1
+        },
+        {
+          "id": "trialTitle",
+          "type": "image",
+          "x": 640,
+          "y": 110,
+          "origin": [
+            0.5,
+            0.5
+          ],
+          "depth": 10,
+          "editable": true,
+          "visible": false,
+          "scale": 1
+        },
+        {
+          "id": "timerFrame",
+          "type": "image",
+          "asset": "ui-stone-bar-frame",
+          "x": 640,
+          "y": 173,
+          "origin": [
+            0.5,
+            0.5
+          ],
+          "depth": 200,
+          "editable": true,
+          "visible": false,
+          "scaleX": 0.606,
+          "scaleY": 0.548
+        },
+        {
+          "id": "timerBar",
+          "type": "progressBar",
+          "x": 639,
+          "y": 175,
+          "origin": [
+            0.5,
+            0.5
+          ],
+          "depth": 199,
+          "editable": true,
+          "visible": false,
+          "scale": 1,
+          "width": 400,
+          "height": 48
+        },
+        {
+          "id": "scoreText",
+          "type": "image",
+          "x": 640,
+          "y": 240,
+          "origin": [
+            0.5,
+            0.5
+          ],
+          "depth": 10,
+          "editable": true,
+          "visible": false,
+          "scale": 1
+        },
+        {
+          "id": "problemText",
+          "type": "image",
+          "x": 640,
+          "y": 360,
+          "origin": [
+            0.5,
+            0.5
+          ],
+          "depth": 10,
+          "editable": true,
+          "visible": false,
+          "scale": 1
+        },
+        {
+          "id": "answerButton1",
+          "type": "image",
+          "x": 490,
+          "y": 480,
+          "origin": [
+            0.5,
+            0.5
+          ],
+          "depth": 200,
+          "editable": true,
+          "visible": false,
+          "scale": 1
+        },
+        {
+          "id": "answerButton2",
+          "type": "image",
+          "x": 640,
+          "y": 480,
+          "origin": [
+            0.5,
+            0.5
+          ],
+          "depth": 200,
+          "editable": true,
+          "visible": false,
+          "scale": 1
+        },
+        {
+          "id": "answerButton3",
+          "type": "image",
+          "x": 790,
+          "y": 480,
+          "origin": [
+            0.5,
+            0.5
+          ],
+          "depth": 200,
+          "editable": true,
+          "visible": false,
+          "scale": 1
+        },
+        {
+          "id": "resultsTitle",
+          "type": "image",
+          "x": 640,
+          "y": 260,
+          "origin": [
+            0.5,
+            0.5
+          ],
+          "depth": 10,
+          "editable": true,
+          "visible": false,
+          "scale": 1
+        },
+        {
+          "id": "resultsMessage",
+          "type": "image",
+          "x": 774,
+          "y": 361,
+          "origin": [
+            0.5,
+            0.5
+          ],
+          "depth": 10,
+          "editable": true,
+          "visible": false,
+          "scale": 1
+        },
+        {
+          "id": "continueButton",
+          "type": "image",
+          "x": 640,
+          "y": 478,
+          "origin": [
+            0.5,
+            0.5
+          ],
+          "depth": 50,
+          "editable": true,
+          "visible": false,
+          "scale": 1
+        },
+        {
+          "id": "backButton",
+          "type": "image",
+          "x": 100,
+          "y": 637,
+          "origin": [
+            0.5,
+            0.5
+          ],
+          "depth": 50,
+          "editable": true,
+          "visible": true,
+          "scale": 1
+        }
+      ],
+      "hotspots": [],
+      "templates": {}
+    },
+    "TownScene": {
+      "viewport": {
+        "width": 1280,
+        "height": 720
+      },
+      "elements": [
+        {
+          "id": "bg",
+          "type": "image",
+          "asset": "bg-town",
+          "x": 0,
+          "y": 0,
+          "origin": [
+            0,
+            0
+          ],
+          "depth": -10,
+          "editable": true,
+          "visible": true,
+          "scale": 1
+        },
+        {
+          "id": "bgGrass",
+          "type": "image",
+          "asset": "town-grass",
+          "x": 0,
+          "y": 685,
+          "origin": [
+            0,
+            1
+          ],
+          "depth": -5,
+          "editable": true,
+          "visible": true,
+          "scale": 1
+        },
+        {
+          "id": "witch",
+          "type": "image",
+          "asset": "building-witch-hut",
+          "x": 220,
+          "y": 670,
+          "origin": [
+            0.5,
+            1
+          ],
+          "depth": 0,
+          "editable": true,
+          "visible": true,
+          "scale": 0.224
+        },
+        {
+          "id": "guild",
+          "type": "image",
+          "asset": "building-guild",
+          "x": 455,
+          "y": 700,
+          "origin": [
+            0.5,
+            1
+          ],
+          "depth": 0,
+          "editable": true,
+          "visible": true,
+          "scale": 0.224
+        },
+        {
+          "id": "tavern",
+          "type": "image",
+          "asset": "building-tavern",
+          "x": 655,
+          "y": 665,
+          "origin": [
+            0.5,
+            1
+          ],
+          "depth": 0,
+          "editable": true,
+          "visible": true,
+          "scale": 0.224
+        },
+        {
+          "id": "shop",
+          "type": "image",
+          "asset": "building-shop",
+          "x": 880,
+          "y": 670,
+          "origin": [
+            0.5,
+            1
+          ],
+          "depth": 0,
+          "editable": true,
+          "visible": true,
+          "scale": 0.184
+        },
+        {
+          "id": "fgGrass",
+          "type": "image",
+          "asset": "town-grass",
+          "x": 0,
+          "y": 705,
+          "origin": [
+            0,
+            1
+          ],
+          "depth": 5,
+          "editable": true,
+          "visible": true,
+          "scale": 1
+        },
+        {
+          "id": "playerSpawn",
+          "type": "image",
+          "x": 80,
+          "y": 615,
+          "origin": [
+            0.5,
+            0.5
+          ],
+          "depth": 0,
+          "editable": true,
+          "visible": true,
+          "scale": 1
+        },
+        {
+          "id": "witch-label",
+          "type": "image",
+          "x": 220,
+          "y": 430,
+          "origin": [
+            0.5,
+            1
+          ],
+          "depth": 10,
+          "editable": true,
+          "visible": true,
+          "scale": 1
+        },
+        {
+          "id": "guild-label",
+          "type": "image",
+          "x": 454,
+          "y": 446,
+          "origin": [
+            0.5,
+            1
+          ],
+          "depth": 10,
+          "editable": true,
+          "visible": true,
+          "scale": 1
+        },
+        {
+          "id": "tavern-label",
+          "type": "image",
+          "x": 655,
+          "y": 420,
+          "origin": [
+            0.5,
+            1
+          ],
+          "depth": 10,
+          "editable": true,
+          "visible": true,
+          "scale": 1
+        },
+        {
+          "id": "shop-label",
+          "type": "image",
+          "x": 882,
+          "y": 442,
+          "origin": [
+            0.5,
+            1
+          ],
+          "depth": 10,
+          "editable": true,
+          "visible": true,
+          "scale": 1
+        },
+        {
+          "id": "arena-label",
+          "type": "image",
+          "x": 1220,
+          "y": 410,
+          "origin": [
+            0.5,
+            1
+          ],
+          "depth": 10,
+          "editable": true,
+          "visible": true,
+          "scale": 1
+        },
+        {
+          "id": "guild-notification",
+          "type": "image",
+          "x": 455,
+          "y": 380,
+          "origin": [
+            0.5,
+            0.5
+          ],
+          "depth": 80,
+          "editable": true,
+          "visible": false,
+          "scale": 1
+        }
+      ],
+      "hotspots": [],
+      "templates": {}
+    },
+    "BattleScene": {
+      "viewport": {
+        "width": 1280,
+        "height": 720
+      },
+      "elements": [
+        {
+          "id": "bg",
+          "type": "image",
+          "asset": "bg-battle",
+          "x": 640,
+          "y": 360,
+          "origin": [
+            0.5,
+            0.5
+          ],
+          "depth": -10,
+          "editable": true,
+          "visible": true,
+          "scale": 1
+        },
+        {
+          "id": "playerSpawn",
+          "type": "image",
+          "x": 300,
+          "y": 480,
+          "origin": [
+            0.5,
+            0.5
+          ],
+          "depth": 0,
+          "editable": true,
+          "visible": true,
+          "scale": 1
+        },
+        {
+          "id": "enemySpawn",
+          "type": "image",
+          "x": 900,
+          "y": 480,
+          "origin": [
+            0.5,
+            0.5
+          ],
+          "depth": 0,
+          "editable": true,
+          "visible": true,
+          "scale": 1
+        },
+        {
+          "id": "attackBtn",
+          "type": "image",
+          "x": 640,
+          "y": 660,
+          "origin": [
+            0.5,
+            0.5
+          ],
+          "depth": 50,
+          "editable": true,
+          "visible": true,
+          "scale": 1
+        },
+        {
+          "id": "potionBtn",
+          "type": "image",
+          "x": 480,
+          "y": 660,
+          "origin": [
+            0.5,
+            0.5
+          ],
+          "depth": 0,
+          "editable": true,
+          "visible": true,
+          "scale": 1
+        }
+      ],
+      "hotspots": [],
+      "templates": {},
+      "spawnPoints": {
+        "player": {
+          "x": 300,
+          "y": 480
+        },
+        "pet": {
+          "x": 371,
+          "y": 609
+        },
+        "enemies": {
+          "1": [
+            {
+              "x": 900,
+              "y": 480
+            }
+          ],
+          "2": [
+            {
+              "x": 873,
+              "y": 472
+            },
+            {
+              "x": 970,
+              "y": 560
+            }
+          ],
+          "3": [
+            {
+              "x": 772,
+              "y": 462
+            },
+            {
+              "x": 845,
+              "y": 574
+            },
+            {
+              "x": 982,
+              "y": 503
+            }
+          ]
+        }
+      }
+    },
+    "ArenaScene": {
+      "viewport": {
+        "width": 1280,
+        "height": 720
+      },
+      "elements": [
+        {
+          "id": "bg",
+          "type": "image",
+          "asset": "bg-arena",
+          "x": 640,
+          "y": 360,
+          "origin": [
+            0.5,
+            0.5
+          ],
+          "depth": -10,
+          "editable": true,
+          "visible": true,
+          "scale": 1
+        },
+        {
+          "id": "waveText",
+          "type": "image",
+          "x": 889,
+          "y": 204,
+          "origin": [
+            0.5,
+            0.5
+          ],
+          "depth": 10,
+          "editable": true,
+          "visible": true,
+          "scale": 1
+        },
+        {
+          "id": "startBattleButton",
+          "type": "image",
+          "x": 890,
+          "y": 655,
+          "origin": [
+            0.5,
+            0.5
+          ],
+          "depth": 50,
+          "editable": true,
+          "visible": true,
+          "scale": 1
+        },
+        {
+          "id": "leaveButton",
+          "type": "image",
+          "x": 1065,
+          "y": 655,
+          "origin": [
+            0.5,
+            0.5
+          ],
+          "depth": 50,
+          "editable": true,
+          "visible": true,
+          "scale": 1
+        }
+      ],
+      "hotspots": [],
+      "templates": {},
+      "spawnPoints": {
+        "player": {
+          "x": 216,
+          "y": 563
+        },
+        "pet": {
+          "x": 303,
+          "y": 674
+        },
+        "enemies": {
+          "1": [
+            {
+              "x": 892,
+              "y": 457
+            }
+          ],
+          "2": [
+            {
+              "x": 771,
+              "y": 452
+            },
+            {
+              "x": 1001,
+              "y": 445
+            }
+          ],
+          "3": [
+            {
+              "x": 887,
+              "y": 449
+            },
+            {
+              "x": 414,
+              "y": 359
+            },
+            {
+              "x": 1068,
+              "y": 460
+            }
+          ]
+        }
+      }
+    },
+    "ShopScene": {
+      "viewport": {
+        "width": 1280,
+        "height": 720
+      },
+      "elements": [
+        {
+          "id": "interior",
+          "type": "image",
+          "asset": "interior-shop",
+          "x": 640,
+          "y": 360,
+          "origin": [
+            0.5,
+            0.5
+          ],
+          "depth": -10,
+          "editable": true,
+          "visible": true,
+          "scale": 1
+        },
+        {
+          "id": "tablePouch",
+          "type": "image",
+          "asset": "shop-table-pouch",
+          "x": 938,
+          "y": 632,
+          "origin": [
+            0.5,
+            0.5
+          ],
+          "depth": 5,
+          "editable": true,
+          "visible": true,
+          "scaleX": 0.851,
+          "scaleY": 0.716
+        },
+        {
+          "id": "tableTop",
+          "type": "image",
+          "asset": "shop-table-top",
+          "x": 244,
+          "y": 629,
+          "origin": [
+            0.5,
+            0.5
+          ],
+          "depth": 5,
+          "editable": true,
+          "visible": true,
+          "scaleX": 0.767,
+          "scaleY": 0.729
+        },
+        {
+          "id": "coinTray",
+          "type": "image",
+          "asset": "shop-coin-tray",
+          "x": 493,
+          "y": 589,
+          "origin": [
+            0.5,
+            0.5
+          ],
+          "depth": 5,
+          "editable": true,
+          "visible": true,
+          "scale": 0.368
+        },
+        {
+          "id": "closeButton",
+          "type": "image",
+          "x": 1137,
+          "y": 697,
+          "origin": [
+            0.5,
+            0.5
+          ],
+          "depth": 100,
+          "editable": true,
+          "visible": true,
+          "scale": 1
+        },
+        {
+          "id": "tabWeapons",
+          "type": "container",
+          "x": 120,
+          "y": 50,
+          "origin": [
+            0.5,
+            0.5
+          ],
+          "depth": 20,
+          "editable": true,
+          "visible": true,
+          "scale": 1
+        },
+        {
+          "id": "tabShields",
+          "type": "container",
+          "x": 220,
+          "y": 50,
+          "origin": [
+            0.5,
+            0.5
+          ],
+          "depth": 20,
+          "editable": true,
+          "visible": true,
+          "scale": 1
+        },
+        {
+          "id": "itemSlot0",
+          "type": "container",
+          "x": 80,
+          "y": 120,
+          "origin": [
+            0.5,
+            0.5
+          ],
+          "depth": 20,
+          "editable": true,
+          "visible": true,
+          "scale": 1
+        },
+        {
+          "id": "itemSlot1",
+          "type": "container",
+          "x": 160,
+          "y": 120,
+          "origin": [
+            0.5,
+            0.5
+          ],
+          "depth": 20,
+          "editable": true,
+          "visible": true,
+          "scale": 1
+        },
+        {
+          "id": "itemSlot2",
+          "type": "container",
+          "x": 240,
+          "y": 120,
+          "origin": [
+            0.5,
+            0.5
+          ],
+          "depth": 20,
+          "editable": true,
+          "visible": true,
+          "scale": 1
+        },
+        {
+          "id": "itemSlot3",
+          "type": "container",
+          "x": 320,
+          "y": 120,
+          "origin": [
+            0.5,
+            0.5
+          ],
+          "depth": 20,
+          "editable": true,
+          "visible": true,
+          "scale": 1
+        },
+        {
+          "id": "purchasePanel",
+          "type": "container",
+          "x": 174,
+          "y": 520,
+          "origin": [
+            0.5,
+            0.5
+          ],
+          "depth": 25,
+          "editable": true,
+          "visible": false,
+          "scale": 1,
+          "width": 280,
+          "height": 80
+        },
+        {
+          "id": "purchaseName",
+          "type": "text",
+          "x": 175,
+          "y": 502,
+          "origin": [
+            0,
+            0.5
+          ],
+          "depth": 26,
+          "editable": true,
+          "visible": false,
+          "scale": 1
+        },
+        {
+          "id": "purchasePrice",
+          "type": "text",
+          "x": 175,
+          "y": 550,
+          "origin": [
+            0,
+            0.5
+          ],
+          "depth": 26,
+          "editable": true,
+          "visible": false,
+          "scale": 1
+        },
+        {
+          "id": "strike0",
+          "type": "text",
+          "x": 1150,
+          "y": 70,
+          "origin": [
+            0.5,
+            0.5
+          ],
+          "depth": 30,
+          "editable": true,
+          "visible": true,
+          "scale": 1
+        },
+        {
+          "id": "strike1",
+          "type": "text",
+          "x": 1175,
+          "y": 70,
+          "origin": [
+            0.5,
+            0.5
+          ],
+          "depth": 30,
+          "editable": true,
+          "visible": true,
+          "scale": 1
+        },
+        {
+          "id": "strike2",
+          "type": "text",
+          "x": 1200,
+          "y": 70,
+          "origin": [
+            0.5,
+            0.5
+          ],
+          "depth": 30,
+          "editable": true,
+          "visible": true,
+          "scale": 1
+        },
+        {
+          "id": "labelPlayerCoins",
+          "type": "image",
+          "x": 912,
+          "y": 502,
+          "origin": [
+            0.5,
+            0.5
+          ],
+          "depth": 10,
+          "editable": true,
+          "visible": true,
+          "scale": 1
+        },
+        {
+          "id": "labelPayment",
+          "type": "image",
+          "x": 505,
+          "y": 468,
+          "origin": [
+            0.5,
+            0.5
+          ],
+          "depth": 10,
+          "editable": true,
+          "visible": true,
+          "scale": 1
+        },
+        {
+          "id": "labelTotal",
+          "type": "image",
+          "x": 449,
+          "y": 669,
+          "origin": [
+            0.5,
+            0.5
+          ],
+          "depth": 10,
+          "editable": true,
+          "visible": true,
+          "scale": 1
+        },
+        {
+          "id": "buyButton",
+          "type": "image",
+          "x": 599,
+          "y": 667,
+          "origin": [
+            0.5,
+            0.5
+          ],
+          "depth": 20,
+          "editable": true,
+          "visible": true,
+          "scale": 1
+        }
+      ],
+      "hotspots": [],
+      "templates": {}
+    }
+  }
+}

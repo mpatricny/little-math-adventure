@@ -2,7 +2,8 @@
     {
         "id": "slime_green",
         "name": "Zelený Sliz",
-        "spriteKey": "slime",
+        "spriteKey": "slime-sheet",
+        "animPrefix": "slime",
         "hp": 3,
         "attack": 1,
         "defense": 0,
@@ -13,9 +14,10 @@
     {
         "id": "purple_demon",
         "name": "Fialový démon",
-        "spriteKey": "purple-attack",
-        "hp": 10,
-        "attack": 3,
+        "spriteKey": "purple-attack-sheet",
+        "animPrefix": "purple",
+        "hp": 4,
+        "attack": 2,
         "defense": 0,
         "xpReward": 40,
         "goldReward": [15, 35],
@@ -24,34 +26,25 @@
     {
         "id": "pink_beast",
         "name": "Růžová bestie",
-        "spriteKey": "pink-idle",
-        "hp": 18,
-        "attack": 5,
-        "defense": 1,
+        "spriteKey": "pink-idle-sheet",
+        "animPrefix": "pink",
+        "hp": 10,
+        "attack": 2,
+        "defense": 0,
         "xpReward": 70,
         "goldReward": [30, 55],
-        "difficulty": 4
-    },
-    {
-        "id": "slime_blue",
-        "name": "Modrý Sliz",
-        "spriteKey": "slime",
-        "hp": 50,
-        "attack": 8,
-        "defense": 2,
-        "xpReward": 35,
-        "goldReward": [10, 25],
         "difficulty": 3
     },
     {
-        "id": "slime_red",
-        "name": "Červený Sliz",
-        "spriteKey": "slime",
-        "hp": 80,
-        "attack": 12,
-        "defense": 5,
-        "xpReward": 60,
-        "goldReward": [20, 40],
-        "difficulty": 5
+        "id": "leafy",
+        "name": "Listový Tvor",
+        "spriteKey": "leafy-idle-sheet",
+        "animPrefix": "leafy",
+        "hp": 15,
+        "attack": 3,
+        "defense": 0,
+        "xpReward": 100,
+        "goldReward": [50, 80],
+        "difficulty": 4
     }
 ]

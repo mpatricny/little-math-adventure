@@ -1,0 +1,92 @@
+[
+    {
+        "id": "pet_slime",
+        "name": "Slizáček",
+        "spriteKey": "slime-sheet",
+        "animPrefix": "slime",
+        "unlockedByEnemy": "slime_green",
+        "cost": {
+            "common": 3,
+            "red": 0,
+            "green": 0
+        },
+        "mathProblemType": "addition",
+        "mathProblemMax": 3,
+        "damageMultiplier": 1
+    },
+    {
+        "id": "pet_porcupine",
+        "name": "Bodlinka",
+        "spriteKey": "pet-porcupine-sheet",
+        "animPrefix": "porcupine",
+        "unlockedByArenaLevel": 1,
+        "cost": {
+            "common": 1,
+            "red": 1,
+            "green": 1
+        },
+        "mathProblemType": "addition",
+        "mathProblemMax": 3,
+        "damageMultiplier": 1
+    },
+    {
+        "id": "pet_demon",
+        "name": "Démonek",
+        "spriteKey": "purple-attack-sheet",
+        "animPrefix": "purple",
+        "unlockedByEnemy": "purple_demon",
+        "cost": {
+            "common": 2,
+            "red": 2,
+            "green": 0
+        },
+        "mathProblemType": "subtraction",
+        "mathProblemMax": 5,
+        "damageMultiplier": 1
+    },
+    {
+        "id": "pet_beast",
+        "name": "Růžáček",
+        "spriteKey": "pink-idle-sheet",
+        "animPrefix": "pink",
+        "unlockedByEnemy": "pink_beast",
+        "cost": {
+            "common": 0,
+            "red": 3,
+            "green": 1
+        },
+        "mathProblemType": "subtraction",
+        "mathProblemMax": 8,
+        "damageMultiplier": 2
+    },
+    {
+        "id": "pet_leafy",
+        "name": "Lístek",
+        "spriteKey": "leafy-idle-sheet",
+        "animPrefix": "leafy",
+        "unlockedByEnemy": "leafy",
+        "cost": {
+            "common": 0,
+            "red": 0,
+            "green": 3
+        },
+        "mathProblemType": "threeOperand",
+        "mathProblemMax": 8,
+        "damageMultiplier": 2
+    },
+    {
+        "id": "pet_porcupine2",
+        "name": "Bodlina",
+        "spriteKey": "pet-porcupine-2",
+        "animPrefix": "porcupine2",
+        "unlockedByArenaLevel": 3,
+        "cost": {
+            "common": 3,
+            "red": 0,
+            "green": 0
+        },
+        "mathProblemType": "subtraction",
+        "mathProblemMax": 5,
+        "damageMultiplier": 2
+    }
+]

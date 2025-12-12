@@ -1,0 +1,105 @@
+{
+    "version": "1.0",
+    "language": "en",
+    "ui": {
+        "buttons": {
+            "BTN_001": "ATTACK",
+            "BTN_002": "BLOCK",
+            "BTN_003": "BACK",
+            "BTN_004": "CONTINUE",
+            "BTN_005": "NEW GAME",
+            "BTN_006": "LOAD GAME",
+            "BTN_007": "HEAL",
+            "BTN_008": "BUY",
+            "BTN_009": "SELECT"
+        },
+        "labels": {
+            "LBL_001": "HEALTH",
+            "LBL_002": "ATTACK",
+            "LBL_003": "DEFENSE",
+            "LBL_004": "LEVEL",
+            "LBL_005": "EXPERIENCE",
+            "LBL_006": "GOLD",
+            "LBL_007": "TIME",
+            "LBL_008": "BLOCKING",
+            "LBL_009": "WAVE",
+            "LBL_010": "PROBLEM",
+            "LBL_011": "YOUR MONEY",
+            "LBL_012": "PAYMENT",
+            "LBL_013": "TOTAL",
+            "LBL_014": "TODAY",
+            "LBL_015": "ALL TIME"
+        },
+        "titles": {
+            "TTL_001": "ARENA",
+            "TTL_002": "LEARNING OVERVIEW",
+            "TTL_003": "WITCH'S HUT",
+            "TTL_004": "HEALING",
+            "TTL_005": "PETS",
+            "TTL_006": "YOUR DIAMONDS",
+            "TTL_GAME_TITLE": "LITTLE MATH ADVENTURE",
+            "TTL_GAME_SUBTITLE": "MATH ADVENTURE"
+        },
+        "messages": {
+            "MSG_001": "VICTORY!",
+            "MSG_002": "DEFEAT",
+            "MSG_003": "BLOCKED!",
+            "MSG_004": "COMING SOON...",
+            "MSG_005": "STATUS: HEALTHY",
+            "MSG_006": "STATUS: INJURED",
+            "MSG_007": "I SEE YOU'VE GROWN STRONGER.\nSHOW ME WHAT YOU CAN DO!"
+        }
+    },
+    "buildings": {
+        "BLD_001": "WITCH",
+        "BLD_002": "GUILD",
+        "BLD_003": "TAVERN",
+        "BLD_004": "SHOP"
+    },
+    "items": {
+        "weapons": {
+            "WPN_001": "Wooden Sword",
+            "WPN_002": "Iron Sword",
+            "WPN_003": "Steel Sword"
+        },
+        "armor": {
+            "ARM_001": "Wooden Shield",
+            "ARM_002": "Iron Shield",
+            "ARM_003": "Steel Shield"
+        },
+        "currency": {
+            "CUR_001": "copper",
+            "CUR_002": "silver",
+            "CUR_003": "gold"
+        }
+    },
+    "characters": {
+        "enemies": {
+            "ENM_001": "Slime",
+            "ENM_002": "Pinky",
+            "ENM_003": "Purple",
+            "ENM_004": "Leafy"
+        },
+        "npcs": {
+            "NPC_001": "Blacksmith",
+            "NPC_002": "Guildmaster"
+        },
+        "player": {
+            "PLR_001": "Knight"
+        }
+    },
+    "stats": {
+        "STT_001": "HP",
+        "STT_002": "attack",
+        "STT_003": "defense",
+        "STT_004": "block",
+        "STT_005": "block time"
+    },
+    "formats": {
+        "FMT_001": "{0}/{1}",
+        "FMT_002": "TIME: {0}S",
+        "FMT_003": "WAVE {0}",
+        "FMT_004": "TOTAL: {0} copper",
+        "FMT_005": "LEVEL: {0}   |   CYCLE: {1}   |   {2}%"
+    }
+}

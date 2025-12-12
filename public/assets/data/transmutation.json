@@ -1,0 +1,14 @@
+{
+    "recipes": [
+        {
+            "input": ["common", "common"],
+            "output": "red",
+            "description": "2× Běžný diamant → 1× Červený diamant"
+        },
+        {
+            "input": ["red", "red"],
+            "output": "green",
+            "description": "2× Červený diamant → 1× Zelený diamant"
+        }
+    ]
+}

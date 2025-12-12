@@ -1,0 +1,270 @@
+{
+  "ArenaScene": {
+    "hero": {
+      "x": 235,
+      "y": 575,
+      "scale": 0.7900000000000003,
+      "depth": 0,
+      "width": 237.00000000000009,
+      "height": 237.00000000000009
+    },
+    "waveText": {
+      "x": 400,
+      "y": 40,
+      "scale": 1,
+      "depth": 0,
+      "width": 145,
+      "height": 38.890625
+    },
+    "startBattleButton": {
+      "x": 890,
+      "y": 655,
+      "scale": 1,
+      "depth": 0,
+      "width": 0,
+      "height": 0
+    },
+    "leaveButton": {
+      "x": 1065,
+      "y": 655,
+      "scale": 1,
+      "depth": 0,
+      "width": 0,
+      "height": 0
+    },
+    "enemy0": {
+      "x": 850,
+      "y": 425,
+      "scale": 1.3500000000000003,
+      "depth": 0,
+      "width": 0,
+      "height": 0
+    }
+  },
+  "BattleScene": {
+    "hero": {
+      "x": 300,
+      "y": 480,
+      "scale": 1,
+      "depth": 0,
+      "width": 0,
+      "height": 0
+    },
+    "enemy0": {
+      "x": 695,
+      "y": 445,
+      "scale": 1,
+      "depth": 0,
+      "width": 0,
+      "height": 0
+    },
+    "enemy1": {
+      "x": 820,
+      "y": 545,
+      "scale": 1,
+      "depth": 0,
+      "width": 0,
+      "height": 0
+    },
+    "attackButton": {
+      "x": 0,
+      "y": 0,
+      "scale": 1,
+      "depth": 0,
+      "width": 0,
+      "height": 0
+    },
+    "mathBoard": {
+      "x": 640,
+      "y": 200,
+      "scale": 1,
+      "depth": 100,
+      "width": 0,
+      "height": 0
+    }
+  },
+  "ShopScene": {
+    "purchasePanel": {
+      "x": 550,
+      "y": 125,
+      "scale": 1,
+      "depth": 0
+    },
+    "tableContainer": {
+      "x": 405,
+      "y": 510,
+      "scale": 1.1500000000000001,
+      "depth": 0
+    },
+    "inventoryTable": {
+      "x": 175,
+      "y": 520,
+      "scale": 0.2734375,
+      "depth": 0,
+      "width": 280,
+      "height": 200
+    },
+    "paymentTray": {
+      "x": 650,
+      "y": 420,
+      "scale": 1,
+      "depth": 0
+    }
+  },
+  "TownScene": {
+    "witch": {
+      "x": 220,
+      "y": 670,
+      "scale": 0.224,
+      "depth": 0,
+      "width": 229.376,
+      "height": 229.376
+    },
+    "guild": {
+      "x": 455,
+      "y": 700,
+      "scale": 0.224,
+      "depth": 0,
+      "width": 229.376,
+      "height": 229.376
+    },
+    "tavern": {
+      "x": 655,
+      "y": 665,
+      "scale": 0.224,
+      "depth": 0,
+      "width": 229.376,
+      "height": 229.376
+    },
+    "shop": {
+      "x": 880,
+      "y": 670,
+      "scale": 0.184,
+      "depth": 0,
+      "width": 188.416,
+      "height": 188.416
+    },
+    "knight": {
+      "x": 80,
+      "y": 675,
+      "scale": 0.4,
+      "depth": 0,
+      "width": 120,
+      "height": 120
+    },
+    "bgGrass": {
+      "x": 0,
+      "y": 685,
+      "scale": 1,
+      "depth": 0,
+      "width": 2560,
+      "height": 80
+    },
+    "fgGrass": {
+      "x": 0,
+      "y": 705,
+      "scale": 1.02,
+      "depth": 0,
+      "width": 2611.2,
+      "height": 71.4
+    },
+    "background": {
+      "x": 0,
+      "y": 0,
+      "scale": 1,
+      "depth": 0,
+      "width": 2560,
+      "height": 720
+    }
+  },
+  "GuildScene": {
+    "guildmaster": {
+      "x": 200,
+      "y": 200,
+      "scale": 0.4,
+      "depth": 0,
+      "width": 353.20000000000005,
+      "height": 353.20000000000005
+    },
+    "title": {
+      "x": 815,
+      "y": 35,
+      "scale": 1,
+      "depth": 0,
+      "width": 233,
+      "height": 34.529296875
+    },
+    "statsPanel": {
+      "x": 815,
+      "y": 85,
+      "scale": 1,
+      "depth": 0,
+      "width": 0,
+      "height": 0
+    },
+    "resultsTable": {
+      "x": 815,
+      "y": 420,
+      "scale": 0.6740625000000001,
+      "depth": 5,
+      "width": 517.6800000000001,
+      "height": 665.3599999999999
+    },
+    "listPanel": {
+      "x": 845,
+      "y": 345,
+      "scale": 1,
+      "depth": 10,
+      "width": 0,
+      "height": 0
+    },
+    "backButton": {
+      "x": 200,
+      "y": 650,
+      "scale": 1,
+      "depth": 0,
+      "width": 0,
+      "height": 0
+    },
+    "totalStats": {
+      "x": 825,
+      "y": 555,
+      "scale": 1.1,
+      "depth": 15,
+      "width": 0,
+      "height": 0
+    },
+    "collectButton": {
+      "x": 985,
+      "y": 550,
+      "scale": 1.0181762016120517,
+      "depth": 15,
+      "width": 0,
+      "height": 0
+    },
+    "timerFrame": {
+      "x": 0,
+      "y": -180,
+      "scale": 0.16773897058823528,
+      "depth": 0,
+      "width": 365,
+      "height": 91
+    },
+    "timerBar": {
+      "x": -145,
+      "y": -180,
+      "scale": 1,
+      "depth": 0,
+      "width": 290,
+      "height": 50
+    },
+    "timerBg": {
+      "x": 0,
+      "y": -180,
+      "scale": 1,
+      "depth": 0,
+      "width": 290,
+      "height": 50
+    }
+  }
+}

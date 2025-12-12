@@ -1,10 +1,33 @@
 import Phaser from 'phaser';
 import { ItemDefinition, ItemType } from '../types';
 import { GameStateManager } from '../systems/GameStateManager';
-import { MathEngine } from '../systems/MathEngine';
-import { MathBoard } from '../ui/MathBoard';
+import { SceneDebugger } from '../systems/SceneDebugger';
+import { SceneBuilder } from '../systems/SceneBuilder';
 
-type ShopCategory = 'weapon' | 'shield' | 'helmet';
+type ShopCategory = 'weapon' | 'shield';
+
+// Coin type definitions
+interface CoinType {
+    key: 'smallCopper' | 'largeCopper' | 'silver' | 'gold';
+    value: number;
+    frame: number;  // Frame in spritesheet
+    name: string;
+}
+
+const COIN_TYPES: CoinType[] = [
+    { key: 'smallCopper', value: 1, frame: 0, name: 'Měďák' },
+    { key: 'largeCopper', value: 2, frame: 2, name: 'Velký měďák' },
+    { key: 'silver', value: 5, frame: 4, name: 'Stříbrňák' },
+    { key: 'gold', value: 50, frame: 6, name: 'Zlaťák' },
+];
+
+// Draggable coin sprite
+interface DraggableCoin extends Phaser.GameObjects.Image {
+    coinType: CoinType;
+    originX: number;
+    originY: number;
+    inPaymentArea: boolean;
+}
 
 export class ShopScene extends Phaser.Scene {
     private gameState!: GameStateManager;
@@ -13,16 +36,25 @@ export class ShopScene extends Phaser.Scene {
     private selectedItem: ItemDefinition | null = null;
 
     // UI Elements
-    private goldText!: Phaser.GameObjects.Text;
     private categoryTabs: Map<ShopCategory, Phaser.GameObjects.Container> = new Map();
     private itemSlots: Phaser.GameObjects.Container[] = [];
-    private detailPanel!: Phaser.GameObjects.Container;
-    private inventoryContainer!: Phaser.GameObjects.Container;
-    private mathBoard!: MathBoard;
-    private mathEngine!: MathEngine;
-    private isDiscountMode: boolean = false;
-    private discountPrice: number = 0;
-    private isSellMode: boolean = false;
+    private purchasePanel!: Phaser.GameObjects.Container;
+    private tableContainer!: Phaser.GameObjects.Container;
+    private paymentTray!: Phaser.GameObjects.Container;
+    private paymentArea!: Phaser.GameObjects.Rectangle;
+    private tableArea!: Phaser.GameObjects.Rectangle;
+
+    // Coin management
+    private playerCoins: DraggableCoin[] = [];
+    private paymentCoins: DraggableCoin[] = [];
+    private draggedCoin: DraggableCoin | null = null;
+
+
+    // Universal debugger
+    private debugger!: SceneDebugger;
+
+    // Scene Builder
+    private sceneBuilder!: SceneBuilder;
 
     constructor() {
         super({ key: 'ShopScene' });
@@ -31,355 +63,330 @@ export class ShopScene extends Phaser.Scene {
     create(): void {
         this.gameState = GameStateManager.getInstance();
         this.allItems = this.cache.json.get('items') as ItemDefinition[];
-        this.mathEngine = new MathEngine(this.registry);
 
-        // Background
-        this.add.image(400, 300, 'shop-interior').setDisplaySize(800, 600);
+        // Reset arrays (important for scene re-entry)
+        this.categoryTabs.clear();
+        this.itemSlots = [];
+        this.playerCoins = [];
+        this.paymentCoins = [];
+        this.draggedCoin = null;
+        this.selectedItem = null;
 
-        // Player inventory (left side)
-        this.createPlayerInventory();
+        // Initialize SceneBuilder
+        this.sceneBuilder = new SceneBuilder(this);
 
-        // Gold display
-        this.createGoldDisplay();
+        // Register handlers before building
+        this.sceneBuilder.registerHandler('onBuy', () => this.attemptPurchase());
 
-        // Close button
-        this.createCloseButton();
+        this.sceneBuilder.buildScene();
 
-        // Category tabs
-        this.createCategoryTabs();
+        // Get purchase panel from SceneBuilder and set up references
+        this.setupPurchasePanel();
 
-        // Item grid
-        this.createItemGrid();
+        // Get table elements
+        const tablePouch = this.sceneBuilder.get('tablePouch') as Phaser.GameObjects.Image;
+        const tableTop = this.sceneBuilder.get('tableTop') as Phaser.GameObjects.Image;
+        const coinTray = this.sceneBuilder.get('coinTray') as Phaser.GameObjects.Image;
 
-        // Detail panel (hidden initially)
-        this.createDetailPanel();
+        // Setup areas based on positions
+        this.setupAreas(tablePouch, tableTop, coinTray);
 
-        // Math board for discount
-        this.mathBoard = new MathBoard(this, this.onDiscountAnswer.bind(this));
+        // Category tabs and item grid - use SceneBuilder elements
+        this.setupCategoryTabs();
+        this.setupItemSlots();
 
         // Show initial category
         this.showCategory('weapon');
+
+        // Setup drag handling
+        this.setupDragHandling();
+
+        // Setup debugger
+        this.setupDebugger();
     }
 
-    private createPlayerInventory(): void {
-        // Create container for inventory (so we can refresh it)
-        this.inventoryContainer = this.add.container(0, 0);
-        this.refreshPlayerInventory();
-    }
+    private setupAreas(tablePouch: Phaser.GameObjects.Image, tableTop: Phaser.GameObjects.Image, coinTray: Phaser.GameObjects.Image): void {
+        // Table area
+        if (tablePouch && tableTop) {
+            const minX = Math.min(tablePouch.x, tableTop.x) - 150;
+            const maxX = Math.max(tablePouch.x, tableTop.x) + 150;
+            const avgY = (tablePouch.y + tableTop.y) / 2;
+            this.tableArea = this.add.rectangle((minX + maxX) / 2, avgY, maxX - minX, 240, 0x000000, 0);
 
-    private refreshPlayerInventory(): void {
-        // Clear existing content
-        this.inventoryContainer.removeAll(true);
+            // Store table container reference for coin spawning relative position
+            this.tableContainer = this.add.container(tablePouch.x, tablePouch.y);
+        } else {
+            // Fallback if elements missing
+            this.tableArea = this.add.rectangle(600, 600, 600, 200, 0x000000, 0);
+            this.tableContainer = this.add.container(600, 600);
+        }
 
-        const player = this.gameState.getPlayer();
+        // Payment area - covers the entire coin tray
+        if (coinTray) {
+            this.paymentTray = this.add.container(coinTray.x, coinTray.y);
+            const trayWidth = 280 * coinTray.scale;
+            const trayHeight = 200 * coinTray.scale;
+            this.paymentArea = this.add.rectangle(coinTray.x, coinTray.y, trayWidth, trayHeight, 0x000000, 0);
 
-        // Inventory background
-        const invBg = this.add.rectangle(130, 320, 200, 280, 0x000000, 0.7)
-            .setStrokeStyle(2, 0x8a7a6a);
-        this.inventoryContainer.add(invBg);
-
-        // Title
-        const title = this.add.text(130, 195, 'VÝBAVA (PRODEJ)', {
-            fontSize: '16px',
-            fontFamily: 'Arial, sans-serif',
-            color: '#ffd700',
-            fontStyle: 'bold',
-        }).setOrigin(0.5);
-        this.inventoryContainer.add(title);
-
-        // Equipment slots
-        const slotY = 250;
-        const slotSpacing = 70;
-
-        // Weapon slot
-        this.createEquipmentSlot(130, slotY, 'MEČ', player.equippedWeapon, 'weapon');
-
-        // Shield slot
-        this.createEquipmentSlot(130, slotY + slotSpacing, 'ŠTÍT', player.equippedShield, 'shield');
-
-        // Helmet slot
-        this.createEquipmentSlot(130, slotY + slotSpacing * 2, 'HELMA', player.equippedHelmet, 'helmet');
-
-        // Stats display
-        const atkText = this.add.text(130, 440, `ÚTOK: ${player.attack}`, {
-            fontSize: '14px',
-            fontFamily: 'Arial, sans-serif',
-            color: '#aaffaa',
-        }).setOrigin(0.5);
-        this.inventoryContainer.add(atkText);
-
-        const defText = this.add.text(130, 460, `OBRANA: ${player.defense}`, {
-            fontSize: '14px',
-            fontFamily: 'Arial, sans-serif',
-            color: '#88aaff',
-        }).setOrigin(0.5);
-        this.inventoryContainer.add(defText);
-    }
-
-    private createEquipmentSlot(x: number, y: number, label: string, itemId: string | null, type: string): void {
-        // Slot background
-        const slotBg = this.add.rectangle(x, y, 60, 60, 0x3a3a2a, 0.8)
-            .setStrokeStyle(2, 0x6a6a5a);
-        this.inventoryContainer.add(slotBg);
-
-        // Label
-        const labelText = this.add.text(x, y - 40, label, {
-            fontSize: '12px',
-            fontFamily: 'Arial, sans-serif',
-            color: '#aaaaaa',
-        }).setOrigin(0.5);
-        this.inventoryContainer.add(labelText);
-
-        // Item icon if equipped
-        if (itemId) {
-            const item = this.allItems.find(i => i.id === itemId);
-            if (item && item.spriteKey) {
-                const icon = this.add.image(x, y, item.spriteKey, item.iconFrame);
-                if (type === 'weapon') {
-                    icon.setDisplaySize(40, 55);
-                } else {
-                    icon.setDisplaySize(50, 50);
-                }
-                this.inventoryContainer.add(icon);
-
-                // Make slot clickable for selling
-                slotBg.setInteractive({ useHandCursor: true });
-                slotBg.on('pointerdown', () => this.onEquippedItemClicked(item));
-                slotBg.on('pointerover', () => slotBg.setStrokeStyle(3, 0xffaa00));
-                slotBg.on('pointerout', () => slotBg.setStrokeStyle(2, 0x6a6a5a));
+            // Link total text
+            const totalText = this.sceneBuilder.get('labelTotal') as Phaser.GameObjects.Text;
+            if (totalText) {
+                this.paymentTray.setData('totalText', totalText);
             }
         } else {
-            // Empty slot indicator
-            const empty = this.add.text(x, y, '—', {
-                fontSize: '24px',
-                fontFamily: 'Arial, sans-serif',
-                color: '#555555',
-            }).setOrigin(0.5);
-            this.inventoryContainer.add(empty);
+            this.paymentTray = this.add.container(300, 600);
+            this.paymentArea = this.add.rectangle(300, 600, 200, 150, 0x000000, 0);
         }
+
+        // Spawn coins
+        this.spawnPlayerCoins();
     }
 
-    private onEquippedItemClicked(item: ItemDefinition): void {
-        this.selectedItem = item;
-        this.isSellMode = true;
-        this.updateDetailPanel();
-        this.detailPanel.setVisible(true);
+    private setupDebugger(): void {
+        this.debugger = new SceneDebugger(this, 'ShopScene');
+        // Register elements if needed
     }
 
-    private createGoldDisplay(): void {
-        const player = this.gameState.getPlayer();
-        const bg = this.add.rectangle(100, 30, 160, 40, 0x000000, 0.7).setStrokeStyle(2, 0xffd700);
-        this.goldText = this.add.text(100, 30, `${player.gold} ZL`, {
-            fontSize: '20px',
+    private setupPurchasePanel(): void {
+        // Get purchase panel position and depth from layout override
+        const panelLayout = this.sceneBuilder.getLayoutOverride('purchasePanel');
+
+        const panelX = panelLayout?.x ?? 900;
+        const panelY = panelLayout?.y ?? 120;
+        const panelDepth = panelLayout?.depth ?? 25;
+
+        // Create the container at the JSON-defined position
+        // (We create our own because we need to add dynamic children)
+        this.purchasePanel = this.add.container(panelX, panelY);
+        this.purchasePanel.setDepth(panelDepth);
+        this.purchasePanel.setVisible(false);
+
+        // Background
+        const bg = this.add.rectangle(0, 0, 280, 80, 0x2a2a1a, 0.95)
+            .setStrokeStyle(3, 0x8a7a6a);
+        this.purchasePanel.add(bg);
+
+        // Item name - relative position within the container
+        const nameText = this.add.text(-100, -20, '', {
+            fontSize: '18px',
             fontFamily: 'Arial, sans-serif',
             color: '#ffd700',
             fontStyle: 'bold',
-        }).setOrigin(0.5);
-    }
+        }).setOrigin(0, 0.5);
+        this.purchasePanel.add(nameText);
+        this.purchasePanel.setData('nameText', nameText);
 
-    private createCloseButton(): void {
-        const btn = this.add.text(760, 30, '✕', {
-            fontSize: '32px',
+        // Price - relative position within the container
+        const priceText = this.add.text(-100, 10, '', {
+            fontSize: '16px',
             fontFamily: 'Arial, sans-serif',
-            color: '#ff6666',
-            fontStyle: 'bold',
-        }).setOrigin(0.5).setInteractive({ useHandCursor: true });
+            color: '#ffaa00',
+        }).setOrigin(0, 0.5);
+        this.purchasePanel.add(priceText);
+        this.purchasePanel.setData('priceText', priceText);
 
-        btn.on('pointerover', () => btn.setColor('#ffffff'));
-        btn.on('pointerout', () => btn.setColor('#ff6666'));
-        btn.on('pointerdown', () => this.scene.start('TownScene'));
+        // Item icon - relative position within the container
+        const itemIcon = this.add.image(100, 0, 'shop-swords-sheet', 0)
+            .setDisplaySize(50, 60);
+        this.purchasePanel.add(itemIcon);
+        this.purchasePanel.setData('itemIcon', itemIcon);
     }
 
-    private createCategoryTabs(): void {
-        const categories: { key: ShopCategory; label: string }[] = [
-            { key: 'weapon', label: 'MEČE' },
-            { key: 'shield', label: 'ŠTÍTY' },
-            { key: 'helmet', label: 'HELMY' },
+    private setupCategoryTabs(): void {
+        const categories: { key: ShopCategory; elementId: string }[] = [
+            { key: 'weapon', elementId: 'tabWeapons' },
+            { key: 'shield', elementId: 'tabShields' },
         ];
 
-        const startX = 500;
-        const tabWidth = 90;
+        categories.forEach((cat) => {
+            // Get tab from SceneBuilder (created as button Container)
+            const tabElement = this.sceneBuilder.get(cat.elementId) as Phaser.GameObjects.Container;
 
-        categories.forEach((cat, index) => {
-            const x = startX + index * (tabWidth + 10);
-            const container = this.add.container(x, 80);
+            if (tabElement) {
+                // Tab created by SceneBuilder, set up interactions
+                const bg = (tabElement.list as Phaser.GameObjects.GameObject[])[0] as Phaser.GameObjects.Rectangle;
+                tabElement.setData('bg', bg);
 
-            const bg = this.add.rectangle(0, 0, tabWidth, 35, 0x5a4a3a)
-                .setStrokeStyle(2, 0x8a7a6a)
-                .setInteractive({ useHandCursor: true });
-
-            const text = this.add.text(0, 0, cat.label, {
-                fontSize: '16px',
-                fontFamily: 'Arial, sans-serif',
-                color: '#ffffff',
-                fontStyle: 'bold',
-            }).setOrigin(0.5);
-
-            container.add([bg, text]);
-            container.setData('bg', bg);
-            container.setData('text', text);
-
-            bg.on('pointerdown', () => this.showCategory(cat.key));
-            bg.on('pointerover', () => {
-                if (this.currentCategory !== cat.key) {
-                    bg.setFillStyle(0x7a6a5a);
+                if (bg) {
+                    bg.on('pointerdown', () => {
+                        this.showCategory(cat.key);
+                    });
+                    bg.on('pointerover', () => {
+                        if (this.currentCategory !== cat.key) bg.setFillStyle(0x7a6a5a);
+                    });
+                    bg.on('pointerout', () => {
+                        if (this.currentCategory !== cat.key) bg.setFillStyle(0x5a4a3a);
+                    });
                 }
-            });
-            bg.on('pointerout', () => {
-                if (this.currentCategory !== cat.key) {
-                    bg.setFillStyle(0x5a4a3a);
-                }
-            });
 
-            this.categoryTabs.set(cat.key, container);
+                this.categoryTabs.set(cat.key, tabElement);
+            }
         });
     }
 
-    private createItemGrid(): void {
-        const startX = 470;
-        const startY = 150;
-        const slotSize = 80;
-        const padding = 10;
+    private setupItemSlots(): void {
+        const slotSize = 70;
 
         for (let i = 0; i < 4; i++) {
-            const x = startX + (i % 4) * (slotSize + padding);
-            const y = startY;
+            const slotId = `itemSlot${i}`;
+            const slotElement = this.sceneBuilder.get(slotId) as Phaser.GameObjects.Container;
 
-            const container = this.add.container(x, y);
+            if (slotElement) {
+                // Slot created by SceneBuilder, add icon and set up interactions
+                const bg = (slotElement.list as Phaser.GameObjects.GameObject[])[0] as Phaser.GameObjects.Rectangle;
 
-            const bg = this.add.rectangle(0, 0, slotSize, slotSize, 0x3a3a2a, 0.8)
-                .setStrokeStyle(2, 0x6a6a5a)
-                .setInteractive({ useHandCursor: true });
+                const icon = this.add.image(0, 0, 'shop-swords-sheet', 0)
+                    .setDisplaySize(slotSize - 10, slotSize - 10)
+                    .setVisible(false);
+                slotElement.add(icon);
 
-            const icon = this.add.image(0, 0, 'shop-swords', 0)
-                .setDisplaySize(slotSize - 10, slotSize - 10)
-                .setVisible(false);
+                slotElement.setData('bg', bg);
+                slotElement.setData('icon', icon);
+                slotElement.setData('index', i);
 
-            container.add([bg, icon]);
-            container.setData('bg', bg);
-            container.setData('icon', icon);
-            container.setData('index', i);
+                if (bg) {
+                    bg.on('pointerdown', () => {
+                        this.onSlotClicked(i);
+                    });
+                    bg.on('pointerover', () => bg.setStrokeStyle(3, 0xffd700));
+                    bg.on('pointerout', () => bg.setStrokeStyle(2, 0x6a6a5a));
+                }
 
-            bg.on('pointerdown', () => this.onSlotClicked(i));
-            bg.on('pointerover', () => bg.setStrokeStyle(3, 0xffd700));
-            bg.on('pointerout', () => bg.setStrokeStyle(2, 0x6a6a5a));
-
-            this.itemSlots.push(container);
+                this.itemSlots.push(slotElement);
+            }
         }
     }
 
-    private createDetailPanel(): void {
-        this.detailPanel = this.add.container(580, 350);
-        this.detailPanel.setVisible(false);
+    private spawnPlayerCoins(): void {
+        // Clear existing coins
+        this.playerCoins.forEach(coin => coin.destroy());
+        this.playerCoins = [];
 
-        // Background
-        const bg = this.add.rectangle(0, 0, 280, 200, 0x2a2a1a, 0.95)
-            .setStrokeStyle(3, 0x8a7a6a);
-        this.detailPanel.add(bg);
+        const player = this.gameState.getPlayer();
 
-        // Item name
-        const nameText = this.add.text(0, -70, '', {
-            fontSize: '20px',
-            fontFamily: 'Arial, sans-serif',
-            color: '#ffd700',
-            fontStyle: 'bold',
-        }).setOrigin(0.5);
-        this.detailPanel.add(nameText);
-        this.detailPanel.setData('nameText', nameText);
+        // Fallback to relative positioning from table
+        const spawnX = this.tableContainer ? this.tableContainer.x - 100 : 838;
+        const spawnY = this.tableContainer ? this.tableContainer.y - 50 : 582;
 
-        // Item stats
-        const statsText = this.add.text(0, -35, '', {
-            fontSize: '16px',
-            fontFamily: 'Arial, sans-serif',
-            color: '#aaffaa',
-        }).setOrigin(0.5);
-        this.detailPanel.add(statsText);
-        this.detailPanel.setData('statsText', statsText);
+        // Spawn coins for each type within the spawn area
+        let coinIndex = 0;
+        COIN_TYPES.forEach(coinType => {
+            const count = player.coins[coinType.key];
+            for (let i = 0; i < count; i++) {
+                // Arrange coins in a grid pattern within spawn area
+                const col = coinIndex % 6;
+                const row = Math.floor(coinIndex / 6);
+                const x = spawnX + col * 35 + Phaser.Math.Between(-5, 5);
+                const y = spawnY + row * 35 + Phaser.Math.Between(-5, 5);
 
-        // Price
-        const priceText = this.add.text(0, 0, '', {
-            fontSize: '18px',
-            fontFamily: 'Arial, sans-serif',
-            color: '#ffffff',
-        }).setOrigin(0.5);
-        this.detailPanel.add(priceText);
-        this.detailPanel.setData('priceText', priceText);
+                const coin = this.createDraggableCoin(x, y, coinType);
+                this.playerCoins.push(coin);
+                coinIndex++;
+            }
+        });
+    }
 
-        // Buy button
-        const buyBtn = this.add.rectangle(-50, 50, 100, 40, 0x44aa44)
-            .setStrokeStyle(2, 0x66cc66)
-            .setInteractive({ useHandCursor: true });
-        const buyText = this.add.text(-50, 50, 'KOUPIT', {
-            fontSize: '16px',
-            fontFamily: 'Arial, sans-serif',
-            color: '#ffffff',
-            fontStyle: 'bold',
-        }).setOrigin(0.5);
-        this.detailPanel.add([buyBtn, buyText]);
-        this.detailPanel.setData('buyBtn', buyBtn);
+    private createDraggableCoin(x: number, y: number, coinType: CoinType): DraggableCoin {
+        const coin = this.add.image(x, y, 'shop-coins-sheet', coinType.frame) as DraggableCoin;
+        coin.setDisplaySize(40, 40);
+        coin.setInteractive({ useHandCursor: true });
+        this.input.setDraggable(coin);  // Call separately for reliable drag behavior
+        coin.coinType = coinType;
+        coin.originX = x;
+        coin.originY = y;
+        coin.inPaymentArea = false;
+        coin.setDepth(100);
+        return coin;
+    }
 
-        buyBtn.on('pointerdown', () => this.buyItem(false));
-        buyBtn.on('pointerover', () => buyBtn.setFillStyle(0x55bb55));
-        buyBtn.on('pointerout', () => buyBtn.setFillStyle(0x44aa44));
+    private setupDragHandling(): void {
+        this.input.on('dragstart', (pointer: Phaser.Input.Pointer, gameObject: DraggableCoin) => {
+            this.draggedCoin = gameObject;
+            gameObject.setDepth(200);
+            gameObject.setDisplaySize(48, 48);  // Use setDisplaySize instead of setScale
+        });
 
-        // Discount button
-        const discountBtn = this.add.rectangle(60, 50, 100, 40, 0x4488cc)
-            .setStrokeStyle(2, 0x66aaee)
-            .setInteractive({ useHandCursor: true });
-        const discountText = this.add.text(60, 50, 'SLEVA?', {
-            fontSize: '16px',
-            fontFamily: 'Arial, sans-serif',
-            color: '#ffffff',
-            fontStyle: 'bold',
-        }).setOrigin(0.5);
-        this.detailPanel.add([discountBtn, discountText]);
-        this.detailPanel.setData('discountBtn', discountBtn);
+        this.input.on('drag', (pointer: Phaser.Input.Pointer, gameObject: DraggableCoin, dragX: number, dragY: number) => {
+            gameObject.x = dragX;
+            gameObject.y = dragY;
+        });
 
-        discountBtn.on('pointerdown', () => this.startDiscountChallenge());
-        discountBtn.on('pointerover', () => discountBtn.setFillStyle(0x5599dd));
-        discountBtn.on('pointerout', () => discountBtn.setFillStyle(0x4488cc));
+        this.input.on('dragend', (pointer: Phaser.Input.Pointer, gameObject: DraggableCoin) => {
+            gameObject.setDisplaySize(40, 40);  // Use setDisplaySize instead of setScale
+            gameObject.setDepth(100);
 
-        // Sell button (for selling equipped items)
-        const sellBtn = this.add.rectangle(0, 50, 120, 40, 0xcc6644)
-            .setStrokeStyle(2, 0xee8866)
-            .setInteractive({ useHandCursor: true });
-        const sellText = this.add.text(0, 50, 'PRODAT', {
-            fontSize: '16px',
-            fontFamily: 'Arial, sans-serif',
-            color: '#ffffff',
-            fontStyle: 'bold',
-        }).setOrigin(0.5);
-        this.detailPanel.add([sellBtn, sellText]);
-        this.detailPanel.setData('sellBtn', sellBtn);
-        this.detailPanel.setData('sellText', sellText);
+            // Check if dropped in payment area or table area
+            const inPayment = this.paymentArea.getBounds().contains(gameObject.x, gameObject.y);
+            const inTable = this.tableArea.getBounds().contains(gameObject.x, gameObject.y);
 
-        sellBtn.on('pointerdown', () => this.sellItem());
-        sellBtn.on('pointerover', () => sellBtn.setFillStyle(0xdd7755));
-        sellBtn.on('pointerout', () => sellBtn.setFillStyle(0xcc6644));
+            if (inPayment && !gameObject.inPaymentArea) {
+                // Move to payment area
+                gameObject.inPaymentArea = true;
+                this.paymentCoins.push(gameObject);
+                const idx = this.playerCoins.indexOf(gameObject);
+                if (idx > -1) this.playerCoins.splice(idx, 1);
+            } else if (!inPayment && gameObject.inPaymentArea) {
+                // Return from payment to table
+                gameObject.inPaymentArea = false;
+                this.playerCoins.push(gameObject);
+                const idx = this.paymentCoins.indexOf(gameObject);
+                if (idx > -1) this.paymentCoins.splice(idx, 1);
 
-        // Status message
-        const statusText = this.add.text(0, 85, '', {
-            fontSize: '14px',
-            fontFamily: 'Arial, sans-serif',
-            color: '#ffaaaa',
-        }).setOrigin(0.5);
-        this.detailPanel.add(statusText);
-        this.detailPanel.setData('statusText', statusText);
+                // If dropped on table, keep position; otherwise snap back
+                if (inTable) {
+                    gameObject.originX = gameObject.x;
+                    gameObject.originY = gameObject.y;
+                } else {
+                    gameObject.x = gameObject.originX;
+                    gameObject.y = gameObject.originY;
+                }
+            } else if (!inPayment && !gameObject.inPaymentArea) {
+                // Coin is on table - check if dropped on table or outside
+                if (inTable) {
+                    // Keep position and update origin
+                    gameObject.originX = gameObject.x;
+                    gameObject.originY = gameObject.y;
+                } else {
+                    // Snap back to origin if dropped outside
+                    gameObject.x = gameObject.originX;
+                    gameObject.y = gameObject.originY;
+                }
+            }
+
+            this.updatePaymentTotal();
+            this.draggedCoin = null;
+        });
+    }
+
+    private updatePaymentTotal(): void {
+        let total = 0;
+        this.paymentCoins.forEach(coin => {
+            total += coin.coinType.value;
+        });
+
+        const totalText = this.paymentTray.getData('totalText') as Phaser.GameObjects.Text;
+        if (totalText) {
+            totalText.setText(`CELKEM: ${total} měďáků`);
+        }
+    }
+
+    private getPaymentTotal(): number {
+        let total = 0;
+        this.paymentCoins.forEach(coin => {
+            total += coin.coinType.value;
+        });
+        return total;
     }
 
     private showCategory(category: ShopCategory): void {
         this.currentCategory = category;
         this.selectedItem = null;
-        this.detailPanel.setVisible(false);
+        this.purchasePanel.setVisible(false);
 
         // Update tab visuals
         this.categoryTabs.forEach((container, key) => {
             const bg = container.getData('bg') as Phaser.GameObjects.Rectangle;
-            if (key === category) {
-                bg.setFillStyle(0x8a7a6a);
-            } else {
-                bg.setFillStyle(0x5a4a3a);
-            }
+            bg.setFillStyle(key === category ? 0x8a7a6a : 0x5a4a3a);
         });
 
         // Get items for this category
@@ -388,18 +395,18 @@ export class ShopScene extends Phaser.Scene {
 
         // Update item slots
         this.itemSlots.forEach((slot, index) => {
-            const icon = slot.getData('icon') as Phaser.GameObjects.Image;
+            const icon = slot.getData('icon') as Phaser.GameObjects.Image | undefined;
             const item = items[index];
+
+            if (!icon) {
+                console.warn(`[ShopScene] No icon found for slot ${index}`);
+                return;
+            }
 
             if (item && item.spriteKey) {
                 icon.setTexture(item.spriteKey, item.iconFrame);
                 icon.setVisible(true);
-                // Scale based on item type
-                if (category === 'weapon') {
-                    icon.setDisplaySize(50, 70);
-                } else {
-                    icon.setDisplaySize(60, 60);
-                }
+                icon.setDisplaySize(category === 'weapon' ? 45 : 55, category === 'weapon' ? 60 : 55);
                 slot.setData('item', item);
             } else {
                 icon.setVisible(false);
@@ -414,125 +421,102 @@ export class ShopScene extends Phaser.Scene {
 
         if (!item) return;
 
+        // Check if already owned
+        if (this.isItemOwned(item)) {
+            this.showMessage('JIŽ VLASTNÍŠ!', '#aaaaaa');
+            return;
+        }
+
         this.selectedItem = item;
-        this.isSellMode = false;
-        this.updateDetailPanel();
-        this.detailPanel.setVisible(true);
+        this.updatePurchasePanel();
+        this.purchasePanel.setVisible(true);
+        // Don't reset coins when selecting items - let player keep their payment
     }
 
-    private updateDetailPanel(): void {
+    private updatePurchasePanel(): void {
         if (!this.selectedItem) return;
 
-        const item = this.selectedItem;
-        const player = this.gameState.getPlayer();
+        const nameText = this.purchasePanel.getData('nameText') as Phaser.GameObjects.Text;
+        const priceText = this.purchasePanel.getData('priceText') as Phaser.GameObjects.Text;
+        const itemIcon = this.purchasePanel.getData('itemIcon') as Phaser.GameObjects.Image;
 
-        const nameText = this.detailPanel.getData('nameText') as Phaser.GameObjects.Text;
-        const statsText = this.detailPanel.getData('statsText') as Phaser.GameObjects.Text;
-        const priceText = this.detailPanel.getData('priceText') as Phaser.GameObjects.Text;
-        const statusText = this.detailPanel.getData('statusText') as Phaser.GameObjects.Text;
-        const buyBtn = this.detailPanel.getData('buyBtn') as Phaser.GameObjects.Rectangle;
-        const discountBtn = this.detailPanel.getData('discountBtn') as Phaser.GameObjects.Rectangle;
-        const sellBtn = this.detailPanel.getData('sellBtn') as Phaser.GameObjects.Rectangle;
-        const sellText = this.detailPanel.getData('sellText') as Phaser.GameObjects.Text;
+        nameText.setText(this.selectedItem.name.toUpperCase());
+        priceText.setText(`CENA: ${this.selectedItem.price} měďáků`);
 
-        nameText.setText(item.name.toUpperCase());
-        statsText.setText(item.description.toUpperCase());
-
-        if (this.isSellMode) {
-            // Sell mode - show sell price (half of original)
-            const sellPrice = Math.floor(item.price / 2);
-            priceText.setText(`PRODEJ: ${sellPrice} ZL`);
-            priceText.setColor('#ffaa66');
-            statusText.setText('');
-
-            // Show only sell button
-            buyBtn.setVisible(false);
-            discountBtn.setVisible(false);
-            sellBtn.setVisible(true);
-            sellText.setVisible(true);
-            sellBtn.setFillStyle(0xcc6644);
-            sellBtn.setInteractive({ useHandCursor: true });
-        } else {
-            // Buy mode
-            priceText.setText(`CENA: ${item.price} ZL`);
-            priceText.setColor('#ffffff');
-
-            // Hide sell button
-            sellBtn.setVisible(false);
-            sellText.setVisible(false);
-
-            // Check if player owns this item
-            const isOwned = this.isItemOwned(item);
-            const canAfford = player.gold >= item.price;
-
-            if (isOwned) {
-                statusText.setText('JIŽ VLASTNÍŠ');
-                statusText.setColor('#aaaaaa');
-                buyBtn.setVisible(false);
-                discountBtn.setVisible(false);
-            } else if (!canAfford) {
-                statusText.setText('NEDOSTATEK ZLATA');
-                statusText.setColor('#ffaaaa');
-                buyBtn.setVisible(true);
-                discountBtn.setVisible(true);
-                buyBtn.setFillStyle(0x666666);
-                buyBtn.disableInteractive();
-                discountBtn.setFillStyle(0x666666);
-                discountBtn.disableInteractive();
-            } else {
-                statusText.setText('');
-                buyBtn.setVisible(true);
-                discountBtn.setVisible(true);
-                buyBtn.setFillStyle(0x44aa44);
-                buyBtn.setInteractive({ useHandCursor: true });
-                discountBtn.setFillStyle(0x4488cc);
-                discountBtn.setInteractive({ useHandCursor: true });
-            }
+        if (this.selectedItem.spriteKey) {
+            itemIcon.setTexture(this.selectedItem.spriteKey, this.selectedItem.iconFrame);
+            itemIcon.setVisible(true);
         }
     }
 
     private isItemOwned(item: ItemDefinition): boolean {
         const player = this.gameState.getPlayer();
-
         switch (item.type) {
-            case 'weapon':
-                return player.equippedWeapon === item.id;
-            case 'shield':
-                return player.equippedShield === item.id;
-            case 'helmet':
-                return player.equippedHelmet === item.id;
-            default:
-                return false;
+            case 'weapon': return player.equippedWeapon === item.id;
+            case 'shield': return player.equippedShield === item.id;
+            default: return false;
         }
     }
 
-    private buyItem(withDiscount: boolean): void {
+    private attemptPurchase(): void {
         if (!this.selectedItem) return;
 
-        const item = this.selectedItem;
+        const paymentTotal = this.getPaymentTotal();
+        const price = this.selectedItem.price;
+
+        if (paymentTotal === price) {
+            // Correct payment!
+            this.completePurchase();
+        } else {
+            // Wrong payment - just show message and return coins
+            this.showMessage('ŠPATNÁ ČÁSTKA!', '#ff6666');
+            this.returnAllCoins();
+        }
+    }
+
+    private completePurchase(): void {
+        if (!this.selectedItem) return;
+
         const player = this.gameState.getPlayer();
-        const price = withDiscount ? this.discountPrice : item.price;
 
-        if (player.gold < price) return;
+        // Remove spent coins from player's inventory
+        this.paymentCoins.forEach(coin => {
+            player.coins[coin.coinType.key]--;
+            coin.destroy();
+        });
+        this.paymentCoins = [];
 
-        // Deduct gold
-        player.gold -= price;
-        this.goldText.setText(`${player.gold} ZL`);
-
-        // Equip item and apply stats
-        this.equipItem(item);
+        // Equip item
+        this.equipItem(this.selectedItem);
 
         // Save
         this.gameState.save();
 
-        // Update UI
-        this.updateDetailPanel();
-        this.refreshPlayerInventory();
+        // Show success
+        this.showMessage('KOUPENO!', '#aaffaa');
 
-        // Show feedback
-        const statusText = this.detailPanel.getData('statusText') as Phaser.GameObjects.Text;
-        statusText.setText(withDiscount ? 'KOUPENO SE SLEVOU!' : 'KOUPENO!');
-        statusText.setColor('#aaffaa');
+        // Reset
+        this.selectedItem = null;
+        this.purchasePanel.setVisible(false);
+        this.spawnPlayerCoins();
+        this.updatePaymentTotal();
+        this.showCategory(this.currentCategory);
+    }
+
+    private returnAllCoins(): void {
+        this.paymentCoins.forEach(coin => {
+            coin.inPaymentArea = false;
+            this.tweens.add({
+                targets: coin,
+                x: coin.originX,
+                y: coin.originY,
+                duration: 300,
+                ease: 'Back.out',
+            });
+            this.playerCoins.push(coin);
+        });
+        this.paymentCoins = [];
+        this.updatePaymentTotal();
     }
 
     private equipItem(item: ItemDefinition): void {
@@ -547,7 +531,6 @@ export class ShopScene extends Phaser.Scene {
                         player.attack -= oldWeapon.attackBonus;
                     }
                 }
-                // Apply new weapon
                 player.equippedWeapon = item.id;
                 if (item.attackBonus) {
                     player.attack += item.attackBonus;
@@ -556,113 +539,26 @@ export class ShopScene extends Phaser.Scene {
 
             case 'shield':
                 player.equippedShield = item.id;
-                // Shield doesn't add direct stats, it's used in battle
-                break;
-
-            case 'helmet':
-                // Remove old helmet bonus
-                if (player.equippedHelmet) {
-                    const oldHelmet = this.allItems.find(i => i.id === player.equippedHelmet);
-                    if (oldHelmet?.defenseBonus) {
-                        player.defense -= oldHelmet.defenseBonus;
-                    }
-                }
-                // Apply new helmet
-                player.equippedHelmet = item.id;
-                if (item.defenseBonus) {
-                    player.defense += item.defenseBonus;
-                }
                 break;
         }
     }
 
-    private sellItem(): void {
-        if (!this.selectedItem) return;
+    private showMessage(text: string, color: string): void {
+        const msg = this.add.text(640, 300, text, {
+            fontSize: '32px',
+            fontFamily: 'Arial, sans-serif',
+            color: color,
+            fontStyle: 'bold',
+            stroke: '#000000',
+            strokeThickness: 4,
+        }).setOrigin(0.5).setDepth(400);
 
-        const item = this.selectedItem;
-        const player = this.gameState.getPlayer();
-        const sellPrice = Math.floor(item.price / 2);
-
-        // Unequip item and remove bonuses
-        switch (item.type) {
-            case 'weapon':
-                if (player.equippedWeapon === item.id) {
-                    if (item.attackBonus) {
-                        player.attack -= item.attackBonus;
-                    }
-                    player.equippedWeapon = null;
-                }
-                break;
-
-            case 'shield':
-                if (player.equippedShield === item.id) {
-                    player.equippedShield = null;
-                }
-                break;
-
-            case 'helmet':
-                if (player.equippedHelmet === item.id) {
-                    if (item.defenseBonus) {
-                        player.defense -= item.defenseBonus;
-                    }
-                    player.equippedHelmet = null;
-                }
-                break;
-        }
-
-        // Give gold
-        player.gold += sellPrice;
-        this.goldText.setText(`${player.gold} ZL`);
-
-        // Save
-        this.gameState.save();
-
-        // Show feedback
-        const statusText = this.detailPanel.getData('statusText') as Phaser.GameObjects.Text;
-        statusText.setText(`PRODÁNO ZA ${sellPrice} ZL!`);
-        statusText.setColor('#aaffaa');
-
-        // Hide detail panel and refresh inventory
-        this.time.delayedCall(800, () => {
-            this.detailPanel.setVisible(false);
-            this.selectedItem = null;
-            this.isSellMode = false;
-            this.refreshPlayerInventory();
+        this.tweens.add({
+            targets: msg,
+            alpha: 0,
+            y: msg.y - 50,
+            duration: 1500,
+            onComplete: () => msg.destroy(),
         });
-    }
-
-    private startDiscountChallenge(): void {
-        if (!this.selectedItem) return;
-
-        this.isDiscountMode = true;
-        this.discountPrice = Math.floor(this.selectedItem.price * 0.85); // 15% discount
-
-        const problem = this.mathEngine.generateProblem();
-        this.mathBoard.show(problem);
-
-        // Hide detail panel during math
-        this.detailPanel.setVisible(false);
-    }
-
-    private onDiscountAnswer(isCorrect: boolean): void {
-        this.mathBoard.hide();
-        this.mathEngine.recordResult(isCorrect);
-
-        if (isCorrect && this.selectedItem) {
-            // Show discounted price and buy
-            const priceText = this.detailPanel.getData('priceText') as Phaser.GameObjects.Text;
-            priceText.setText(`CENA: ${this.discountPrice} ZL (SLEVA!)`);
-            priceText.setColor('#aaffaa');
-
-            this.buyItem(true);
-        } else {
-            // Failed - show detail panel again
-            const statusText = this.detailPanel.getData('statusText') as Phaser.GameObjects.Text;
-            statusText.setText('ŠPATNĚ! ŽÁDNÁ SLEVA.');
-            statusText.setColor('#ffaaaa');
-        }
-
-        this.detailPanel.setVisible(true);
-        this.isDiscountMode = false;
     }
 }

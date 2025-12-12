@@ -1,85 +1,66 @@
 import Phaser from 'phaser';
 import { SaveSystem } from '../systems/SaveSystem';
 import { GameStateManager } from '../systems/GameStateManager';
+import { SceneDebugger } from '../systems/SceneDebugger';
+import { SceneBuilder } from '../systems/SceneBuilder';
 
 export class MenuScene extends Phaser.Scene {
+    private debugger!: SceneDebugger;
+    private sceneBuilder!: SceneBuilder;
+
     constructor() {
         super({ key: 'MenuScene' });
     }
 
     create(): void {
-        const width = this.cameras.main.width;
-        const height = this.cameras.main.height;
+        this.sceneBuilder = new SceneBuilder(this);
 
-        // Title
-        this.add.text(width / 2, height / 4, 'LITTLE MATH ADVENTURE', {
-            fontSize: '48px',
-            fontFamily: 'Arial, sans-serif',
-            color: '#ffffff',
-            fontStyle: 'bold',
-        }).setOrigin(0.5);
+        // Register handlers before building
+        this.sceneBuilder.registerHandler('onContinue', () => {
+            this.scene.start('TownScene');
+        });
 
-        // Subtitle
-        this.add.text(width / 2, height / 4 + 50, 'MATEMATICKÉ DOBRODRUŽSTVÍ', {
-            fontSize: '24px',
-            fontFamily: 'Arial, sans-serif',
-            color: '#aaaaaa',
-        }).setOrigin(0.5);
-
-        const hasSave = SaveSystem.hasSave();
-        let buttonY = height / 2;
-
-        // Continue button (only if save exists)
-        if (hasSave) {
-            const continueBtn = this.createMenuButton(width / 2, buttonY, 'POKRAČOVAT', '#44aa44');
-            continueBtn.on('pointerdown', () => {
-                this.scene.start('TownScene');
-            });
-            buttonY += 60;
-        }
-
-        // New Game button
-        const newGameBtn = this.createMenuButton(width / 2, buttonY, 'NOVÁ HRA', hasSave ? '#aa8844' : '#44aa44');
-        newGameBtn.on('pointerdown', () => {
-            if (hasSave) {
-                this.showConfirmDialog(width, height);
+        this.sceneBuilder.registerHandler('onNewGame', () => {
+            if (SaveSystem.hasSave()) {
+                this.showConfirmDialog();
             } else {
                 this.startNewGame();
             }
         });
+
+        // Build the scene from JSON
+        this.sceneBuilder.buildScene('MenuScene');
+
+        // Handle dynamic state (Continue button visibility and positioning)
+        const hasSave = SaveSystem.hasSave();
+        const btnContinue = this.sceneBuilder.get<Phaser.GameObjects.Container>('btnContinue');
+        const btnNewGame = this.sceneBuilder.get<Phaser.GameObjects.Container>('btnNewGame');
+
+        if (hasSave) {
+            if (btnContinue) btnContinue.setVisible(true);
+        } else {
+            // If no save, move New Game button up to where Continue would be
+            if (btnNewGame && btnContinue) {
+                btnNewGame.y = btnContinue.y;
+            }
+        }
+
+        // Setup universal debugger
+        this.debugger = new SceneDebugger(this, 'MenuScene');
     }
 
-    private createMenuButton(x: number, y: number, text: string, color: string): Phaser.GameObjects.Text {
-        const btn = this.add.text(x, y, text, {
-            fontSize: '32px',
-            fontFamily: 'Arial, sans-serif',
-            color: color,
-        }).setOrigin(0.5).setInteractive({ useHandCursor: true });
+    private showConfirmDialog(): void {
+        const width = this.cameras.main.width;
+        const height = this.cameras.main.height;
 
-        const hoverColor = this.lightenColor(color);
-        btn.on('pointerover', () => btn.setColor(hoverColor));
-        btn.on('pointerout', () => btn.setColor(color));
-
-        return btn;
-    }
-
-    private lightenColor(hex: string): string {
-        // Simple color lightening
-        const colors: Record<string, string> = {
-            '#44aa44': '#88ff88',
-            '#aa8844': '#ddbb77',
-            '#aa4444': '#ff8888',
-        };
-        return colors[hex] || '#ffffff';
-    }
-
-    private showConfirmDialog(width: number, height: number): void {
         // Dark overlay
         const overlay = this.add.rectangle(width / 2, height / 2, width, height, 0x000000, 0.8)
-            .setInteractive();
+            .setInteractive()
+            .setDepth(100);
 
         // Dialog box
-        const dialog = this.add.container(width / 2, height / 2);
+        const dialog = this.add.container(width / 2, height / 2)
+            .setDepth(101);
 
         const bg = this.add.rectangle(0, 0, 400, 200, 0x333333)
             .setStrokeStyle(3, 0x666666);
@@ -137,8 +118,12 @@ export class MenuScene extends Phaser.Scene {
     }
 
     private startNewGame(): void {
-        // Reset game state
+        // Reset game state completely
         GameStateManager.getInstance().reset();
+
+        // Destroy the singleton so it reloads fresh data in TownScene
+        GameStateManager.destroyInstance();
+
         this.scene.start('TownScene');
     }
 }

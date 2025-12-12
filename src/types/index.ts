@@ -11,6 +11,63 @@ export interface GameSettings {
     musicEnabled: boolean;
 }
 
+// ===== CURRENCY SYSTEM =====
+export interface CoinCurrency {
+    smallCopper: number;  // Value: 1
+    largeCopper: number;  // Value: 2
+    silver: number;       // Value: 5
+    gold: number;         // Value: 10
+}
+
+// ===== DIAMOND SYSTEM =====
+export interface DiamondInventory {
+    common: number;   // Běžný diamant (blue 💎)
+    red: number;      // Červený diamant (❤️)
+    green: number;    // Zelený diamant (💚)
+}
+
+export type DiamondType = 'common' | 'red' | 'green';
+
+export interface DiamondCost {
+    common: number;
+    red: number;
+    green: number;
+}
+
+export interface TransmutationRecipe {
+    input: [DiamondType, DiamondType];  // Two diamonds required
+    output: DiamondType;                 // Result diamond type
+}
+
+// ===== ARENA SYSTEM =====
+export interface ArenaState {
+    isActive: boolean;
+    arenaLevel: number;         // Which arena level (1-5)
+    currentBattle: number;      // 0-4 (5 battles per arena)
+    playerHpAtStart: number;    // HP when arena started
+    completedArenaLevels: number[];  // Tracks which arena levels have been completed
+}
+
+// ===== PET SYSTEM =====
+export interface PetState {
+    id: string;
+    name: string;
+}
+
+export interface PetDefinition {
+    id: string;              // e.g., 'pet_slime', 'pet_demon'
+    name: string;            // Display name
+    unlockedByEnemy?: string; // Enemy ID that unlocks purchase option
+    unlockedByArenaLevel?: number;  // Arena level that unlocks purchase option
+    cost: DiamondCost;       // Price in diamonds
+    spriteKey: string;       // Monster sprite to use for idle
+    animPrefix: string;      // Animation prefix (e.g., 'slime', 'pink', 'purple', 'leafy')
+    // Pet math problem (bonus attack)
+    mathProblemType?: 'addition' | 'subtraction' | 'threeOperand';  // Problem type
+    mathProblemMax?: number;     // Max result for pet problem
+    damageMultiplier?: number;   // Damage multiplier (1 = normal, 2 = double, etc.)
+}
+
 export interface PlayerState {
     name: string;
     level: number;
@@ -18,7 +75,8 @@ export interface PlayerState {
     xpToNextLevel: number;
     hp: number;
     maxHp: number;
-    gold: number;
+    coins: CoinCurrency;              // Replaces gold: number
+    diamonds: DiamondInventory;       // CHANGED: Multi-tier diamond inventory
     status: 'healthy' | 'přizabitý';  // Health status
     attack: number;
     defense: number;
@@ -26,6 +84,23 @@ export interface PlayerState {
     equippedArmor: string | null;
     equippedShield: string | null;
     equippedHelmet: string | null;
+    readyToPromote: boolean;          // True when XP is capped and player must visit Guild
+    potions: number;                  // Consumable potions for battle
+    hasPotionSubscription: boolean;   // True once player buys potion at witch (enables auto-refill)
+    pet: PetState | null;             // Active pet companion
+    unlockedPets: string[];           // NEW: Enemy IDs defeated (unlocks purchase)
+    ownedPets: string[];              // NEW: Pet IDs player has bought
+    activePet: string | null;         // NEW: Currently equipped pet ID
+    arena: ArenaState;                // Arena progress tracking
+}
+
+// ===== GUILD TRIAL SYSTEM =====
+export interface TrialState {
+    isActive: boolean;
+    timeRemaining: number;    // seconds
+    correctCount: number;
+    wrongCount: number;
+    totalProblems: number;
 }
 
 export interface MathStats {
@@ -34,6 +109,27 @@ export interface MathStats {
     recentResults: boolean[];  // Last 10 (sliding window)
     currentDifficulty: number; // 1-10
     highestDifficulty: number; // Track mastery
+    // Pool system
+    problemStats: Record<string, ProblemStats>;  // keyed by problem ID
+    currentPool: string[];                        // IDs of active problems
+    poolCycle: number;                            // how many times pool reset
+}
+
+// ===== MATH POOL SYSTEM =====
+export interface MathProblemDef {
+    id: string;              // e.g., "add_3_5" or "sub_7_2"
+    operand1: number;
+    operand2: number;
+    operator: '+' | '-';
+    answer: number;
+}
+
+export interface ProblemStats {
+    correctCount: number;
+    wrongCount: number;
+    lastAttempt: number;        // timestamp
+    mastered: boolean;          // true if correctly answered this session
+    diamondsCollected: number;  // NEW: 0, 1, 2, or 3 (tracks collected diamonds at 5x, 10x, 20x)
 }
 
 export interface InventoryState {
@@ -49,6 +145,7 @@ export interface InventoryItem {
 export type MathOperator = '+' | '-';
 
 export interface MathProblem {
+    id: string;               // Problem ID for tracking (e.g., "add_3_5")
     operand1: number;
     operand2: number;
     operand3?: number;        // Optional 3rd operand
@@ -58,6 +155,9 @@ export interface MathProblem {
     choices: number[];        // 3 options (shuffled)
     showVisualHint: boolean;
     hintType: 'apples' | 'dots' | 'none';
+    // Equipment bonus metadata
+    damageMultiplier?: number;  // Damage multiplier (1 = normal, 2 = double, etc.)
+    source?: 'player' | 'pet' | 'sword';  // Source of the problem for UI/tracking
 }
 
 export interface DifficultyConfig {
@@ -77,18 +177,43 @@ export type BattlePhase =
     | 'player_math'
     | 'player_attack'
     | 'player_miss'
+    | 'pet_turn'           // NEW: Pet's turn after player
     | 'enemy_turn'
     | 'enemy_attack'
     | 'player_defend'
     | 'victory'
     | 'defeat';
 
+// Configuration for problems per level
+export interface LevelAttackConfig {
+    level: number;
+    additionCount: number;      // Number of addition problems
+    additionMax: number;        // Max result for additions
+    subtractionCount: number;   // Number of subtraction problems
+    subtractionMax: number;     // Max result for subtractions
+    threeOperandCount: number;  // Number of 3-operand problems
+    threeOperandMax: number;    // Max result for 3-operand
+}
+
+// Enemy instance in battle (for multi-enemy support)
+export interface BattleEnemy {
+    id: string;
+    name: string;
+    spriteKey: string;
+    hp: number;
+    maxHp: number;
+    attack: number;
+    defense: number;
+}
+
 export interface BattleState {
     phase: BattlePhase;
     playerHp: number;
-    enemyHp: number;
-    enemyMaxHp: number;
-    currentProblem: MathProblem | null;
+    enemies: BattleEnemy[];           // Array for multi-enemy support
+    selectedEnemyIndex: number;       // Which enemy is targeted
+    currentProblems: MathProblem[];   // Array of problems for current attack
+    currentProblemIndex: number;      // Which problem is being solved
+    damageDealt: number;              // Damage accumulated this turn
     turnCount: number;
 }
 
@@ -124,6 +249,10 @@ export interface ItemDefinition {
     // Shield specific (block mechanic)
     blockTime?: number;      // Seconds to solve math problems
     blockAttempts?: number;  // Max problems to attempt
+    // Sword math problem (bonus attack)
+    mathProblemType?: 'addition' | 'subtraction' | 'threeOperand';  // Problem type for sword bonus
+    mathProblemMax?: number;     // Max result for sword problem
+    damageMultiplier?: number;   // Damage multiplier (1 = normal, 2 = double, etc.)
 }
 
 // ===== TOWN SCENE =====
