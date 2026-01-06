@@ -629,6 +629,20 @@ export class SceneDebugger {
     }
 
     private destroy(): void {
+        // Remove keyboard event listeners
+        const keyboard = this.scene.input.keyboard;
+        if (keyboard) {
+            keyboard.off('keydown-D');
+            keyboard.off('keydown-TAB');
+            keyboard.off('keydown-S');
+            keyboard.off('keydown-C');
+            keyboard.off('keydown-W');
+            keyboard.off('keydown-H');
+
+            // Remove key captures (added via addKey)
+            keyboard.removeCapture(['D', 'TAB', 'S', 'C', 'P', 'L', 'W', 'Q', 'E', 'R', 'Z', 'X', 'H']);
+        }
+
         this.scene.events.off('update', this.update, this);
         this.scene.events.off('shutdown', this.destroy, this);
 

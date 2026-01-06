@@ -4,6 +4,8 @@ import { GameStateManager } from '../systems/GameStateManager';
 import { ProgressionSystem } from '../systems/ProgressionSystem';
 import { SceneDebugger } from '../systems/SceneDebugger';
 import { SceneBuilder } from '../systems/SceneBuilder';
+import { getPlayerSpriteConfig } from '../utils/characterUtils';
+import { PauseMenu } from '../ui/PauseMenu';
 
 // Arena enemy configurations per arena level
 // Level 1: 5 waves progressing in difficulty
@@ -39,6 +41,9 @@ export class ArenaScene extends Phaser.Scene {
 
     // Universal debugger
     private debugger!: SceneDebugger;
+
+    // Pause menu
+    private pauseMenu!: PauseMenu;
 
     // Scene Builder
     private sceneBuilder!: SceneBuilder;
@@ -104,9 +109,17 @@ export class ArenaScene extends Phaser.Scene {
         // Hero - use spawn points if available, otherwise fallback
         const heroX = spawnPoints?.player.x ?? 235;
         const heroY = spawnPoints?.player.y ?? 575;
-        this.hero = this.add.sprite(heroX, heroY, 'knight-idle-sheet')
-            .setScale(0.79)
-            .play('knight-idle');
+        const spriteConfig = getPlayerSpriteConfig(player.characterType);
+
+        // Get hero scale from character definition
+        const charactersData = this.cache.json.get('characters') as Array<{ id: string; scale?: number }>;
+        const characterDef = charactersData?.find(c => c.id === player.characterType);
+        const HERO_BASE_SCALE = 1.0;
+        const heroScale = (characterDef?.scale ?? 1.0) * HERO_BASE_SCALE;
+
+        this.hero = this.add.sprite(heroX, heroY, spriteConfig.idleTexture)
+            .setScale(heroScale)
+            .play(spriteConfig.idleAnim);
 
         // Create pet companion if player has one equipped
         this.createPetCompanion(player, spawnPoints);
@@ -122,6 +135,9 @@ export class ArenaScene extends Phaser.Scene {
 
     private setupDebugger(): void {
         this.debugger = new SceneDebugger(this, 'ArenaScene');
+
+        // Create pause menu (ESC key to toggle)
+        this.pauseMenu = new PauseMenu(this);
 
         // Register moveable elements
         this.debugger.register('hero', this.hero);
@@ -188,9 +204,13 @@ export class ArenaScene extends Phaser.Scene {
         const petX = spawnPoints?.pet.x ?? 135;
         const petY = spawnPoints?.pet.y ?? 575;
 
+        // Get pet scale from definition
+        const PET_BASE_SCALE = 0.5;
+        const petScale = (petDef.scale ?? 1.0) * PET_BASE_SCALE;
+
         // Create pet sprite - flipped horizontally (facing right like hero)
         this.petSprite = this.add.sprite(petX, petY, petDef.spriteKey, 0)
-            .setScale(0.2)  // Same scale as in BattleScene
+            .setScale(petScale)
             .setFlipX(true)  // Face right like hero
             .setDepth(-1);  // Behind hero
 
@@ -199,16 +219,6 @@ export class ArenaScene extends Phaser.Scene {
         if (this.anims.exists(idleAnim)) {
             this.petSprite.play(idleAnim);
         }
-
-        // Add subtle idle bobbing animation
-        this.tweens.add({
-            targets: this.petSprite,
-            y: petY - 5,
-            duration: 1200,
-            yoyo: true,
-            repeat: -1,
-            ease: 'Sine.inOut'
-        });
     }
 
     private createEnemyPreviews(spawnPoints: { player: { x: number; y: number }; pet: { x: number; y: number }; enemies: { x: number; y: number }[] } | null): void {
@@ -240,9 +250,13 @@ export class ArenaScene extends Phaser.Scene {
             // Get animation prefix
             const animPrefix = def.spriteKey.includes('-') ? def.spriteKey.split('-')[0] : def.spriteKey;
 
+            // Get enemy scale from definition
+            const ENEMY_BASE_SCALE = 1.0;
+            const enemyScale = (def.scale ?? 1.0) * ENEMY_BASE_SCALE;
+
             // Create sprite (idling) - position relative to container
             const sprite = this.add.sprite(0, 0, def.spriteKey)
-                .setScale(0.6);
+                .setScale(enemyScale);
 
             // Play idle animation
             const idleAnim = `${animPrefix}-idle`;

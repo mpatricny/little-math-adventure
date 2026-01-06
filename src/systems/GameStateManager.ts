@@ -1,4 +1,4 @@
-import { PlayerState, MathStats, ProblemStats } from '../types';
+import { PlayerState, MathStats, ProblemStats, CharacterType } from '../types';
 import { ProgressionSystem } from './ProgressionSystem';
 import { SaveSystem } from './SaveSystem';
 
@@ -6,61 +6,37 @@ import { SaveSystem } from './SaveSystem';
  * Global game state manager
  * Singleton pattern for managing ALL game state across scenes
  * Includes player state, math stats, and any other persistent data
+ *
+ * Now supports multi-slot saves via activeSlotIndex
  */
 export class GameStateManager {
     private static instance: GameStateManager;
     private player: PlayerState;
     private mathStats: MathStats;
+    private activeSlotIndex: number | null = null;
 
     private constructor() {
-        // Try to load save, or create new game state
-        const saveData = SaveSystem.load();
-        if (saveData) {
-            this.player = saveData.player;
-            this.mathStats = this.migrateMathStats(saveData.mathStats);
-        } else {
-            // Check for old separate mathStats (migration from old save format)
-            const oldMathStats = this.loadOldMathStats();
+        // Try to load from active slot, or create new game state
+        const activeSlot = SaveSystem.getActiveSlot();
 
-            this.player = ProgressionSystem.createInitialPlayer();
-            this.mathStats = oldMathStats || this.createInitialMathStats();
-
-            // Save immediately to unify the data
-            if (oldMathStats) {
-                this.cleanupOldStorage();
-                SaveSystem.save(this.player, this.mathStats);
-                console.log('[GameStateManager] Migrated old mathStats to unified save');
+        if (activeSlot !== null) {
+            const saveData = SaveSystem.load(activeSlot);
+            if (saveData) {
+                this.activeSlotIndex = activeSlot;
+                this.player = saveData.player;
+                // Migration: add characterType if missing (default to girl_knight for existing saves)
+                if (!this.player.characterType) {
+                    this.player.characterType = 'girl_knight';
+                }
+                this.mathStats = this.migrateMathStats(saveData.mathStats);
+                return;
             }
         }
-    }
 
-    /**
-     * Load old mathStats from separate localStorage key (for migration)
-     */
-    private loadOldMathStats(): MathStats | null {
-        try {
-            const savedStr = localStorage.getItem('littleMathAdventure_mathStats');
-            if (savedStr) {
-                const saved = JSON.parse(savedStr);
-                return this.migrateMathStats(saved);
-            }
-        } catch (error) {
-            console.warn('[GameStateManager] Could not load old mathStats:', error);
-        }
-        return null;
-    }
-
-    /**
-     * Clean up old localStorage keys after migration
-     */
-    private cleanupOldStorage(): void {
-        try {
-            localStorage.removeItem('littleMathAdventure_mathStats');
-            localStorage.removeItem('littleMathAdventure_player'); // Old player key if exists
-            console.log('[GameStateManager] Cleaned up old storage keys');
-        } catch (error) {
-            console.warn('[GameStateManager] Could not clean up old storage:', error);
-        }
+        // No active slot or slot is empty - create fresh state
+        // (actual slot selection happens via loadSlot or reset)
+        this.player = ProgressionSystem.createInitialPlayer();
+        this.mathStats = this.createInitialMathStats();
     }
 
     static getInstance(): GameStateManager {
@@ -79,37 +55,97 @@ export class GameStateManager {
     }
 
     /**
+     * Get the currently active save slot index
+     */
+    getActiveSlotIndex(): number | null {
+        return this.activeSlotIndex;
+    }
+
+    /**
+     * Set the active save slot index
+     * Does NOT load data - use loadSlot() for that
+     */
+    setActiveSlotIndex(slotIndex: number): void {
+        this.activeSlotIndex = slotIndex;
+        SaveSystem.setActiveSlot(slotIndex);
+    }
+
+    /**
+     * Load data from a specific save slot
+     * Returns true if successful, false if slot is empty
+     */
+    loadSlot(slotIndex: number): boolean {
+        const saveData = SaveSystem.load(slotIndex);
+
+        if (!saveData) {
+            return false;
+        }
+
+        this.activeSlotIndex = slotIndex;
+        SaveSystem.setActiveSlot(slotIndex);
+
+        this.player = saveData.player;
+        // Migration: add characterType if missing
+        if (!this.player.characterType) {
+            this.player.characterType = 'girl_knight';
+        }
+        this.mathStats = this.migrateMathStats(saveData.mathStats);
+
+        console.log(`[GameStateManager] Loaded slot ${slotIndex}`);
+        return true;
+    }
+
+    /**
+     * Check if a slot is currently loaded
+     */
+    isSlotLoaded(): boolean {
+        return this.activeSlotIndex !== null;
+    }
+
+    /**
      * Update math stats (called by MathEngine)
      */
     setMathStats(stats: MathStats): void {
         this.mathStats = stats;
     }
 
+    /**
+     * Save to the currently active slot
+     */
     save(): void {
-        SaveSystem.save(this.player, this.mathStats);
+        if (this.activeSlotIndex === null) {
+            console.warn('[GameStateManager] No active slot - cannot save');
+            return;
+        }
+        SaveSystem.save(this.activeSlotIndex, this.player, this.mathStats);
     }
 
     /**
-     * Reset to new game - clears ALL data
+     * Reset to new game state for a specific slot
+     * @param characterType Character type for new game (defaults to girl_knight)
+     * @param characterName Character name for new game (defaults to 'Hrdina')
+     * @param slotIndex Optional slot index (uses active slot if not provided)
      */
-    reset(): void {
-        this.player = ProgressionSystem.createInitialPlayer();
-        this.mathStats = this.createInitialMathStats();
+    reset(characterType: CharacterType = 'girl_knight', characterName: string = 'Hrdina', slotIndex?: number): void {
+        // Use provided slot or active slot
+        const targetSlot = slotIndex ?? this.activeSlotIndex;
 
-        // Clear ALL localStorage keys related to the game
-        SaveSystem.clear();
-
-        // Also clear the old mathStats key if it exists (migration cleanup)
-        try {
-            localStorage.removeItem('littleMathAdventure_mathStats');
-        } catch (e) {
-            console.warn('[GameStateManager] Could not clear old mathStats key');
+        if (targetSlot === null) {
+            console.error('[GameStateManager] No slot specified for reset');
+            return;
         }
 
-        // Save the fresh state
+        // Create fresh player with name
+        this.player = ProgressionSystem.createInitialPlayer(characterType);
+        this.player.name = characterName;
+        this.mathStats = this.createInitialMathStats();
+
+        // Set active slot and save
+        this.activeSlotIndex = targetSlot;
+        SaveSystem.setActiveSlot(targetSlot);
         this.save();
 
-        console.log('[GameStateManager] Game reset complete - all data cleared');
+        console.log(`[GameStateManager] Game reset to slot ${targetSlot} with character "${characterName}"`);
     }
 
     /**
@@ -125,6 +161,8 @@ export class GameStateManager {
             problemStats: {},
             currentPool: [],
             poolCycle: 0,
+            dailyAttempts: 0,
+            lastAttemptDate: '',
         };
     }
 
@@ -160,6 +198,8 @@ export class GameStateManager {
             problemStats: migratedProblemStats,
             currentPool: stats.currentPool || [],
             poolCycle: stats.poolCycle || 0,
+            dailyAttempts: stats.dailyAttempts || 0,
+            lastAttemptDate: stats.lastAttemptDate || '',
         };
     }
 
@@ -167,7 +207,12 @@ export class GameStateManager {
      * Force reload from storage (useful after external changes)
      */
     reload(): void {
-        const saveData = SaveSystem.load();
+        if (this.activeSlotIndex === null) {
+            console.warn('[GameStateManager] No active slot - cannot reload');
+            return;
+        }
+
+        const saveData = SaveSystem.load(this.activeSlotIndex);
         if (saveData) {
             this.player = saveData.player;
             this.mathStats = this.migrateMathStats(saveData.mathStats);

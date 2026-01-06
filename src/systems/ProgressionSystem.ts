@@ -1,4 +1,4 @@
-import { PlayerState, CoinCurrency, DiamondInventory, DiamondType } from '../types';
+import { PlayerState, CoinCurrency, DiamondInventory, DiamondType, CharacterType } from '../types';
 
 // XP needed per level transition (battles needed)
 const XP_PER_LEVEL: Record<number, number> = {
@@ -246,9 +246,10 @@ export class ProgressionSystem {
     /**
      * Create initial player state
      */
-    static createInitialPlayer(): PlayerState {
+    static createInitialPlayer(characterType: CharacterType = 'girl_knight'): PlayerState {
         return {
             name: 'Hrdina',
+            characterType,
             level: 1,
             xp: 0,
             xpToNextLevel: this.getXpForLevel(1),

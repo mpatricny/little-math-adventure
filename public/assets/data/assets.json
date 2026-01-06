@@ -2,7 +2,7 @@
     "version": "1.0",
     "characters": {
         "player": {
-            "knight": {
+            "girl_knight": {
                 "type": "animatedSprite",
                 "category": "player",
                 "nameKey": "$characters.player.PLR_001",
@@ -11,15 +11,40 @@
                     1
                 ],
                 "scale": {
-                    "default": 0.4,
-                    "battle": 0.6,
-                    "arena": 0.79
+                    "default": 0.6,
+                    "battle": 1,
+                    "arena": 1
                 },
                 "depth": 5,
                 "defaultTexture": "knight-idle-sheet",
                 "animations": {
                     "idle": "knight-idle",
                     "attack": "knight-attack"
+                },
+                "defaultAnimation": "idle",
+                "hurtEffect": {
+                    "tint": "#ff0000",
+                    "duration": 100
+                }
+            },
+            "boy_knight": {
+                "type": "animatedSprite",
+                "category": "player",
+                "nameKey": "$characters.player.PLR_002",
+                "origin": [
+                    0.5,
+                    1
+                ],
+                "scale": {
+                    "default": 0.6,
+                    "battle": 1,
+                    "arena": 1
+                },
+                "depth": 5,
+                "defaultTexture": "boy-knight-idle-sheet",
+                "animations": {
+                    "idle": "boy-knight-idle",
+                    "attack": "boy-knight-attack"
                 },
                 "defaultAnimation": "idle",
                 "hurtEffect": {
@@ -38,8 +63,9 @@
                     0.5
                 ],
                 "scale": {
-                    "default": 0.5,
-                    "arena": 1.35
+                    "default": 1,
+                    "battle": 1,
+                    "arena": 1
                 },
                 "depth": 5,
                 "defaultTexture": "slime-sheet",
@@ -60,7 +86,9 @@
                     0.5
                 ],
                 "scale": {
-                    "default": 0.5
+                    "default": 1,
+                    "battle": 1,
+                    "arena": 1
                 },
                 "depth": 5,
                 "defaultTexture": "pink-idle-sheet",
@@ -81,7 +109,9 @@
                     0.5
                 ],
                 "scale": {
-                    "default": 0.5
+                    "default": 1,
+                    "battle": 1,
+                    "arena": 1
                 },
                 "depth": 5,
                 "defaultTexture": "purple-attack-sheet",
@@ -102,7 +132,9 @@
                     0.5
                 ],
                 "scale": {
-                    "default": 0.5
+                    "default": 1,
+                    "battle": 1,
+                    "arena": 1
                 },
                 "depth": 5,
                 "defaultTexture": "leafy-idle-sheet",

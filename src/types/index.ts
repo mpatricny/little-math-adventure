@@ -66,10 +66,14 @@ export interface PetDefinition {
     mathProblemType?: 'addition' | 'subtraction' | 'threeOperand';  // Problem type
     mathProblemMax?: number;     // Max result for pet problem
     damageMultiplier?: number;   // Damage multiplier (1 = normal, 2 = double, etc.)
+    scale?: number;              // Character scale multiplier
 }
+
+export type CharacterType = 'girl_knight' | 'boy_knight';
 
 export interface PlayerState {
     name: string;
+    characterType: CharacterType;
     level: number;
     xp: number;
     xpToNextLevel: number;
@@ -92,6 +96,7 @@ export interface PlayerState {
     ownedPets: string[];              // NEW: Pet IDs player has bought
     activePet: string | null;         // NEW: Currently equipped pet ID
     arena: ArenaState;                // Arena progress tracking
+    lastBuildingId?: string;          // Track last visited building for return position
 }
 
 // ===== GUILD TRIAL SYSTEM =====
@@ -113,6 +118,9 @@ export interface MathStats {
     problemStats: Record<string, ProblemStats>;  // keyed by problem ID
     currentPool: string[];                        // IDs of active problems
     poolCycle: number;                            // how many times pool reset
+    // Daily tracking
+    dailyAttempts: number;     // attempts made today
+    lastAttemptDate: string;   // "YYYY-MM-DD" to detect day change
 }
 
 // ===== MATH POOL SYSTEM =====
@@ -228,6 +236,7 @@ export interface EnemyDefinition {
     xpReward: number;
     goldReward: [number, number];  // [min, max]
     difficulty: number;            // Recommended player level
+    scale?: number;                // Character scale multiplier
 }
 
 // ===== ITEMS =====
@@ -264,3 +273,20 @@ export interface BuildingConfig {
 }
 
 export type TownState = 'exploring' | 'entering_building' | 'inside';
+
+// ===== SAVE SYSTEM =====
+export interface SaveSlotMeta {
+    slotIndex: number;           // 0-7
+    isEmpty: boolean;
+    characterName: string;
+    characterType: CharacterType;
+    level: number;
+    totalProblemsSolved: number; // from mathStats.totalAttempts
+    lastPlayed: number;          // timestamp
+}
+
+export interface SaveSlotData {
+    player: PlayerState;
+    mathStats: MathStats;
+    timestamp: number;
+}

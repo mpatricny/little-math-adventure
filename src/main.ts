@@ -1,6 +1,8 @@
 import Phaser from 'phaser';
 import { BootScene, AssetLoaderScene } from './scenes/BootScene';
 import { MenuScene } from './scenes/MenuScene';
+import { SaveSlotScene } from './scenes/SaveSlotScene';
+import { CharacterSelectScene } from './scenes/CharacterSelectScene';
 import { TownScene } from './scenes/TownScene';
 import { BattleScene } from './scenes/BattleScene';
 import { ArenaScene } from './scenes/ArenaScene';
@@ -21,7 +23,10 @@ const config: Phaser.Types.Core.GameConfig = {
         mode: Phaser.Scale.FIT,
         autoCenter: Phaser.Scale.CENTER_BOTH,
     },
-    scene: [BootScene, AssetLoaderScene, MenuScene, TownScene, BattleScene, ArenaScene, VictoryScene, WitchHutScene, ShopScene, GuildScene, TavernScene, MathBoardDebugScene],
+    dom: {
+        createContainer: true  // Enable DOM element support for text input
+    },
+    scene: [BootScene, AssetLoaderScene, MenuScene, SaveSlotScene, CharacterSelectScene, TownScene, BattleScene, ArenaScene, VictoryScene, WitchHutScene, ShopScene, GuildScene, TavernScene, MathBoardDebugScene],
 };
 
 new Phaser.Game(config);

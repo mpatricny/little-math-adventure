@@ -9,7 +9,8 @@
         "defense": 0,
         "xpReward": 20,
         "goldReward": [5, 15],
-        "difficulty": 1
+        "difficulty": 1,
+        "scale": 1.0
     },
     {
         "id": "purple_demon",
@@ -21,7 +22,8 @@
         "defense": 0,
         "xpReward": 40,
         "goldReward": [15, 35],
-        "difficulty": 2
+        "difficulty": 2,
+        "scale": 1.0
     },
     {
         "id": "pink_beast",
@@ -33,7 +35,8 @@
         "defense": 0,
         "xpReward": 70,
         "goldReward": [30, 55],
-        "difficulty": 3
+        "difficulty": 3,
+        "scale": 1.0
     },
     {
         "id": "leafy",
@@ -45,6 +48,7 @@
         "defense": 0,
         "xpReward": 100,
         "goldReward": [50, 80],
-        "difficulty": 4
+        "difficulty": 4,
+        "scale": 1.0
     }
 ]

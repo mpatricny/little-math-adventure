@@ -1,6 +1,271 @@
 {
   "version": "1.0",
   "scenes": {
+    "SaveSlotScene": {
+      "viewport": {
+        "width": 1280,
+        "height": 720
+      },
+      "elements": [
+        {
+          "id": "title",
+          "type": "text",
+          "x": 640,
+          "y": 60,
+          "depth": 10,
+          "editable": true,
+          "visible": true
+        },
+        {
+          "id": "arrowLeft",
+          "type": "button",
+          "x": 200,
+          "y": 360,
+          "depth": 50,
+          "editable": true,
+          "visible": true
+        },
+        {
+          "id": "arrowRight",
+          "type": "button",
+          "x": 1080,
+          "y": 360,
+          "depth": 50,
+          "editable": true,
+          "visible": true
+        },
+        {
+          "id": "slotCard",
+          "type": "image",
+          "x": 640,
+          "y": 350,
+          "depth": 5,
+          "editable": true,
+          "visible": true,
+          "width": 400,
+          "height": 380
+        },
+        {
+          "id": "slotNumber",
+          "type": "text",
+          "x": 640,
+          "y": 140,
+          "depth": 10,
+          "editable": true,
+          "visible": true
+        },
+        {
+          "id": "characterPreview",
+          "type": "container",
+          "x": 640,
+          "y": 280,
+          "depth": 10,
+          "editable": true,
+          "visible": true
+        },
+        {
+          "id": "emptySlotText",
+          "type": "text",
+          "x": 640,
+          "y": 320,
+          "depth": 10,
+          "editable": true,
+          "visible": false
+        },
+        {
+          "id": "characterName",
+          "type": "text",
+          "x": 640,
+          "y": 400,
+          "depth": 10,
+          "editable": true,
+          "visible": true
+        },
+        {
+          "id": "characterLevel",
+          "type": "text",
+          "x": 640,
+          "y": 430,
+          "depth": 10,
+          "editable": true,
+          "visible": true
+        },
+        {
+          "id": "problemsSolved",
+          "type": "text",
+          "x": 640,
+          "y": 460,
+          "depth": 10,
+          "editable": true,
+          "visible": true
+        },
+        {
+          "id": "btnPlay",
+          "type": "button",
+          "x": 540,
+          "y": 570,
+          "depth": 50,
+          "editable": true,
+          "visible": true
+        },
+        {
+          "id": "btnDelete",
+          "type": "button",
+          "x": 740,
+          "y": 570,
+          "depth": 50,
+          "editable": true,
+          "visible": true
+        },
+        {
+          "id": "btnBack",
+          "type": "button",
+          "x": 640,
+          "y": 660,
+          "depth": 50,
+          "editable": true,
+          "visible": true
+        },
+        {
+          "id": "deleteOverlay",
+          "type": "image",
+          "x": 640,
+          "y": 360,
+          "depth": 100,
+          "editable": true,
+          "visible": false
+        },
+        {
+          "id": "deleteDialog",
+          "type": "image",
+          "x": 640,
+          "y": 360,
+          "depth": 101,
+          "editable": true,
+          "visible": false
+        },
+        {
+          "id": "deleteTitle",
+          "type": "text",
+          "x": 640,
+          "y": 300,
+          "depth": 102,
+          "editable": true,
+          "visible": false
+        },
+        {
+          "id": "btnConfirmDelete",
+          "type": "button",
+          "x": 570,
+          "y": 400,
+          "depth": 102,
+          "editable": true,
+          "visible": false
+        },
+        {
+          "id": "btnCancelDelete",
+          "type": "button",
+          "x": 710,
+          "y": 400,
+          "depth": 102,
+          "editable": true,
+          "visible": false
+        }
+      ],
+      "hotspots": [],
+      "templates": {}
+    },
+    "CharacterSelectScene": {
+      "viewport": {
+        "width": 1280,
+        "height": 720
+      },
+      "elements": [
+        {
+          "id": "title",
+          "type": "text",
+          "x": 640,
+          "y": 80,
+          "depth": 10,
+          "editable": true,
+          "visible": true
+        },
+        {
+          "id": "girlKnightPreview",
+          "type": "container",
+          "x": 400,
+          "y": 400,
+          "depth": 10,
+          "editable": true,
+          "visible": true
+        },
+        {
+          "id": "boyKnightPreview",
+          "type": "container",
+          "x": 880,
+          "y": 400,
+          "depth": 10,
+          "editable": true,
+          "visible": true
+        },
+        {
+          "id": "girlLabel",
+          "type": "text",
+          "x": 400,
+          "y": 550,
+          "depth": 10,
+          "editable": true,
+          "visible": true
+        },
+        {
+          "id": "boyLabel",
+          "type": "text",
+          "x": 880,
+          "y": 550,
+          "depth": 10,
+          "editable": true,
+          "visible": true
+        },
+        {
+          "id": "nameInputLabel",
+          "type": "text",
+          "x": 640,
+          "y": 575,
+          "depth": 10,
+          "editable": true,
+          "visible": true
+        },
+        {
+          "id": "nameInputContainer",
+          "type": "container",
+          "x": 640,
+          "y": 605,
+          "depth": 10,
+          "editable": true,
+          "visible": true
+        },
+        {
+          "id": "btnConfirm",
+          "type": "button",
+          "x": 640,
+          "y": 660,
+          "depth": 50,
+          "editable": true,
+          "visible": true
+        },
+        {
+          "id": "btnBack",
+          "type": "button",
+          "x": 100,
+          "y": 700,
+          "depth": 50,
+          "editable": true,
+          "visible": true
+        }
+      ],
+      "hotspots": [],
+      "templates": {}
+    },
     "TestScene": {
       "viewport": {
         "width": 1280,
@@ -573,6 +838,20 @@
           "depth": 80,
           "editable": true,
           "visible": false,
+          "scale": 1
+        },
+        {
+          "id": "btnQuitToMenu",
+          "type": "button",
+          "x": 85,
+          "y": 40,
+          "origin": [
+            0.5,
+            0.5
+          ],
+          "depth": 80,
+          "editable": true,
+          "visible": true,
           "scale": 1
         }
       ],

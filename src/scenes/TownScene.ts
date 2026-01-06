@@ -3,6 +3,7 @@ import { CharacterUI } from '../ui/CharacterUI';
 import { GameStateManager } from '../systems/GameStateManager';
 import { SceneDebugger } from '../systems/SceneDebugger';
 import { SceneBuilder } from '../systems/SceneBuilder';
+import { getPlayerSpriteConfig } from '../utils/characterUtils';
 
 export class TownScene extends Phaser.Scene {
     private sceneBuilder!: SceneBuilder;
@@ -34,17 +35,37 @@ export class TownScene extends Phaser.Scene {
             gameState.save();
         }
 
+        // Register quit to menu handler
+        this.sceneBuilder.registerHandler('onQuitToMenu', () => this.quitToMenu());
+
         // Build the scene from JSON
         this.sceneBuilder.buildScene('TownScene');
 
-        // Spawn the player character
+        // Spawn the player character with dynamic sprite based on selection
         const playerSpawn = this.sceneBuilder.getZone('playerSpawn');
-        const playerX = playerSpawn?.x ?? 80;
+        let playerX = playerSpawn?.x ?? 80;
         const playerY = playerSpawn?.y ?? 675;
-        this.player = this.add.sprite(playerX, playerY, 'knight-idle-sheet')
-            .setScale(0.4)
+
+        // Check if returning from a building - spawn at that building's position
+        const lastBuildingId = player.lastBuildingId;
+        if (lastBuildingId) {
+            const lastBuilding = this.sceneBuilder.get<Phaser.GameObjects.Image>(lastBuildingId);
+            if (lastBuilding) {
+                playerX = lastBuilding.x;
+            }
+            // Clear the lastBuildingId so next time we use default spawn
+            player.lastBuildingId = undefined;
+            gameState.save();
+        }
+
+        const spriteConfig = getPlayerSpriteConfig(player.characterType);
+        this.player = this.add.sprite(playerX, playerY, spriteConfig.idleTexture)
+            .setScale(0.6)
             .setDepth(5)
-            .play('knight-idle');
+            .play(spriteConfig.idleAnim);
+
+        // Override building click handlers with walk animation
+        this.setupBuildingTransitions();
 
         // Create UI Overlays
         this.characterUI = new CharacterUI(this);
@@ -133,16 +154,7 @@ export class TownScene extends Phaser.Scene {
         });
 
         button.on('pointerdown', () => {
-            // Start arena
-            const player = GameStateManager.getInstance().getPlayer();
-            const arenaLevel = player.arena.arenaLevel || 1;
-            const wave = player.arena.isActive ? player.arena.currentBattle : 0;
-
-            player.arena.isActive = true;
-            player.arena.playerHpAtStart = player.hp;
-            GameStateManager.getInstance().save();
-
-            this.scene.start('ArenaScene', { arenaLevel, wave });
+            this.walkToArena(buttonX);
         });
 
         // Pulsing animation
@@ -155,6 +167,122 @@ export class TownScene extends Phaser.Scene {
             repeat: -1,
             ease: 'Sine.easeInOut'
         });
+    }
+
+    /**
+     * Override building click handlers to add walk animation before scene transition
+     */
+    private setupBuildingTransitions(): void {
+        const buildings = [
+            { id: 'witch', scene: 'WitchHutScene' },
+            { id: 'guild', scene: 'GuildScene' },
+            { id: 'tavern', scene: 'TavernScene' },
+            { id: 'shop', scene: 'ShopScene' }
+        ];
+
+        buildings.forEach(({ id, scene }) => {
+            const building = this.sceneBuilder.get<Phaser.GameObjects.Image>(id);
+            if (building) {
+                building.removeAllListeners('pointerdown');
+                building.on('pointerdown', () => this.walkToBuilding(building.x, scene, id));
+            }
+        });
+    }
+
+    /**
+     * Walk player to building, fade out, then transition to scene
+     */
+    private walkToBuilding(targetX: number, targetScene: string, buildingId: string): void {
+        this.input.enabled = false;
+
+        // Save the building ID for return position
+        const gameState = GameStateManager.getInstance();
+        gameState.getPlayer().lastBuildingId = buildingId;
+        gameState.save();
+
+        const startX = this.player.x;
+        const distance = Math.abs(targetX - startX);
+        const walkSpeed = 350;
+        const duration = (distance / walkSpeed) * 1000;
+
+        // Flip sprite based on direction (flipX=true faces left)
+        this.player.setFlipX(targetX < startX);
+
+        // Play walk animation
+        const spriteConfig = getPlayerSpriteConfig(
+            GameStateManager.getInstance().getPlayer().characterType
+        );
+        this.player.play(spriteConfig.walkAnim);
+
+        // Walk tween
+        this.tweens.add({
+            targets: this.player,
+            x: targetX,
+            duration,
+            ease: 'Linear',
+            onComplete: () => {
+                this.player.play(spriteConfig.idleAnim);
+
+                // Fade out then transition
+                this.tweens.add({
+                    targets: this.player,
+                    alpha: 0,
+                    duration: 300,
+                    onComplete: () => this.scene.start(targetScene)
+                });
+            }
+        });
+    }
+
+    /**
+     * Walk player to arena button, fade out, then start arena
+     */
+    private walkToArena(targetX: number): void {
+        this.input.enabled = false;
+
+        const startX = this.player.x;
+        const distance = Math.abs(targetX - startX);
+        const duration = (distance / 350) * 1000;
+
+        this.player.setFlipX(targetX < startX);
+
+        const spriteConfig = getPlayerSpriteConfig(
+            GameStateManager.getInstance().getPlayer().characterType
+        );
+        this.player.play(spriteConfig.walkAnim);
+
+        this.tweens.add({
+            targets: this.player,
+            x: targetX,
+            duration,
+            ease: 'Linear',
+            onComplete: () => {
+                this.player.play(spriteConfig.idleAnim);
+
+                this.tweens.add({
+                    targets: this.player,
+                    alpha: 0,
+                    duration: 300,
+                    onComplete: () => {
+                        const player = GameStateManager.getInstance().getPlayer();
+                        const arenaLevel = player.arena.arenaLevel || 1;
+                        const wave = player.arena.isActive ? player.arena.currentBattle : 0;
+
+                        player.arena.isActive = true;
+                        player.arena.playerHpAtStart = player.hp;
+                        GameStateManager.getInstance().save();
+
+                        this.scene.start('ArenaScene', { arenaLevel, wave });
+                    }
+                });
+            }
+        });
+    }
+
+    private quitToMenu(): void {
+        // Auto-save before leaving
+        GameStateManager.getInstance().save();
+        this.scene.start('MenuScene');
     }
 
     update(): void {

@@ -6,6 +6,8 @@ import { GameStateManager } from '../systems/GameStateManager';
 import { ProgressionSystem } from '../systems/ProgressionSystem';
 import { SceneDebugger } from '../systems/SceneDebugger';
 import { SceneBuilder } from '../systems/SceneBuilder';
+import { getPlayerSpriteConfig, PlayerSpriteConfig } from '../utils/characterUtils';
+import { PauseMenu } from '../ui/PauseMenu';
 
 // HP Bar component attached to character
 interface HpBar {
@@ -59,8 +61,14 @@ export class BattleScene extends Phaser.Scene {
     // Animation definitions with movement data
     private animationDefs: Record<string, any> = {};
 
+    // Player character sprite configuration
+    private playerSpriteConfig!: PlayerSpriteConfig;
+
     // Universal debugger
     private debugger!: SceneDebugger;
+
+    // Pause menu
+    private pauseMenu!: PauseMenu;
 
     // Cached spawn points for battle positioning
     private cachedSpawnPoints: {
@@ -73,6 +81,7 @@ export class BattleScene extends Phaser.Scene {
     private petContainer: Phaser.GameObjects.Container | null = null;
     private petSprite: Phaser.GameObjects.Sprite | null = null;
     private equippedPetDef: PetDefinition | null = null;
+    private petShouldAttack: boolean = false;
 
     constructor() {
         super({ key: 'BattleScene' });
@@ -82,6 +91,11 @@ export class BattleScene extends Phaser.Scene {
     private fromArena: boolean = false;
     private arenaLevel: number = 1;
     private arenaWave: number = 0;
+
+    // Enemy attack tween tracking for mid-attack pause
+    private enemyAttackTweens: Phaser.Tweens.Tween[] = [];
+    private blockPhaseResumeCallback?: () => void;
+    private enemyAttackStartPosition: { x: number; y: number } = { x: 0, y: 0 };
 
     init(data: { enemyId?: string; enemyDefs?: EnemyDefinition[]; fromArena?: boolean; arenaLevel?: number; wave?: number }): void {
         // Get global game state
@@ -170,9 +184,20 @@ export class BattleScene extends Phaser.Scene {
             heroY = playerSpawn ? playerSpawn.y : 480;
         }
 
+        // Get player sprite configuration based on selected character
+        this.playerSpriteConfig = getPlayerSpriteConfig(player.characterType);
+
+        // Get hero scale from character definition
+        const charactersData = this.cache.json.get('characters') as Array<{ id: string; scale?: number }>;
+        const characterDef = charactersData?.find(c => c.id === player.characterType);
+        const HERO_BASE_SCALE = 1.0;
+        const heroScale = (characterDef?.scale ?? 1.0) * HERO_BASE_SCALE;
+
         // Create hero container with sprite and HP bar
         this.heroContainer = this.add.container(heroX, heroY);
-        this.hero = this.add.sprite(0, 0, 'knight').setScale(0.6).play('knight-idle');
+        this.hero = this.add.sprite(0, 0, this.playerSpriteConfig.idleTexture)
+            .setScale(heroScale)
+            .play(this.playerSpriteConfig.idleAnim);
         this.heroHpBar = this.createHpBar(0, -90, this.battleState.playerHp, player.maxHp, '#44cc44');
         this.heroContainer.add([this.hero, this.heroHpBar.container]);
 
@@ -220,8 +245,12 @@ export class BattleScene extends Phaser.Scene {
             const def = this.enemyDefs[index];
             const animPrefix = this.enemyAnimPrefixes[index];
 
+            // Get enemy scale from definition
+            const ENEMY_BASE_SCALE = 1.0;
+            const enemyScale = (def.scale ?? 1.0) * ENEMY_BASE_SCALE;
+
             const container = this.add.container(x, y);
-            const sprite = this.add.sprite(0, 0, def.spriteKey).setScale(0.5).play(`${animPrefix}-idle`);
+            const sprite = this.add.sprite(0, 0, def.spriteKey).setScale(enemyScale).play(`${animPrefix}-idle`);
             const hpBar = this.createHpBar(0, -80, enemy.hp, enemy.maxHp, '#cc4444');
             container.add([sprite, hpBar.container]);
 
@@ -251,6 +280,9 @@ export class BattleScene extends Phaser.Scene {
         });
 
         this.updateTargetIndicator();
+
+        // Set player level in registry for MathEngine's adaptive difficulty
+        this.registry.set('playerLevel', player.level);
 
         // Initialize systems
         this.mathEngine = new MathEngine(this.registry);
@@ -328,10 +360,14 @@ export class BattleScene extends Phaser.Scene {
         // Create pet container at the specified position
         this.petContainer = this.add.container(petX, petY);
 
-        // Create pet sprite - flipped horizontally (facing right like hero), 1/3 scale
+        // Get pet scale from definition
+        const PET_BASE_SCALE = 0.5;
+        const petScale = (petDef.scale ?? 1.0) * PET_BASE_SCALE;
+
+        // Create pet sprite - flipped horizontally (facing right like hero)
         // Use spriteKey (spritesheet) with frame 0, then play idle animation
         this.petSprite = this.add.sprite(0, 0, petDef.spriteKey, 0)
-            .setScale(0.2)  // 1/3 of enemy size (0.5 * 0.4 ≈ 0.2)
+            .setScale(petScale)
             .setFlipX(true);  // Flip to face right (same direction as hero)
 
         // Play idle animation if it exists
@@ -342,60 +378,107 @@ export class BattleScene extends Phaser.Scene {
 
         this.petContainer.add(this.petSprite);
         this.petContainer.setDepth(-1);  // Behind hero
-
-        // Add subtle idle bobbing animation
-        this.tweens.add({
-            targets: this.petContainer,
-            y: petY - 5,
-            duration: 1200,
-            yoyo: true,
-            repeat: -1,
-            ease: 'Sine.inOut'
-        });
     }
 
     /**
-     * Play pet attack animation (called when pet problem is answered correctly)
+     * Play pet attack animation (called after hero attack completes)
+     * Pet plays attack animation during approach, quick hit, then returns
      */
-    playPetAttack(): void {
-        if (!this.petSprite || !this.equippedPetDef || !this.petContainer) return;
+    private playPetAttack(targetIdx: number, onComplete: () => void): void {
+        if (!this.petSprite || !this.equippedPetDef || !this.petContainer) {
+            onComplete();
+            return;
+        }
+
+        const enemyContainer = this.enemyContainers[targetIdx];
+        if (!enemyContainer) {
+            onComplete();
+            return;
+        }
 
         const animPrefix = this.equippedPetDef.animPrefix;
-
-        // Jump forward animation
         const startX = this.petContainer.x;
         const startY = this.petContainer.y;
 
+        // Target position - offset slightly to the left of enemy
+        const targetX = enemyContainer.x - 40;
+        const targetY = enemyContainer.y;
+
+        // Get movement data from pet's attack animation definition
+        const attackAnimDef = this.animationDefs[`${animPrefix}-attack`];
+        const movement = attackAnimDef?.movement;
+        const moveDuration = movement?.duration || 300;
+
+        // Pet appears on top during attack
+        this.petContainer.setDepth(10);
+
+        // Play attack animation immediately during approach
+        const attackAnim = `${animPrefix}-attack`;
+        if (this.anims.exists(attackAnim)) {
+            this.petSprite.play(attackAnim);
+        }
+
+        // Move to enemy position
         this.tweens.add({
             targets: this.petContainer,
-            x: startX + 60,
-            y: startY - 30,
-            duration: 200,
-            ease: 'Quad.easeOut',
+            x: targetX,
+            y: targetY,
+            duration: moveDuration,
+            ease: movement?.ease || 'Quad.easeOut',
             onComplete: () => {
-                // Play attack animation if available
-                const attackAnim = `${animPrefix}-attack`;
-                if (this.anims.exists(attackAnim)) {
-                    this.petSprite!.play(attackAnim);
-                    this.petSprite!.once('animationcomplete', () => {
-                        this.petSprite!.play(`${animPrefix}-idle`);
-                    });
-                }
-
-                // Return to position
-                this.tweens.add({
-                    targets: this.petContainer,
-                    x: startX,
-                    y: startY,
-                    duration: 300,
-                    ease: 'Quad.easeIn'
+                // Brief pause at enemy (100ms), then return
+                this.time.delayedCall(100, () => {
+                    this.petSprite!.play(`${animPrefix}-idle`);
+                    this.returnPetToPosition(startX, startY, onComplete);
                 });
             }
         });
     }
 
+    /**
+     * Return pet to its starting position after attack
+     */
+    private returnPetToPosition(startX: number, startY: number, onComplete: () => void): void {
+        if (!this.petContainer) {
+            onComplete();
+            return;
+        }
+
+        this.tweens.add({
+            targets: this.petContainer,
+            x: startX,
+            y: startY,
+            duration: 300,
+            ease: 'Quad.easeIn',
+            onComplete: () => {
+                // Reset depth
+                this.petContainer?.setDepth(-1);
+                onComplete();
+            }
+        });
+    }
+
+    /**
+     * Play hero defense animation when player successfully blocks damage
+     */
+    private playHeroDefense(): void {
+        this.hero.play(this.playerSpriteConfig.defendAnim);
+
+        // Blue tint for defense effect
+        this.hero.setTint(0x4488ff);
+        this.time.delayedCall(200, () => this.hero.clearTint());
+
+        // Return to idle when animation completes
+        this.hero.once('animationcomplete', () => {
+            this.hero.play(this.playerSpriteConfig.idleAnim);
+        });
+    }
+
     private setupDebugger(): void {
         this.debugger = new SceneDebugger(this, 'BattleScene');
+
+        // Create pause menu (ESC key to toggle)
+        this.pauseMenu = new PauseMenu(this);
 
         // Register containers (sprite + HP bar move together)
         this.debugger.register('hero', this.heroContainer);
@@ -711,10 +794,10 @@ export class BattleScene extends Phaser.Scene {
                     const multiplier = problem.damageMultiplier || 1;
                     totalDamage += multiplier;
 
-                    // Trigger pet attack animation if this was the pet's problem
+                    // Mark pet to attack after hero (if this was the pet's problem)
                     if (problem.source === 'pet' && !petAttacked) {
                         petAttacked = true;
-                        this.playPetAttack();
+                        this.petShouldAttack = true;
                     }
                 }
             }
@@ -764,7 +847,12 @@ export class BattleScene extends Phaser.Scene {
     private startBlockPhase(damage: number): void {
         const shield = this.getEquippedShield();
         if (!shield) {
+            // No shield - apply damage directly and resume enemy attack sequence
             this.applyDamageToPlayer(damage);
+            if (this.blockPhaseResumeCallback) {
+                this.blockPhaseResumeCallback();
+                this.blockPhaseResumeCallback = undefined;
+            }
             return;
         }
 
@@ -818,6 +906,11 @@ export class BattleScene extends Phaser.Scene {
         const damageBlocked = Math.min(this.blockCorrectCount, this.pendingDamage);
         const finalDamage = this.pendingDamage - damageBlocked;
 
+        // Play defense animation if player blocked at least 1 damage
+        if (damageBlocked > 0) {
+            this.playHeroDefense();
+        }
+
         // Show block result only if player actually blocked something
         if (damageBlocked > 0) {
             const blockMessage = finalDamage === 0
@@ -844,6 +937,12 @@ export class BattleScene extends Phaser.Scene {
 
         // Apply remaining damage
         this.applyDamageToPlayer(finalDamage);
+
+        // Resume the attack sequence (continue movement, play attack anim, return enemy)
+        if (this.blockPhaseResumeCallback) {
+            this.blockPhaseResumeCallback();
+            this.blockPhaseResumeCallback = undefined;
+        }
     }
 
     private applyDamageToPlayer(damage: number): void {
@@ -858,9 +957,7 @@ export class BattleScene extends Phaser.Scene {
                 this.hero.clearTint();
             });
         }
-
-        // Continue with enemy return animation
-        this.finishEnemyAttack();
+        // Note: Enemy return is handled by blockPhaseResumeCallback -> returnEnemyToPosition
     }
 
     // Helper to get current target enemy index (first alive enemy)
@@ -956,10 +1053,10 @@ export class BattleScene extends Phaser.Scene {
         this.heroContainer.setDepth(10);
 
         // Start animation immediately
-        this.hero.play('knight-attack');
+        this.hero.play(this.playerSpriteConfig.attackAnim);
 
         // Get movement data from animation definition
-        const attackAnim = this.animationDefs['knight-attack'];
+        const attackAnim = this.animationDefs[this.playerSpriteConfig.attackAnim];
         const movement = attackAnim?.movement;
         const jumpDuration = movement?.duration || 400;
         const jumpOffsetY = movement?.offsetY || 0;
@@ -1041,7 +1138,7 @@ export class BattleScene extends Phaser.Scene {
 
             // Wait for animation to finish
             this.hero.once('animationcomplete', () => {
-                this.hero.play('knight-idle');
+                this.hero.play(this.playerSpriteConfig.idleAnim);
 
                 // Return: jump arc back to start
                 if (movement?.type === 'jump' && jumpOffsetY !== 0) {
@@ -1086,6 +1183,18 @@ export class BattleScene extends Phaser.Scene {
         // Reset depth
         this.heroContainer.setDepth(0);
 
+        // Check if pet should attack after hero
+        if (this.petShouldAttack) {
+            this.petShouldAttack = false;
+            this.playPetAttack(idx, () => {
+                this.continueAfterAttack(idx, enemy, enemySprite, animPrefix);
+            });
+        } else {
+            this.continueAfterAttack(idx, enemy, enemySprite, animPrefix);
+        }
+    }
+
+    private continueAfterAttack(idx: number, enemy: BattleEnemy, enemySprite: Phaser.GameObjects.Sprite, animPrefix: string): void {
         if (enemy.hp <= 0) {
             enemySprite.play(`${animPrefix}-death`);
             enemySprite.once('animationcomplete', () => {
@@ -1141,6 +1250,9 @@ export class BattleScene extends Phaser.Scene {
         const targetX = this.heroContainer.x + 50;
         const targetY = this.heroContainer.y;
 
+        // Store start position for return after attack
+        this.enemyAttackStartPosition = { x: startX, y: startY };
+
         // Get enemy attack animation movement data
         const attackAnimKey = `${animPrefix}-attack-anim`;
         const attackAnim = this.animationDefs[attackAnimKey];
@@ -1151,82 +1263,129 @@ export class BattleScene extends Phaser.Scene {
         // Enemy appears on top
         enemyContainer.setDepth(10);
 
+        // Play attack animation immediately during approach
+        const attackAnimName = `${animPrefix}-attack`;
+        if (this.anims.exists(attackAnimName)) {
+            enemySprite.play(attackAnimName);
+        }
+
+        // Clear previous tweens array
+        this.enemyAttackTweens = [];
+
         // Horizontal movement to hero
-        this.tweens.add({
+        const xTween = this.tweens.add({
             targets: enemyContainer,
             x: targetX,
             duration: moveDuration,
             ease: moveEase,
         });
+        this.enemyAttackTweens.push(xTween);
 
         // Vertical movement based on movement type
         if (movement?.type === 'jump') {
-            // Jump arc
+            // Jump arc - simplified for pausable tween
             const jumpOffsetY = movement.offsetY || -40;
-            this.tweens.add({
+            const yTween = this.tweens.add({
                 targets: enemyContainer,
-                y: startY + jumpOffsetY,
-                duration: moveDuration / 2,
-                ease: moveEase,
-                onComplete: () => {
-                    this.tweens.add({
-                        targets: enemyContainer,
-                        y: targetY,
-                        duration: moveDuration / 2,
-                        ease: movement.returnEase || 'Power1',
-                    });
-                }
+                y: [startY + jumpOffsetY, targetY],
+                duration: moveDuration,
+                ease: 'Sine.easeInOut',
             });
+            this.enemyAttackTweens.push(yTween);
         } else if (movement?.type === 'bounce') {
-            // Bouncy hop
+            // Bouncy hop - simplified
             const bounceOffsetY = movement.offsetY || -30;
-            this.tweens.add({
+            const yTween = this.tweens.add({
                 targets: enemyContainer,
-                y: startY + bounceOffsetY,
-                duration: moveDuration / 2,
-                ease: 'Quad.easeOut',
-                yoyo: true,
-                onComplete: () => {
-                    this.tweens.add({
-                        targets: enemyContainer,
-                        y: targetY,
-                        duration: moveDuration / 4,
-                        ease: 'Bounce.easeOut',
-                    });
-                }
-            });
-        } else if (movement?.type === 'dash') {
-            // Quick horizontal dash (no vertical movement)
-            this.tweens.add({
-                targets: enemyContainer,
-                y: targetY,
+                y: [startY + bounceOffsetY, targetY],
                 duration: moveDuration,
-                ease: moveEase,
+                ease: 'Bounce.easeOut',
             });
+            this.enemyAttackTweens.push(yTween);
         } else {
-            // Default: direct movement
-            this.tweens.add({
+            // Default/dash: direct movement
+            const yTween = this.tweens.add({
                 targets: enemyContainer,
                 y: targetY,
                 duration: moveDuration,
                 ease: moveEase,
             });
+            this.enemyAttackTweens.push(yTween);
         }
 
-        // After movement, play attack animation and trigger damage
-        this.time.delayedCall(moveDuration, () => {
-            // Attack animation
-            enemySprite.play(`${animPrefix}-attack`);
+        // Mid-attack: pause and show block phase (100ms into movement)
+        this.time.delayedCall(100, () => {
+            // Pause all attack tweens
+            this.enemyAttackTweens.forEach(t => t.pause());
 
-            // Wait for attack frame or delay
-            this.time.delayedCall(200, () => {
-                // Trigger block phase instead of immediate damage
-                this.startBlockPhase(enemyDef.attack);
-            });
+            // Pause enemy sprite animation
+            enemySprite.anims.pause();
 
-            enemySprite.once('animationcomplete', () => {
-                enemySprite.play(`${animPrefix}-idle`);
-            });
+            // Pause hero sprite animation
+            this.hero.anims.pause();
+
+            // Store resume callback for after block phase
+            this.blockPhaseResumeCallback = () => {
+                // Resume tweens
+                this.enemyAttackTweens.forEach(t => t.resume());
+
+                // Resume animations
+                enemySprite.anims.resume();
+                this.hero.anims.resume();
+
+                // After remaining movement completes, brief pause then return
+                this.time.delayedCall(moveDuration - 100, () => {
+                    // Brief pause at hero (100ms), then return to idle and go back
+                    this.time.delayedCall(100, () => {
+                        enemySprite.play(`${animPrefix}-idle`);
+                        // Return enemy to start position
+                        this.returnEnemyToPosition(idx);
+                    });
+                });
+            };
+
+            // Start block phase
+            this.startBlockPhase(enemyDef.attack);
+        });
+    }
+
+    /**
+     * Return enemy to their starting position after attack
+     */
+    private returnEnemyToPosition(idx: number): void {
+        const enemyContainer = this.enemyContainers[idx];
+
+        // Use cached spawn points for accurate return position
+        const enemyPos = this.cachedSpawnPoints?.enemies[idx];
+        const startX = enemyPos?.x ?? this.enemyAttackStartPosition.x;
+        const startY = enemyPos?.y ?? this.enemyAttackStartPosition.y;
+
+        this.tweens.add({
+            targets: enemyContainer,
+            x: startX,
+            y: startY,
+            duration: 300,
+            ease: 'Power1',
+            onComplete: () => {
+                enemyContainer.setDepth(0);
+
+                // Check if player was defeated
+                if (this.battleState.playerHp <= 0) {
+                    this.setPhase('defeat');
+                } else {
+                    // Check if there are more enemies to attack
+                    const nextEnemyIdx = this.findNextAliveEnemy(idx);
+                    if (nextEnemyIdx >= 0) {
+                        // More enemies to attack
+                        this.currentAttackingEnemyIndex = nextEnemyIdx;
+                        this.time.delayedCall(300, () => this.playEnemyAttack());
+                    } else {
+                        // All enemies have attacked, back to player turn
+                        this.battleState.turnCount++;
+                        this.setPhase('player_turn');
+                    }
+                }
+            }
         });
     }
 

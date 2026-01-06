@@ -65,6 +65,11 @@ export class GuildScene extends Phaser.Scene {
 
     create(): void {
         this.gameState = GameStateManager.getInstance();
+
+        // Set player level in registry for MathEngine's adaptive difficulty
+        const player = this.gameState.getPlayer();
+        this.registry.set('playerLevel', player.level);
+
         this.mathEngine = new MathEngine(this.registry);
         // Use ALL problems ever attempted, not just current level pool
         this.problemList = this.mathEngine.getAllProblemsWithStats();
@@ -116,7 +121,7 @@ export class GuildScene extends Phaser.Scene {
     }
 
     private createStatsSummary(x: number, y: number, depth: number): void {
-        const stats = this.mathEngine.getStats();
+        const player = this.gameState.getPlayer();
         const masteryPct = this.mathEngine.getMasteryPercentage();
         const poolCycle = this.mathEngine.getPoolCycle();
 
@@ -129,7 +134,7 @@ export class GuildScene extends Phaser.Scene {
         this.statsContainer.add(bg);
 
         const statsText = this.add.text(0, 0,
-            `ÚROVEŇ: ${stats.currentDifficulty}   |   CYKLUS: ${poolCycle + 1}   |   ${masteryPct}%`,
+            `ÚROVEŇ: ${player.level}   |   CYKLUS: ${poolCycle + 1}   |   ${masteryPct}%`,
             {
                 fontSize: '16px',
                 fontFamily: 'Arial, sans-serif',
@@ -337,14 +342,10 @@ export class GuildScene extends Phaser.Scene {
     private createTotalStats(x: number, y: number, collectX: number, panelDepth: number, buttonDepth: number): void {
         const stats = this.mathEngine.getStats();
 
-        // Calculate daily stats
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-        const todayTimestamp = today.getTime();
-
-        let allTimeTotal = stats.totalAttempts;
-        let allTimeCorrect = stats.correctAnswers;
-        let allTimeWrong = allTimeTotal - allTimeCorrect;
+        const allTimeTotal = stats.totalAttempts;
+        const allTimeCorrect = stats.correctAnswers;
+        const allTimeWrong = allTimeTotal - allTimeCorrect;
+        const todayProblems = stats.dailyAttempts;
 
         this.totalStatsPanel = this.add.container(x, y);
         this.totalStatsPanel.setDepth(panelDepth);
@@ -363,14 +364,6 @@ export class GuildScene extends Phaser.Scene {
             fontStyle: 'bold'
         }).setOrigin(0, 0.5);
         statsPanel.add(dailyHeader);
-
-        // Count problems attempted today
-        let todayProblems = 0;
-        for (const problem of this.problemList) {
-            if (problem.stats && problem.stats.lastAttempt >= todayTimestamp) {
-                todayProblems++;
-            }
-        }
 
         const dailyText = this.add.text(40, -25, `${todayProblems} příkladů dnes`, {
             fontSize: '14px',
@@ -837,6 +830,9 @@ export class GuildScene extends Phaser.Scene {
             const player = this.gameState.getPlayer();
             const result = ProgressionSystem.applyLevelUp(player, 1);
             this.gameState.save();
+
+            // Update registry with new level for adaptive difficulty
+            this.registry.set('playerLevel', player.level);
 
             // Show stats gains in the message
             message.setText(

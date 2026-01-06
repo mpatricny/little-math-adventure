@@ -3,58 +3,68 @@
     "spritesheets": {
         "knight-idle-sheet": {
             "path": "sprites/knight-idle.png",
-            "frameWidth": 300,
-            "frameHeight": 300
+            "frameWidth": 200,
+            "frameHeight": 200
         },
         "knight-attack-sheet": {
             "path": "sprites/knight-attack.png",
-            "frameWidth": 256,
-            "frameHeight": 256
+            "frameWidth": 200,
+            "frameHeight": 200
+        },
+        "boy-knight-idle-sheet": {
+            "path": "sprites/boy-knight-idle.png",
+            "frameWidth": 200,
+            "frameHeight": 200
+        },
+        "boy-knight-attack-sheet": {
+            "path": "sprites/boy-knight-attack.png",
+            "frameWidth": 200,
+            "frameHeight": 200
         },
         "slime-sheet": {
             "path": "sprites/slime.png",
-            "frameWidth": 256,
-            "frameHeight": 256
+            "frameWidth": 200,
+            "frameHeight": 200
         },
         "pink-idle-sheet": {
             "path": "sprites/pink-idle.png",
-            "frameWidth": 320,
-            "frameHeight": 304
+            "frameWidth": 210,
+            "frameHeight": 200
         },
         "pink-attack-sheet": {
             "path": "sprites/pink-attack.png",
-            "frameWidth": 320,
-            "frameHeight": 300
+            "frameWidth": 213,
+            "frameHeight": 200
         },
         "pink-hit-sheet": {
             "path": "sprites/pink-hit.png",
-            "frameWidth": 320,
-            "frameHeight": 304
+            "frameWidth": 210,
+            "frameHeight": 200
         },
         "purple-attack-sheet": {
             "path": "sprites/Purple-attack.png",
-            "frameWidth": 300,
-            "frameHeight": 320
+            "frameWidth": 187,
+            "frameHeight": 200
         },
         "purple-hit-sheet": {
             "path": "sprites/purple-hit-fall.png",
-            "frameWidth": 300,
-            "frameHeight": 300
+            "frameWidth": 200,
+            "frameHeight": 200
         },
         "leafy-idle-sheet": {
             "path": "sprites/leafy-idle.png",
-            "frameWidth": 330,
-            "frameHeight": 300
+            "frameWidth": 220,
+            "frameHeight": 200
         },
         "leafy-attack-sheet": {
             "path": "sprites/leafy-attack.png",
-            "frameWidth": 330,
-            "frameHeight": 300
+            "frameWidth": 220,
+            "frameHeight": 200
         },
         "leafy-hit-sheet": {
             "path": "sprites/leafy-hit.png",
-            "frameWidth": 326,
-            "frameHeight": 300
+            "frameWidth": 217,
+            "frameHeight": 200
         },
         "hint-items-sheet": {
             "path": "sprites/hint-items.png",
@@ -83,6 +93,36 @@
         },
         "pet-porcupine-2": {
             "path": "sprites/spritesheet (23).png",
+            "frameWidth": 200,
+            "frameHeight": 200
+        },
+        "knight-walk-sheet": {
+            "path": "sprites/knight-walk.png",
+            "frameWidth": 300,
+            "frameHeight": 300
+        },
+        "knight-defend-sheet": {
+            "path": "sprites/knight-defend.png",
+            "frameWidth": 300,
+            "frameHeight": 300
+        },
+        "boy-knight-walk-sheet": {
+            "path": "sprites/boy-knight-walk.png",
+            "frameWidth": 200,
+            "frameHeight": 200
+        },
+        "boy-knight-defend-sheet": {
+            "path": "sprites/boy-knight-defend.png",
+            "frameWidth": 200,
+            "frameHeight": 200
+        },
+        "girl-knight-walk-sheet": {
+            "path": "sprites/girl-knight-walk.png",
+            "frameWidth": 200,
+            "frameHeight": 200
+        },
+        "girl-knight-def-sheet": {
+            "path": "sprites/girl-knight-def.png",
             "frameWidth": 200,
             "frameHeight": 200
         }

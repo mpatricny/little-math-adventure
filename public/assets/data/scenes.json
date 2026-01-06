@@ -1,5 +1,242 @@
 {
     "scenes": {
+        "SaveSlotScene": {
+            "viewport": {
+                "width": 1280,
+                "height": 720
+            },
+            "ui": [
+                {
+                    "id": "title",
+                    "asset": "ui.labels.title-label",
+                    "x": 640,
+                    "y": 60,
+                    "text": "ULOZENE HRY"
+                },
+                {
+                    "id": "arrowLeft",
+                    "asset": "ui.buttons.back-button",
+                    "x": 200,
+                    "y": 360,
+                    "text": "<",
+                    "events": {
+                        "click": "onPrevSlot"
+                    }
+                },
+                {
+                    "id": "arrowRight",
+                    "asset": "ui.buttons.back-button",
+                    "x": 1080,
+                    "y": 360,
+                    "text": ">",
+                    "events": {
+                        "click": "onNextSlot"
+                    }
+                },
+                {
+                    "id": "slotCard",
+                    "asset": "ui.panels.dialog-panel",
+                    "x": 640,
+                    "y": 350,
+                    "width": 400,
+                    "height": 380
+                },
+                {
+                    "id": "slotNumber",
+                    "asset": "ui.labels.title-label",
+                    "x": 640,
+                    "y": 140,
+                    "text": "SLOT 1/8"
+                },
+                {
+                    "id": "characterPreview",
+                    "asset": "ui.containers.empty",
+                    "x": 640,
+                    "y": 280
+                },
+                {
+                    "id": "emptySlotText",
+                    "asset": "ui.labels.title-label",
+                    "x": 640,
+                    "y": 320,
+                    "text": "PRAZDNY SLOT",
+                    "visible": false
+                },
+                {
+                    "id": "characterName",
+                    "asset": "ui.labels.gold-label",
+                    "x": 640,
+                    "y": 400,
+                    "text": ""
+                },
+                {
+                    "id": "characterLevel",
+                    "asset": "ui.labels.gold-label",
+                    "x": 640,
+                    "y": 430,
+                    "text": ""
+                },
+                {
+                    "id": "problemsSolved",
+                    "asset": "ui.labels.gold-label",
+                    "x": 640,
+                    "y": 460,
+                    "text": ""
+                },
+                {
+                    "id": "btnPlay",
+                    "asset": "ui.buttons.attack-button",
+                    "x": 540,
+                    "y": 570,
+                    "text": "HRAT",
+                    "events": {
+                        "click": "onPlay"
+                    }
+                },
+                {
+                    "id": "btnDelete",
+                    "asset": "ui.buttons.back-button",
+                    "x": 740,
+                    "y": 570,
+                    "text": "SMAZAT",
+                    "events": {
+                        "click": "onDelete"
+                    }
+                },
+                {
+                    "id": "btnBack",
+                    "asset": "ui.buttons.back-button",
+                    "x": 640,
+                    "y": 660,
+                    "text": "ZPET",
+                    "events": {
+                        "click": "onBack"
+                    }
+                },
+                {
+                    "id": "deleteOverlay",
+                    "asset": "ui.panels.dark-overlay",
+                    "x": 640,
+                    "y": 360,
+                    "width": 1280,
+                    "height": 720,
+                    "visible": false
+                },
+                {
+                    "id": "deleteDialog",
+                    "asset": "ui.panels.dialog-panel",
+                    "x": 640,
+                    "y": 360,
+                    "width": 400,
+                    "height": 200,
+                    "visible": false
+                },
+                {
+                    "id": "deleteTitle",
+                    "asset": "ui.labels.title-label",
+                    "x": 640,
+                    "y": 300,
+                    "text": "SMAZAT POSTAVU?",
+                    "visible": false
+                },
+                {
+                    "id": "btnConfirmDelete",
+                    "asset": "ui.buttons.attack-button",
+                    "x": 570,
+                    "y": 400,
+                    "text": "ANO",
+                    "visible": false,
+                    "events": {
+                        "click": "onConfirmDelete"
+                    }
+                },
+                {
+                    "id": "btnCancelDelete",
+                    "asset": "ui.buttons.back-button",
+                    "x": 710,
+                    "y": 400,
+                    "text": "NE",
+                    "visible": false,
+                    "events": {
+                        "click": "onCancelDelete"
+                    }
+                }
+            ]
+        },
+        "CharacterSelectScene": {
+            "viewport": {
+                "width": 1280,
+                "height": 720
+            },
+            "ui": [
+                {
+                    "id": "title",
+                    "asset": "ui.labels.title-label",
+                    "x": 640,
+                    "y": 80,
+                    "text": "VYBER SI POSTAVU"
+                },
+                {
+                    "id": "girlKnightPreview",
+                    "asset": "ui.containers.empty",
+                    "x": 400,
+                    "y": 400
+                },
+                {
+                    "id": "boyKnightPreview",
+                    "asset": "ui.containers.empty",
+                    "x": 880,
+                    "y": 400
+                },
+                {
+                    "id": "girlLabel",
+                    "asset": "ui.labels.building-label",
+                    "x": 400,
+                    "y": 550,
+                    "text": "RYTÍŘKA"
+                },
+                {
+                    "id": "boyLabel",
+                    "asset": "ui.labels.building-label",
+                    "x": 880,
+                    "y": 550,
+                    "text": "RYTÍŘ"
+                },
+                {
+                    "id": "nameInputLabel",
+                    "asset": "ui.labels.building-label",
+                    "x": 640,
+                    "y": 575,
+                    "text": "JMENO:"
+                },
+                {
+                    "id": "nameInputContainer",
+                    "asset": "ui.containers.empty",
+                    "x": 640,
+                    "y": 605
+                },
+                {
+                    "id": "btnConfirm",
+                    "asset": "ui.buttons.attack-button",
+                    "x": 640,
+                    "y": 660,
+                    "text": "POTVRDIT",
+                    "events": {
+                        "click": "onConfirm"
+                    }
+                },
+                {
+                    "id": "btnBack",
+                    "asset": "ui.buttons.back-button",
+                    "x": 100,
+                    "y": 700,
+                    "text": "ZPĚT",
+                    "events": {
+                        "click": "onBack"
+                    }
+                }
+            ]
+        },
         "MenuScene": {
             "viewport": {
                 "width": 1280,
@@ -192,6 +429,16 @@
                     "x": 455,
                     "y": 380,
                     "visible": false
+                },
+                {
+                    "id": "btnQuitToMenu",
+                    "asset": "ui.buttons.back-button",
+                    "x": 60,
+                    "y": 40,
+                    "text": "MENU",
+                    "events": {
+                        "click": "onQuitToMenu"
+                    }
                 }
             ]
         },

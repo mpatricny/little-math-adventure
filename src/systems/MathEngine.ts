@@ -126,10 +126,11 @@ export class MathEngine {
     }
 
     /**
-     * Initialize the level pool based on current difficulty
+     * Initialize the level pool based on player level
      */
     initializeLevelPool(): void {
-        this.levelPool = this.generateLevelPool(this.stats.currentDifficulty);
+        const playerLevel = this.registry.get('playerLevel') || 1;
+        this.levelPool = this.generateLevelPool(playerLevel);
 
         // Initialize active pool if empty or if difficulty changed
         if (this.stats.currentPool.length === 0) {
@@ -276,9 +277,22 @@ export class MathEngine {
     }
 
     /**
+     * Check if day has changed and reset daily counter if needed
+     */
+    private checkDailyReset(): void {
+        const today = new Date().toISOString().split('T')[0]; // "YYYY-MM-DD"
+        if (this.stats.lastAttemptDate !== today) {
+            this.stats.dailyAttempts = 0;
+            this.stats.lastAttemptDate = today;
+        }
+    }
+
+    /**
      * Record the result of a problem with explicit problem ID
      */
     recordResultForProblem(problemId: string, isCorrect: boolean): void {
+        this.checkDailyReset();
+        this.stats.dailyAttempts++;
         this.stats.totalAttempts++;
         if (isCorrect) this.stats.correctAnswers++;
 
@@ -303,13 +317,12 @@ export class MathEngine {
             problemStat.wrongCount++;
         }
 
-        // Sliding window of last 10 for difficulty adaptation
+        // Sliding window of last 10 for stats tracking
         this.stats.recentResults.push(isCorrect);
         if (this.stats.recentResults.length > 10) {
             this.stats.recentResults.shift();
         }
 
-        this.adaptDifficulty();
         this.saveStats();
     }
 
@@ -317,6 +330,8 @@ export class MathEngine {
      * Record the result of a problem and update stats (uses currentProblemId)
      */
     recordResult(isCorrect: boolean): void {
+        this.checkDailyReset();
+        this.stats.dailyAttempts++;
         this.stats.totalAttempts++;
         if (isCorrect) this.stats.correctAnswers++;
 
@@ -349,51 +364,21 @@ export class MathEngine {
             }
         }
 
-        // Sliding window of last 10 for difficulty adaptation
+        // Sliding window of last 10 for stats tracking
         this.stats.recentResults.push(isCorrect);
         if (this.stats.recentResults.length > 10) {
             this.stats.recentResults.shift();
         }
 
-        // Adapt difficulty based on recent performance
-        this.adaptDifficulty();
         this.saveStats();
     }
 
-    private adaptDifficulty(): void {
-        if (this.stats.recentResults.length < 5) return;
-
-        const recentCorrect = this.stats.recentResults.filter(r => r).length;
-        const successRate = recentCorrect / this.stats.recentResults.length;
-        const playerLevel = this.registry.get('playerLevel') || 1;
-        const oldDifficulty = this.stats.currentDifficulty;
-
-        if (successRate < 0.4 && this.stats.currentDifficulty > 1) {
-            this.stats.currentDifficulty--;
-        } else if (successRate >= 0.8 && this.stats.currentDifficulty < playerLevel + 2) {
-            this.stats.currentDifficulty++;
-            if (this.stats.currentDifficulty > this.stats.highestDifficulty) {
-                this.stats.highestDifficulty = this.stats.currentDifficulty;
-            }
-        }
-
-        // If difficulty changed, reinitialize pool
-        if (oldDifficulty !== this.stats.currentDifficulty) {
-            this.stats.currentPool = [];
-            this.stats.poolCycle = 0;
-            // Reset mastered flags for clean start at new difficulty
-            for (const key in this.stats.problemStats) {
-                this.stats.problemStats[key].mastered = false;
-            }
-            this.initializeLevelPool();
-        }
-    }
-
     /**
-     * Get the current difficulty configuration
+     * Get the current difficulty configuration (based on player level)
      */
     private getConfig(level?: number): DifficultyConfig {
-        const effectiveLevel = level !== undefined ? level : this.stats.currentDifficulty;
+        const playerLevel = this.registry.get('playerLevel') || 1;
+        const effectiveLevel = level !== undefined ? level : playerLevel;
         const idx = Math.min(effectiveLevel - 1, DIFFICULTY_CONFIGS.length - 1);
         return DIFFICULTY_CONFIGS[idx];
     }
