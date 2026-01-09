@@ -1401,6 +1401,170 @@
       ],
       "hotspots": [],
       "templates": {}
+    },
+    "TestingTownScene": {
+      "viewport": {
+        "width": 1280,
+        "height": 720
+      },
+      "elements": [
+        {
+          "id": "playerSpawn",
+          "type": "zone",
+          "x": 80,
+          "y": 615,
+          "origin": [0.5, 0.5],
+          "depth": 0,
+          "editable": true,
+          "visible": true
+        },
+        {
+          "id": "bg",
+          "type": "image",
+          "x": 0,
+          "y": 0,
+          "origin": [0, 0],
+          "depth": -10,
+          "editable": true,
+          "visible": true
+        },
+        {
+          "id": "bgGrass",
+          "type": "image",
+          "x": 0,
+          "y": 685,
+          "origin": [0, 1],
+          "depth": -5,
+          "editable": true,
+          "visible": true
+        },
+        {
+          "id": "witch",
+          "type": "image",
+          "x": 220,
+          "y": 670,
+          "origin": [0.5, 1],
+          "depth": 0,
+          "editable": true,
+          "visible": true,
+          "scale": 0.224
+        },
+        {
+          "id": "guild",
+          "type": "image",
+          "x": 455,
+          "y": 700,
+          "origin": [0.5, 1],
+          "depth": 0,
+          "editable": true,
+          "visible": true,
+          "scale": 0.224
+        },
+        {
+          "id": "tavern",
+          "type": "image",
+          "x": 655,
+          "y": 665,
+          "origin": [0.5, 1],
+          "depth": 0,
+          "editable": true,
+          "visible": true,
+          "scale": 0.224
+        },
+        {
+          "id": "shop",
+          "type": "image",
+          "x": 880,
+          "y": 670,
+          "origin": [0.5, 1],
+          "depth": 0,
+          "editable": true,
+          "visible": true,
+          "scale": 0.184
+        },
+        {
+          "id": "fgGrass",
+          "type": "image",
+          "x": 0,
+          "y": 705,
+          "origin": [0, 1],
+          "depth": 5,
+          "editable": true,
+          "visible": true
+        },
+        {
+          "id": "testingLabel",
+          "type": "container",
+          "x": 640,
+          "y": 360,
+          "origin": [0.5, 0.5],
+          "depth": 500,
+          "editable": true,
+          "visible": true
+        },
+        {
+          "id": "btnBackToTown",
+          "type": "button",
+          "x": 60,
+          "y": 40,
+          "origin": [0.5, 0.5],
+          "depth": 80,
+          "editable": true,
+          "visible": true
+        }
+      ],
+      "hotspots": [],
+      "templates": {}
+    },
+    "TestingWitchHutScene": {
+      "viewport": {
+        "width": 1280,
+        "height": 720
+      },
+      "elements": [
+        {
+          "id": "interior",
+          "type": "image",
+          "x": 640,
+          "y": 360,
+          "origin": [0.5, 0.5],
+          "depth": -10,
+          "editable": true,
+          "visible": true
+        },
+        {
+          "id": "overlay",
+          "type": "image",
+          "x": 640,
+          "y": 360,
+          "origin": [0.5, 0.5],
+          "depth": -5,
+          "editable": true,
+          "visible": true
+        },
+        {
+          "id": "title",
+          "type": "text",
+          "x": 640,
+          "y": 40,
+          "origin": [0.5, 0.5],
+          "depth": 10,
+          "editable": true,
+          "visible": true
+        },
+        {
+          "id": "backBtn",
+          "type": "button",
+          "x": 640,
+          "y": 630,
+          "origin": [0.5, 0.5],
+          "depth": 50,
+          "editable": true,
+          "visible": true
+        }
+      ],
+      "hotspots": [],
+      "templates": {}
     }
   }
 }

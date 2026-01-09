@@ -97,6 +97,7 @@ export interface PlayerState {
     activePet: string | null;         // NEW: Currently equipped pet ID
     arena: ArenaState;                // Arena progress tracking
     lastBuildingId?: string;          // Track last visited building for return position
+    lastTestingBuildingId?: string;   // Track last visited building in testing scene
 }
 
 // ===== GUILD TRIAL SYSTEM =====

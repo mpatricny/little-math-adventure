@@ -12,6 +12,8 @@ import { ShopScene } from './scenes/ShopScene';
 import { GuildScene } from './scenes/GuildScene';
 import { TavernScene } from './scenes/TavernScene';
 import { MathBoardDebugScene } from './scenes/MathBoardDebugScene';
+import { TestingTownScene } from './scenes/TestingTownScene';
+import { TestingWitchHutScene } from './scenes/TestingWitchHutScene';
 
 const config: Phaser.Types.Core.GameConfig = {
     type: Phaser.AUTO,  // WebGL with Canvas fallback
@@ -26,7 +28,7 @@ const config: Phaser.Types.Core.GameConfig = {
     dom: {
         createContainer: true  // Enable DOM element support for text input
     },
-    scene: [BootScene, AssetLoaderScene, MenuScene, SaveSlotScene, CharacterSelectScene, TownScene, BattleScene, ArenaScene, VictoryScene, WitchHutScene, ShopScene, GuildScene, TavernScene, MathBoardDebugScene],
+    scene: [BootScene, AssetLoaderScene, MenuScene, SaveSlotScene, CharacterSelectScene, TownScene, TestingTownScene, TestingWitchHutScene, BattleScene, ArenaScene, VictoryScene, WitchHutScene, ShopScene, GuildScene, TavernScene, MathBoardDebugScene],
 };
 
 new Phaser.Game(config);

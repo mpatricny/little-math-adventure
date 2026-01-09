@@ -10,6 +10,8 @@ export class TownScene extends Phaser.Scene {
     private characterUI!: CharacterUI;
     private debugger!: SceneDebugger;
     private player!: Phaser.GameObjects.Sprite;
+    private debugArrow?: Phaser.GameObjects.Container;
+    private isDebugMode: boolean = false;
 
     constructor() {
         super({ key: 'TownScene' });
@@ -95,6 +97,82 @@ export class TownScene extends Phaser.Scene {
         // Debug shortcuts
         this.input.keyboard!.on('keydown-M', () => {
             this.scene.start('MathBoardDebugScene');
+        });
+
+        // Create debug arrow for Testing scene (hidden by default)
+        this.createDebugArrow();
+
+        // Toggle debug arrow visibility when D is pressed (same as debug mode toggle)
+        this.input.keyboard!.on('keydown-D', () => {
+            this.isDebugMode = !this.isDebugMode;
+            if (this.debugArrow) {
+                this.debugArrow.setVisible(this.isDebugMode);
+            }
+        });
+    }
+
+    private createDebugArrow(): void {
+        // Create arrow on left side pointing left, hidden by default
+        const arrowX = 40;
+        const arrowY = 360;
+
+        // Left-pointing triangle
+        const arrow = this.add.triangle(0, 0,
+            20, -25,   // top right
+            20, 25,    // bottom right
+            -10, 0,    // tip (pointing left)
+            0xffff00
+        );
+
+        // Label below arrow
+        const label = this.add.text(0, 40, 'TEST', {
+            fontSize: '14px',
+            fontFamily: 'Arial, sans-serif',
+            color: '#ffff00',
+            fontStyle: 'bold',
+            stroke: '#000000',
+            strokeThickness: 2
+        }).setOrigin(0.5);
+
+        this.debugArrow = this.add.container(arrowX, arrowY, [arrow, label]);
+        this.debugArrow.setVisible(false);
+        this.debugArrow.setDepth(1000);
+        this.debugArrow.setSize(50, 80);
+        this.debugArrow.setInteractive({ useHandCursor: true });
+
+        // Hover effects
+        this.debugArrow.on('pointerover', () => {
+            arrow.setFillStyle(0xffff88);
+            this.tweens.add({
+                targets: this.debugArrow,
+                x: arrowX - 5,
+                duration: 150,
+                ease: 'Back.easeOut'
+            });
+        });
+
+        this.debugArrow.on('pointerout', () => {
+            arrow.setFillStyle(0xffff00);
+            this.tweens.add({
+                targets: this.debugArrow,
+                x: arrowX,
+                duration: 150
+            });
+        });
+
+        this.debugArrow.on('pointerdown', () => {
+            this.scene.start('TestingTownScene');
+        });
+
+        // Pulsing animation
+        this.tweens.add({
+            targets: arrow,
+            scaleX: 1.15,
+            scaleY: 1.15,
+            duration: 800,
+            yoyo: true,
+            repeat: -1,
+            ease: 'Sine.easeInOut'
         });
     }
 

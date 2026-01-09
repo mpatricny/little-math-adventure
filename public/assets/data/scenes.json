@@ -948,6 +948,131 @@
                     }
                 }
             ]
+        },
+        "TestingTownScene": {
+            "viewport": {
+                "width": 1280,
+                "height": 720
+            },
+            "elements": [
+                {
+                    "id": "bg",
+                    "asset": "environments.backgrounds.town",
+                    "x": 0,
+                    "y": 0,
+                    "width": 1280,
+                    "height": 720
+                },
+                {
+                    "id": "bgGrass",
+                    "asset": "environments.terrain.grass-layer",
+                    "x": 0,
+                    "y": 685,
+                    "width": 1280,
+                    "height": 80,
+                    "depth": -5,
+                    "alpha": 0.8
+                },
+                {
+                    "id": "witch",
+                    "asset": "environments.buildings.witch-hut",
+                    "x": 220,
+                    "y": 670
+                },
+                {
+                    "id": "guild",
+                    "asset": "environments.buildings.guild",
+                    "x": 455,
+                    "y": 700
+                },
+                {
+                    "id": "tavern",
+                    "asset": "environments.buildings.tavern",
+                    "x": 655,
+                    "y": 665
+                },
+                {
+                    "id": "shop",
+                    "asset": "environments.buildings.shop",
+                    "x": 880,
+                    "y": 670
+                },
+                {
+                    "id": "fgGrass",
+                    "asset": "environments.terrain.grass-layer",
+                    "x": 0,
+                    "y": 705,
+                    "width": 1280,
+                    "height": 70,
+                    "depth": 5
+                }
+            ],
+            "zones": [
+                {
+                    "id": "playerSpawn",
+                    "zone": "zones.spawns.player-spawn-town"
+                }
+            ],
+            "ui": [
+                {
+                    "id": "testingLabel",
+                    "asset": "ui.containers.empty",
+                    "x": 640,
+                    "y": 360
+                },
+                {
+                    "id": "btnBackToTown",
+                    "asset": "ui.buttons.back-button",
+                    "x": 60,
+                    "y": 40,
+                    "text": "ZPĚT",
+                    "events": {
+                        "click": "onBackToTown"
+                    }
+                }
+            ]
+        },
+        "TestingWitchHutScene": {
+            "viewport": {
+                "width": 1280,
+                "height": 720
+            },
+            "elements": [
+                {
+                    "id": "interior",
+                    "asset": "environments.interiors.witch-hut-interior",
+                    "x": 640,
+                    "y": 360,
+                    "width": 1280,
+                    "height": 720
+                },
+                {
+                    "id": "overlay",
+                    "asset": "ui.panels.dark-overlay",
+                    "x": 640,
+                    "y": 360,
+                    "width": 1280,
+                    "height": 720
+                }
+            ],
+            "ui": [
+                {
+                    "id": "title",
+                    "asset": "ui.labels.title-label",
+                    "x": 640,
+                    "y": 40,
+                    "text": "TESTING - ČARODĚJNICE"
+                },
+                {
+                    "id": "backBtn",
+                    "asset": "ui.buttons.back-button",
+                    "x": 640,
+                    "y": 630,
+                    "events": {
+                        "click": "enterScene:TestingTownScene"
+                    }
+                }
+            ]
         }
     }
 }

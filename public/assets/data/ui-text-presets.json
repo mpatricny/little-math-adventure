@@ -1,0 +1,22 @@
+{
+  "version": 1,
+  "presets": [
+    {
+      "id": "SpellButton",
+      "label": "spellButton",
+      "fontFamily": "Fredoka",
+      "textAlign": "center",
+      "fitMode": "shrinkToFit",
+      "textStyle": {
+        "fill": "#F7E9CF",
+        "stroke": "#3A1F14",
+        "strokeWidth": 0.5,
+        "shadowColor": "#000000",
+        "shadowBlur": 10,
+        "shadowOffsetX": 0,
+        "shadowOffsetY": 6,
+        "shadowOpacity": 0.55
+      }
+    }
+  ]
+}
