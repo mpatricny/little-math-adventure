@@ -38,6 +38,9 @@ export class BootScene extends Phaser.Scene {
         // UI layouts (math board etc.)
         this.load.json('uiLayouts', 'assets/data/ui-layouts.json');
 
+        // Nine-slice configs (for scalable UI elements)
+        this.load.json('nineSlices', 'assets/data/nine-slices.json');
+
         // Legacy data (keep until fully migrated)
         this.load.json('enemies', 'assets/data/enemies.json');
         this.load.json('items', 'assets/data/items.json');
@@ -106,6 +109,12 @@ export class AssetLoaderScene extends Phaser.Scene {
 
         // Create global animations
         this.createAnimations();
+
+        // Store nine-slice configs in registry for AssetFactory
+        const nineSlices = this.cache.json.get('nineSlices');
+        if (nineSlices) {
+            this.registry.set('nineSlices', nineSlices);
+        }
 
         // Go to menu
         this.scene.start('MenuScene');

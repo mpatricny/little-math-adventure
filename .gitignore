@@ -10,3 +10,6 @@ dist
 
 # Local settings
 .claude/settings.local.json
+
+# Asset library (large database files)
+public/assets/library/

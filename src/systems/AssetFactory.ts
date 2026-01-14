@@ -91,6 +91,9 @@ export class AssetFactory {
             case 'container':
                 obj = this.createContainer(assetDef as ContainerAssetDef, placement);
                 break;
+            case 'nineSlice':
+                obj = this.createNineSlice(assetDef as ImageAssetDef, placement);
+                break;
             default:
                 console.warn(`Unsupported asset type: ${assetDef.type}`);
                 obj = this.scene.add.text(placement.x, placement.y, `TYPE? ${assetDef.type}`, { color: '#ff0000' });
@@ -182,6 +185,49 @@ export class AssetFactory {
         }
 
         return image;
+    }
+
+    private createNineSlice(def: ImageAssetDef, placement: SceneElement): Phaser.GameObjects.NineSlice {
+        const texture = placement.texture || def.texture;
+
+        // Get nine-slice config from registry
+        const nineSlices = this.scene.registry.get('nineSlices');
+        const config = nineSlices?.configs?.[texture];
+
+        if (!config) {
+            console.warn(`No nine-slice config for texture: ${texture}, falling back to image`);
+            // Fallback to regular image if no nine-slice config
+            const image = this.scene.add.image(placement.x, placement.y, texture);
+            const depth = placement.depth !== undefined ? placement.depth : (def.depth || 0);
+            image.setDepth(depth);
+            return image as unknown as Phaser.GameObjects.NineSlice;
+        }
+
+        // Get dimensions (from placement, def, or defaults)
+        const width = placement.width ?? (def as any).defaultWidth ?? 100;
+        const height = placement.height ?? (def as any).defaultHeight ?? 100;
+
+        // Create nine-slice
+        const nineSlice = this.scene.add.nineslice(
+            placement.x,
+            placement.y,
+            texture,
+            undefined,  // frame
+            width,
+            height,
+            config.leftWidth,
+            config.rightWidth,
+            config.topHeight,
+            config.bottomHeight
+        );
+
+        const origin = def.origin || [0.5, 0.5];
+        nineSlice.setOrigin(origin[0], origin[1]);
+
+        const depth = placement.depth !== undefined ? placement.depth : (def.depth || 0);
+        nineSlice.setDepth(depth);
+
+        return nineSlice;
     }
 
     private createTileSprite(def: TileSpriteAssetDef, placement: SceneElement): Phaser.GameObjects.TileSprite {

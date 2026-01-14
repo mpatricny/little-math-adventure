@@ -23,7 +23,23 @@ export type AssetType =
     | 'enemySpawn'
     | 'npcSpawn'
     | 'dropZone'
-    | 'itemSpawn';
+    | 'itemSpawn'
+    | 'nineSlice';
+
+// Nine-slice config (from nine-slices.json)
+export interface NineSliceConfig {
+    texture: string;
+    leftWidth: number;
+    rightWidth: number;
+    topHeight: number;
+    bottomHeight: number;
+}
+
+// Nine-slices manifest file
+export interface NineSlicesFile {
+    version: string;
+    configs: Record<string, NineSliceConfig>;
+}
 
 // Texture definition (raw file reference)
 export interface TextureDef {
