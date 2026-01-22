@@ -1,0 +1,74 @@
+{
+  "48962742-321f-405f-9f3d-e345ba6969ad": {
+    "leftInset": 108,
+    "rightInset": 113,
+    "topInset": 123,
+    "bottomInset": 131,
+    "padLeft": 0,
+    "padRight": 0,
+    "padTop": 0,
+    "padBottom": 0,
+    "originalPath": "originals/9a5d2773-5ff03771.png",
+    "assetName": "Select_hero_frame-cropped_small"
+  },
+  "b13050e1-14ed-4620-a48d-1f68ff630bbe": {
+    "leftInset": 213,
+    "rightInset": 236,
+    "topInset": 246,
+    "bottomInset": 256,
+    "padLeft": 0,
+    "padRight": 0,
+    "padTop": 0,
+    "padBottom": 0,
+    "originalPath": "originals/d2f65138-9b1c920a.png",
+    "assetName": "Select_hero_frame"
+  },
+  "c2ef3774-39fd-4b22-bfeb-10cb20a1993d": {
+    "leftInset": 158,
+    "rightInset": 100,
+    "topInset": 74,
+    "bottomInset": 74,
+    "padLeft": 0,
+    "padRight": 0,
+    "padTop": 0,
+    "padBottom": 0,
+    "originalPath": "originals/b0a2cda5-e1830791.png",
+    "assetName": "Alternate title-cropped-cropped"
+  },
+  "a55eab2b-0d1d-44a0-be3e-df44886bd14b": {
+    "leftInset": 57,
+    "rightInset": 59,
+    "topInset": 46,
+    "bottomInset": 61,
+    "padLeft": 0,
+    "padRight": 0,
+    "padTop": 0,
+    "padBottom": 0,
+    "originalPath": "originals/4faac94d-3611c94b.png",
+    "assetName": "ui board diamonds-small"
+  },
+  "0017a8f0-5e13-4e5c-8687-c207e2f3fd9f": {
+    "leftInset": 397,
+    "rightInset": 361,
+    "topInset": 316,
+    "bottomInset": 324,
+    "padLeft": 0,
+    "padRight": 0,
+    "padTop": 0,
+    "padBottom": 0,
+    "originalPath": "originals/dc73913c-e84fe5fe.png",
+    "assetName": "Button isolated"
+  },
+  "64e6a52e-003f-4672-9a9d-6350dabab4e9": {
+    "leftInset": 122,
+    "rightInset": 184,
+    "topInset": 128,
+    "bottomInset": 154,
+    "padLeft": 0,
+    "padRight": 0,
+    "padTop": 0,
+    "padBottom": 0,
+    "originalPath": "originals/52a2a9e9-4997b23f.png",
+    "assetName": "ui board diamonds-selection"
+  }
+}
