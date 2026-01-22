@@ -16,7 +16,8 @@ export type ElementType =
     | 'zone'
     | 'text'
     | 'graphics'
-    | 'nineslice';
+    | 'nineslice'
+    | 'uiElement';
 
 /**
  * Definition for a single scene element
@@ -123,6 +124,11 @@ export interface ElementDef {
     interactive?: boolean | {
         useHandCursor?: boolean;
         hitArea?: 'rect' | 'circle';
+    };
+
+    /** UI Element template reference (for type: 'uiElement') */
+    uiElement?: {
+        templateId: string;
     };
 }
 

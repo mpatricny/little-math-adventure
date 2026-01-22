@@ -1,7 +1,7 @@
 import Phaser from 'phaser';
 import { AssetFactory } from './AssetFactory';
-import { ScenesFile, SceneDef } from '../types/scenes';
-import { SceneLayoutsFile, SpawnPoints, SpawnPoint, EnemyCount } from '../types/layout';
+import { ScenesFile, SceneElement } from '../types/scenes';
+import { SceneLayoutsFile, SpawnPoints, SpawnPoint, EnemyCount, ElementType } from '../types/layout';
 
 export class SceneBuilder {
     private scene: Phaser.Scene;
@@ -20,6 +20,8 @@ export class SceneBuilder {
         scaleY?: number;
         depth?: number;
         origin?: [number, number];
+        type?: ElementType;
+        uiElement?: { templateId: string };
     }> = new Map();
 
     constructor(scene: Phaser.Scene) {
@@ -53,13 +55,16 @@ export class SceneBuilder {
         // Create elements
         if (sceneDef.elements) {
             sceneDef.elements.forEach(element => {
-                const obj = this.factory.create(element.asset, element);
+                const layoutOverride = this.layoutOverrides.get(element.id);
+                const effectiveElement = this.buildEffectiveElement(element, layoutOverride);
+
+                const obj = this.factory.create(effectiveElement.asset, effectiveElement);
                 this.elements.set(element.id, obj);
 
                 // Apply position overrides from scene-layouts.json
                 this.applyLayoutOverrides(element.id, obj);
 
-                // Bind events
+                // Bind events from original element or layout override
                 if (element.events) {
                     this.bindEvents(obj, element.events);
                 }
@@ -90,7 +95,10 @@ export class SceneBuilder {
         // Create UI elements
         if (sceneDef.ui) {
             sceneDef.ui.forEach(element => {
-                const obj = this.factory.create(element.asset, element);
+                const layoutOverride = this.layoutOverrides.get(element.id);
+                const effectiveElement = this.buildEffectiveElement(element, layoutOverride);
+
+                const obj = this.factory.create(effectiveElement.asset, effectiveElement);
                 this.elements.set(element.id, obj);
 
                 // Apply position overrides from scene-layouts.json
@@ -254,7 +262,9 @@ export class SceneBuilder {
                 scaleX: element.scaleX,
                 scaleY: element.scaleY,
                 depth: element.depth,
-                origin: element.origin
+                origin: element.origin,
+                type: element.type,
+                uiElement: element.uiElement
             });
         }
 
@@ -313,6 +323,43 @@ export class SceneBuilder {
     }
 
     /**
+     * Build the effective element definition by merging scene element with layout override.
+     * If layout override has type 'uiElement', use that instead of the original asset type.
+     * Also handles elements that already have uiElement property from scenes.json.
+     */
+    private buildEffectiveElement(
+        element: SceneElement,
+        layoutOverride?: {
+            x: number;
+            y: number;
+            type?: ElementType;
+            uiElement?: { templateId: string };
+        }
+    ): SceneElement {
+        // If layout override specifies uiElement type, transform the element
+        if (layoutOverride?.type === 'uiElement' && layoutOverride.uiElement?.templateId) {
+            return {
+                ...element,
+                x: layoutOverride.x,
+                y: layoutOverride.y,
+                asset: 'uiElement', // Special asset key handled by AssetFactory
+                uiElement: layoutOverride.uiElement
+            };
+        }
+
+        // If element already has uiElement property from scenes.json, ensure asset is set correctly
+        if (element.uiElement?.templateId) {
+            return {
+                ...element,
+                asset: 'uiElement'
+            };
+        }
+
+        // Return element unchanged if no uiElement override
+        return element;
+    }
+
+    /**
      * Check if layout overrides exist for an element
      */
     hasLayoutOverride(id: string): boolean {
@@ -332,6 +379,8 @@ export class SceneBuilder {
         scaleY?: number;
         depth?: number;
         origin?: [number, number];
+        type?: ElementType;
+        uiElement?: { templateId: string };
     } | undefined {
         return this.layoutOverrides.get(id);
     }
