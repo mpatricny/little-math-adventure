@@ -4,6 +4,7 @@ import {
     UiElementTemplatesFile,
     UiElementTemplateLayer,
     UiElementTemplateTextArea,
+    UiElementTemplateEffect,
     ExportedNineSliceConfig,
     ExportedNineSliceConfigsFile
 } from '../types/assets';
@@ -99,9 +100,143 @@ export class UiElementFactory {
                 Phaser.Geom.Rectangle.Contains
             );
             (container.input as Phaser.Types.Input.InteractiveObject).cursor = 'pointer';
+
+            // Set up pointer event handlers for state effects
+            this.setupStateEffects(container, template);
         }
 
         return container;
+    }
+
+    /**
+     * Set up pointer event handlers for interactive state effects.
+     * Handles hover, pressed, and normal state transitions.
+     */
+    private setupStateEffects(container: Phaser.GameObjects.Container, template: UiElementTemplate): void {
+        const { stateEffects } = template;
+        let isPressed = false;
+
+        // Store original scale for reverting
+        container.setData('originalScaleX', container.scaleX);
+        container.setData('originalScaleY', container.scaleY);
+
+        container.on('pointerover', () => {
+            if (!isPressed && stateEffects.hover) {
+                this.applyEffects(container, stateEffects.hover);
+            }
+        });
+
+        container.on('pointerout', () => {
+            isPressed = false;
+            if (stateEffects.normal && stateEffects.normal.length > 0) {
+                this.applyEffects(container, stateEffects.normal);
+            } else {
+                // Revert to original scale
+                this.revertToOriginalScale(container);
+            }
+        });
+
+        container.on('pointerdown', () => {
+            isPressed = true;
+            if (stateEffects.pressed) {
+                this.applyEffects(container, stateEffects.pressed);
+            }
+        });
+
+        container.on('pointerup', () => {
+            isPressed = false;
+            // After release, revert to hover if still over, otherwise to normal
+            if (stateEffects.hover) {
+                this.applyEffects(container, stateEffects.hover);
+            } else if (stateEffects.normal && stateEffects.normal.length > 0) {
+                this.applyEffects(container, stateEffects.normal);
+            } else {
+                this.revertToOriginalScale(container);
+            }
+        });
+    }
+
+    /**
+     * Apply a list of effects to a container.
+     * Currently supports 'scale' effect type.
+     */
+    private applyEffects(container: Phaser.GameObjects.Container, effects: UiElementTemplateEffect[]): void {
+        for (const effect of effects) {
+            switch (effect.type) {
+                case 'scale':
+                    this.applyScaleEffect(container, effect);
+                    break;
+                // Other effect types (brightness, shadow, offset) can be added later
+                default:
+                    // Silently ignore unsupported effect types for now
+                    break;
+            }
+        }
+    }
+
+    /**
+     * Apply a scale effect to a container using tweens.
+     */
+    private applyScaleEffect(container: Phaser.GameObjects.Container, effect: UiElementTemplateEffect): void {
+        const scaleX = effect.params?.x ?? 1;
+        const scaleY = effect.params?.y ?? 1;
+        const duration = effect.duration ?? 150;
+        const easing = this.convertEasing(effect.easing);
+
+        // Stop any existing tweens on this container
+        this.scene.tweens.killTweensOf(container);
+
+        // Apply scale relative to original scale
+        const originalScaleX = container.getData('originalScaleX') ?? 1;
+        const originalScaleY = container.getData('originalScaleY') ?? 1;
+        const targetScaleX = originalScaleX * scaleX;
+        const targetScaleY = originalScaleY * scaleY;
+
+        if (duration > 0) {
+            this.scene.tweens.add({
+                targets: container,
+                scaleX: targetScaleX,
+                scaleY: targetScaleY,
+                duration,
+                ease: easing
+            });
+        } else {
+            container.setScale(targetScaleX, targetScaleY);
+        }
+    }
+
+    /**
+     * Revert container to its original scale.
+     */
+    private revertToOriginalScale(container: Phaser.GameObjects.Container): void {
+        const originalScaleX = container.getData('originalScaleX') ?? 1;
+        const originalScaleY = container.getData('originalScaleY') ?? 1;
+
+        // Stop any existing tweens
+        this.scene.tweens.killTweensOf(container);
+
+        this.scene.tweens.add({
+            targets: container,
+            scaleX: originalScaleX,
+            scaleY: originalScaleY,
+            duration: 150,
+            ease: 'Power2'
+        });
+    }
+
+    /**
+     * Convert template easing string to Phaser easing function name.
+     */
+    private convertEasing(easing: string): string {
+        const easingMap: Record<string, string> = {
+            'linear': 'Linear',
+            'easeIn': 'Power2.easeIn',
+            'easeOut': 'Power2.easeOut',
+            'easeInOut': 'Power2.easeInOut',
+            'easeOutBack': 'Back.easeOut',
+            'easeInBack': 'Back.easeIn'
+        };
+        return easingMap[easing] || 'Power2';
     }
 
     /**
