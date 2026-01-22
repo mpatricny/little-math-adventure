@@ -255,3 +255,63 @@ export interface AssetsFile {
     effects?: Record<string, any>;
     zones?: Record<string, any>;
 }
+
+// UI Element Template types (from ui-element-templates.json)
+export interface UiElementTemplateLayer {
+    id: string;
+    name: string;
+    order: number;
+    sourceType: 'image' | 'nineSlice' | 'color';
+    behavior: 'static' | 'dynamic';
+    bounds: { x: number; y: number; w: number; h: number };
+    color?: string;
+    opacity: number;
+    visible: boolean;
+    imageAssetId?: string;
+    imagePath?: string;
+    nineSliceConfigId?: string;
+}
+
+export interface UiElementTemplateTextArea {
+    id: string;
+    name: string;
+    bounds: { x: number; y: number; w: number; h: number };
+    fontFamily: string;
+    fontSize: number;
+    textAlign: 'left' | 'center' | 'right';
+    verticalAlign: 'top' | 'middle' | 'bottom';
+    fitMode: 'none' | 'shrinkToFit' | 'wrap';
+    defaultText: string;
+    textStyle: {
+        fill: string;
+        stroke?: string;
+        strokeWidth?: number;
+        shadowBlur?: number;
+    };
+}
+
+export interface UiElementTemplateEffect {
+    type: string;
+    params: Record<string, any>;
+    duration: number;
+    easing: string;
+}
+
+export interface UiElementTemplate {
+    id: string;
+    name: string;
+    size: { x: number; y: number; w: number; h: number };
+    layers: UiElementTemplateLayer[];
+    textAreas: UiElementTemplateTextArea[];
+    stateEffects: {
+        normal?: UiElementTemplateEffect[];
+        hover?: UiElementTemplateEffect[];
+        pressed?: UiElementTemplateEffect[];
+    };
+}
+
+export interface UiElementTemplatesFile {
+    version: string;
+    templates: UiElementTemplate[];
+    effectPresets?: Record<string, UiElementTemplateEffect[]>;
+}

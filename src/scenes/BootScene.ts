@@ -1,6 +1,6 @@
 import Phaser from 'phaser';
 import { LocalizationService } from '../systems/LocalizationService';
-import { TexturesFile, AnimationsFile } from '../types/assets';
+import { TexturesFile, AnimationsFile, UiElementTemplatesFile } from '../types/assets';
 
 export class BootScene extends Phaser.Scene {
     constructor() {
@@ -102,6 +102,25 @@ export class AssetLoaderScene extends Phaser.Scene {
                 });
             } else {
                 console.warn(`Skipping spritesheet ${key}: missing frame dimensions`);
+            }
+        }
+
+        // Load UI Element template images
+        const uiTemplates = this.cache.json.get('uiElementTemplates') as UiElementTemplatesFile | null;
+        if (uiTemplates && uiTemplates.templates) {
+            const loadedPaths = new Set<string>();
+            for (const template of uiTemplates.templates) {
+                if (template.layers) {
+                    for (const layer of template.layers) {
+                        if (layer.imagePath && !loadedPaths.has(layer.imagePath)) {
+                            loadedPaths.add(layer.imagePath);
+                            // Extract filename without extension for texture key
+                            const filename = layer.imagePath.split('/').pop()?.replace(/\.[^.]+$/, '') || layer.imagePath;
+                            const textureKey = `ui-tpl-${filename}`;
+                            this.load.image(textureKey, `assets/library/${layer.imagePath}`);
+                        }
+                    }
+                }
             }
         }
     }
