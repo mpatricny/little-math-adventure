@@ -393,13 +393,14 @@ export class AssetFactory {
      */
     private createUiElement(placement: SceneElement): Phaser.GameObjects.Container {
         const templateId = placement.uiElement?.templateId;
+        const textOverrides = placement.uiElement?.textOverrides;
 
         if (!templateId) {
             console.warn(`AssetFactory: uiElement placement missing templateId: ${placement.id}`);
             return this.scene.add.container(placement.x, placement.y);
         }
 
-        const container = this.uiElementFactory.create(templateId, placement.x, placement.y);
+        const container = this.uiElementFactory.create(templateId, placement.x, placement.y, textOverrides);
 
         // Apply depth if specified
         if (placement.depth !== undefined) {

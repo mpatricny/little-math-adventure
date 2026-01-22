@@ -21,7 +21,7 @@ export class SceneBuilder {
         depth?: number;
         origin?: [number, number];
         type?: ElementType;
-        uiElement?: { templateId: string };
+        uiElement?: { templateId: string; textOverrides?: Record<string, string> };
     }> = new Map();
 
     constructor(scene: Phaser.Scene) {
@@ -333,7 +333,7 @@ export class SceneBuilder {
             x: number;
             y: number;
             type?: ElementType;
-            uiElement?: { templateId: string };
+            uiElement?: { templateId: string; textOverrides?: Record<string, string> };
         }
     ): SceneElement {
         // If layout override specifies uiElement type, transform the element
@@ -380,7 +380,7 @@ export class SceneBuilder {
         depth?: number;
         origin?: [number, number];
         type?: ElementType;
-        uiElement?: { templateId: string };
+        uiElement?: { templateId: string; textOverrides?: Record<string, string> };
     } | undefined {
         return this.layoutOverrides.get(id);
     }

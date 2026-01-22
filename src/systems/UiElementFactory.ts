@@ -32,9 +32,10 @@ export class UiElementFactory {
      * @param templateId The template ID from ui-element-templates.json
      * @param x X position for the container
      * @param y Y position for the container
+     * @param textOverrides Optional map of textArea.id to override text
      * @returns A Phaser Container containing the rendered template
      */
-    create(templateId: string, x: number, y: number): Phaser.GameObjects.Container {
+    create(templateId: string, x: number, y: number, textOverrides?: Record<string, string>): Phaser.GameObjects.Container {
         const template = this.templates.get(templateId);
 
         if (!template) {
@@ -62,7 +63,9 @@ export class UiElementFactory {
 
         // Render text areas (after layers, so text appears on top)
         for (const textArea of template.textAreas) {
-            const textObject = this.renderTextArea(textArea);
+            // Check for text override by textArea.id
+            const overrideText = textOverrides?.[textArea.id];
+            const textObject = this.renderTextArea(textArea, overrideText);
             if (textObject) {
                 container.add(textObject);
             }
@@ -173,9 +176,12 @@ export class UiElementFactory {
     /**
      * Render a text area from the template.
      * Text is positioned at the center of the textArea.bounds.
+     * @param textArea The text area definition from the template
+     * @param overrideText Optional text to use instead of defaultText
      */
     private renderTextArea(
-        textArea: UiElementTemplateTextArea
+        textArea: UiElementTemplateTextArea,
+        overrideText?: string
     ): Phaser.GameObjects.Text {
         // Calculate position based on alignment
         let x: number;
@@ -250,7 +256,9 @@ export class UiElementFactory {
             };
         }
 
-        const text = this.scene.add.text(x, y, textArea.defaultText, textStyle);
+        // Use override text if provided, otherwise fall back to defaultText
+        const displayText = overrideText !== undefined ? overrideText : textArea.defaultText;
+        const text = this.scene.add.text(x, y, displayText, textStyle);
         text.setOrigin(originX, originY);
 
         // Handle shrinkToFit - scale down if text exceeds bounds

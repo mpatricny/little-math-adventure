@@ -1,6 +1,7 @@
 // UI Element template reference
 export interface UiElementRef {
     templateId: string;
+    textOverrides?: Record<string, string>;  // Maps textArea.id to override text
 }
 
 // Scene element placement

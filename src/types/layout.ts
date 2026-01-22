@@ -129,6 +129,7 @@ export interface ElementDef {
     /** UI Element template reference (for type: 'uiElement') */
     uiElement?: {
         templateId: string;
+        textOverrides?: Record<string, string>;  // Maps textArea.id to override text
     };
 }
 
