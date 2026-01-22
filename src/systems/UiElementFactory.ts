@@ -2,7 +2,8 @@ import Phaser from 'phaser';
 import {
     UiElementTemplate,
     UiElementTemplatesFile,
-    UiElementTemplateLayer
+    UiElementTemplateLayer,
+    UiElementTemplateTextArea
 } from '../types/assets';
 
 /**
@@ -56,6 +57,14 @@ export class UiElementFactory {
             if (layerObject) {
                 layerObject.setAlpha(layer.opacity);
                 container.add(layerObject);
+            }
+        }
+
+        // Render text areas (after layers, so text appears on top)
+        for (const textArea of template.textAreas) {
+            const textObject = this.renderTextArea(textArea);
+            if (textObject) {
+                container.add(textObject);
             }
         }
 
@@ -159,6 +168,106 @@ export class UiElementFactory {
         rect.setData('layerName', layer.name);
 
         return rect;
+    }
+
+    /**
+     * Render a text area from the template.
+     * Text is positioned at the center of the textArea.bounds.
+     */
+    private renderTextArea(
+        textArea: UiElementTemplateTextArea
+    ): Phaser.GameObjects.Text {
+        // Calculate position based on alignment
+        let x: number;
+        let y: number;
+        let originX: number;
+        let originY: number;
+
+        // Horizontal alignment
+        switch (textArea.textAlign) {
+            case 'left':
+                x = textArea.bounds.x;
+                originX = 0;
+                break;
+            case 'right':
+                x = textArea.bounds.x + textArea.bounds.w;
+                originX = 1;
+                break;
+            case 'center':
+            default:
+                x = textArea.bounds.x + textArea.bounds.w / 2;
+                originX = 0.5;
+                break;
+        }
+
+        // Vertical alignment
+        switch (textArea.verticalAlign) {
+            case 'top':
+                y = textArea.bounds.y;
+                originY = 0;
+                break;
+            case 'bottom':
+                y = textArea.bounds.y + textArea.bounds.h;
+                originY = 1;
+                break;
+            case 'middle':
+            default:
+                y = textArea.bounds.y + textArea.bounds.h / 2;
+                originY = 0.5;
+                break;
+        }
+
+        // Build text style from textArea config
+        const textStyle: Phaser.Types.GameObjects.Text.TextStyle = {
+            fontFamily: textArea.fontFamily,
+            fontSize: `${textArea.fontSize}px`,
+            color: textArea.textStyle.fill,
+            align: textArea.textAlign
+        };
+
+        // Add stroke if defined
+        if (textArea.textStyle.stroke && textArea.textStyle.strokeWidth && textArea.textStyle.strokeWidth > 0) {
+            textStyle.stroke = textArea.textStyle.stroke;
+            textStyle.strokeThickness = textArea.textStyle.strokeWidth;
+        }
+
+        // Add shadow if defined
+        if (textArea.textStyle.shadowBlur && textArea.textStyle.shadowBlur > 0) {
+            textStyle.shadow = {
+                offsetX: 0,
+                offsetY: 0,
+                color: '#000000',
+                blur: textArea.textStyle.shadowBlur,
+                fill: true
+            };
+        }
+
+        // Handle word wrap for wrap fitMode
+        if (textArea.fitMode === 'wrap') {
+            textStyle.wordWrap = {
+                width: textArea.bounds.w,
+                useAdvancedWrap: true
+            };
+        }
+
+        const text = this.scene.add.text(x, y, textArea.defaultText, textStyle);
+        text.setOrigin(originX, originY);
+
+        // Handle shrinkToFit - scale down if text exceeds bounds
+        if (textArea.fitMode === 'shrinkToFit') {
+            const scaleX = text.width > textArea.bounds.w ? textArea.bounds.w / text.width : 1;
+            const scaleY = text.height > textArea.bounds.h ? textArea.bounds.h / text.height : 1;
+            const scale = Math.min(scaleX, scaleY);
+            if (scale < 1) {
+                text.setScale(scale);
+            }
+        }
+
+        text.setName(textArea.id);
+        text.setData('textAreaId', textArea.id);
+        text.setData('textAreaName', textArea.name);
+
+        return text;
     }
 
     /**
