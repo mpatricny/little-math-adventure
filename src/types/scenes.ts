@@ -1,3 +1,8 @@
+// UI Element template reference
+export interface UiElementRef {
+    templateId: string;
+}
+
 // Scene element placement
 export interface SceneElement {
     id: string;
@@ -16,6 +21,9 @@ export interface SceneElement {
     fontSize?: string; // Override font size
     color?: string;    // Override color
     visible?: boolean;
+
+    // UI Element template reference (used when asset type is 'uiElement')
+    uiElement?: UiElementRef;
 
     // Event bindings
     events?: Record<string, string>;  // eventName -> handlerName

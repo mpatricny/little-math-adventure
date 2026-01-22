@@ -12,15 +12,18 @@ import {
 } from '../types/assets';
 import { SceneElement } from '../types/scenes';
 import { LocalizationService } from './LocalizationService';
+import { UiElementFactory } from './UiElementFactory';
 
 export class AssetFactory {
     private scene: Phaser.Scene;
     private assetDefs: Record<string, any>; // Flattened or structured assets
     private localization: LocalizationService;
+    private uiElementFactory: UiElementFactory;
 
     constructor(scene: Phaser.Scene) {
         this.scene = scene;
         this.localization = LocalizationService.getInstance();
+        this.uiElementFactory = new UiElementFactory(scene);
 
         // Load assets from cache
         const assetsData = this.scene.cache.json.get('assets');
@@ -93,6 +96,9 @@ export class AssetFactory {
                 break;
             case 'nineSlice':
                 obj = this.createNineSlice(assetDef as ImageAssetDef, placement);
+                break;
+            case 'uiElement':
+                obj = this.createUiElement(placement);
                 break;
             default:
                 console.warn(`Unsupported asset type: ${assetDef.type}`);
@@ -376,6 +382,38 @@ export class AssetFactory {
                 repeat: -1,
                 ease: 'Sine.easeInOut'
             });
+        }
+
+        return container;
+    }
+
+    /**
+     * Create a UI Element from a template.
+     * Templates are defined in ui-element-templates.json.
+     */
+    private createUiElement(placement: SceneElement): Phaser.GameObjects.Container {
+        const templateId = placement.uiElement?.templateId;
+
+        if (!templateId) {
+            console.warn(`AssetFactory: uiElement placement missing templateId: ${placement.id}`);
+            return this.scene.add.container(placement.x, placement.y);
+        }
+
+        const container = this.uiElementFactory.create(templateId, placement.x, placement.y);
+
+        // Apply depth if specified
+        if (placement.depth !== undefined) {
+            container.setDepth(placement.depth);
+        }
+
+        // Apply scale if specified
+        if (placement.scale !== undefined) {
+            container.setScale(placement.scale);
+        }
+
+        // Apply alpha if specified
+        if (placement.alpha !== undefined) {
+            container.setAlpha(placement.alpha);
         }
 
         return container;
