@@ -86,6 +86,21 @@ export class UiElementFactory {
         // Set container size based on template size for hit area purposes
         container.setSize(template.size.w, template.size.h);
 
+        // Make container interactive if template has hover or pressed effects
+        if (this.hasInteractiveEffects(template)) {
+            // Set up hit area using template size, centered at origin
+            container.setInteractive(
+                new Phaser.Geom.Rectangle(
+                    0, // x (relative to container origin)
+                    0, // y (relative to container origin)
+                    template.size.w,
+                    template.size.h
+                ),
+                Phaser.Geom.Rectangle.Contains
+            );
+            (container.input as Phaser.Types.Input.InteractiveObject).cursor = 'pointer';
+        }
+
         return container;
     }
 
@@ -391,5 +406,19 @@ export class UiElementFactory {
      */
     getNineSliceConfig(configId: string): ExportedNineSliceConfig | undefined {
         return this.nineSliceConfigs.get(configId);
+    }
+
+    /**
+     * Check if a template has interactive effects (hover or pressed).
+     * If so, the container should be made interactive.
+     */
+    private hasInteractiveEffects(template: UiElementTemplate): boolean {
+        const { stateEffects } = template;
+        if (!stateEffects) return false;
+
+        const hasHoverEffects = Array.isArray(stateEffects.hover) && stateEffects.hover.length > 0;
+        const hasPressedEffects = Array.isArray(stateEffects.pressed) && stateEffects.pressed.length > 0;
+
+        return hasHoverEffects || hasPressedEffects;
     }
 }
