@@ -169,7 +169,7 @@ export class UiElementFactory {
 
     /**
      * Apply a list of effects to a container.
-     * Currently supports 'scale' effect type.
+     * Supports: scale, offset, brightness
      */
     private applyEffects(container: Phaser.GameObjects.Container, effects: UiElementTemplateEffect[]): void {
         for (const effect of effects) {
@@ -177,9 +177,15 @@ export class UiElementFactory {
                 case 'scale':
                     this.applyScaleEffect(container, effect);
                     break;
-                // Other effect types (brightness, shadow, offset) can be added later
+                case 'offset':
+                    this.applyOffsetEffect(container, effect);
+                    break;
+                case 'brightness':
+                    this.applyBrightnessEffect(container, effect);
+                    break;
+                // Shadow effect is complex (requires separate objects), skip for now
                 default:
-                    // Silently ignore unsupported effect types for now
+                    // Silently ignore unsupported effect types
                     break;
             }
         }
@@ -217,21 +223,98 @@ export class UiElementFactory {
     }
 
     /**
-     * Revert container to its original scale.
+     * Apply an offset effect to a container (moves it from original position).
+     */
+    private applyOffsetEffect(container: Phaser.GameObjects.Container, effect: UiElementTemplateEffect): void {
+        const offsetX = effect.params?.x ?? 0;
+        const offsetY = effect.params?.y ?? 0;
+        const duration = effect.duration ?? 150;
+        const easing = this.convertEasing(effect.easing);
+
+        // Store original position if not already stored
+        if (container.getData('originalX') === undefined) {
+            container.setData('originalX', container.x);
+            container.setData('originalY', container.y);
+        }
+
+        const originalX = container.getData('originalX');
+        const originalY = container.getData('originalY');
+        const targetX = originalX + offsetX;
+        const targetY = originalY + offsetY;
+
+        if (duration > 0) {
+            this.scene.tweens.add({
+                targets: container,
+                x: targetX,
+                y: targetY,
+                duration,
+                ease: easing
+            });
+        } else {
+            container.setPosition(targetX, targetY);
+        }
+    }
+
+    /**
+     * Apply a brightness effect to container children using tint.
+     * brightness > 1 = lighter, brightness < 1 = darker
+     */
+    private applyBrightnessEffect(container: Phaser.GameObjects.Container, effect: UiElementTemplateEffect): void {
+        const brightness = effect.params?.value ?? 1;
+
+        // Convert brightness to tint color
+        // brightness 1 = no tint (0xffffff), >1 = brighter, <1 = darker
+        const tintValue = Math.min(255, Math.max(0, Math.floor(brightness * 255)));
+        const tint = (tintValue << 16) | (tintValue << 8) | tintValue;
+
+        // Apply tint to all tintable children
+        container.list.forEach((child) => {
+            if ('setTint' in child && typeof (child as any).setTint === 'function') {
+                if (brightness >= 1) {
+                    // For brightness >= 1, clear tint (Phaser can't go brighter than original)
+                    (child as any).clearTint();
+                } else {
+                    // For brightness < 1, darken with tint
+                    (child as any).setTint(tint);
+                }
+            }
+        });
+    }
+
+    /**
+     * Revert container to its original state (scale, position, tint).
      */
     private revertToOriginalScale(container: Phaser.GameObjects.Container): void {
         const originalScaleX = container.getData('originalScaleX') ?? 1;
         const originalScaleY = container.getData('originalScaleY') ?? 1;
+        const originalX = container.getData('originalX');
+        const originalY = container.getData('originalY');
 
         // Stop any existing tweens
         this.scene.tweens.killTweensOf(container);
 
-        this.scene.tweens.add({
+        // Revert scale and position
+        const tweenConfig: Phaser.Types.Tweens.TweenBuilderConfig = {
             targets: container,
             scaleX: originalScaleX,
             scaleY: originalScaleY,
             duration: 150,
             ease: 'Power2'
+        };
+
+        // Add position revert if we have original position stored
+        if (originalX !== undefined && originalY !== undefined) {
+            tweenConfig.x = originalX;
+            tweenConfig.y = originalY;
+        }
+
+        this.scene.tweens.add(tweenConfig);
+
+        // Clear tint on all children
+        container.list.forEach((child) => {
+            if ('clearTint' in child && typeof (child as any).clearTint === 'function') {
+                (child as any).clearTint();
+            }
         });
     }
 
