@@ -168,6 +168,28 @@
                 "width": 1280,
                 "height": 720
             },
+            "elements": [
+                {
+                    "id": "background",
+                    "asset": "environments.backgrounds.char-select",
+                    "x": 640,
+                    "y": 360
+                },
+                {
+                    "id": "titleScroll",
+                    "asset": "ui.decorations.char-select-scroll",
+                    "x": 640,
+                    "y": 57,
+                    "scaleX": 0.45,
+                    "scaleY": 0.35
+                },
+                {
+                    "id": "mainPanel",
+                    "asset": "ui.containers.empty",
+                    "x": 640,
+                    "y": 380
+                }
+            ],
             "ui": [
                 {
                     "id": "title",
@@ -1073,6 +1095,15 @@
                     }
                 }
             ]
+        },
+        "NewTestScene": {
+            "viewport": {
+                "width": 1280,
+                "height": 720
+            },
+            "elements": [],
+            "zones": [],
+            "ui": []
         }
     }
 }

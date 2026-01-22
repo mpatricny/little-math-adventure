@@ -60,6 +60,11 @@ export class UiElementFactory {
         container.setName(templateId);
         container.setData('templateId', templateId);
 
+        // Calculate offset to center content within container
+        // This makes the container position be at the center of the template content
+        const offsetX = -template.size.w / 2;
+        const offsetY = -template.size.h / 2;
+
         // Sort layers by order (lower order = rendered first = behind)
         const sortedLayers = [...template.layers].sort((a, b) => a.order - b.order);
 
@@ -70,6 +75,9 @@ export class UiElementFactory {
             const layerObject = this.renderLayer(layer, template);
             if (layerObject) {
                 layerObject.setAlpha(layer.opacity);
+                // Apply centering offset
+                layerObject.x += offsetX;
+                layerObject.y += offsetY;
                 container.add(layerObject);
             }
         }
@@ -80,6 +88,9 @@ export class UiElementFactory {
             const overrideText = textOverrides?.[textArea.id];
             const textObject = this.renderTextArea(textArea, overrideText);
             if (textObject) {
+                // Apply centering offset
+                textObject.x += offsetX;
+                textObject.y += offsetY;
                 container.add(textObject);
             }
         }
@@ -89,11 +100,11 @@ export class UiElementFactory {
 
         // Make container interactive if template has hover or pressed effects
         if (this.hasInteractiveEffects(template)) {
-            // Set up hit area using template size, centered at origin
+            // Set up hit area using template size, centered at container origin
             container.setInteractive(
                 new Phaser.Geom.Rectangle(
-                    0, // x (relative to container origin)
-                    0, // y (relative to container origin)
+                    offsetX, // x (offset to center)
+                    offsetY, // y (offset to center)
                     template.size.w,
                     template.size.h
                 ),
