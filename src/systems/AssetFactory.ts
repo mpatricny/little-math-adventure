@@ -59,6 +59,12 @@ export class AssetFactory {
      * Create a game object from an asset definition
      */
     create(assetKey: string, placement: SceneElement): Phaser.GameObjects.GameObject {
+        // Special case: uiElement type doesn't need an asset definition
+        // It uses the templateId from placement.uiElement
+        if (assetKey === 'uiElement') {
+            return this.createUiElement(placement);
+        }
+
         const assetDef = this.assetDefs[assetKey];
         if (!assetDef) {
             console.warn(`Unknown asset: ${assetKey}`);
