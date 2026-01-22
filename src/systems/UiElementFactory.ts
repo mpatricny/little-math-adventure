@@ -536,18 +536,18 @@ export class UiElementFactory {
         const textStyle: Phaser.Types.GameObjects.Text.TextStyle = {
             fontFamily: textArea.fontFamily,
             fontSize: `${textArea.fontSize}px`,
-            color: textArea.textStyle.fill,
+            color: textArea.textStyle?.fill ?? '#ffffff',
             align: textArea.textAlign
         };
 
         // Add stroke if defined
-        if (textArea.textStyle.stroke && textArea.textStyle.strokeWidth && textArea.textStyle.strokeWidth > 0) {
+        if (textArea.textStyle?.stroke && textArea.textStyle?.strokeWidth && textArea.textStyle.strokeWidth > 0) {
             textStyle.stroke = textArea.textStyle.stroke;
             textStyle.strokeThickness = textArea.textStyle.strokeWidth;
         }
 
         // Add shadow if defined
-        if (textArea.textStyle.shadowBlur && textArea.textStyle.shadowBlur > 0) {
+        if (textArea.textStyle?.shadowBlur && textArea.textStyle.shadowBlur > 0) {
             textStyle.shadow = {
                 offsetX: 0,
                 offsetY: 0,
