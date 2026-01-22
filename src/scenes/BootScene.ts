@@ -1,6 +1,6 @@
 import Phaser from 'phaser';
 import { LocalizationService } from '../systems/LocalizationService';
-import { TexturesFile, AnimationsFile, UiElementTemplatesFile } from '../types/assets';
+import { TexturesFile, AnimationsFile, UiElementTemplatesFile, ExportedNineSliceConfigsFile } from '../types/assets';
 
 export class BootScene extends Phaser.Scene {
     constructor() {
@@ -108,19 +108,33 @@ export class AssetLoaderScene extends Phaser.Scene {
             }
         }
 
-        // Load UI Element template images
+        // Load UI Element template images and nine-slice textures
         const uiTemplates = this.cache.json.get('uiElementTemplates') as UiElementTemplatesFile | null;
+        const nineSliceConfigs = this.cache.json.get('nineSliceConfigs') as ExportedNineSliceConfigsFile | null;
+
         if (uiTemplates && uiTemplates.templates) {
             const loadedPaths = new Set<string>();
+
             for (const template of uiTemplates.templates) {
                 if (template.layers) {
                     for (const layer of template.layers) {
+                        // Load image layer textures
                         if (layer.imagePath && !loadedPaths.has(layer.imagePath)) {
                             loadedPaths.add(layer.imagePath);
-                            // Extract filename without extension for texture key
                             const filename = layer.imagePath.split('/').pop()?.replace(/\.[^.]+$/, '') || layer.imagePath;
                             const textureKey = `ui-tpl-${filename}`;
                             this.load.image(textureKey, `assets/library/${layer.imagePath}`);
+                        }
+
+                        // Load nine-slice layer textures
+                        if (layer.nineSliceConfigId && nineSliceConfigs) {
+                            const config = nineSliceConfigs[layer.nineSliceConfigId];
+                            if (config && config.originalPath && !loadedPaths.has(config.originalPath)) {
+                                loadedPaths.add(config.originalPath);
+                                const filename = config.originalPath.split('/').pop()?.replace(/\.[^.]+$/, '') || config.originalPath;
+                                const textureKey = `ui-tpl-${filename}`;
+                                this.load.image(textureKey, `assets/library/${config.originalPath}`);
+                            }
                         }
                     }
                 }

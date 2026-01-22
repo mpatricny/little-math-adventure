@@ -103,9 +103,7 @@ export class UiElementFactory {
             case 'color':
                 return this.renderColorLayer(layer);
             case 'nineSlice':
-                // Nine-slice support will be added in a later story (GUIE-011)
-                console.warn(`UiElementFactory: nineSlice layers not yet supported, layer: ${layer.name}`);
-                return this.renderColorLayer(layer);
+                return this.renderNineSliceLayer(layer);
             default:
                 console.warn(`UiElementFactory: Unknown layer sourceType: ${layer.sourceType}`);
                 return null;
@@ -183,6 +181,61 @@ export class UiElementFactory {
         rect.setData('layerName', layer.name);
 
         return rect;
+    }
+
+    /**
+     * Render a nine-slice layer.
+     * Nine-slices are scalable images that preserve corner/edge regions when resized.
+     */
+    private renderNineSliceLayer(
+        layer: UiElementTemplateLayer
+    ): Phaser.GameObjects.NineSlice | Phaser.GameObjects.Rectangle {
+        if (!layer.nineSliceConfigId) {
+            console.warn(`UiElementFactory: Nine-slice layer missing nineSliceConfigId: ${layer.name}`);
+            return this.renderColorLayer(layer);
+        }
+
+        const config = this.getNineSliceConfig(layer.nineSliceConfigId);
+        if (!config) {
+            console.warn(`UiElementFactory: Nine-slice config not found: ${layer.nineSliceConfigId} for layer: ${layer.name}`);
+            return this.renderColorLayer(layer);
+        }
+
+        // Build texture key from config's originalPath: ui-tpl-{filename}
+        const filename = config.originalPath.split('/').pop()?.replace(/\.[^.]+$/, '') || config.originalPath;
+        const textureKey = `ui-tpl-${filename}`;
+
+        // Check if texture exists
+        if (!this.scene.textures.exists(textureKey)) {
+            console.warn(`UiElementFactory: Nine-slice texture not found: ${textureKey} for layer: ${layer.name}`);
+            return this.renderColorLayer(layer);
+        }
+
+        // Create nine-slice at the center of the bounds
+        const centerX = layer.bounds.x + layer.bounds.w / 2;
+        const centerY = layer.bounds.y + layer.bounds.h / 2;
+
+        // Phaser NineSlice takes: x, y, texture, frame, width, height, leftWidth, rightWidth, topHeight, bottomHeight
+        const nineSlice = this.scene.add.nineslice(
+            centerX,
+            centerY,
+            textureKey,
+            undefined, // frame (use entire texture)
+            layer.bounds.w,
+            layer.bounds.h,
+            config.leftInset,
+            config.rightInset,
+            config.topInset,
+            config.bottomInset
+        );
+        nineSlice.setOrigin(0.5, 0.5);
+
+        nineSlice.setName(layer.id);
+        nineSlice.setData('layerId', layer.id);
+        nineSlice.setData('layerName', layer.name);
+        nineSlice.setData('nineSliceConfigId', layer.nineSliceConfigId);
+
+        return nineSlice;
     }
 
     /**
