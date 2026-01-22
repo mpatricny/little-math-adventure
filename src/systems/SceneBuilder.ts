@@ -212,11 +212,18 @@ export class SceneBuilder {
 
     /**
      * Get the interactive target for an object.
-     * For containers, returns the first interactive child (usually the background).
+     * For containers:
+     *   - If the container itself is interactive (e.g., UI Element templates), return the container
+     *   - Otherwise, returns the first interactive child (usually the background)
      * For other objects, makes them interactive and returns them.
      */
     private getInteractiveTarget(obj: Phaser.GameObjects.GameObject): Phaser.GameObjects.GameObject | null {
         if (obj instanceof Phaser.GameObjects.Container) {
+            // Check if the container itself is interactive (e.g., UI Element templates)
+            if ((obj as any).input) {
+                return obj;
+            }
+
             // Find the first interactive child (usually the background rectangle)
             const children = obj.list as Phaser.GameObjects.GameObject[];
             for (const child of children) {
