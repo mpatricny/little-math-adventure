@@ -3,7 +3,9 @@ import {
     UiElementTemplate,
     UiElementTemplatesFile,
     UiElementTemplateLayer,
-    UiElementTemplateTextArea
+    UiElementTemplateTextArea,
+    ExportedNineSliceConfig,
+    ExportedNineSliceConfigsFile
 } from '../types/assets';
 
 /**
@@ -13,16 +15,26 @@ import {
 export class UiElementFactory {
     private scene: Phaser.Scene;
     private templates: Map<string, UiElementTemplate>;
+    private nineSliceConfigs: Map<string, ExportedNineSliceConfig>;
 
     constructor(scene: Phaser.Scene) {
         this.scene = scene;
         this.templates = new Map();
+        this.nineSliceConfigs = new Map();
 
         // Load templates from cache
         const templatesData = this.scene.cache.json.get('uiElementTemplates') as UiElementTemplatesFile | undefined;
         if (templatesData?.templates) {
             for (const template of templatesData.templates) {
                 this.templates.set(template.id, template);
+            }
+        }
+
+        // Load nine-slice configs from cache
+        const nineSliceData = this.scene.cache.json.get('nineSliceConfigs') as ExportedNineSliceConfigsFile | undefined;
+        if (nineSliceData) {
+            for (const [configId, config] of Object.entries(nineSliceData)) {
+                this.nineSliceConfigs.set(configId, config);
             }
         }
     }
@@ -317,5 +329,14 @@ export class UiElementFactory {
      */
     hasTemplate(templateId: string): boolean {
         return this.templates.has(templateId);
+    }
+
+    /**
+     * Get a nine-slice config by ID.
+     * @param configId The nine-slice config ID from the scene editor export
+     * @returns The config or undefined if not found
+     */
+    getNineSliceConfig(configId: string): ExportedNineSliceConfig | undefined {
+        return this.nineSliceConfigs.get(configId);
     }
 }

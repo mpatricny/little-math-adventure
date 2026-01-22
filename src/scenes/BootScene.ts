@@ -41,6 +41,9 @@ export class BootScene extends Phaser.Scene {
         // Nine-slice configs (for scalable UI elements)
         this.load.json('nineSlices', 'assets/data/nine-slices.json');
 
+        // Exported nine-slice configs from scene editor (for UI Element templates)
+        this.load.json('nineSliceConfigs', 'assets/data/nine-slice-configs.json');
+
         // UI Element templates (buttons, panels, etc. created in scene editor)
         this.load.json('uiElementTemplates', 'assets/data/ui-element-templates.json');
 

@@ -41,6 +41,23 @@ export interface NineSlicesFile {
     configs: Record<string, NineSliceConfig>;
 }
 
+// Exported nine-slice config (from nine-slice-configs.json via scene editor export)
+export interface ExportedNineSliceConfig {
+    leftInset: number;
+    rightInset: number;
+    topInset: number;
+    bottomInset: number;
+    padLeft: number;
+    padRight: number;
+    padTop: number;
+    padBottom: number;
+    originalPath: string;
+    assetName: string;
+}
+
+// Exported nine-slice configs file (keyed by config ID)
+export type ExportedNineSliceConfigsFile = Record<string, ExportedNineSliceConfig>;
+
 // Texture definition (raw file reference)
 export interface TextureDef {
     path: string;
