@@ -100,17 +100,8 @@ export class UiElementFactory {
 
         // Make container interactive if template has hover or pressed effects
         if (this.hasInteractiveEffects(template)) {
-            // Set up hit area using template size, centered at container origin
-            container.setInteractive(
-                new Phaser.Geom.Rectangle(
-                    offsetX, // x (offset to center)
-                    offsetY, // y (offset to center)
-                    template.size.w,
-                    template.size.h
-                ),
-                Phaser.Geom.Rectangle.Contains
-            );
-            (container.input as Phaser.Types.Input.InteractiveObject).cursor = 'pointer';
+            // Let Phaser calculate hit area automatically based on container size
+            container.setInteractive({ useHandCursor: true });
 
             // Set up pointer event handlers for state effects
             this.setupStateEffects(container, template);
