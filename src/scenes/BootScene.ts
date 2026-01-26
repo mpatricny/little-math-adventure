@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import { LocalizationService } from '../systems/LocalizationService';
 import { TexturesFile, AnimationsFile } from '../types/assets';
+import { uiTemplateLoader } from '../systems/UiTemplateLoader';
 
 export class BootScene extends Phaser.Scene {
     constructor() {
@@ -116,8 +117,10 @@ export class AssetLoaderScene extends Phaser.Scene {
             this.registry.set('nineSlices', nineSlices);
         }
 
-        // Go to menu
-        this.scene.start('MenuScene');
+        // Load UI templates, then go to menu
+        uiTemplateLoader.load().then(() => {
+            this.scene.start('MenuScene');
+        });
     }
 
     private createAnimations(): void {
