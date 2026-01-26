@@ -22,6 +22,11 @@ export interface SceneElement {
 
     // Data
     data?: Record<string, unknown>;
+
+    // UI element template reference (for building with UiElementBuilder)
+    uiElement?: {
+        templateId: string;
+    };
 }
 
 export interface SceneZone {

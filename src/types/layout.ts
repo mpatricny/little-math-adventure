@@ -124,6 +124,11 @@ export interface ElementDef {
         useHandCursor?: boolean;
         hitArea?: 'rect' | 'circle';
     };
+
+    /** UI element template reference (for building with UiElementBuilder) */
+    uiElement?: {
+        templateId: string;
+    };
 }
 
 /**

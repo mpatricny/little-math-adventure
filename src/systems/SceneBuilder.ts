@@ -2,6 +2,7 @@ import Phaser from 'phaser';
 import { AssetFactory } from './AssetFactory';
 import { ScenesFile, SceneDef } from '../types/scenes';
 import { SceneLayoutsFile, SpawnPoints, SpawnPoint, EnemyCount } from '../types/layout';
+import { UiElementBuilder } from './UiElementBuilder';
 
 export class SceneBuilder {
     private scene: Phaser.Scene;
@@ -53,7 +54,30 @@ export class SceneBuilder {
         // Create elements
         if (sceneDef.elements) {
             sceneDef.elements.forEach(element => {
-                const obj = this.factory.create(element.asset, element);
+                let obj: Phaser.GameObjects.GameObject;
+
+                // Check if element uses a UI template
+                if (element.uiElement?.templateId) {
+                    const builder = new UiElementBuilder(this.scene);
+                    const uiObj = builder.buildFromTemplate(
+                        element.uiElement.templateId,
+                        element.x,
+                        element.y
+                    );
+                    if (uiObj) {
+                        // Apply any additional layout overrides
+                        if (element.depth !== undefined) uiObj.setDepth(element.depth);
+                        if (element.visible === false) uiObj.setVisible(false);
+                        if (element.alpha !== undefined) uiObj.setAlpha(element.alpha);
+                        obj = uiObj;
+                    } else {
+                        // Fallback to regular creation if template not found
+                        obj = this.factory.create(element.asset, element);
+                    }
+                } else {
+                    obj = this.factory.create(element.asset, element);
+                }
+
                 this.elements.set(element.id, obj);
 
                 // Apply position overrides from scene-layouts.json
@@ -90,7 +114,30 @@ export class SceneBuilder {
         // Create UI elements
         if (sceneDef.ui) {
             sceneDef.ui.forEach(element => {
-                const obj = this.factory.create(element.asset, element);
+                let obj: Phaser.GameObjects.GameObject;
+
+                // Check if element uses a UI template
+                if (element.uiElement?.templateId) {
+                    const builder = new UiElementBuilder(this.scene);
+                    const uiObj = builder.buildFromTemplate(
+                        element.uiElement.templateId,
+                        element.x,
+                        element.y
+                    );
+                    if (uiObj) {
+                        // Apply any additional layout overrides
+                        if (element.depth !== undefined) uiObj.setDepth(element.depth);
+                        if (element.visible === false) uiObj.setVisible(false);
+                        if (element.alpha !== undefined) uiObj.setAlpha(element.alpha);
+                        obj = uiObj;
+                    } else {
+                        // Fallback to regular creation if template not found
+                        obj = this.factory.create(element.asset, element);
+                    }
+                } else {
+                    obj = this.factory.create(element.asset, element);
+                }
+
                 this.elements.set(element.id, obj);
 
                 // Apply position overrides from scene-layouts.json
