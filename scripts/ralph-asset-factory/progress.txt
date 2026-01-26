@@ -1,0 +1,250 @@
+# Ralph Progress Log
+Started: Asset Factory Feature
+
+## Codebase Patterns
+- API endpoints are defined in scene-editor/vite.config.ts (look for middleware section)
+- Scene editor uses React with Zustand stores in scene-editor/src/stores/
+- Components are in scene-editor/src/components/
+- Data files: assets.json, scenes.json, scene-layouts.json, textures.json in little-math-adventure/public/assets/data/
+- Existing tabs pattern: Check App.tsx for how tabs are structured
+- Scene editor is in a SEPARATE git repo at /Users/datamole/SimpleGame/scene-editor
+- Existing endpoint /api/assets-defs returns raw nested assets.json
+- Asset definitions have a 'type' property that distinguishes them from container objects
+
+---
+
+## 2026-01-26 - AF-001
+- Implemented GET /api/assets-definitions endpoint in scene-editor/vite.config.ts
+- Added flattenAssets() helper function that recursively flattens nested assets.json
+- Returns dot-notation keys like "characters.player.girl_knight" with their definitions
+- Skips the 'version' field at root level
+- Detects asset definitions by checking for 'type' property
+- **Files changed:** scene-editor/vite.config.ts
+- **Learnings for future iterations:**
+  - The scene-editor is in a separate git repo, commits go there not to little-math-adventure
+  - Asset definitions are identified by having a 'type' property
+  - The flattenAssets pattern can be reused/reversed for AF-002
+---
+
+## 2026-01-26 - AF-002
+- Implemented POST /api/save-assets-definitions endpoint in scene-editor/vite.config.ts
+- Added unflattenAssets() helper that converts dot-notation keys back to nested structure
+- Preserves existing assets.json structure including 'version' field
+- Creates nested path structure from keys like "test.asset.new" → { test: { asset: { new: {...} } } }
+- Tested both GET and POST endpoints - server starts and responds correctly
+- **Files changed:** scene-editor/vite.config.ts
+- **Learnings for future iterations:**
+  - The unflattenAssets function merges with existing data to avoid data loss
+  - Typecheck has pre-existing errors from missing modules - these are not blocking
+  - curl testing works to verify endpoints work at runtime
+---
+
+## 2026-01-26 - AF-003
+- Added new 'Assets' tab to scene editor navigation
+- Created AssetFactoryPanel component in src/components/asset-factory/
+- Added 'assets' to EditorMode type union
+- Added tab button to ModeTabs and ToolbarModeTabs components
+- Added conditional rendering for assets mode that displays AssetFactoryPanel
+- **Files changed:**
+  - scene-editor/src/App.tsx (modified)
+  - scene-editor/src/components/asset-factory/AssetFactoryPanel.tsx (new)
+  - scene-editor/src/components/asset-factory/index.ts (new)
+- **Learnings for future iterations:**
+  - Each editor mode follows the same pattern: type union entry, tab button, conditional render block
+  - Panel components use consistent styling: h-full flex flex-col bg-gray-900 text-white
+  - Pre-existing typecheck errors from missing modules don't block commits (as noted in AF-002)
+---
+
+## 2026-01-26 - AF-004
+- Implemented full asset list display in AssetFactoryPanel
+- Fetches assets from /api/assets-definitions on mount
+- Groups assets by top-level category (characters, environments, ui, items, effects, zones)
+- Each asset shows: type badge (color-coded), dot-notation key, texture, depth, category
+- Search/filter functionality - matches against key, type, or texture
+- Expandable/collapsible category sections (all expanded by default)
+- Shows count of filtered vs total assets in header
+- Reload button to refresh asset data
+- **Files changed:**
+  - scene-editor/src/components/asset-factory/AssetFactoryPanel.tsx (rewritten)
+- **Learnings for future iterations:**
+  - The /api/assets-definitions endpoint returns flattened dot-notation keys
+  - Use useMemo for computed groupings to avoid recalculating on every render
+  - Type badges with color coding help visual scanning of asset lists
+  - Pre-existing typecheck errors continue to not block (same modules still missing)
+---
+
+## 2026-01-26 - AF-005
+- Implemented detail panel that opens when clicking an asset in the list
+- Shows all editable properties: type (dropdown), texture, defaultTexture, origin (x,y), scale (number or object with default/battle/arena), depth, category, animations
+- Supports adding/removing/renaming animations for animatedSprite types
+- Save button calls POST /api/save-assets-definitions with updated assets
+- Shows visual feedback: selected asset highlighted in list, unsaved changes indicator, saving state
+- Handles both simple scale (number) and complex scale (object with variants)
+- **Files changed:**
+  - scene-editor/src/components/asset-factory/AssetFactoryPanel.tsx (expanded from ~270 to ~700 lines)
+- **Learnings for future iterations:**
+  - useCallback for handlers that get passed to child elements or are dependencies of other hooks
+  - Pattern for nested field updates: split field path by '.', navigate/create nested structure
+  - The detail panel pattern (side panel that opens on item select) can be reused for other editors
+  - Pre-existing typecheck errors in LibraryAssetSection, BackgroundSelector, ResizeToolbar, AssetPicker, simpleEffectEngine still don't block
+---
+
+## 2026-01-26 - AF-006
+- Added "Create" button to Asset Factory panel header
+- Implemented modal dialog for creating new assets from textures
+- Texture picker fetches from /api/assets-manifest (textures.json) and shows images and spritesheets separately
+- Search/filter functionality for texture picker
+- Auto-suggest dot-notation path based on texture name patterns:
+  - "bg-*" → environments.backgrounds.*
+  - "interior-*" → environments.interiors.*
+  - "building-*" → environments.buildings.*
+  - "npc-*" → characters.npcs.*
+  - "ui-*" → ui.elements.*
+  - "*-sheet" → characters.sprites.*
+  - Default: misc.*
+- Asset creation form with fields: path (required), type, origin (x,y), scale, depth (optional)
+- Validation: path format, texture required, duplicate check
+- Saves via POST /api/save-assets-definitions
+- After creation, auto-expands category and selects the newly created asset
+- **Files changed:**
+  - scene-editor/src/components/asset-factory/AssetFactoryPanel.tsx (expanded from ~710 to ~1150 lines)
+- **Learnings for future iterations:**
+  - Watch for dependency order in useCallback - avoid referencing callbacks defined later in the file
+  - The unflattenAssets API only adds/updates, doesn't delete (merge behavior) - if delete is needed, separate API would be required
+  - The /api/assets-manifest endpoint (textures.json) is already available, no new API needed
+---
+
+## 2026-01-26 - AF-007
+- Created assetLookup.ts utility module in scene-editor/src/lib/
+- Implemented reverse texture-to-asset lookup functions:
+  - findAssetByTexture(textureKey, assets) - returns first matching asset path or null
+  - findAssetsByTexture(textureKey, assets) - returns all matching assets with definitions
+  - buildTextureLookupMap(assets) - creates Map for efficient repeated lookups
+  - buildFullTextureLookupMap(assets) - includes all assets per texture (for duplicates)
+  - isTextureRegistered(textureKey, assets) - boolean check
+  - findUnregisteredTextures(textureKeys, assets) - batch validation helper
+  - getTexturesFromAsset(definition) - extracts texture/defaultTexture from asset
+- Handles both `texture` and `defaultTexture` properties in asset definitions
+- TypeScript interfaces: AssetDefinition, FlattenedAssets, TextureLookupResult
+- **Files changed:**
+  - scene-editor/src/lib/assetLookup.ts (new, ~200 lines)
+- **Learnings for future iterations:**
+  - Assets use either `texture` or `defaultTexture` for their texture key references
+  - The utility module is designed to work with flattened assets from /api/assets-definitions
+  - Pre-existing typecheck errors don't affect new properly-typed code
+---
+
+## 2026-01-26 - AF-008
+- Added save-time validation for unregistered assets in Toolbar.tsx
+- Modified handleSave() to validate scene elements against assets.json before saving
+- Fetches asset definitions from /api/assets-definitions on save
+- Uses findUnregisteredTextures() from assetLookup utility to identify unregistered textures
+- Refactored save logic into reusable helper functions:
+  - buildUpdatedLayouts() - builds the scene-layouts.json structure from editor state
+  - performSave() - executes the actual save API call
+- Added new exports:
+  - UnregisteredAssetInfo interface (textureKey, elementId, suggestedPath)
+  - suggestAssetPath() helper for auto-suggesting dot-notation paths
+- Added onUnregisteredAssets callback prop to Toolbar for dialog integration (AF-009)
+- Added 'validating' state to save button for user feedback
+- Graceful degradation: if asset API fails, save proceeds anyway with warning
+- **Files changed:**
+  - scene-editor/src/components/toolbar/Toolbar.tsx (refactored, +120 lines)
+- **Learnings for future iterations:**
+  - Use useCallback for helper functions that become dependencies in other hooks
+  - The callback pattern (onUnregisteredAssets with proceedWithSave) allows parent to handle dialog and then continue save
+  - The suggestAssetPath logic is duplicated from AssetFactoryPanel - could be extracted to shared utility
+---
+
+## 2026-01-26 - AF-009
+- Created UnregisteredAssetDialog component in src/components/dialogs/
+- Dialog appears when saving a scene with unregistered textures
+- Features implemented:
+  - Lists all unregistered textures with suggested dot-notation paths
+  - Users can modify the suggested paths in editable text inputs
+  - Users can toggle between "Create new asset" and "Use existing asset" modes
+  - Search-based existing asset picker with filtered list
+  - Duplicate detection for paths already in assets.json
+  - Validation for dot-notation format and conflicts
+  - "Create & Save" button creates new assets via API, then proceeds with scene save
+  - "Cancel" aborts save without changes
+- Integrated dialog into App.tsx with state management:
+  - showUnregisteredDialog, unregisteredAssets, pendingSaveCallback states
+  - handleUnregisteredAssets callback passed to Toolbar
+  - handleCreateAndSave and handleCancelUnregisteredDialog handlers
+- **Files changed:**
+  - scene-editor/src/components/dialogs/UnregisteredAssetDialog.tsx (new, ~300 lines)
+  - scene-editor/src/components/dialogs/index.ts (new)
+  - scene-editor/src/App.tsx (integration with dialog)
+- **Learnings for future iterations:**
+  - Modal dialogs use fixed inset-0 positioning with z-50+ for overlay stacking
+  - The callback pattern from AF-008 (pendingSaveCallback) works well for deferred actions
+  - Form state per-item (AssetFormEntry[]) with validation per-entry is clean pattern for multi-item dialogs
+  - Re-using the assetLookup utility (findAssetsByTexture) for duplicate detection
+---
+
+## 2026-01-26 - AF-010
+- Added POST /api/save-scene-definition endpoint in vite.config.ts
+- Endpoint receives scene elements with texture keys and a textureToAssetMap
+- Converts texture keys to dot-notation asset paths using the provided map
+- Preserves existing scene properties (zones, ui, viewport) when updating scenes.json
+- Integrated into Toolbar.tsx performSave() to save both scene-layouts.json and scenes.json
+- Modified performSave to accept optional FlattenedAssets parameter for texture conversion
+- Uses buildTextureLookupMap utility for efficient texture-to-asset lookups
+- **Files changed:**
+  - scene-editor/vite.config.ts (added ~110 lines for new endpoint)
+  - scene-editor/src/components/toolbar/Toolbar.tsx (modified performSave, added ~40 lines)
+- **Learnings for future iterations:**
+  - The textureToAssetMap approach keeps the API endpoint simple - the client handles the lookup
+  - Entity type doesn't have displayWidth/displayHeight/alpha - use original layout data for those
+  - Pre-existing typecheck errors continue to not block (same missing modules)
+  - This completes the core "asset factory" loop: editor → scenes.json → game
+---
+
+## 2026-01-26 - AF-011
+- Created AssetFactoryTestScene to verify end-to-end integration
+- Added test scene definition to scenes.json using dot-notation asset path "environments.backgrounds.arena"
+- Added corresponding entry in scene-layouts.json with texture key "bg-arena"
+- Created AssetFactoryTestScene.ts Phaser scene class with SceneBuilder integration
+- Registered scene in main.ts
+
+**Integration Test Procedure (Manual Browser Verification):**
+
+1. **Start the scene editor:**
+   ```bash
+   cd /Users/datamole/SimpleGame/scene-editor && npm run dev
+   ```
+
+2. **Start the game:**
+   ```bash
+   cd /Users/datamole/little-math-adventure && npm run dev -- --port 8001
+   ```
+
+3. **Test in Scene Editor:**
+   - Open http://localhost:5174
+   - Select "AssetFactoryTestScene" from the scene dropdown
+   - Verify the arena background appears in the canvas
+   - Click Save - should save to both scene-layouts.json and scenes.json
+
+4. **Test in Game:**
+   - Open http://localhost:8001
+   - Open browser console
+   - Run: `game.scene.start('AssetFactoryTestScene')`
+   - Verify:
+     - Arena background renders correctly
+     - Title "ASSET FACTORY TEST" appears
+     - "BACK TO MENU" button works
+     - Console shows: "[AssetFactoryTestScene] Scene built successfully..."
+
+**Files changed:**
+  - little-math-adventure/public/assets/data/scenes.json (added AssetFactoryTestScene)
+  - little-math-adventure/public/assets/data/scene-layouts.json (added AssetFactoryTestScene)
+  - little-math-adventure/src/scenes/AssetFactoryTestScene.ts (new)
+  - little-math-adventure/src/main.ts (registered scene)
+
+**Learnings for future iterations:**
+  - Integration tests require manual browser verification for both editor and game
+  - The data flow: scenes.json (dot-notation) ← AssetFactory → textures.json (texture keys)
+  - SceneBuilder applies scene-layouts.json overrides on top of scenes.json base definitions
+  - Pre-existing typecheck errors in both codebases don't block commits
+---

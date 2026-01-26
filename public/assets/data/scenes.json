@@ -1073,6 +1073,39 @@
                     }
                 }
             ]
+        },
+        "AssetFactoryTestScene": {
+            "viewport": {
+                "width": 1280,
+                "height": 720
+            },
+            "elements": [
+                {
+                    "id": "bg",
+                    "asset": "environments.backgrounds.arena",
+                    "x": 640,
+                    "y": 360
+                }
+            ],
+            "ui": [
+                {
+                    "id": "title",
+                    "asset": "ui.labels.title-label",
+                    "x": 640,
+                    "y": 40,
+                    "text": "ASSET FACTORY TEST"
+                },
+                {
+                    "id": "backBtn",
+                    "asset": "ui.buttons.back-button",
+                    "x": 640,
+                    "y": 680,
+                    "text": "BACK TO MENU",
+                    "events": {
+                        "click": "enterScene:MenuScene"
+                    }
+                }
+            ]
         }
     }
 }
