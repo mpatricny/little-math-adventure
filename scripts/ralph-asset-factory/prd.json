@@ -1,0 +1,170 @@
+{
+  "project": "SceneEditor",
+  "branchName": "ralph/asset-factory",
+  "description": "Asset Factory - Hybrid asset management for scene editor",
+  "userStories": [
+    {
+      "id": "AF-001",
+      "title": "Add API endpoint to read assets.json",
+      "description": "Create a read-only endpoint that returns the flattened assets.json structure.",
+      "acceptanceCriteria": [
+        "GET /api/assets-definitions returns flattened assets.json",
+        "Response includes dot-notation keys and asset definitions",
+        "Typecheck passes"
+      ],
+      "priority": 1,
+      "passes": true,
+      "notes": "Add to scene-editor/vite.config.ts alongside existing endpoints"
+    },
+    {
+      "id": "AF-002",
+      "title": "Add API endpoint to write assets.json",
+      "description": "Create an endpoint to save modified assets back to assets.json.",
+      "acceptanceCriteria": [
+        "POST /api/save-assets-definitions accepts asset definitions",
+        "Writes to little-math-adventure/public/assets/data/assets.json",
+        "Preserves existing structure (nested, not flattened)",
+        "Typecheck passes"
+      ],
+      "priority": 2,
+      "passes": true,
+      "notes": "Must convert flat dot-notation back to nested structure for storage"
+    },
+    {
+      "id": "AF-003",
+      "title": "Create Asset Factory tab shell",
+      "description": "Add a new tab to the scene editor for asset management.",
+      "acceptanceCriteria": [
+        "New 'Assets' tab appears in scene editor navigation",
+        "Tab shows placeholder content",
+        "Existing tabs still work",
+        "Typecheck passes"
+      ],
+      "priority": 3,
+      "passes": true,
+      "notes": "Check existing tab structure in scene-editor/src/components/"
+    },
+    {
+      "id": "AF-004",
+      "title": "Display asset list in Asset Factory",
+      "description": "Show all assets from assets.json in a browsable list.",
+      "acceptanceCriteria": [
+        "Loads assets from /api/assets-definitions on mount",
+        "Displays assets grouped by category (environments, characters, ui, etc.)",
+        "Shows asset key, type, and texture for each",
+        "Search/filter by name works",
+        "Typecheck passes",
+        "Verify in browser"
+      ],
+      "priority": 4,
+      "passes": true,
+      "notes": ""
+    },
+    {
+      "id": "AF-005",
+      "title": "View/edit asset details",
+      "description": "Click an asset to view and edit its properties.",
+      "acceptanceCriteria": [
+        "Clicking asset opens detail panel",
+        "Shows all properties: type, texture, origin, scale, depth, animations",
+        "Can modify properties and save",
+        "Typecheck passes",
+        "Verify in browser"
+      ],
+      "priority": 5,
+      "passes": true,
+      "notes": ""
+    },
+    {
+      "id": "AF-006",
+      "title": "Create new asset from texture",
+      "description": "Allow creating a new asset definition from an existing texture.",
+      "acceptanceCriteria": [
+        "Button to create new asset",
+        "Texture picker shows available textures from textures.json",
+        "User specifies: dot-notation path, type, origin, scale",
+        "Saves to assets.json via API",
+        "Typecheck passes",
+        "Verify in browser"
+      ],
+      "priority": 6,
+      "passes": true,
+      "notes": "Auto-suggest dot-notation path based on texture name"
+    },
+    {
+      "id": "AF-007",
+      "title": "Build reverse texture-to-asset lookup",
+      "description": "Create utility to find which asset uses a given texture key.",
+      "acceptanceCriteria": [
+        "Function: findAssetByTexture(textureKey) returns asset path or null",
+        "Handles multiple assets using same texture (returns first/all)",
+        "Typecheck passes"
+      ],
+      "priority": 7,
+      "passes": true,
+      "notes": "Needed for save-time validation"
+    },
+    {
+      "id": "AF-008",
+      "title": "Add save-time validation for unregistered assets",
+      "description": "When saving a scene, check if any elements use unregistered textures.",
+      "acceptanceCriteria": [
+        "On save, iterate elements and check each asset against assets.json",
+        "Identify elements using texture keys not mapped to any asset",
+        "If all assets registered, save proceeds normally",
+        "If unregistered found, show validation dialog (next story)",
+        "Typecheck passes"
+      ],
+      "priority": 8,
+      "passes": true,
+      "notes": "Modify Toolbar.tsx save logic"
+    },
+    {
+      "id": "AF-009",
+      "title": "Create unregistered asset dialog",
+      "description": "Dialog that appears when saving with unregistered assets.",
+      "acceptanceCriteria": [
+        "Lists unregistered textures with suggested dot-notation paths",
+        "User can modify suggested paths",
+        "User can select existing asset (duplicate detection)",
+        "'Create & Save' button creates assets then saves scene",
+        "'Cancel' aborts save",
+        "Typecheck passes",
+        "Verify in browser"
+      ],
+      "priority": 9,
+      "passes": true,
+      "notes": ""
+    },
+    {
+      "id": "AF-010",
+      "title": "Write scene elements to scenes.json",
+      "description": "When saving, also write element definitions to scenes.json using dot-notation.",
+      "acceptanceCriteria": [
+        "Add API endpoint: POST /api/save-scene-definition",
+        "Converts texture keys to dot-notation asset paths",
+        "Updates scenes.json with element definitions",
+        "Preserves existing scene properties (zones, ui)",
+        "Typecheck passes"
+      ],
+      "priority": 10,
+      "passes": true,
+      "notes": "This is the key change that makes editor scenes render in game"
+    },
+    {
+      "id": "AF-011",
+      "title": "Integration test: Create scene in editor, verify in game",
+      "description": "End-to-end verification that editor scenes now work in game.",
+      "acceptanceCriteria": [
+        "Create new scene in editor with one background image",
+        "Save the scene (creates asset if needed)",
+        "Load game and navigate to new scene",
+        "Background renders correctly",
+        "Verify in browser (both editor and game)"
+      ],
+      "priority": 11,
+      "passes": true,
+      "notes": "Final verification story. Test scene 'AssetFactoryTestScene' created with manual browser verification procedure documented in progress.txt"
+    }
+  ]
+}

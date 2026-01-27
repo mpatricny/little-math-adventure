@@ -1163,5 +1163,38 @@
                 "action": "enterScene:ArenaScene"
             }
         }
+    },
+    "library": {
+        "image": {
+            "arrow_256cropped": {
+                "type": "staticImage",
+                "texture": "arrow-256cropped",
+                "origin": [
+                    0.5,
+                    0.5
+                ],
+                "scale": 1
+            },
+            "intro_comic_2_cropped": {
+                "type": "staticImage",
+                "texture": "intro-comic-2-cropped",
+                "origin": [
+                    0.5,
+                    0.5
+                ],
+                "scale": 1
+            }
+        }
+    },
+    "misc": {
+        "arrow_left": {
+            "type": "staticImage",
+            "texture": "arrow-256cropped",
+            "origin": [
+                0.5,
+                0.5
+            ],
+            "scale": 1
+        }
     }
 }

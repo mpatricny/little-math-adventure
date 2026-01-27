@@ -151,6 +151,8 @@
         "ui-button-pressed": "ui/small_board_button_pressed.png",
         "ui-results-table": "ui/results-table.png",
         "ui-stone-bar-frame": "ui/stone-bar-frame.png",
-        "ui-exclamation": "ui/exclamation-mark.png"
+        "ui-exclamation": "ui/exclamation-mark.png",
+        "arrow-256cropped": "library:originals/74636147-83687a13.png",
+        "intro-comic-2-cropped": "library:originals/d6ff02b1-d924a196.png"
     }
 }
