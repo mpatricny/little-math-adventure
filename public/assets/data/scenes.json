@@ -354,32 +354,6 @@
           "depth": -10,
           "scale": 1,
           "visible": true
-        },
-        {
-          "id": "playerSpawn",
-          "asset": "playerSpawn",
-          "x": 300,
-          "y": 480,
-          "origin": [
-            0.5,
-            0.5
-          ],
-          "depth": 0,
-          "scale": 1,
-          "visible": true
-        },
-        {
-          "id": "enemySpawn",
-          "asset": "enemySpawn",
-          "x": 900,
-          "y": 480,
-          "origin": [
-            0.5,
-            0.5
-          ],
-          "depth": 0,
-          "scale": 1,
-          "visible": true
         }
       ],
       "zones": [
@@ -504,7 +478,6 @@
             0,
             1
           ],
-          "scale": 1,
           "visible": true
         },
         {
@@ -571,27 +544,15 @@
             0,
             1
           ],
-          "scale": 1,
-          "visible": true
-        },
-        {
-          "id": "playerSpawn",
-          "asset": "playerSpawn",
-          "x": 80,
-          "y": 615,
-          "origin": [
-            0.5,
-            0.5
-          ],
-          "depth": 0,
-          "scale": 1,
           "visible": true
         }
       ],
       "zones": [
         {
           "id": "playerSpawn",
-          "zone": "zones.spawns.player-spawn-town"
+          "zone": "zones.spawns.player-spawn-town",
+          "x": 80,
+          "y": 615
         }
       ],
       "ui": [
@@ -1693,24 +1654,14 @@
             1
           ],
           "visible": true
-        },
-        {
-          "id": "playerSpawn",
-          "asset": "playerSpawn",
-          "x": 80,
-          "y": 615,
-          "origin": [
-            0.5,
-            0.5
-          ],
-          "depth": 0,
-          "visible": true
         }
       ],
       "zones": [
         {
           "id": "playerSpawn",
-          "zone": "zones.spawns.player-spawn-town"
+          "zone": "zones.spawns.player-spawn-town",
+          "x": 80,
+          "y": 615
         }
       ],
       "ui": [
@@ -1818,22 +1769,6 @@
       "elements": [],
       "ui": [
         {
-          "id": "Scroll title",
-          "asset": "misc.scroll-title",
-          "x": 662,
-          "y": 50,
-          "uiElement": {
-            "templateId": "1769080942092-ajqn9x4tw"
-          },
-          "origin": [
-            0.5,
-            0.5
-          ],
-          "depth": 0,
-          "scale": 1,
-          "visible": true
-        },
-        {
           "id": "Arrow",
           "asset": "misc.arrow",
           "x": 288,
@@ -1841,61 +1776,34 @@
           "uiElement": {
             "templateId": "1768918531203-8o2htxgfn"
           },
-          "origin": [
-            0.5,
-            0.5
-          ],
-          "depth": 0,
-          "scale": 1,
           "visible": true
         },
         {
           "id": "Green_button",
-          "asset": "misc.green-button",
-          "x": 586,
-          "y": 660,
+          "asset": "Green_button",
+          "x": 922,
+          "y": 493,
           "uiElement": {
             "templateId": "1768922130266-28htorb5x"
-          },
-          "origin": [
-            0.5,
-            0.5
-          ],
-          "depth": 0,
-          "scale": 1,
-          "visible": true
+          }
+        },
+        {
+          "id": "Arrow_1",
+          "asset": "Arrow",
+          "x": 1072,
+          "y": 348,
+          "uiElement": {
+            "templateId": "1768918531203-8o2htxgfn"
+          }
         },
         {
           "id": "Back button",
-          "asset": "misc.back-button",
-          "x": 144,
-          "y": 601,
-          "scale": 1.8,
+          "asset": "Back button",
+          "x": 179,
+          "y": 635,
           "uiElement": {
             "templateId": "1768730825297-e6lnuaoyj"
-          },
-          "origin": [
-            0.5,
-            0.5
-          ],
-          "depth": 0,
-          "visible": true
-        },
-        {
-          "id": "Character select",
-          "asset": "misc.character-select",
-          "x": 657,
-          "y": 363,
-          "scale": 1.2,
-          "uiElement": {
-            "templateId": "1768919608689-8otqazir2"
-          },
-          "origin": [
-            0.5,
-            0.5
-          ],
-          "depth": 0,
-          "visible": true
+          }
         }
       ]
     },

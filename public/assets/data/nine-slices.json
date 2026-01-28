@@ -1,4 +1,101 @@
 {
   "version": "1.0",
-  "configs": {}
+  "configs": {
+    "d51d97c8-6306-4a22-831c-ebc7c05e7825": {
+      "texture": "d51d97c8-6306-4a22-831c-ebc7c05e7825",
+      "leftWidth": 108,
+      "rightWidth": 113,
+      "topHeight": 123,
+      "bottomHeight": 131
+    },
+    "b62cfbee-abe4-445d-bfa3-53aacec649fa": {
+      "texture": "b62cfbee-abe4-445d-bfa3-53aacec649fa",
+      "leftWidth": 213,
+      "rightWidth": 236,
+      "topHeight": 246,
+      "bottomHeight": 256
+    },
+    "85f06d42-47d9-4aaf-80c2-17a1bb6a668d": {
+      "texture": "85f06d42-47d9-4aaf-80c2-17a1bb6a668d",
+      "leftWidth": 158,
+      "rightWidth": 100,
+      "topHeight": 74,
+      "bottomHeight": 74
+    },
+    "48491a2f-ba31-47a7-9a2f-1688b07791cf": {
+      "texture": "48491a2f-ba31-47a7-9a2f-1688b07791cf",
+      "leftWidth": 57,
+      "rightWidth": 59,
+      "topHeight": 46,
+      "bottomHeight": 61
+    },
+    "7649a893-a2be-48ff-9955-d1d3541545cf": {
+      "texture": "7649a893-a2be-48ff-9955-d1d3541545cf",
+      "leftWidth": 397,
+      "rightWidth": 361,
+      "topHeight": 316,
+      "bottomHeight": 324
+    },
+    "d406a3fd-394c-4328-b2bc-6b57db11483a": {
+      "texture": "d406a3fd-394c-4328-b2bc-6b57db11483a",
+      "leftWidth": 122,
+      "rightWidth": 184,
+      "topHeight": 128,
+      "bottomHeight": 154
+    },
+    "48962742-321f-405f-9f3d-e345ba6969ad": {
+      "texture": "d51d97c8-6306-4a22-831c-ebc7c05e7825",
+      "name": "Select_hero_frame-cropped_small",
+      "path": "library:originals/9a5d2773-5ff03771.png",
+      "leftWidth": 108,
+      "rightWidth": 113,
+      "topHeight": 123,
+      "bottomHeight": 131
+    },
+    "b13050e1-14ed-4620-a48d-1f68ff630bbe": {
+      "texture": "b62cfbee-abe4-445d-bfa3-53aacec649fa",
+      "name": "Select_hero_frame",
+      "path": "library:originals/d2f65138-9b1c920a.png",
+      "leftWidth": 213,
+      "rightWidth": 236,
+      "topHeight": 246,
+      "bottomHeight": 256
+    },
+    "c2ef3774-39fd-4b22-bfeb-10cb20a1993d": {
+      "texture": "85f06d42-47d9-4aaf-80c2-17a1bb6a668d",
+      "name": "Alternate title-cropped-cropped",
+      "path": "library:originals/b0a2cda5-e1830791.png",
+      "leftWidth": 158,
+      "rightWidth": 100,
+      "topHeight": 74,
+      "bottomHeight": 74
+    },
+    "a55eab2b-0d1d-44a0-be3e-df44886bd14b": {
+      "texture": "48491a2f-ba31-47a7-9a2f-1688b07791cf",
+      "name": "ui board diamonds-small",
+      "path": "library:originals/4faac94d-3611c94b.png",
+      "leftWidth": 57,
+      "rightWidth": 59,
+      "topHeight": 46,
+      "bottomHeight": 61
+    },
+    "0017a8f0-5e13-4e5c-8687-c207e2f3fd9f": {
+      "texture": "7649a893-a2be-48ff-9955-d1d3541545cf",
+      "name": "Button isolated",
+      "path": "library:originals/dc73913c-e84fe5fe.png",
+      "leftWidth": 397,
+      "rightWidth": 361,
+      "topHeight": 316,
+      "bottomHeight": 324
+    },
+    "64e6a52e-003f-4672-9a9d-6350dabab4e9": {
+      "texture": "d406a3fd-394c-4328-b2bc-6b57db11483a",
+      "name": "ui board diamonds-selection",
+      "path": "library:originals/52a2a9e9-4997b23f.png",
+      "leftWidth": 122,
+      "rightWidth": 184,
+      "topHeight": 128,
+      "bottomHeight": 154
+    }
+  }
 }

@@ -118,17 +118,31 @@ export class AssetFactory {
         const origin = def.origin || [0.5, 0.5];
         sprite.setOrigin(origin[0], origin[1]);
 
-        let scale = 1;
+        let scaleX = 1;
+        let scaleY = 1;
         if (typeof def.scale === 'number') {
-            scale = def.scale;
+            scaleX = scaleY = def.scale;
         } else if (def.scale && typeof def.scale === 'object') {
-            scale = def.scale.default || 1;
+            scaleX = scaleY = def.scale.default || 1;
         }
-        if (placement.scale !== undefined) scale = placement.scale;
-        sprite.setScale(scale);
+        // Uniform scale from placement overrides def
+        if (placement.scale !== undefined) {
+            scaleX = scaleY = placement.scale;
+        }
+        // Individual scaleX/scaleY override uniform scale
+        if (placement.scaleX !== undefined) scaleX = placement.scaleX;
+        if (placement.scaleY !== undefined) scaleY = placement.scaleY;
+        sprite.setScale(scaleX, scaleY);
 
         const depth = placement.depth !== undefined ? placement.depth : (def.depth || 0);
         sprite.setDepth(depth);
+
+        // Apply flip
+        if (placement.flipX) sprite.setFlipX(true);
+        if (placement.flipY) sprite.setFlipY(true);
+
+        // Apply rotation (in degrees)
+        if (placement.rotation !== undefined) sprite.setAngle(placement.rotation);
 
         if (def.defaultAnimation) {
             sprite.play(def.animations?.[def.defaultAnimation] || def.defaultAnimation);
@@ -144,17 +158,31 @@ export class AssetFactory {
         const origin = def.origin || [0.5, 0.5];
         image.setOrigin(origin[0], origin[1]);
 
-        let scale = 1;
+        let scaleX = 1;
+        let scaleY = 1;
         if (typeof def.scale === 'number') {
-            scale = def.scale;
+            scaleX = scaleY = def.scale;
         } else if (def.scale && typeof def.scale === 'object') {
-            scale = def.scale.default || 1;
+            scaleX = scaleY = def.scale.default || 1;
         }
-        if (placement.scale !== undefined) scale = placement.scale;
-        image.setScale(scale);
+        // Uniform scale from placement overrides def
+        if (placement.scale !== undefined) {
+            scaleX = scaleY = placement.scale;
+        }
+        // Individual scaleX/scaleY override uniform scale
+        if (placement.scaleX !== undefined) scaleX = placement.scaleX;
+        if (placement.scaleY !== undefined) scaleY = placement.scaleY;
+        image.setScale(scaleX, scaleY);
 
         const depth = placement.depth !== undefined ? placement.depth : (def.depth || 0);
         image.setDepth(depth);
+
+        // Apply flip
+        if (placement.flipX) image.setFlipX(true);
+        if (placement.flipY) image.setFlipY(true);
+
+        // Apply rotation (in degrees)
+        if (placement.rotation !== undefined) image.setAngle(placement.rotation);
 
         if (def.displaySize) {
             image.setDisplaySize(def.displaySize[0], def.displaySize[1]);
@@ -172,13 +200,16 @@ export class AssetFactory {
             image.setInteractive({ useHandCursor: true });
 
             if (def.hoverEffect) {
-                const baseScale = scale;
+                const baseScaleX = scaleX;
+                const baseScaleY = scaleY;
                 image.on('pointerover', () => {
-                    if (def.hoverEffect?.scaleMultiplier) image.setScale(baseScale * def.hoverEffect.scaleMultiplier);
+                    if (def.hoverEffect?.scaleMultiplier) {
+                        image.setScale(baseScaleX * def.hoverEffect.scaleMultiplier, baseScaleY * def.hoverEffect.scaleMultiplier);
+                    }
                     if (def.hoverEffect?.tint) image.setTint(Phaser.Display.Color.HexStringToColor(def.hoverEffect.tint).color);
                 });
                 image.on('pointerout', () => {
-                    image.setScale(baseScale);
+                    image.setScale(baseScaleX, baseScaleY);
                     image.clearTint();
                 });
             }

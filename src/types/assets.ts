@@ -29,6 +29,8 @@ export type AssetType =
 // Nine-slice config (from nine-slices.json)
 export interface NineSliceConfig {
     texture: string;
+    name: string;        // Human-readable asset name
+    path: string;        // Texture path (library:originals/...)
     leftWidth: number;
     rightWidth: number;
     topHeight: number;
