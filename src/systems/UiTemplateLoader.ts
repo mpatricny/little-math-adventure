@@ -35,8 +35,29 @@ export interface UiElementLayer {
   sourceType: 'image' | 'color' | 'nineSlice';
   imageAssetId?: string;
   imagePath?: string;
+  nineSliceConfigId?: string;  // Reference to nine-slice config in nine-slices.json
   bounds: { x: number; y: number; w: number; h: number };
   states?: LayerStateConfig;
+}
+
+export interface TextStyleConfig {
+  fill?: string;
+  stroke?: string;
+  strokeWidth?: number;
+  shadowBlur?: number;
+}
+
+export interface TextAreaConfig {
+  id: string;
+  name: string;
+  bounds: { x: number; y: number; w: number; h: number };
+  fontFamily: string;
+  fontSize: number;
+  textAlign: 'left' | 'center' | 'right';
+  verticalAlign: 'top' | 'middle' | 'bottom';
+  fitMode: 'shrinkToFit' | 'wrap' | 'truncate' | 'overflow';
+  defaultText: string;
+  textStyle: TextStyleConfig;
 }
 
 export interface UiElementTemplate {
@@ -44,6 +65,7 @@ export interface UiElementTemplate {
   name: string;
   size: { x: number; y: number; w: number; h: number };
   layers: UiElementLayer[];
+  textAreas?: TextAreaConfig[];
   effects?: TemplateEffectConfig;
 }
 

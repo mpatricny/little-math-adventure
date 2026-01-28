@@ -1,6 +1,8 @@
 import Phaser from 'phaser';
-import { uiTemplateLoader, type UiElementTemplate, type LayerVisualConfig } from './UiTemplateLoader';
+import { uiTemplateLoader, type UiElementTemplate, type UiElementLayer, type LayerVisualConfig } from './UiTemplateLoader';
 import { uiEffectSystem, type BaseProps } from './UiEffectSystem';
+import type { NineSlicesFile } from '../types/assets';
+import { LocalizationService } from './LocalizationService';
 
 /**
  * UiElementBuilder - Creates Phaser game objects from UI templates
@@ -15,12 +17,14 @@ export class UiElementBuilder {
    * @param x - X position (where the origin point should be placed)
    * @param y - Y position (where the origin point should be placed)
    * @param origin - Origin point [0-1, 0-1], defaults to [0.5, 0.5] (center)
+   * @param textOverrides - Optional text overrides by textAreaId
    */
   buildFromTemplate(
     templateId: string,
     x: number,
     y: number,
-    origin: [number, number] = [0.5, 0.5]
+    origin: [number, number] = [0.5, 0.5],
+    textOverrides?: Record<string, string>
   ): Phaser.GameObjects.Container | null {
     const template = uiTemplateLoader.get(templateId);
     if (!template) {
@@ -34,6 +38,11 @@ export class UiElementBuilder {
     // Build layers (images) - element creation is separate from effects
     // Pass origin so layers can be offset correctly
     this.buildLayers(container, template, origin);
+
+    // Build text areas
+    if (template.textAreas && template.textAreas.length > 0) {
+      this.buildTextAreas(container, template, origin, textOverrides);
+    }
 
     // Store base props for effect system
     const baseProps: BaseProps = {
@@ -69,12 +78,14 @@ export class UiElementBuilder {
     const sortedLayers = [...template.layers].sort((a, b) => a.order - b.order);
 
     for (const layer of sortedLayers) {
+      // Apply origin offset to layer position
+      const layerX = (layer.bounds?.x ?? 0) + originOffsetX;
+      const layerY = (layer.bounds?.y ?? 0) + originOffsetY;
+      const layerW = layer.bounds?.w ?? 100;
+      const layerH = layer.bounds?.h ?? 100;
+
       if (layer.sourceType === 'image' && layer.imageAssetId) {
         try {
-          // Apply origin offset to layer position
-          const layerX = (layer.bounds?.x ?? 0) + originOffsetX;
-          const layerY = (layer.bounds?.y ?? 0) + originOffsetY;
-
           const img = this.scene.add.image(
             layerX,
             layerY,
@@ -95,7 +106,16 @@ export class UiElementBuilder {
           }
           container.add(img);
         } catch (e) {
-          console.warn(`[UiElementBuilder] Failed to create layer ${layer.id}:`, e);
+          console.warn(`[UiElementBuilder] Failed to create image layer ${layer.id}:`, e);
+        }
+      } else if (layer.sourceType === 'nineSlice' && layer.nineSliceConfigId) {
+        try {
+          const nineSliceObj = this.createNineSliceLayer(layer, layerX, layerY, layerW, layerH);
+          if (nineSliceObj) {
+            container.add(nineSliceObj);
+          }
+        } catch (e) {
+          console.warn(`[UiElementBuilder] Failed to create nineSlice layer ${layer.id}:`, e);
         }
       }
     }
@@ -106,6 +126,152 @@ export class UiElementBuilder {
       new Phaser.Geom.Rectangle(originOffsetX, originOffsetY, template.size.w, template.size.h),
       Phaser.Geom.Rectangle.Contains
     );
+  }
+
+  /**
+   * Build text areas for a template
+   */
+  private buildTextAreas(
+    container: Phaser.GameObjects.Container,
+    template: UiElementTemplate,
+    origin: [number, number],
+    textOverrides?: Record<string, string>
+  ): void {
+    if (!template.textAreas) return;
+
+    const originOffsetX = -origin[0] * template.size.w;
+    const originOffsetY = -origin[1] * template.size.h;
+    const localization = LocalizationService.getInstance();
+
+    for (const textArea of template.textAreas) {
+      // Get text: override > defaultText
+      let rawText = textOverrides?.[textArea.id] ?? textArea.defaultText;
+
+      // Resolve translation keys (text starting with $)
+      const displayText = localization.resolve(rawText);
+
+      // Build Phaser text style
+      const style: Phaser.Types.GameObjects.Text.TextStyle = {
+        fontFamily: textArea.fontFamily || 'Arial',
+        fontSize: `${textArea.fontSize || 16}px`,
+        color: textArea.textStyle?.fill || '#ffffff',
+        align: textArea.textAlign || 'center',
+      };
+
+      // Add stroke if defined
+      if (textArea.textStyle?.stroke && textArea.textStyle.strokeWidth) {
+        style.stroke = textArea.textStyle.stroke;
+        style.strokeThickness = textArea.textStyle.strokeWidth;
+      }
+
+      // Add shadow if defined
+      if (textArea.textStyle?.shadowBlur && textArea.textStyle.shadowBlur > 0) {
+        style.shadow = {
+          offsetX: 0,
+          offsetY: 0,
+          color: '#000000',
+          blur: textArea.textStyle.shadowBlur,
+          fill: true
+        };
+      }
+
+      // Create text object
+      const textX = textArea.bounds.x + originOffsetX;
+      const textY = textArea.bounds.y + originOffsetY;
+      const text = this.scene.add.text(textX, textY, displayText, style);
+
+      // Apply horizontal alignment within bounds
+      if (textArea.textAlign === 'center') {
+        text.setOrigin(0.5, 0);
+        text.setX(textX + textArea.bounds.w / 2);
+      } else if (textArea.textAlign === 'right') {
+        text.setOrigin(1, 0);
+        text.setX(textX + textArea.bounds.w);
+      } else {
+        text.setOrigin(0, 0);
+      }
+
+      // Apply vertical alignment within bounds
+      if (textArea.verticalAlign === 'middle') {
+        const currentOriginX = text.originX;
+        text.setOrigin(currentOriginX, 0.5);
+        text.setY(textY + textArea.bounds.h / 2);
+      } else if (textArea.verticalAlign === 'bottom') {
+        const currentOriginX = text.originX;
+        text.setOrigin(currentOriginX, 1);
+        text.setY(textY + textArea.bounds.h);
+      }
+
+      // Apply fitMode: shrinkToFit scales text to fit within bounds
+      if (textArea.fitMode === 'shrinkToFit') {
+        const textWidth = text.width;
+        const textHeight = text.height;
+        const boundsWidth = textArea.bounds.w;
+        const boundsHeight = textArea.bounds.h;
+
+        if (textWidth > boundsWidth || textHeight > boundsHeight) {
+          const scaleX = boundsWidth / textWidth;
+          const scaleY = boundsHeight / textHeight;
+          const scale = Math.min(scaleX, scaleY);
+          text.setScale(scale);
+        }
+      } else if (textArea.fitMode === 'wrap') {
+        text.setWordWrapWidth(textArea.bounds.w);
+      }
+
+      // Store text area id for later access
+      text.setData('textAreaId', textArea.id);
+      container.add(text);
+    }
+  }
+
+  /**
+   * Create a nine-slice game object for a layer
+   */
+  private createNineSliceLayer(
+    layer: UiElementLayer,
+    x: number,
+    y: number,
+    width: number,
+    height: number
+  ): Phaser.GameObjects.NineSlice | null {
+    // Get nine-slice configs from registry (loaded in BootScene)
+    const nineSlices: NineSlicesFile | undefined = this.scene.registry.get('nineSlices');
+    if (!nineSlices?.configs) {
+      console.warn(`[UiElementBuilder] Nine-slice configs not loaded in registry`);
+      return null;
+    }
+
+    // Look up config by nineSliceConfigId
+    const config = nineSlices.configs[layer.nineSliceConfigId!];
+    if (!config) {
+      console.warn(`[UiElementBuilder] No nine-slice config found for: ${layer.nineSliceConfigId}`);
+      return null;
+    }
+
+    // Check if texture is loaded
+    if (!this.scene.textures.exists(config.texture)) {
+      console.warn(`[UiElementBuilder] Texture not loaded for nine-slice: ${config.texture} (${config.name})`);
+      return null;
+    }
+
+    // Create the nine-slice object
+    // Phaser.add.nineslice(x, y, texture, frame, width, height, leftWidth, rightWidth, topHeight, bottomHeight)
+    const nineSlice = this.scene.add.nineslice(
+      x,
+      y,
+      config.texture,
+      undefined,  // frame
+      width,
+      height,
+      config.leftWidth,
+      config.rightWidth,
+      config.topHeight,
+      config.bottomHeight
+    );
+
+    nineSlice.setOrigin(0, 0);
+    return nineSlice;
   }
 
   private setupInteractivity(

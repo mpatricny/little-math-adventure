@@ -14,8 +14,10 @@ export interface SceneElement {
     scaleX?: number;
     scaleY?: number;
     origin?: [number, number];
-    rotation?: number;
-    texture?: string;  // Override default texture
+    rotation?: number;  // Rotation in degrees
+    flipX?: boolean;    // Horizontal flip
+    flipY?: boolean;    // Vertical flip
+    texture?: string;   // Override default texture
     text?: string;     // Override text content/key
     fontSize?: string; // Override font size
     color?: string;    // Override color
@@ -30,6 +32,7 @@ export interface SceneElement {
     // UI element template reference (for building with UiElementBuilder)
     uiElement?: {
         templateId: string;
+        textOverrides?: Record<string, string>;  // textAreaId -> text content or $key
     };
 }
 

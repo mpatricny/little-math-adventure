@@ -53,12 +53,21 @@ export class SceneBuilder {
                         element.uiElement.templateId,
                         element.x,
                         element.y,
-                        origin
+                        origin,
+                        element.uiElement.textOverrides
                     );
                     if (uiObj) {
                         if (element.depth !== undefined) uiObj.setDepth(element.depth);
                         if (element.visible === false) uiObj.setVisible(false);
                         if (element.alpha !== undefined) uiObj.setAlpha(element.alpha);
+                        // Apply scale (with flip support via negative scale)
+                        let scaleX = element.scale ?? element.scaleX ?? 1;
+                        let scaleY = element.scale ?? element.scaleY ?? 1;
+                        if (element.flipX) scaleX = -Math.abs(scaleX);
+                        if (element.flipY) scaleY = -Math.abs(scaleY);
+                        if (scaleX !== 1 || scaleY !== 1) uiObj.setScale(scaleX, scaleY);
+                        // Apply rotation
+                        if (element.rotation !== undefined) uiObj.setAngle(element.rotation);
                         obj = uiObj;
                     } else {
                         // Fallback to regular creation if template not found
@@ -112,12 +121,21 @@ export class SceneBuilder {
                         element.uiElement.templateId,
                         element.x,
                         element.y,
-                        origin
+                        origin,
+                        element.uiElement.textOverrides
                     );
                     if (uiObj) {
                         if (element.depth !== undefined) uiObj.setDepth(element.depth);
                         if (element.visible === false) uiObj.setVisible(false);
                         if (element.alpha !== undefined) uiObj.setAlpha(element.alpha);
+                        // Apply scale (with flip support via negative scale)
+                        let scaleX = element.scale ?? element.scaleX ?? 1;
+                        let scaleY = element.scale ?? element.scaleY ?? 1;
+                        if (element.flipX) scaleX = -Math.abs(scaleX);
+                        if (element.flipY) scaleY = -Math.abs(scaleY);
+                        if (scaleX !== 1 || scaleY !== 1) uiObj.setScale(scaleX, scaleY);
+                        // Apply rotation
+                        if (element.rotation !== undefined) uiObj.setAngle(element.rotation);
                         obj = uiObj;
                     } else {
                         // Fallback to regular creation if template not found
