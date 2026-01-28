@@ -1,8 +1,16 @@
 import Phaser from 'phaser';
-import { uiTemplateLoader, type UiElementTemplate, type UiElementLayer, type LayerVisualConfig } from './UiTemplateLoader';
+import { uiTemplateLoader, type UiElementTemplate, type UiElementLayer, type LayerVisualConfig, type TemplateEffectConfig } from './UiTemplateLoader';
 import { uiEffectSystem, type BaseProps } from './UiEffectSystem';
 import type { NineSlicesFile } from '../types/assets';
 import { LocalizationService } from './LocalizationService';
+
+/**
+ * Animation timing configuration
+ */
+interface AnimationTiming {
+  duration: number;
+  easing: string;
+}
 
 /**
  * UiElementBuilder - Creates Phaser game objects from UI templates
@@ -58,7 +66,7 @@ export class UiElementBuilder {
     // Setup interactivity with effects - decoupled
     const effectConfig = template.effects?.defaults;
     if (effectConfig) {
-      this.setupInteractivity(container, effectConfig, baseProps);
+      this.setupInteractivity(container, effectConfig, baseProps, template.effects?.animation);
     }
 
     return container;
@@ -277,36 +285,119 @@ export class UiElementBuilder {
   private setupInteractivity(
     container: Phaser.GameObjects.Container,
     effectConfig: { normal?: LayerVisualConfig; hover?: LayerVisualConfig; pressed?: LayerVisualConfig },
-    baseProps: BaseProps
+    baseProps: BaseProps,
+    animation?: TemplateEffectConfig['animation']
   ): void {
     let isPressed = false;
 
     container.on('pointerover', () => {
       if (!isPressed && effectConfig.hover) {
-        uiEffectSystem.applyEffect(container, effectConfig.hover, baseProps);
+        this.tweenToState(container, effectConfig.hover, baseProps, animation?.toHover);
       }
     });
 
     container.on('pointerout', () => {
       isPressed = false;
+      // First reset postFX effects (these don't tween well)
       uiEffectSystem.resetToBase(container, baseProps);
+      // Then apply normal state with animation
       if (effectConfig.normal) {
-        uiEffectSystem.applyEffect(container, effectConfig.normal, baseProps);
+        this.tweenToState(container, effectConfig.normal, baseProps, animation?.toNormal);
+      } else {
+        // Tween back to base if no normal config
+        this.tweenToState(container, {}, baseProps, animation?.toNormal);
       }
     });
 
     container.on('pointerdown', () => {
       isPressed = true;
       if (effectConfig.pressed) {
-        uiEffectSystem.applyEffect(container, effectConfig.pressed, baseProps);
+        this.tweenToState(container, effectConfig.pressed, baseProps, animation?.toPressed);
       }
     });
 
     container.on('pointerup', () => {
       isPressed = false;
       if (effectConfig.hover) {
-        uiEffectSystem.applyEffect(container, effectConfig.hover, baseProps);
+        this.tweenToState(container, effectConfig.hover, baseProps, animation?.toHover);
       }
     });
+  }
+
+  /**
+   * Tween to a visual state with animation
+   * Animates scale, position, and opacity. PostFX effects (shadow, glow) are applied instantly.
+   */
+  private tweenToState(
+    obj: Phaser.GameObjects.Container | Phaser.GameObjects.Image,
+    config: LayerVisualConfig,
+    base: BaseProps,
+    timing?: AnimationTiming
+  ): void {
+    // Default timing if not specified
+    const duration = timing?.duration ?? 150;
+    const ease = this.mapEasing(timing?.easing ?? 'easeOut');
+
+    // Calculate target values
+    const targetScaleX = base.scaleX * (config.scale?.x ?? 1);
+    const targetScaleY = base.scaleY * (config.scale?.y ?? 1);
+    const targetX = base.x + (config.offset?.x ?? 0);
+    const targetY = base.y + (config.offset?.y ?? 0);
+    const targetAlpha = base.alpha * (config.opacity ?? 1);
+
+    // Stop any existing tweens on this object to prevent conflicts
+    this.scene.tweens.killTweensOf(obj);
+
+    // Animate tweennable properties
+    this.scene.tweens.add({
+      targets: obj,
+      scaleX: targetScaleX,
+      scaleY: targetScaleY,
+      x: targetX,
+      y: targetY,
+      alpha: targetAlpha,
+      duration,
+      ease
+    });
+
+    // Apply non-tweennable effects immediately (postFX)
+    // These need the effect system since they use postFX pipeline
+    if (config.shadow || config.glow || config.tint || config.brightness !== undefined) {
+      uiEffectSystem.applyEffect(obj, {
+        shadow: config.shadow,
+        glow: config.glow,
+        tint: config.tint,
+        brightness: config.brightness
+      }, base);
+    }
+  }
+
+  /**
+   * Map common easing names to Phaser easing strings
+   */
+  private mapEasing(easing: string): string {
+    const easingMap: Record<string, string> = {
+      'linear': 'Linear',
+      'easeIn': 'Power2.easeIn',
+      'easeOut': 'Power2.easeOut',
+      'easeInOut': 'Power2.easeInOut',
+      'easeInQuad': 'Quad.easeIn',
+      'easeOutQuad': 'Quad.easeOut',
+      'easeInOutQuad': 'Quad.easeInOut',
+      'easeInCubic': 'Cubic.easeIn',
+      'easeOutCubic': 'Cubic.easeOut',
+      'easeInOutCubic': 'Cubic.easeInOut',
+      'easeInElastic': 'Elastic.easeIn',
+      'easeOutElastic': 'Elastic.easeOut',
+      'easeInOutElastic': 'Elastic.easeInOut',
+      'easeInBack': 'Back.easeIn',
+      'easeOutBack': 'Back.easeOut',
+      'easeInOutBack': 'Back.easeInOut',
+      'easeInBounce': 'Bounce.easeIn',
+      'easeOutBounce': 'Bounce.easeOut',
+      'easeInOutBounce': 'Bounce.easeInOut',
+    };
+
+    return easingMap[easing] || easing;
   }
 }
