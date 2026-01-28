@@ -17,7 +17,7 @@ import { TestingWitchHutScene } from './scenes/TestingWitchHutScene';
 import { AssetFactoryTestScene } from './scenes/AssetFactoryTestScene';
 
 const config: Phaser.Types.Core.GameConfig = {
-    type: Phaser.AUTO,  // WebGL with Canvas fallback
+    type: Phaser.AUTO,
     width: 1280,
     height: 720,
     parent: 'game-container',
@@ -26,8 +26,14 @@ const config: Phaser.Types.Core.GameConfig = {
         mode: Phaser.Scale.FIT,
         autoCenter: Phaser.Scale.CENTER_BOTH,
     },
+    render: {
+        antialias: true,
+        roundPixels: false,
+        transparent: false,
+        powerPreference: 'high-performance',
+    },
     dom: {
-        createContainer: true  // Enable DOM element support for text input
+        createContainer: true
     },
     scene: [BootScene, AssetLoaderScene, MenuScene, SaveSlotScene, CharacterSelectScene, TownScene, TestingTownScene, TestingWitchHutScene, BattleScene, ArenaScene, VictoryScene, WitchHutScene, ShopScene, GuildScene, TavernScene, MathBoardDebugScene, AssetFactoryTestScene],
 };

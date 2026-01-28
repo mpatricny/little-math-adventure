@@ -88,7 +88,11 @@ export class AssetLoaderScene extends Phaser.Scene {
 
         // Load all images
         for (const [key, path] of Object.entries(textures.images)) {
-            this.load.image(key, `assets/${path}`);
+            // Handle library: prefix for Asset Library files
+            const actualPath = path.startsWith('library:')
+                ? `assets/library/${path.slice(8)}`  // Strip "library:" and add "assets/library/"
+                : `assets/${path}`;
+            this.load.image(key, actualPath);
         }
 
         // Load all spritesheets

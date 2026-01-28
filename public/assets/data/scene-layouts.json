@@ -1615,10 +1615,11 @@
       },
       "elements": [
         {
-          "id": "Intro_Comic_1-cropped",
-          "type": "image",
-          "x": 650,
-          "y": 360,
+          "id": "Scroll title",
+          "type": "uiElement",
+          "asset": "Scroll title",
+          "x": 662,
+          "y": 50,
           "origin": [
             0.5,
             0.5
@@ -1626,13 +1627,17 @@
           "depth": 0,
           "editable": true,
           "visible": true,
-          "scale": 1
+          "scale": 1,
+          "uiElement": {
+            "templateId": "1769080942092-ajqn9x4tw"
+          }
         },
         {
-          "id": "Arrow-256cropped",
-          "type": "image",
-          "x": 463,
-          "y": 388,
+          "id": "Arrow",
+          "type": "uiElement",
+          "asset": "Arrow",
+          "x": 288,
+          "y": 320,
           "origin": [
             0.5,
             0.5
@@ -1640,27 +1645,17 @@
           "depth": 0,
           "editable": true,
           "visible": true,
-          "scale": 1
-        },
-        {
-          "id": "Arrow-256cropped",
-          "type": "image",
-          "x": 463,
-          "y": 388,
-          "origin": [
-            0.5,
-            0.5
-          ],
-          "depth": 0,
-          "editable": true,
-          "visible": true,
-          "scale": 1
+          "scale": 1,
+          "uiElement": {
+            "templateId": "1768918531203-8o2htxgfn"
+          }
         },
         {
           "id": "Green_button",
           "type": "uiElement",
-          "x": 773,
-          "y": 671,
+          "asset": "Green_button",
+          "x": 586,
+          "y": 660,
           "origin": [
             0.5,
             0.5
@@ -1674,32 +1669,40 @@
           }
         },
         {
-          "id": "title",
-          "type": "text",
-          "x": 642,
-          "y": 63,
+          "id": "Back button",
+          "type": "uiElement",
+          "asset": "Back button",
+          "x": 144,
+          "y": 601,
           "origin": [
             0.5,
             0.5
           ],
-          "depth": 10,
+          "depth": 0,
           "editable": true,
           "visible": true,
-          "scale": 1
+          "scale": 1.8,
+          "uiElement": {
+            "templateId": "1768730825297-e6lnuaoyj"
+          }
         },
         {
-          "id": "backBtn",
-          "type": "button",
-          "x": 289,
-          "y": 657,
+          "id": "Character select",
+          "type": "uiElement",
+          "asset": "Character select",
+          "x": 657,
+          "y": 363,
           "origin": [
             0.5,
             0.5
           ],
-          "depth": 50,
+          "depth": 0,
           "editable": true,
           "visible": true,
-          "scale": 1
+          "scale": 1.2,
+          "uiElement": {
+            "templateId": "1768919608689-8otqazir2"
+          }
         }
       ],
       "hotspots": [],

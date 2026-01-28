@@ -1174,27 +1174,104 @@
                     0.5
                 ],
                 "scale": 1
-            },
-            "intro_comic_2_cropped": {
-                "type": "staticImage",
-                "texture": "intro-comic-2-cropped",
-                "origin": [
-                    0.5,
-                    0.5
-                ],
-                "scale": 1
             }
         }
     },
     "misc": {
-        "arrow_left": {
+        "alternate-title-scroll": {
             "type": "staticImage",
-            "texture": "arrow-256cropped",
+            "texture": "alternate title_scroll",
+            "origin": [
+                0.5,
+                0.5
+            ]
+        },
+        "name-banner-cropped": {
+            "type": "staticImage",
+            "texture": "name banner-cropped",
+            "origin": [
+                0.5,
+                0.5
+            ]
+        },
+        "intro-comic-1-cropped": {
+            "type": "staticImage",
+            "texture": "Intro_Comic_1-cropped",
+            "origin": [
+                0.5,
+                0.5
+            ]
+        },
+        "gemini-generated-image-r43gbar43gbar43g": {
+            "type": "staticImage",
+            "texture": "Gemini_Generated_Image_r43gbar43gbar43g",
+            "origin": [
+                0.5,
+                0.5
+            ]
+        },
+        "button": {
+            "green": {
+                "small": {
+                    "type": "button",
+                    "texture": "Button isolated-small",
+                    "origin": [
+                        0.5,
+                        0.5
+                    ],
+                    "scale": 1,
+                    "depth": 5
+                }
+            }
+        },
+        "arrow-cropped": {
+            "type": "staticImage",
+            "texture": "Arrow-cropped",
+            "origin": [
+                0.5,
+                0.5
+            ]
+        },
+        "scroll-title": {
+            "type": "staticImage",
+            "texture": "Scroll title",
+            "origin": [
+                0.5,
+                0.5
+            ]
+        },
+        "arrow": {
+            "type": "staticImage",
+            "texture": "Arrow",
+            "origin": [
+                0.5,
+                0.5
+            ]
+        },
+        "green-button": {
+            "type": "staticImage",
+            "texture": "Green_button",
+            "origin": [
+                0.5,
+                0.5
+            ]
+        },
+        "back-button": {
+            "type": "staticImage",
+            "texture": "Back button",
+            "origin": [
+                0.5,
+                0.5
+            ]
+        },
+        "character-select": {
+            "type": "staticImage",
+            "texture": "Character select",
             "origin": [
                 0.5,
                 0.5
             ],
-            "scale": 1
+            "scale": 1.2
         }
     }
 }

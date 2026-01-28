@@ -59,16 +59,26 @@ export class SceneBuilder {
                 // Check if element uses a UI template
                 if (element.uiElement?.templateId) {
                     const builder = new UiElementBuilder(this.scene);
+                    // Get layout override to check for origin and position overrides
+                    const layoutOverride = this.layoutOverrides.get(element.id);
+                    const posX = layoutOverride?.x ?? element.x;
+                    const posY = layoutOverride?.y ?? element.y;
+                    const origin: [number, number] = layoutOverride?.origin ?? element.origin ?? [0.5, 0.5];
+
                     const uiObj = builder.buildFromTemplate(
                         element.uiElement.templateId,
-                        element.x,
-                        element.y
+                        posX,
+                        posY,
+                        origin
                     );
                     if (uiObj) {
-                        // Apply any additional layout overrides
+                        // Apply additional layout overrides (position/origin already applied)
                         if (element.depth !== undefined) uiObj.setDepth(element.depth);
+                        if (layoutOverride?.depth !== undefined) uiObj.setDepth(layoutOverride.depth);
                         if (element.visible === false) uiObj.setVisible(false);
+                        if (layoutOverride?.visible === false) uiObj.setVisible(false);
                         if (element.alpha !== undefined) uiObj.setAlpha(element.alpha);
+                        if (layoutOverride?.alpha !== undefined) uiObj.setAlpha(layoutOverride.alpha);
                         obj = uiObj;
                     } else {
                         // Fallback to regular creation if template not found
@@ -119,16 +129,26 @@ export class SceneBuilder {
                 // Check if element uses a UI template
                 if (element.uiElement?.templateId) {
                     const builder = new UiElementBuilder(this.scene);
+                    // Get layout override to check for origin and position overrides
+                    const layoutOverride = this.layoutOverrides.get(element.id);
+                    const posX = layoutOverride?.x ?? element.x;
+                    const posY = layoutOverride?.y ?? element.y;
+                    const origin: [number, number] = layoutOverride?.origin ?? element.origin ?? [0.5, 0.5];
+
                     const uiObj = builder.buildFromTemplate(
                         element.uiElement.templateId,
-                        element.x,
-                        element.y
+                        posX,
+                        posY,
+                        origin
                     );
                     if (uiObj) {
-                        // Apply any additional layout overrides
+                        // Apply additional layout overrides (position/origin already applied)
                         if (element.depth !== undefined) uiObj.setDepth(element.depth);
+                        if (layoutOverride?.depth !== undefined) uiObj.setDepth(layoutOverride.depth);
                         if (element.visible === false) uiObj.setVisible(false);
+                        if (layoutOverride?.visible === false) uiObj.setVisible(false);
                         if (element.alpha !== undefined) uiObj.setAlpha(element.alpha);
+                        if (layoutOverride?.alpha !== undefined) uiObj.setAlpha(layoutOverride.alpha);
                         obj = uiObj;
                     } else {
                         // Fallback to regular creation if template not found
