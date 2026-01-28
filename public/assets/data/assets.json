@@ -222,7 +222,7 @@
         },
         "terrain": {
             "grass-layer": {
-                "type": "tileSprite",
+                "type": "staticImage",
                 "category": "terrain",
                 "texture": "town-grass",
                 "origin": [
