@@ -128,12 +128,12 @@ export class UiElementBuilder {
       }
     }
 
-    // Set hit area for interactivity - also offset by origin
+    // Set hit area for interactivity
+    // Let Phaser calculate hit area automatically based on container size
+    // NOTE: Do NOT use custom Rectangle with origin offset - causes misaligned click areas!
+    // This bug has been fixed multiple times. See commit 86694f9.
     container.setSize(template.size.w, template.size.h);
-    container.setInteractive(
-      new Phaser.Geom.Rectangle(originOffsetX, originOffsetY, template.size.w, template.size.h),
-      Phaser.Geom.Rectangle.Contains
-    );
+    container.setInteractive({ useHandCursor: true });
   }
 
   /**
