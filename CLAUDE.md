@@ -225,6 +225,34 @@ TileSprites use `width` and `height` to define the display area. The `scale` pro
 { "width": 1280, "height": 80 }
 ```
 
+## Known Recurring Bugs
+
+### Hit Area Offset Bug (UI Elements)
+
+**Symptom**: Hover/click effects trigger in the wrong position - offset by half the element size to the left and up from where the visual element appears.
+
+**Root Cause**: Using a custom `Phaser.Geom.Rectangle` with origin offset values for the hit area. When Phaser transforms mouse coordinates to local space, the custom rectangle offset causes misalignment.
+
+**Wrong (causes bug)**:
+```typescript
+container.setInteractive(
+  new Phaser.Geom.Rectangle(originOffsetX, originOffsetY, width, height),
+  Phaser.Geom.Rectangle.Contains
+);
+```
+
+**Correct (let Phaser calculate)**:
+```typescript
+container.setSize(width, height);
+container.setInteractive({ useHandCursor: true });
+```
+
+**History**: This bug has been fixed multiple times:
+- Commit `86694f9` - Fixed in UiElementFactory.ts
+- Commit `2a7ce65` - Fixed in UiElementBuilder.ts
+
+**Prevention**: When making containers interactive, ALWAYS use `setInteractive({ useHandCursor: true })` and let Phaser calculate the hit area automatically based on container size. Never use custom Rectangle offsets.
+
 ## File Locations
 
 - **Game source**: `/Users/datamole/little-math-adventure/src/`
