@@ -11,6 +11,10 @@ export interface SceneElement {
     depth?: number;
     alpha?: number;
     scale?: number;
+    scaleX?: number;
+    scaleY?: number;
+    origin?: [number, number];
+    rotation?: number;
     texture?: string;  // Override default texture
     text?: string;     // Override text content/key
     fontSize?: string; // Override font size
@@ -39,11 +43,51 @@ export interface SceneZone {
     height?: number;
 }
 
+/**
+ * Spawn point position
+ */
+export interface SpawnPoint {
+    x: number;
+    y: number;
+}
+
+/**
+ * Enemy count key type
+ */
+export type EnemyCount = '1' | '2' | '3';
+
+/**
+ * Spawn points configuration for battle scenes
+ */
+export interface SpawnPoints {
+    /** Player spawn position */
+    player: SpawnPoint;
+
+    /** Pet spawn position */
+    pet: SpawnPoint;
+
+    /** Enemy spawn positions for different enemy counts */
+    enemies: Record<EnemyCount, SpawnPoint[]>;
+}
+
+/**
+ * Hotspot definition for interactive areas
+ */
+export interface SceneHotspot {
+    id: string;
+    type: string;
+    bounds: number[];
+    target?: string;
+    action?: string;
+}
+
 export interface SceneDef {
     viewport: { width: number; height: number };
     elements: SceneElement[];
     zones?: SceneZone[];
     ui?: SceneElement[];
+    spawnPoints?: SpawnPoints;
+    hotspots?: SceneHotspot[];
 }
 
 export interface ScenesFile {

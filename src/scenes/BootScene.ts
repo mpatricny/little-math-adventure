@@ -29,7 +29,6 @@ export class BootScene extends Phaser.Scene {
         this.load.json('animations', 'assets/data/animations.json');
         this.load.json('assets', 'assets/data/assets.json');
         this.load.json('scenes', 'assets/data/scenes.json');
-        this.load.json('sceneLayouts', 'assets/data/scene-layouts.json');
 
         // Localization
         this.load.json('lang-index', 'assets/data/localization/index.json');

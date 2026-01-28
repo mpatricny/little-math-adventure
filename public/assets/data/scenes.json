@@ -11,7 +11,9 @@
           "asset": "ui.labels.title-label",
           "x": 640,
           "y": 60,
-          "text": "ULOZENE HRY"
+          "text": "ULOZENE HRY",
+          "depth": 10,
+          "visible": true
         },
         {
           "id": "arrowLeft",
@@ -21,7 +23,9 @@
           "text": "<",
           "events": {
             "click": "onPrevSlot"
-          }
+          },
+          "depth": 50,
+          "visible": true
         },
         {
           "id": "arrowRight",
@@ -31,7 +35,9 @@
           "text": ">",
           "events": {
             "click": "onNextSlot"
-          }
+          },
+          "depth": 50,
+          "visible": true
         },
         {
           "id": "slotCard",
@@ -39,20 +45,26 @@
           "x": 640,
           "y": 350,
           "width": 400,
-          "height": 380
+          "height": 380,
+          "depth": 5,
+          "visible": true
         },
         {
           "id": "slotNumber",
           "asset": "ui.labels.title-label",
           "x": 640,
           "y": 140,
-          "text": "SLOT 1/8"
+          "text": "SLOT 1/8",
+          "depth": 10,
+          "visible": true
         },
         {
           "id": "characterPreview",
           "asset": "ui.containers.empty",
           "x": 640,
-          "y": 280
+          "y": 280,
+          "depth": 10,
+          "visible": true
         },
         {
           "id": "emptySlotText",
@@ -60,28 +72,35 @@
           "x": 640,
           "y": 320,
           "text": "PRAZDNY SLOT",
-          "visible": false
+          "visible": false,
+          "depth": 10
         },
         {
           "id": "characterName",
           "asset": "ui.labels.gold-label",
           "x": 640,
           "y": 400,
-          "text": ""
+          "text": "",
+          "depth": 10,
+          "visible": true
         },
         {
           "id": "characterLevel",
           "asset": "ui.labels.gold-label",
           "x": 640,
           "y": 430,
-          "text": ""
+          "text": "",
+          "depth": 10,
+          "visible": true
         },
         {
           "id": "problemsSolved",
           "asset": "ui.labels.gold-label",
           "x": 640,
           "y": 460,
-          "text": ""
+          "text": "",
+          "depth": 10,
+          "visible": true
         },
         {
           "id": "btnPlay",
@@ -91,7 +110,9 @@
           "text": "HRAT",
           "events": {
             "click": "onPlay"
-          }
+          },
+          "depth": 50,
+          "visible": true
         },
         {
           "id": "btnDelete",
@@ -101,7 +122,9 @@
           "text": "SMAZAT",
           "events": {
             "click": "onDelete"
-          }
+          },
+          "depth": 50,
+          "visible": true
         },
         {
           "id": "btnBack",
@@ -111,7 +134,9 @@
           "text": "ZPET",
           "events": {
             "click": "onBack"
-          }
+          },
+          "depth": 50,
+          "visible": true
         },
         {
           "id": "deleteOverlay",
@@ -120,7 +145,8 @@
           "y": 360,
           "width": 1280,
           "height": 720,
-          "visible": false
+          "visible": false,
+          "depth": 100
         },
         {
           "id": "deleteDialog",
@@ -129,7 +155,8 @@
           "y": 360,
           "width": 400,
           "height": 200,
-          "visible": false
+          "visible": false,
+          "depth": 101
         },
         {
           "id": "deleteTitle",
@@ -137,7 +164,8 @@
           "x": 640,
           "y": 300,
           "text": "SMAZAT POSTAVU?",
-          "visible": false
+          "visible": false,
+          "depth": 102
         },
         {
           "id": "btnConfirmDelete",
@@ -148,7 +176,8 @@
           "visible": false,
           "events": {
             "click": "onConfirmDelete"
-          }
+          },
+          "depth": 102
         },
         {
           "id": "btnCancelDelete",
@@ -159,7 +188,8 @@
           "visible": false,
           "events": {
             "click": "onCancelDelete"
-          }
+          },
+          "depth": 102
         }
       ]
     },
@@ -174,46 +204,60 @@
           "asset": "ui.labels.title-label",
           "x": 640,
           "y": 80,
-          "text": "VYBER SI POSTAVU"
+          "text": "VYBER SI POSTAVU",
+          "depth": 10,
+          "visible": true
         },
         {
           "id": "girlKnightPreview",
           "asset": "ui.containers.empty",
           "x": 400,
-          "y": 400
+          "y": 400,
+          "depth": 10,
+          "visible": true
         },
         {
           "id": "boyKnightPreview",
           "asset": "ui.containers.empty",
           "x": 880,
-          "y": 400
+          "y": 400,
+          "depth": 10,
+          "visible": true
         },
         {
           "id": "girlLabel",
           "asset": "ui.labels.building-label",
           "x": 400,
           "y": 550,
-          "text": "RYTÍŘKA"
+          "text": "RYTÍŘKA",
+          "depth": 10,
+          "visible": true
         },
         {
           "id": "boyLabel",
           "asset": "ui.labels.building-label",
           "x": 880,
           "y": 550,
-          "text": "RYTÍŘ"
+          "text": "RYTÍŘ",
+          "depth": 10,
+          "visible": true
         },
         {
           "id": "nameInputLabel",
           "asset": "ui.labels.building-label",
           "x": 640,
           "y": 575,
-          "text": "JMENO:"
+          "text": "JMENO:",
+          "depth": 10,
+          "visible": true
         },
         {
           "id": "nameInputContainer",
           "asset": "ui.containers.empty",
           "x": 640,
-          "y": 605
+          "y": 605,
+          "depth": 10,
+          "visible": true
         },
         {
           "id": "btnConfirm",
@@ -223,7 +267,9 @@
           "text": "POTVRDIT",
           "events": {
             "click": "onConfirm"
-          }
+          },
+          "depth": 50,
+          "visible": true
         },
         {
           "id": "btnBack",
@@ -233,7 +279,9 @@
           "text": "ZPĚT",
           "events": {
             "click": "onBack"
-          }
+          },
+          "depth": 50,
+          "visible": true
         }
       ]
     },
@@ -298,7 +346,40 @@
           "id": "bg",
           "asset": "environments.backgrounds.battle-field",
           "x": 640,
-          "y": 360
+          "y": 360,
+          "origin": [
+            0.5,
+            0.5
+          ],
+          "depth": -10,
+          "scale": 1,
+          "visible": true
+        },
+        {
+          "id": "playerSpawn",
+          "asset": "playerSpawn",
+          "x": 300,
+          "y": 480,
+          "origin": [
+            0.5,
+            0.5
+          ],
+          "depth": 0,
+          "scale": 1,
+          "visible": true
+        },
+        {
+          "id": "enemySpawn",
+          "asset": "enemySpawn",
+          "x": 900,
+          "y": 480,
+          "origin": [
+            0.5,
+            0.5
+          ],
+          "depth": 0,
+          "scale": 1,
+          "visible": true
         }
       ],
       "zones": [
@@ -323,15 +404,71 @@
           "y": 660,
           "events": {
             "click": "onAttack"
-          }
+          },
+          "origin": [
+            0.5,
+            0.5
+          ],
+          "depth": 50,
+          "scale": 1,
+          "visible": true
         },
         {
           "id": "potionBtn",
           "asset": "ui.containers.empty",
           "x": 480,
-          "y": 660
+          "y": 660,
+          "origin": [
+            0.5,
+            0.5
+          ],
+          "depth": 0,
+          "scale": 1,
+          "visible": true
         }
-      ]
+      ],
+      "spawnPoints": {
+        "player": {
+          "x": 300,
+          "y": 480
+        },
+        "pet": {
+          "x": 371,
+          "y": 609
+        },
+        "enemies": {
+          "1": [
+            {
+              "x": 900,
+              "y": 480
+            }
+          ],
+          "2": [
+            {
+              "x": 873,
+              "y": 472
+            },
+            {
+              "x": 970,
+              "y": 560
+            }
+          ],
+          "3": [
+            {
+              "x": 772,
+              "y": 462
+            },
+            {
+              "x": 845,
+              "y": 574
+            },
+            {
+              "x": 982,
+              "y": 503
+            }
+          ]
+        }
+      }
     },
     "TownScene": {
       "viewport": {
@@ -345,7 +482,14 @@
           "x": 0,
           "y": 0,
           "width": 1280,
-          "height": 720
+          "height": 720,
+          "origin": [
+            0,
+            0
+          ],
+          "depth": -10,
+          "scale": 1,
+          "visible": true
         },
         {
           "id": "bgGrass",
@@ -355,31 +499,65 @@
           "width": 1280,
           "height": 80,
           "depth": -5,
-          "alpha": 0.8
+          "alpha": 0.8,
+          "origin": [
+            0,
+            1
+          ],
+          "scale": 1,
+          "visible": true
         },
         {
           "id": "witch",
           "asset": "environments.buildings.witch-hut",
           "x": 220,
-          "y": 670
+          "y": 670,
+          "origin": [
+            0.5,
+            1
+          ],
+          "depth": 0,
+          "scale": 0.224,
+          "visible": true
         },
         {
           "id": "guild",
           "asset": "environments.buildings.guild",
           "x": 455,
-          "y": 700
+          "y": 700,
+          "origin": [
+            0.5,
+            1
+          ],
+          "depth": 0,
+          "scale": 0.224,
+          "visible": true
         },
         {
           "id": "tavern",
           "asset": "environments.buildings.tavern",
           "x": 655,
-          "y": 665
+          "y": 665,
+          "origin": [
+            0.5,
+            1
+          ],
+          "depth": 0,
+          "scale": 0.224,
+          "visible": true
         },
         {
           "id": "shop",
           "asset": "environments.buildings.shop",
           "x": 880,
-          "y": 670
+          "y": 670,
+          "origin": [
+            0.5,
+            1
+          ],
+          "depth": 0,
+          "scale": 0.184,
+          "visible": true
         },
         {
           "id": "fgGrass",
@@ -388,7 +566,26 @@
           "y": 705,
           "width": 1280,
           "height": 70,
-          "depth": 5
+          "depth": 5,
+          "origin": [
+            0,
+            1
+          ],
+          "scale": 1,
+          "visible": true
+        },
+        {
+          "id": "playerSpawn",
+          "asset": "playerSpawn",
+          "x": 80,
+          "y": 615,
+          "origin": [
+            0.5,
+            0.5
+          ],
+          "depth": 0,
+          "scale": 1,
+          "visible": true
         }
       ],
       "zones": [
@@ -403,52 +600,100 @@
           "asset": "ui.labels.building-label",
           "x": 220,
           "y": 430,
-          "text": "$buildings.BLD_001"
+          "text": "$buildings.BLD_001",
+          "origin": [
+            0.5,
+            1
+          ],
+          "depth": 10,
+          "scale": 1,
+          "visible": true
         },
         {
           "id": "guild-label",
           "asset": "ui.labels.building-label",
           "x": 454,
           "y": 446,
-          "text": "$buildings.BLD_002"
+          "text": "$buildings.BLD_002",
+          "origin": [
+            0.5,
+            1
+          ],
+          "depth": 10,
+          "scale": 1,
+          "visible": true
         },
         {
           "id": "tavern-label",
           "asset": "ui.labels.building-label",
           "x": 655,
           "y": 420,
-          "text": "$buildings.BLD_003"
+          "text": "$buildings.BLD_003",
+          "origin": [
+            0.5,
+            1
+          ],
+          "depth": 10,
+          "scale": 1,
+          "visible": true
         },
         {
           "id": "shop-label",
           "asset": "ui.labels.building-label",
           "x": 882,
           "y": 442,
-          "text": "$buildings.BLD_004"
+          "text": "$buildings.BLD_004",
+          "origin": [
+            0.5,
+            1
+          ],
+          "depth": 10,
+          "scale": 1,
+          "visible": true
         },
         {
           "id": "arena-label",
           "asset": "ui.labels.building-label",
           "x": 1220,
           "y": 410,
-          "text": "$ui.titles.TTL_001"
+          "text": "$ui.titles.TTL_001",
+          "origin": [
+            0.5,
+            1
+          ],
+          "depth": 10,
+          "scale": 1,
+          "visible": true
         },
         {
           "id": "guild-notification",
           "asset": "ui.indicators.notification-badge",
           "x": 455,
           "y": 380,
-          "visible": false
+          "visible": false,
+          "origin": [
+            0.5,
+            0.5
+          ],
+          "depth": 80,
+          "scale": 1
         },
         {
           "id": "btnQuitToMenu",
           "asset": "ui.buttons.back-button",
-          "x": 60,
+          "x": 85,
           "y": 40,
           "text": "MENU",
           "events": {
             "click": "onQuitToMenu"
-          }
+          },
+          "origin": [
+            0.5,
+            0.5
+          ],
+          "depth": 80,
+          "scale": 1,
+          "visible": true
         }
       ]
     },
@@ -530,7 +775,14 @@
           "x": 640,
           "y": 360,
           "width": 1280,
-          "height": 720
+          "height": 720,
+          "origin": [
+            0.5,
+            0.5
+          ],
+          "depth": -10,
+          "scale": 1,
+          "visible": true
         },
         {
           "id": "tablePouch",
@@ -538,7 +790,13 @@
           "x": 938,
           "y": 632,
           "scaleX": 0.851,
-          "scaleY": 0.716
+          "scaleY": 0.716,
+          "origin": [
+            0.5,
+            0.5
+          ],
+          "depth": 5,
+          "visible": true
         },
         {
           "id": "tableTop",
@@ -546,14 +804,39 @@
           "x": 244,
           "y": 629,
           "scaleX": 0.767,
-          "scaleY": 0.729
+          "scaleY": 0.729,
+          "origin": [
+            0.5,
+            0.5
+          ],
+          "depth": 5,
+          "visible": true
         },
         {
           "id": "coinTray",
           "asset": "environments.props.shop-coin-tray",
-          "x": 306,
+          "x": 493,
           "y": 589,
-          "scale": 0.368
+          "scale": 0.368,
+          "origin": [
+            0.5,
+            0.5
+          ],
+          "depth": 5,
+          "visible": true
+        },
+        {
+          "id": "closeButton",
+          "asset": "closeButton",
+          "x": 1137,
+          "y": 697,
+          "origin": [
+            0.5,
+            0.5
+          ],
+          "depth": 100,
+          "scale": 1,
+          "visible": true
         }
       ],
       "ui": [
@@ -571,95 +854,222 @@
           "asset": "ui.buttons.shop-tab",
           "x": 120,
           "y": 50,
-          "text": "MEČE"
+          "text": "MEČE",
+          "origin": [
+            0.5,
+            0.5
+          ],
+          "depth": 20,
+          "scale": 1,
+          "visible": true
         },
         {
           "id": "tabShields",
           "asset": "ui.buttons.shop-tab",
           "x": 220,
           "y": 50,
-          "text": "ŠTÍTY"
+          "text": "ŠTÍTY",
+          "origin": [
+            0.5,
+            0.5
+          ],
+          "depth": 20,
+          "scale": 1,
+          "visible": true
         },
         {
           "id": "itemSlot0",
           "asset": "ui.buttons.shop-item-slot",
           "x": 80,
-          "y": 120
+          "y": 120,
+          "origin": [
+            0.5,
+            0.5
+          ],
+          "depth": 20,
+          "scale": 1,
+          "visible": true
         },
         {
           "id": "itemSlot1",
           "asset": "ui.buttons.shop-item-slot",
           "x": 160,
-          "y": 120
+          "y": 120,
+          "origin": [
+            0.5,
+            0.5
+          ],
+          "depth": 20,
+          "scale": 1,
+          "visible": true
         },
         {
           "id": "itemSlot2",
           "asset": "ui.buttons.shop-item-slot",
           "x": 240,
-          "y": 120
+          "y": 120,
+          "origin": [
+            0.5,
+            0.5
+          ],
+          "depth": 20,
+          "scale": 1,
+          "visible": true
         },
         {
           "id": "itemSlot3",
           "asset": "ui.buttons.shop-item-slot",
           "x": 320,
-          "y": 120
+          "y": 120,
+          "origin": [
+            0.5,
+            0.5
+          ],
+          "depth": 20,
+          "scale": 1,
+          "visible": true
         },
         {
           "id": "purchasePanel",
           "asset": "ui.panels.shop-purchase-panel",
-          "x": 900,
-          "y": 120,
+          "x": 174,
+          "y": 520,
           "width": 280,
           "height": 80,
-          "visible": false
+          "visible": false,
+          "origin": [
+            0.5,
+            0.5
+          ],
+          "depth": 25,
+          "scale": 1
         },
         {
           "id": "purchaseName",
           "asset": "ui.labels.gold-label",
-          "x": 800,
-          "y": 100,
+          "x": 175,
+          "y": 502,
           "text": "",
-          "visible": false
+          "visible": false,
+          "origin": [
+            0,
+            0.5
+          ],
+          "depth": 26,
+          "scale": 1
         },
         {
           "id": "purchasePrice",
           "asset": "ui.labels.gold-label",
-          "x": 800,
-          "y": 130,
+          "x": 175,
+          "y": 550,
           "text": "",
           "color": "#ffaa00",
-          "visible": false
+          "visible": false,
+          "origin": [
+            0,
+            0.5
+          ],
+          "depth": 26,
+          "scale": 1
         },
         {
           "id": "labelPlayerCoins",
           "asset": "ui.labels.gold-label",
-          "x": 938,
-          "y": 532,
-          "text": "TVOJE PENÍZE"
+          "x": 912,
+          "y": 502,
+          "text": "TVOJE PENÍZE",
+          "origin": [
+            0.5,
+            0.5
+          ],
+          "depth": 10,
+          "scale": 1,
+          "visible": true
         },
         {
           "id": "labelPayment",
           "asset": "ui.labels.gold-label",
-          "x": 306,
-          "y": 529,
-          "text": "PLATBA"
+          "x": 505,
+          "y": 468,
+          "text": "PLATBA",
+          "origin": [
+            0.5,
+            0.5
+          ],
+          "depth": 10,
+          "scale": 1,
+          "visible": true
         },
         {
           "id": "labelTotal",
           "asset": "ui.labels.gold-label",
-          "x": 306,
-          "y": 639,
+          "x": 449,
+          "y": 669,
           "text": "CELKEM: 0 měďáků",
-          "color": "#ffffff"
+          "color": "#ffffff",
+          "origin": [
+            0.5,
+            0.5
+          ],
+          "depth": 10,
+          "scale": 1,
+          "visible": true
         },
         {
           "id": "buyButton",
           "asset": "ui.buttons.buy-button",
-          "x": 1000,
-          "y": 660,
+          "x": 599,
+          "y": 667,
           "events": {
             "click": "onBuy"
-          }
+          },
+          "origin": [
+            0.5,
+            0.5
+          ],
+          "depth": 20,
+          "scale": 1,
+          "visible": true
+        },
+        {
+          "id": "strike0",
+          "asset": "strike0",
+          "x": 1150,
+          "y": 70,
+          "origin": [
+            0.5,
+            0.5
+          ],
+          "depth": 30,
+          "scale": 1,
+          "visible": true
+        },
+        {
+          "id": "strike1",
+          "asset": "strike1",
+          "x": 1175,
+          "y": 70,
+          "origin": [
+            0.5,
+            0.5
+          ],
+          "depth": 30,
+          "scale": 1,
+          "visible": true
+        },
+        {
+          "id": "strike2",
+          "asset": "strike2",
+          "x": 1200,
+          "y": 70,
+          "origin": [
+            0.5,
+            0.5
+          ],
+          "depth": 30,
+          "scale": 1,
+          "visible": true
         }
       ]
     },
@@ -675,7 +1085,14 @@
           "x": 640,
           "y": 360,
           "width": 1280,
-          "height": 720
+          "height": 720,
+          "origin": [
+            0.5,
+            0.5
+          ],
+          "depth": -10,
+          "scale": 1,
+          "visible": true
         },
         {
           "id": "overlay",
@@ -684,76 +1101,143 @@
           "y": 360,
           "width": 1280,
           "height": 720,
-          "alpha": 0.3
+          "alpha": 0.3,
+          "origin": [
+            0.5,
+            0.5
+          ],
+          "depth": -5,
+          "scale": 1,
+          "visible": true
         },
         {
           "id": "guildmaster",
           "asset": "characters.npcs.guildmaster",
-          "x": 557,
-          "y": 235
+          "x": 176,
+          "y": 174,
+          "origin": [
+            0.5,
+            0.5
+          ],
+          "depth": 10,
+          "scale": 0.4,
+          "visible": true
         },
         {
           "id": "resultsTable",
           "asset": "ui.tables.results-table",
-          "x": 800,
-          "y": 380,
-          "scaleX": 0.67,
-          "scaleY": 0.67
+          "x": 893,
+          "y": 383,
+          "scaleX": 0.74,
+          "scaleY": 0.475,
+          "origin": [
+            0.5,
+            0.5
+          ],
+          "depth": 5,
+          "visible": true
         },
         {
           "id": "listPanel",
           "asset": "ui.containers.empty",
-          "x": 880,
-          "y": 380
+          "x": 940,
+          "y": 333,
+          "origin": [
+            0.5,
+            0.5
+          ],
+          "depth": 6,
+          "scale": 1,
+          "visible": true
         }
       ],
       "ui": [
         {
           "id": "title",
           "asset": "ui.labels.title-label",
-          "x": 878,
-          "y": 40,
-          "text": "PŘEHLED UČENÍ"
+          "x": 890,
+          "y": 39,
+          "text": "PŘEHLED UČENÍ",
+          "origin": [
+            0.5,
+            0.5
+          ],
+          "depth": 10,
+          "scale": 1,
+          "visible": true
         },
         {
           "id": "statsPanel",
           "asset": "ui.panels.info-panel",
-          "x": 880,
-          "y": 110,
+          "x": 891,
+          "y": 86,
           "width": 300,
-          "height": 50
+          "height": 50,
+          "origin": [
+            0.5,
+            0.5
+          ],
+          "depth": 5,
+          "scale": 1,
+          "visible": true
         },
         {
           "id": "totalStatsPanel",
           "asset": "ui.panels.info-panel",
-          "x": 800,
-          "y": 650,
+          "x": 848,
+          "y": 577,
           "width": 350,
-          "height": 80
+          "height": 80,
+          "origin": [
+            0.5,
+            0.5
+          ],
+          "depth": 6,
+          "scale": 1,
+          "visible": true
         },
         {
           "id": "collectButton",
           "asset": "ui.buttons.collect-button",
-          "x": 950,
-          "y": 650,
-          "text": "SBÍRAT"
+          "x": 1041,
+          "y": 574,
+          "text": "SBÍRAT",
+          "origin": [
+            0.5,
+            0.5
+          ],
+          "depth": 15,
+          "scale": 1,
+          "visible": true
         },
         {
           "id": "trialDialog",
           "asset": "ui.labels.title-label",
-          "x": 200,
-          "y": 310,
+          "x": 203,
+          "y": 267,
           "text": "VIDÍM, ŽE JSI ZESÍLIL.\nUKAŽ MI, CO UMÍŠ!",
           "fontSize": "14px",
-          "visible": false
+          "visible": false,
+          "origin": [
+            0.5,
+            0.5
+          ],
+          "depth": 10,
+          "scale": 1
         },
         {
           "id": "trialStartButton",
           "asset": "ui.buttons.exam-button",
-          "x": 200,
-          "y": 420,
+          "x": 210,
+          "y": 410,
           "text": "ZAČÍT ZKOUŠKU",
-          "visible": false
+          "visible": false,
+          "origin": [
+            0.5,
+            0.5
+          ],
+          "depth": 50,
+          "scale": 1
         },
         {
           "id": "trialOverlay",
@@ -763,7 +1247,13 @@
           "width": 1280,
           "height": 720,
           "alpha": 0.9,
-          "visible": false
+          "visible": false,
+          "origin": [
+            0.5,
+            0.5
+          ],
+          "depth": -5,
+          "scale": 1
         },
         {
           "id": "trialTitle",
@@ -772,25 +1262,44 @@
           "y": 110,
           "text": "ZKOUŠKA HRDINY",
           "fontSize": "36px",
-          "visible": false
+          "visible": false,
+          "origin": [
+            0.5,
+            0.5
+          ],
+          "depth": 10,
+          "scale": 1
         },
         {
           "id": "timerFrame",
           "asset": "ui.frames.timer-frame",
           "x": 640,
-          "y": 180,
+          "y": 173,
           "width": 365,
           "height": 91,
-          "visible": false
+          "visible": false,
+          "origin": [
+            0.5,
+            0.5
+          ],
+          "depth": 200,
+          "scaleX": 0.606,
+          "scaleY": 0.548
         },
         {
           "id": "timerBar",
           "asset": "ui.bars.exam-timer-bar",
-          "x": 787,
-          "y": 126,
+          "x": 639,
+          "y": 175,
           "width": 400,
           "height": 48,
-          "visible": false
+          "visible": false,
+          "origin": [
+            0.5,
+            0.5
+          ],
+          "depth": 199,
+          "scale": 1
         },
         {
           "id": "scoreText",
@@ -799,7 +1308,13 @@
           "y": 240,
           "text": "SKÓRE: 0 / 10",
           "fontSize": "24px",
-          "visible": false
+          "visible": false,
+          "origin": [
+            0.5,
+            0.5
+          ],
+          "depth": 10,
+          "scale": 1
         },
         {
           "id": "problemText",
@@ -808,7 +1323,13 @@
           "y": 360,
           "text": "5 + 3 = ?",
           "fontSize": "64px",
-          "visible": false
+          "visible": false,
+          "origin": [
+            0.5,
+            0.5
+          ],
+          "depth": 10,
+          "scale": 1
         },
         {
           "id": "answerButton1",
@@ -816,7 +1337,13 @@
           "x": 490,
           "y": 480,
           "text": "8",
-          "visible": false
+          "visible": false,
+          "origin": [
+            0.5,
+            0.5
+          ],
+          "depth": 200,
+          "scale": 1
         },
         {
           "id": "answerButton2",
@@ -824,7 +1351,13 @@
           "x": 640,
           "y": 480,
           "text": "7",
-          "visible": false
+          "visible": false,
+          "origin": [
+            0.5,
+            0.5
+          ],
+          "depth": 200,
+          "scale": 1
         },
         {
           "id": "answerButton3",
@@ -832,7 +1365,13 @@
           "x": 790,
           "y": 480,
           "text": "9",
-          "visible": false
+          "visible": false,
+          "origin": [
+            0.5,
+            0.5
+          ],
+          "depth": 200,
+          "scale": 1
         },
         {
           "id": "resultsTitle",
@@ -841,34 +1380,59 @@
           "y": 260,
           "text": "ZKOUŠKA SPLNĚNA!",
           "fontSize": "48px",
-          "visible": false
+          "visible": false,
+          "origin": [
+            0.5,
+            0.5
+          ],
+          "depth": 10,
+          "scale": 1
         },
         {
           "id": "resultsMessage",
           "asset": "ui.labels.title-label",
-          "x": 640,
-          "y": 360,
+          "x": 774,
+          "y": 361,
           "text": "Gratuluji! Prokázal jsi své schopnosti.",
           "fontSize": "24px",
           "color": "#cccccc",
-          "visible": false
+          "visible": false,
+          "origin": [
+            0.5,
+            0.5
+          ],
+          "depth": 10,
+          "scale": 1
         },
         {
           "id": "continueButton",
           "asset": "ui.buttons.back-button",
           "x": 640,
-          "y": 510,
+          "y": 478,
           "text": "POKRAČOVAT",
-          "visible": false
+          "visible": false,
+          "origin": [
+            0.5,
+            0.5
+          ],
+          "depth": 50,
+          "scale": 1
         },
         {
           "id": "backButton",
           "asset": "ui.buttons.back-button",
           "x": 100,
-          "y": 670,
+          "y": 637,
           "events": {
             "click": "enterScene:TownScene"
-          }
+          },
+          "origin": [
+            0.5,
+            0.5
+          ],
+          "depth": 50,
+          "scale": 1,
+          "visible": true
         }
       ]
     },
@@ -925,17 +1489,31 @@
           "id": "bg",
           "asset": "environments.backgrounds.arena",
           "x": 640,
-          "y": 360
+          "y": 360,
+          "origin": [
+            0.5,
+            0.5
+          ],
+          "depth": -10,
+          "scale": 1,
+          "visible": true
         }
       ],
       "ui": [
         {
           "id": "waveText",
           "asset": "ui.labels.title-label",
-          "x": 400,
-          "y": 40,
+          "x": 889,
+          "y": 204,
           "text": "VLNA 1",
-          "color": "#ffffff"
+          "color": "#ffffff",
+          "origin": [
+            0.5,
+            0.5
+          ],
+          "depth": 10,
+          "scale": 1,
+          "visible": true
         },
         {
           "id": "startBattleButton",
@@ -945,7 +1523,14 @@
           "text": "ZAČÍT BOJ",
           "events": {
             "click": "startBattle"
-          }
+          },
+          "origin": [
+            0.5,
+            0.5
+          ],
+          "depth": 50,
+          "scale": 1,
+          "visible": true
         },
         {
           "id": "leaveButton",
@@ -955,9 +1540,58 @@
           "text": "ODEJÍT",
           "events": {
             "click": "leaveArena"
-          }
+          },
+          "origin": [
+            0.5,
+            0.5
+          ],
+          "depth": 50,
+          "scale": 1,
+          "visible": true
         }
-      ]
+      ],
+      "spawnPoints": {
+        "player": {
+          "x": 216,
+          "y": 563
+        },
+        "pet": {
+          "x": 303,
+          "y": 674
+        },
+        "enemies": {
+          "1": [
+            {
+              "x": 892,
+              "y": 457
+            }
+          ],
+          "2": [
+            {
+              "x": 771,
+              "y": 452
+            },
+            {
+              "x": 1001,
+              "y": 445
+            }
+          ],
+          "3": [
+            {
+              "x": 887,
+              "y": 449
+            },
+            {
+              "x": 414,
+              "y": 359
+            },
+            {
+              "x": 1068,
+              "y": 460
+            }
+          ]
+        }
+      }
     },
     "TestingTownScene": {
       "viewport": {
@@ -971,7 +1605,13 @@
           "x": 0,
           "y": 0,
           "width": 1280,
-          "height": 720
+          "height": 720,
+          "origin": [
+            0,
+            0
+          ],
+          "depth": -10,
+          "visible": true
         },
         {
           "id": "bgGrass",
@@ -981,31 +1621,64 @@
           "width": 1280,
           "height": 80,
           "depth": -5,
-          "alpha": 0.8
+          "alpha": 0.8,
+          "origin": [
+            0,
+            1
+          ],
+          "visible": true
         },
         {
           "id": "witch",
           "asset": "environments.buildings.witch-hut",
           "x": 220,
-          "y": 670
+          "y": 670,
+          "origin": [
+            0.5,
+            1
+          ],
+          "depth": 0,
+          "scale": 0.224,
+          "visible": true
         },
         {
           "id": "guild",
           "asset": "environments.buildings.guild",
           "x": 455,
-          "y": 700
+          "y": 700,
+          "origin": [
+            0.5,
+            1
+          ],
+          "depth": 0,
+          "scale": 0.224,
+          "visible": true
         },
         {
           "id": "tavern",
           "asset": "environments.buildings.tavern",
           "x": 655,
-          "y": 665
+          "y": 665,
+          "origin": [
+            0.5,
+            1
+          ],
+          "depth": 0,
+          "scale": 0.224,
+          "visible": true
         },
         {
           "id": "shop",
           "asset": "environments.buildings.shop",
           "x": 880,
-          "y": 670
+          "y": 670,
+          "origin": [
+            0.5,
+            1
+          ],
+          "depth": 0,
+          "scale": 0.184,
+          "visible": true
         },
         {
           "id": "fgGrass",
@@ -1014,7 +1687,24 @@
           "y": 705,
           "width": 1280,
           "height": 70,
-          "depth": 5
+          "depth": 5,
+          "origin": [
+            0,
+            1
+          ],
+          "visible": true
+        },
+        {
+          "id": "playerSpawn",
+          "asset": "playerSpawn",
+          "x": 80,
+          "y": 615,
+          "origin": [
+            0.5,
+            0.5
+          ],
+          "depth": 0,
+          "visible": true
         }
       ],
       "zones": [
@@ -1028,7 +1718,13 @@
           "id": "testingLabel",
           "asset": "ui.containers.empty",
           "x": 640,
-          "y": 360
+          "y": 360,
+          "origin": [
+            0.5,
+            0.5
+          ],
+          "depth": 500,
+          "visible": true
         },
         {
           "id": "btnBackToTown",
@@ -1038,7 +1734,13 @@
           "text": "ZPĚT",
           "events": {
             "click": "onBackToTown"
-          }
+          },
+          "origin": [
+            0.5,
+            0.5
+          ],
+          "depth": 80,
+          "visible": true
         }
       ]
     },
@@ -1054,7 +1756,13 @@
           "x": 640,
           "y": 360,
           "width": 1280,
-          "height": 720
+          "height": 720,
+          "origin": [
+            0.5,
+            0.5
+          ],
+          "depth": -10,
+          "visible": true
         },
         {
           "id": "overlay",
@@ -1062,7 +1770,13 @@
           "x": 640,
           "y": 360,
           "width": 1280,
-          "height": 720
+          "height": 720,
+          "origin": [
+            0.5,
+            0.5
+          ],
+          "depth": -5,
+          "visible": true
         }
       ],
       "ui": [
@@ -1071,7 +1785,13 @@
           "asset": "ui.labels.title-label",
           "x": 640,
           "y": 40,
-          "text": "TESTING - ČARODĚJNICE"
+          "text": "TESTING - ČARODĚJNICE",
+          "origin": [
+            0.5,
+            0.5
+          ],
+          "depth": 10,
+          "visible": true
         },
         {
           "id": "backBtn",
@@ -1080,7 +1800,13 @@
           "y": 630,
           "events": {
             "click": "enterScene:TestingTownScene"
-          }
+          },
+          "origin": [
+            0.5,
+            0.5
+          ],
+          "depth": 50,
+          "visible": true
         }
       ]
     },
@@ -1098,7 +1824,14 @@
           "y": 50,
           "uiElement": {
             "templateId": "1769080942092-ajqn9x4tw"
-          }
+          },
+          "origin": [
+            0.5,
+            0.5
+          ],
+          "depth": 0,
+          "scale": 1,
+          "visible": true
         },
         {
           "id": "Arrow",
@@ -1107,7 +1840,14 @@
           "y": 320,
           "uiElement": {
             "templateId": "1768918531203-8o2htxgfn"
-          }
+          },
+          "origin": [
+            0.5,
+            0.5
+          ],
+          "depth": 0,
+          "scale": 1,
+          "visible": true
         },
         {
           "id": "Green_button",
@@ -1116,7 +1856,14 @@
           "y": 660,
           "uiElement": {
             "templateId": "1768922130266-28htorb5x"
-          }
+          },
+          "origin": [
+            0.5,
+            0.5
+          ],
+          "depth": 0,
+          "scale": 1,
+          "visible": true
         },
         {
           "id": "Back button",
@@ -1126,7 +1873,13 @@
           "scale": 1.8,
           "uiElement": {
             "templateId": "1768730825297-e6lnuaoyj"
-          }
+          },
+          "origin": [
+            0.5,
+            0.5
+          ],
+          "depth": 0,
+          "visible": true
         },
         {
           "id": "Character select",
@@ -1136,9 +1889,23 @@
           "scale": 1.2,
           "uiElement": {
             "templateId": "1768919608689-8otqazir2"
-          }
+          },
+          "origin": [
+            0.5,
+            0.5
+          ],
+          "depth": 0,
+          "visible": true
         }
       ]
+    },
+    "TestScene": {
+      "viewport": {
+        "width": 1280,
+        "height": 720
+      },
+      "elements": [],
+      "ui": []
     }
   }
 }

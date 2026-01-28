@@ -1,7 +1,6 @@
 import Phaser from 'phaser';
 import { AssetFactory } from './AssetFactory';
-import { ScenesFile, SceneDef } from '../types/scenes';
-import { SceneLayoutsFile, SpawnPoints, SpawnPoint, EnemyCount } from '../types/layout';
+import { ScenesFile, SceneDef, SpawnPoints, SpawnPoint, EnemyCount } from '../types/scenes';
 import { UiElementBuilder } from './UiElementBuilder';
 
 export class SceneBuilder {
@@ -10,18 +9,7 @@ export class SceneBuilder {
     private elements: Map<string, Phaser.GameObjects.GameObject> = new Map();
     private eventHandlers: Map<string, Function> = new Map();
     private zones: Map<string, { x: number; y: number; width?: number; height?: number }> = new Map();
-    private zoneOverrides: Map<string, { x: number; y: number }> = new Map();
-    private layoutOverrides: Map<string, {
-        x: number;
-        y: number;
-        width?: number;
-        height?: number;
-        scale?: number;
-        scaleX?: number;
-        scaleY?: number;
-        depth?: number;
-        origin?: [number, number];
-    }> = new Map();
+    private currentSceneDef: SceneDef | null = null;
 
     constructor(scene: Phaser.Scene) {
         this.scene = scene;
@@ -48,8 +36,8 @@ export class SceneBuilder {
             return;
         }
 
-        // Load position overrides from scene-layouts.json (used by scene editor)
-        this.loadLayoutOverrides(actualSceneName);
+        // Store scene definition for later access (e.g., getSpawnPoints)
+        this.currentSceneDef = sceneDef;
 
         // Create elements
         if (sceneDef.elements) {
@@ -59,26 +47,18 @@ export class SceneBuilder {
                 // Check if element uses a UI template
                 if (element.uiElement?.templateId) {
                     const builder = new UiElementBuilder(this.scene);
-                    // Get layout override to check for origin and position overrides
-                    const layoutOverride = this.layoutOverrides.get(element.id);
-                    const posX = layoutOverride?.x ?? element.x;
-                    const posY = layoutOverride?.y ?? element.y;
-                    const origin: [number, number] = layoutOverride?.origin ?? element.origin ?? [0.5, 0.5];
+                    const origin: [number, number] = element.origin ?? [0.5, 0.5];
 
                     const uiObj = builder.buildFromTemplate(
                         element.uiElement.templateId,
-                        posX,
-                        posY,
+                        element.x,
+                        element.y,
                         origin
                     );
                     if (uiObj) {
-                        // Apply additional layout overrides (position/origin already applied)
                         if (element.depth !== undefined) uiObj.setDepth(element.depth);
-                        if (layoutOverride?.depth !== undefined) uiObj.setDepth(layoutOverride.depth);
                         if (element.visible === false) uiObj.setVisible(false);
-                        if (layoutOverride?.visible === false) uiObj.setVisible(false);
                         if (element.alpha !== undefined) uiObj.setAlpha(element.alpha);
-                        if (layoutOverride?.alpha !== undefined) uiObj.setAlpha(layoutOverride.alpha);
                         obj = uiObj;
                     } else {
                         // Fallback to regular creation if template not found
@@ -89,9 +69,6 @@ export class SceneBuilder {
                 }
 
                 this.elements.set(element.id, obj);
-
-                // Apply position overrides from scene-layouts.json
-                this.applyLayoutOverrides(element.id, obj);
 
                 // Bind events
                 if (element.events) {
@@ -129,26 +106,18 @@ export class SceneBuilder {
                 // Check if element uses a UI template
                 if (element.uiElement?.templateId) {
                     const builder = new UiElementBuilder(this.scene);
-                    // Get layout override to check for origin and position overrides
-                    const layoutOverride = this.layoutOverrides.get(element.id);
-                    const posX = layoutOverride?.x ?? element.x;
-                    const posY = layoutOverride?.y ?? element.y;
-                    const origin: [number, number] = layoutOverride?.origin ?? element.origin ?? [0.5, 0.5];
+                    const origin: [number, number] = element.origin ?? [0.5, 0.5];
 
                     const uiObj = builder.buildFromTemplate(
                         element.uiElement.templateId,
-                        posX,
-                        posY,
+                        element.x,
+                        element.y,
                         origin
                     );
                     if (uiObj) {
-                        // Apply additional layout overrides (position/origin already applied)
                         if (element.depth !== undefined) uiObj.setDepth(element.depth);
-                        if (layoutOverride?.depth !== undefined) uiObj.setDepth(layoutOverride.depth);
                         if (element.visible === false) uiObj.setVisible(false);
-                        if (layoutOverride?.visible === false) uiObj.setVisible(false);
                         if (element.alpha !== undefined) uiObj.setAlpha(element.alpha);
-                        if (layoutOverride?.alpha !== undefined) uiObj.setAlpha(layoutOverride.alpha);
                         obj = uiObj;
                     } else {
                         // Fallback to regular creation if template not found
@@ -159,9 +128,6 @@ export class SceneBuilder {
                 }
 
                 this.elements.set(element.id, obj);
-
-                // Apply position overrides from scene-layouts.json
-                this.applyLayoutOverrides(element.id, obj);
 
                 if (element.events) {
                     this.bindEvents(obj, element.events);
@@ -178,25 +144,77 @@ export class SceneBuilder {
     }
 
     /**
-     * Get a zone by ID (for spawn points)
-     * Checks scene-layouts.json overrides first (hotspots or elements), then falls back to zones from scenes.json
+     * Get element definition from scenes.json by ID
+     * This allows runtime code to access element properties (x, y, depth, scale, etc.)
+     *
+     * @deprecated Use get() to access created game objects instead when possible.
+     * This method is provided for backward compatibility with code that used getLayoutOverride()
      */
-    getZone(id: string): { x: number; y: number; width?: number; height?: number } | undefined {
-        // Check if there's an override from scene-layouts.json hotspots (spawn type)
-        const hotspotOverride = this.zoneOverrides.get(id);
-        if (hotspotOverride) {
-            return hotspotOverride;
-        }
+    getElementDef(id: string): {
+        x: number;
+        y: number;
+        width?: number;
+        height?: number;
+        scale?: number;
+        scaleX?: number;
+        scaleY?: number;
+        depth?: number;
+        origin?: [number, number];
+        alpha?: number;
+        visible?: boolean;
+    } | undefined {
+        if (!this.currentSceneDef) return undefined;
 
-        // Also check element overrides - zones from scenes.json may be saved as elements in scene-layouts.json
-        const elementOverride = this.layoutOverrides.get(id);
-        if (elementOverride) {
+        // Search in elements
+        const element = this.currentSceneDef.elements?.find(e => e.id === id);
+        if (element) {
             return {
-                x: elementOverride.x,
-                y: elementOverride.y
+                x: element.x,
+                y: element.y,
+                width: element.width,
+                height: element.height,
+                scale: element.scale,
+                scaleX: element.scaleX,
+                scaleY: element.scaleY,
+                depth: element.depth,
+                origin: element.origin,
+                alpha: element.alpha,
+                visible: element.visible,
             };
         }
 
+        // Search in UI
+        const uiElement = this.currentSceneDef.ui?.find(e => e.id === id);
+        if (uiElement) {
+            return {
+                x: uiElement.x,
+                y: uiElement.y,
+                width: uiElement.width,
+                height: uiElement.height,
+                scale: uiElement.scale,
+                scaleX: uiElement.scaleX,
+                scaleY: uiElement.scaleY,
+                depth: uiElement.depth,
+                origin: uiElement.origin,
+                alpha: uiElement.alpha,
+                visible: uiElement.visible,
+            };
+        }
+
+        return undefined;
+    }
+
+    /**
+     * @deprecated Use getElementDef() instead. This alias is provided for backward compatibility.
+     */
+    getLayoutOverride(id: string) {
+        return this.getElementDef(id);
+    }
+
+    /**
+     * Get a zone by ID (for spawn points)
+     */
+    getZone(id: string): { x: number; y: number; width?: number; height?: number } | undefined {
         return this.zones.get(id);
     }
 
@@ -299,113 +317,10 @@ export class SceneBuilder {
     }
 
     /**
-     * Load position overrides from scene-layouts.json
-     * This allows the scene editor to override positions defined in scenes.json
-     */
-    private loadLayoutOverrides(sceneName: string): void {
-        const layoutsFile = this.scene.cache.json.get('sceneLayouts') as SceneLayoutsFile | undefined;
-        if (!layoutsFile?.scenes?.[sceneName]) {
-            return; // No overrides for this scene
-        }
-
-        const sceneLayout = layoutsFile.scenes[sceneName];
-
-        // Index elements by ID for quick lookup
-        for (const element of sceneLayout.elements || []) {
-            this.layoutOverrides.set(element.id, {
-                x: element.x,
-                y: element.y,
-                width: element.width,
-                height: element.height,
-                scale: element.scale,
-                scaleX: element.scaleX,
-                scaleY: element.scaleY,
-                depth: element.depth,
-                origin: element.origin
-            });
-        }
-
-        // Index hotspots that are spawn points - these override zone positions
-        for (const hotspot of sceneLayout.hotspots || []) {
-            if (hotspot.type === 'spawn' && hotspot.bounds && hotspot.bounds.length >= 2) {
-                // Spawn hotspots use bounds[0], bounds[1] as x, y
-                this.zoneOverrides.set(hotspot.id, {
-                    x: hotspot.bounds[0],
-                    y: hotspot.bounds[1]
-                });
-            }
-        }
-    }
-
-    /**
-     * Apply layout overrides to a created game object
-     *
-     * Size priority: width/height (via setDisplaySize) takes precedence over scale.
-     * This allows the scene editor to control display dimensions directly.
-     */
-    applyLayoutOverrides(id: string, obj: Phaser.GameObjects.GameObject): void {
-        const override = this.layoutOverrides.get(id);
-        if (!override) {
-            return;
-        }
-
-        // Apply origin FIRST (before position) - origin affects how x,y is interpreted
-        if (override.origin && (obj as any).setOrigin) {
-            (obj as any).setOrigin(override.origin[0], override.origin[1]);
-        }
-
-        // Apply position
-        if ((obj as any).x !== undefined) (obj as any).x = override.x;
-        if ((obj as any).y !== undefined) (obj as any).y = override.y;
-
-        // Apply size: width/height takes precedence over scale
-        // This prevents scale from overwriting setDisplaySize set by AssetFactory
-        if (override.width !== undefined && override.height !== undefined) {
-            // Use setDisplaySize for explicit dimensions
-            if ((obj as any).setDisplaySize) {
-                (obj as any).setDisplaySize(override.width, override.height);
-            }
-        } else if ((obj as any).setScale) {
-            // Only apply scale if width/height are NOT specified
-            if (override.scaleX !== undefined && override.scaleY !== undefined) {
-                (obj as any).setScale(override.scaleX, override.scaleY);
-            } else if (override.scale !== undefined) {
-                (obj as any).setScale(override.scale);
-            }
-        }
-
-        if (override.depth !== undefined && (obj as any).setDepth) {
-            (obj as any).setDepth(override.depth);
-        }
-    }
-
-    /**
-     * Check if layout overrides exist for an element
-     */
-    hasLayoutOverride(id: string): boolean {
-        return this.layoutOverrides.has(id);
-    }
-
-    /**
-     * Get layout override for an element
-     */
-    getLayoutOverride(id: string): {
-        x: number;
-        y: number;
-        width?: number;
-        height?: number;
-        scale?: number;
-        scaleX?: number;
-        scaleY?: number;
-        depth?: number;
-        origin?: [number, number];
-    } | undefined {
-        return this.layoutOverrides.get(id);
-    }
-
-    /**
      * Get spawn points for battle scenes (BattleScene, ArenaScene)
      * Returns player, pet, and enemy positions for the specified enemy count
+     *
+     * Spawn points are now stored directly in scenes.json
      *
      * @param sceneName - The scene to get spawn points for (defaults to current scene)
      * @param enemyCount - Number of enemies (1, 2, or 3)
@@ -417,13 +332,14 @@ export class SceneBuilder {
         enemies: SpawnPoint[];
     } | null {
         const actualSceneName = sceneName ?? (this.scene as any).scene.key;
-        const layoutsFile = this.scene.cache.json.get('sceneLayouts') as SceneLayoutsFile | undefined;
+        const scenesFile = this.scene.cache.json.get('scenes') as ScenesFile;
+        const sceneDef = scenesFile?.scenes?.[actualSceneName];
 
-        if (!layoutsFile?.scenes?.[actualSceneName]?.spawnPoints) {
+        if (!sceneDef?.spawnPoints) {
             return null;
         }
 
-        const spawnPoints = layoutsFile.scenes[actualSceneName].spawnPoints!;
+        const spawnPoints = sceneDef.spawnPoints;
         const enemyCountKey = String(Math.min(3, Math.max(1, enemyCount))) as EnemyCount;
 
         return {
@@ -436,15 +352,18 @@ export class SceneBuilder {
     /**
      * Get all spawn points configuration for a scene
      * Use this when you need access to all enemy count configurations
+     *
+     * Spawn points are now stored directly in scenes.json
      */
     getAllSpawnPoints(sceneName?: string): SpawnPoints | null {
         const actualSceneName = sceneName ?? (this.scene as any).scene.key;
-        const layoutsFile = this.scene.cache.json.get('sceneLayouts') as SceneLayoutsFile | undefined;
+        const scenesFile = this.scene.cache.json.get('scenes') as ScenesFile;
+        const sceneDef = scenesFile?.scenes?.[actualSceneName];
 
-        if (!layoutsFile?.scenes?.[actualSceneName]?.spawnPoints) {
+        if (!sceneDef?.spawnPoints) {
             return null;
         }
 
-        return layoutsFile.scenes[actualSceneName].spawnPoints!;
+        return sceneDef.spawnPoints;
     }
 }
