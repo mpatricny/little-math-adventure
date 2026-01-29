@@ -50,7 +50,7 @@ export class UiEffectSystem {
    * Call resetToBase() first if changing states
    */
   applyEffect(
-    obj: Phaser.GameObjects.Container | Phaser.GameObjects.Image,
+    obj: Phaser.GameObjects.Container | Phaser.GameObjects.Image | Phaser.GameObjects.NineSlice,
     config: LayerVisualConfig,
     base: BaseProps
   ): void {
@@ -99,7 +99,7 @@ export class UiEffectSystem {
    * Reset object to base state
    */
   resetToBase(
-    obj: Phaser.GameObjects.Container | Phaser.GameObjects.Image,
+    obj: Phaser.GameObjects.Container | Phaser.GameObjects.Image | Phaser.GameObjects.NineSlice,
     base: BaseProps
   ): void {
     obj.setPosition(base.x, base.y);

@@ -66,7 +66,7 @@ export class UiElementBuilder {
     // Setup interactivity with effects - decoupled
     const effectConfig = template.effects?.defaults;
     if (effectConfig) {
-      this.setupInteractivity(container, effectConfig, baseProps, template.effects?.animation);
+      this.setupInteractivity(container, effectConfig, baseProps, template.effects?.animation, template.layers);
     }
 
     return container;
@@ -84,6 +84,9 @@ export class UiElementBuilder {
 
     // Sort layers by order
     const sortedLayers = [...template.layers].sort((a, b) => a.order - b.order);
+
+    // Store layer references for per-layer effects
+    const layerObjects = new Map<string, Phaser.GameObjects.Image | Phaser.GameObjects.NineSlice>();
 
     for (const layer of sortedLayers) {
       // Apply origin offset to layer position
@@ -112,6 +115,11 @@ export class UiElementBuilder {
               img.setScale(scaleX, scaleY);
             }
           }
+
+          // Store layer reference for per-layer effects
+          img.setData('layerId', layer.id);
+          layerObjects.set(layer.id, img);
+
           container.add(img);
         } catch (e) {
           console.warn(`[UiElementBuilder] Failed to create image layer ${layer.id}:`, e);
@@ -120,6 +128,10 @@ export class UiElementBuilder {
         try {
           const nineSliceObj = this.createNineSliceLayer(layer, layerX, layerY, layerW, layerH);
           if (nineSliceObj) {
+            // Store layer reference for per-layer effects
+            nineSliceObj.setData('layerId', layer.id);
+            layerObjects.set(layer.id, nineSliceObj);
+
             container.add(nineSliceObj);
           }
         } catch (e) {
@@ -127,6 +139,10 @@ export class UiElementBuilder {
         }
       }
     }
+
+    // Store layer references and configs on container for effect system
+    container.setData('layerObjects', layerObjects);
+    container.setData('layers', template.layers);
 
     // Set hit area for interactivity
     // Let Phaser calculate hit area automatically based on container size
@@ -286,42 +302,140 @@ export class UiElementBuilder {
     container: Phaser.GameObjects.Container,
     effectConfig: { normal?: LayerVisualConfig; hover?: LayerVisualConfig; pressed?: LayerVisualConfig },
     baseProps: BaseProps,
-    animation?: TemplateEffectConfig['animation']
+    animation?: TemplateEffectConfig['animation'],
+    layers?: UiElementLayer[]
   ): void {
     let isPressed = false;
 
     container.on('pointerover', () => {
-      if (!isPressed && effectConfig.hover) {
-        this.tweenToState(container, effectConfig.hover, baseProps, animation?.toHover);
+      if (!isPressed) {
+        this.applyStateToLayers(container, 'hover', effectConfig, baseProps, animation?.toHover, layers);
       }
     });
 
     container.on('pointerout', () => {
       isPressed = false;
-      // First reset postFX effects (these don't tween well)
-      uiEffectSystem.resetToBase(container, baseProps);
-      // Then apply normal state with animation
-      if (effectConfig.normal) {
-        this.tweenToState(container, effectConfig.normal, baseProps, animation?.toNormal);
-      } else {
-        // Tween back to base if no normal config
-        this.tweenToState(container, {}, baseProps, animation?.toNormal);
-      }
+      // Reset postFX effects for all layers
+      this.resetAllLayers(container, baseProps, layers);
+      // Apply normal state with animation
+      this.applyStateToLayers(container, 'normal', effectConfig, baseProps, animation?.toNormal, layers);
     });
 
     container.on('pointerdown', () => {
       isPressed = true;
-      if (effectConfig.pressed) {
-        this.tweenToState(container, effectConfig.pressed, baseProps, animation?.toPressed);
-      }
+      this.applyStateToLayers(container, 'pressed', effectConfig, baseProps, animation?.toPressed, layers);
     });
 
     container.on('pointerup', () => {
       isPressed = false;
-      if (effectConfig.hover) {
-        this.tweenToState(container, effectConfig.hover, baseProps, animation?.toHover);
-      }
+      this.applyStateToLayers(container, 'hover', effectConfig, baseProps, animation?.toHover, layers);
     });
+  }
+
+  /**
+   * Apply state effects to all layers, with per-layer overrides
+   * Each layer can have its own states that override template defaults
+   */
+  private applyStateToLayers(
+    container: Phaser.GameObjects.Container,
+    state: 'normal' | 'hover' | 'pressed',
+    templateEffects: { normal?: LayerVisualConfig; hover?: LayerVisualConfig; pressed?: LayerVisualConfig },
+    containerBase: BaseProps,
+    timing?: AnimationTiming,
+    layers?: UiElementLayer[]
+  ): void {
+    const layerObjects = container.getData('layerObjects') as Map<string, Phaser.GameObjects.Image | Phaser.GameObjects.NineSlice> | undefined;
+
+    // Check if any layer has per-layer effects for this state
+    const hasPerLayerEffects = layers?.some(layer => layer.states?.[state]);
+
+    if (!layerObjects || !layers || !hasPerLayerEffects) {
+      // Fallback: apply template effects to whole container (existing behavior)
+      const config = templateEffects[state];
+      if (config) {
+        this.tweenToState(container, config, containerBase, timing);
+      } else if (state === 'normal') {
+        // Tween back to base if no normal config
+        this.tweenToState(container, {}, containerBase, timing);
+      }
+      return;
+    }
+
+    // Apply per-layer effects
+    for (const layer of layers) {
+      const gameObj = layerObjects.get(layer.id);
+      if (!gameObj) continue;
+
+      // Get layer-specific effects, fall back to template defaults
+      const layerConfig = layer.states?.[state];
+      const templateConfig = templateEffects[state];
+
+      // Merge: layer config overrides template config
+      const mergedConfig = { ...templateConfig, ...layerConfig };
+
+      // Skip if no effects to apply
+      if (!mergedConfig || Object.keys(mergedConfig).length === 0) {
+        if (state === 'normal') {
+          // For normal state, tween back to base
+          const layerBase = this.getLayerBaseProps(gameObj);
+          this.tweenToState(gameObj, {}, layerBase, timing);
+        }
+        continue;
+      }
+
+      // Get base props for this specific layer
+      const layerBase = this.getLayerBaseProps(gameObj);
+
+      this.tweenToState(gameObj, mergedConfig, layerBase, timing);
+    }
+  }
+
+  /**
+   * Reset all layers to their base state (clears postFX effects)
+   */
+  private resetAllLayers(
+    container: Phaser.GameObjects.Container,
+    containerBase: BaseProps,
+    layers?: UiElementLayer[]
+  ): void {
+    const layerObjects = container.getData('layerObjects') as Map<string, Phaser.GameObjects.Image | Phaser.GameObjects.NineSlice> | undefined;
+
+    // Check if any layer has per-layer effects
+    const hasPerLayerEffects = layers?.some(layer => layer.states);
+
+    if (!layerObjects || !layers || !hasPerLayerEffects) {
+      // Fallback: reset container only (existing behavior)
+      uiEffectSystem.resetToBase(container, containerBase);
+      return;
+    }
+
+    // Reset each layer individually
+    for (const layer of layers) {
+      const gameObj = layerObjects.get(layer.id);
+      if (!gameObj) continue;
+
+      const layerBase = this.getLayerBaseProps(gameObj);
+      uiEffectSystem.resetToBase(gameObj, layerBase);
+    }
+  }
+
+  /**
+   * Get base properties for a layer game object
+   */
+  private getLayerBaseProps(gameObj: Phaser.GameObjects.Image | Phaser.GameObjects.NineSlice): BaseProps {
+    // Store base props on first call, reuse thereafter
+    let baseProps = gameObj.getData('baseProps') as BaseProps | undefined;
+    if (!baseProps) {
+      baseProps = {
+        x: gameObj.x,
+        y: gameObj.y,
+        scaleX: gameObj.scaleX,
+        scaleY: gameObj.scaleY,
+        alpha: gameObj.alpha
+      };
+      gameObj.setData('baseProps', baseProps);
+    }
+    return baseProps;
   }
 
   /**
@@ -329,7 +443,7 @@ export class UiElementBuilder {
    * Animates scale, position, and opacity. PostFX effects (shadow, glow) are applied instantly.
    */
   private tweenToState(
-    obj: Phaser.GameObjects.Container | Phaser.GameObjects.Image,
+    obj: Phaser.GameObjects.Container | Phaser.GameObjects.Image | Phaser.GameObjects.NineSlice,
     config: LayerVisualConfig,
     base: BaseProps,
     timing?: AnimationTiming
