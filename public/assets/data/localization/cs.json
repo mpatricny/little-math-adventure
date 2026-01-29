@@ -48,6 +48,15 @@
             "MSG_005": "STAV: ZDRAVÝ",
             "MSG_006": "STAV: ZRANĚNÝ",
             "MSG_007": "VIDÍM, ŽE JSI ZESÍLIL.\nUKAŽ MI, CO UMÍŠ!"
+        },
+        "screens": {
+            "character_select": {
+                "title": "VYBER POSTAVU",
+                "girl_label": "RYTÍŘKA",
+                "boy_label": "RYTÍŘ",
+                "name_label": "JMÉNO:",
+                "name_placeholder": "Hrdina"
+            }
         }
     },
     "buildings": {

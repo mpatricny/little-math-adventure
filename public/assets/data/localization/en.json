@@ -48,6 +48,15 @@
             "MSG_005": "STATUS: HEALTHY",
             "MSG_006": "STATUS: INJURED",
             "MSG_007": "I SEE YOU'VE GROWN STRONGER.\nSHOW ME WHAT YOU CAN DO!"
+        },
+        "screens": {
+            "character_select": {
+                "title": "SELECT CHARACTER",
+                "girl_label": "GIRL KNIGHT",
+                "boy_label": "BOY KNIGHT",
+                "name_label": "NAME:",
+                "name_placeholder": "Hero"
+            }
         }
     },
     "buildings": {

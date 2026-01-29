@@ -29,7 +29,7 @@ export class MenuScene extends Phaser.Scene {
 
             if (firstEmptySlot >= 0) {
                 // Go directly to character select with the empty slot
-                this.scene.start('CharacterSelectScene', { slotIndex: firstEmptySlot });
+                this.scene.start('CharacterSelectNewScene', { slotIndex: firstEmptySlot });
             } else {
                 // All slots full - show save slot scene to let user manage slots
                 this.scene.start('SaveSlotScene');

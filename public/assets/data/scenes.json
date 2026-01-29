@@ -1483,19 +1483,11 @@
           "id": "New_game_background-1280",
           "asset": "misc.new-game-background-1280",
           "x": 640,
-          "y": 360
+          "y": 360,
+          "depth": -2
         }
       ],
       "ui": [
-        {
-          "id": "Character select",
-          "asset": "Character select",
-          "x": 647,
-          "y": 371,
-          "uiElement": {
-            "templateId": "1768919608689-8otqazir2"
-          }
-        },
         {
           "id": "Scroll title",
           "asset": "Scroll title",
@@ -1512,6 +1504,103 @@
           "y": 670,
           "uiElement": {
             "templateId": "1768922130266-28htorb5x"
+          },
+          "events": {
+            "click": "onConfirm"
+          }
+        },
+        {
+          "id": "Back button",
+          "asset": "Back button",
+          "x": 120,
+          "y": 636,
+          "uiElement": {
+            "templateId": "1768730825297-e6lnuaoyj"
+          },
+          "events": {
+            "click": "onBack"
+          }
+        },
+        {
+          "id": "CharacterNew",
+          "asset": "misc.characternew",
+          "x": 638,
+          "y": 378,
+          "uiElement": {
+            "templateId": "1769720515460-vya4ftfra"
+          }
+        }
+      ],
+      "zones": []
+    },
+    "MenuNewScene": {
+      "viewport": {
+        "width": 1280,
+        "height": 720
+      },
+      "elements": [
+        {
+          "id": "New_game_background-1280",
+          "asset": "New_game_background-1280",
+          "x": 640,
+          "y": 360
+        }
+      ],
+      "ui": [
+        {
+          "id": "NewArrow",
+          "asset": "misc.newarrow",
+          "x": 307,
+          "y": 345,
+          "uiElement": {
+            "templateId": "1769722721277-p7d9kn6kj"
+          }
+        },
+        {
+          "id": "NewArrow_1",
+          "asset": "misc.newarrow-1",
+          "x": 972,
+          "y": 350,
+          "flipX": true,
+          "uiElement": {
+            "templateId": "1769722721277-p7d9kn6kj"
+          }
+        },
+        {
+          "id": "LoadGame",
+          "asset": "misc.loadgame",
+          "x": 645,
+          "y": 366,
+          "uiElement": {
+            "templateId": "1769723012382-cvg951gxw"
+          }
+        },
+        {
+          "id": "Scroll title",
+          "asset": "Scroll title",
+          "x": 644,
+          "y": 61,
+          "depth": 27,
+          "uiElement": {
+            "templateId": "1769080942092-ajqn9x4tw"
+          }
+        },
+        {
+          "id": "Green_button",
+          "asset": "Green_button",
+          "x": 782,
+          "y": 675,
+          "uiElement": {
+            "templateId": "1768922130266-28htorb5x"
+          }
+        },
+        {
+          "id": "Back button",
+          "asset": "Back button",
+          "x": 139,
+          "y": 619,
+          "uiElement": {
+            "templateId": "1768730825297-e6lnuaoyj"
           }
         }
       ],

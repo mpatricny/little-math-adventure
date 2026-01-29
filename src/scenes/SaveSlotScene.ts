@@ -213,8 +213,8 @@ export class SaveSlotScene extends Phaser.Scene {
         const slot = this.slotsMeta[this.currentSlotIndex];
 
         if (slot.isEmpty) {
-            // Go to CharacterSelectScene with slot index
-            this.scene.start('CharacterSelectScene', { slotIndex: this.currentSlotIndex });
+            // Go to CharacterSelectNewScene with slot index
+            this.scene.start('CharacterSelectNewScene', { slotIndex: this.currentSlotIndex });
         } else {
             // Load slot and go to TownScene
             const gameState = GameStateManager.getInstance();
