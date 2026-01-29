@@ -1174,6 +1174,15 @@
                     0.5
                 ],
                 "scale": 1
+            },
+            "red_button_small": {
+                "type": "staticImage",
+                "texture": "red-button-small",
+                "origin": [
+                    0.5,
+                    0.5
+                ],
+                "scale": 1
             }
         }
     },
@@ -1296,6 +1305,63 @@
                 0.5,
                 0.5
             ]
+        },
+        "characternew": {
+            "type": "staticImage",
+            "texture": "CharacterNew",
+            "origin": [
+                0.5,
+                0.5
+            ]
+        },
+        "newarrow": {
+            "type": "staticImage",
+            "texture": "NewArrow",
+            "origin": [
+                0.5,
+                0.5
+            ]
+        },
+        "newarrow-1": {
+            "type": "staticImage",
+            "texture": "NewArrow",
+            "origin": [
+                0.5,
+                0.5
+            ]
+        },
+        "loadgame": {
+            "type": "staticImage",
+            "texture": "LoadGame",
+            "origin": [
+                0.5,
+                0.5
+            ]
+        },
+        "red-button": {
+            "type": "staticImage",
+            "texture": "Red_button",
+            "origin": [
+                0.5,
+                0.5
+            ]
+        },
+        "load-game": {
+            "type": "staticImage",
+            "texture": "Load game",
+            "origin": [
+                0.5,
+                0.5
+            ]
+        },
+        "slot": {
+            "type": "staticImage",
+            "texture": "Slot",
+            "origin": [
+                0.5,
+                0.5
+            ],
+            "scale": 3
         }
     }
 }

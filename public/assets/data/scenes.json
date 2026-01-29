@@ -1556,8 +1556,8 @@
         {
           "id": "NewArrow",
           "asset": "misc.newarrow",
-          "x": 307,
-          "y": 345,
+          "x": 150,
+          "y": 330,
           "uiElement": {
             "templateId": "1769722721277-p7d9kn6kj"
           }
@@ -1565,9 +1565,8 @@
         {
           "id": "NewArrow_1",
           "asset": "misc.newarrow-1",
-          "x": 972,
-          "y": 350,
-          "flipX": true,
+          "x": 576,
+          "y": 334,
           "uiElement": {
             "templateId": "1769722721277-p7d9kn6kj"
           }
@@ -1575,27 +1574,17 @@
         {
           "id": "LoadGame",
           "asset": "misc.loadgame",
-          "x": 645,
-          "y": 366,
+          "x": 974,
+          "y": 315,
           "uiElement": {
             "templateId": "1769723012382-cvg951gxw"
           }
         },
         {
-          "id": "Scroll title",
-          "asset": "Scroll title",
-          "x": 644,
-          "y": 61,
-          "depth": 27,
-          "uiElement": {
-            "templateId": "1769080942092-ajqn9x4tw"
-          }
-        },
-        {
           "id": "Green_button",
           "asset": "Green_button",
-          "x": 782,
-          "y": 675,
+          "x": 484,
+          "y": 510,
           "uiElement": {
             "templateId": "1768922130266-28htorb5x"
           }
@@ -1603,10 +1592,38 @@
         {
           "id": "Back button",
           "asset": "Back button",
-          "x": 139,
-          "y": 619,
+          "x": 339,
+          "y": 639,
           "uiElement": {
             "templateId": "1768730825297-e6lnuaoyj"
+          }
+        },
+        {
+          "id": "Red_button",
+          "asset": "misc.red-button",
+          "x": 181,
+          "y": 514,
+          "uiElement": {
+            "templateId": "1769726663069-rpj2fcs8s"
+          }
+        },
+        {
+          "id": "Load game",
+          "asset": "misc.load-game",
+          "x": 361,
+          "y": 112,
+          "uiElement": {
+            "templateId": "1769727002078-pz315evpc"
+          }
+        },
+        {
+          "id": "Slot",
+          "asset": "misc.slot",
+          "x": 366,
+          "y": 351,
+          "scale": 3,
+          "uiElement": {
+            "templateId": "1769727172111-u2xhyww60"
           }
         }
       ],
