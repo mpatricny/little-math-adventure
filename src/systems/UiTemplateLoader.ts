@@ -38,6 +38,9 @@ export interface UiElementLayer {
   nineSliceConfigId?: string;  // Reference to nine-slice config in nine-slices.json
   bounds: { x: number; y: number; w: number; h: number };
   states?: LayerStateConfig;
+  flipX?: boolean;
+  flipY?: boolean;
+  rotation?: number;  // Rotation in degrees
 }
 
 export interface TextStyleConfig {
