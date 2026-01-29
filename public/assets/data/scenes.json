@@ -1527,7 +1527,13 @@
           "x": 638,
           "y": 378,
           "uiElement": {
-            "templateId": "1769720515460-vya4ftfra"
+            "templateId": "1769720515460-vya4ftfra",
+            "textOverrides": {
+              "1769721204793-3lcofhw3r": "$ui.screens.character_select.girl_label",
+              "1769721234568-by2j6mb6u": "$ui.screens.character_select.boy_label",
+              "1769721247102-j6iaoqlvm": "$ui.screens.character_select.name_label",
+              "1769721252252-e9vt7kyxi": ""
+            }
           }
         }
       ],

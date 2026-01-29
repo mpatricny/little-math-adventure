@@ -56,16 +56,17 @@ export class CharacterSelectNewScene extends Phaser.Scene {
         // Template origin offset: (250, 250)
         // Left frame center: template (20+124, 38+124) = (144, 162) -> screen (638-250+144, 378-250+162) = (532, 290)
         // Right frame center: template (231+124, 38+124) = (355, 162) -> screen (638-250+355, 378-250+162) = (743, 290)
+        // Adjusted: moved up 15px to better fit inside frames
         const girlX = 532;
-        const girlY = 290;
+        const girlY = 275;
         const boyX = 743;
-        const boyY = 290;
+        const boyY = 275;
 
         const girlConfig = getPlayerSpriteConfig('girl_knight');
         const boyConfig = getPlayerSpriteConfig('boy_knight');
 
-        // Character scale for the frames (frames are 248x248)
-        const characterScale = 1.0;
+        // Character scale - slightly smaller to fit better in frames
+        const characterScale = 0.85;
         const characterScaleHover = characterScale * 1.0625;
 
         // Create sprites with idle animations
@@ -81,12 +82,12 @@ export class CharacterSelectNewScene extends Phaser.Scene {
             .play(boyConfig.idleAnim)
             .setInteractive({ useHandCursor: true });
 
-        // Selection indicators (positioned behind sprites)
-        this.girlSelector = this.add.rectangle(girlX, girlY, 200, 220, 0x000000, 0)
+        // Selection indicators (positioned behind sprites, adjusted for smaller sprites)
+        this.girlSelector = this.add.rectangle(girlX, girlY, 180, 200, 0x000000, 0)
             .setStrokeStyle(4, 0xffd700)
             .setDepth(19);
 
-        this.boySelector = this.add.rectangle(boyX, boyY, 200, 220, 0x000000, 0)
+        this.boySelector = this.add.rectangle(boyX, boyY, 180, 200, 0x000000, 0)
             .setStrokeStyle(4, 0x666666)
             .setDepth(19);
 
@@ -106,7 +107,7 @@ export class CharacterSelectNewScene extends Phaser.Scene {
         const inputX = 637;
         const inputY = 533;
 
-        // Create HTML input element
+        // Create HTML input element - transparent to blend with UI
         const inputHtml = `
             <input type="text"
                    id="characterNameInput"
@@ -115,14 +116,15 @@ export class CharacterSelectNewScene extends Phaser.Scene {
                    value="Hrdina"
                    style="
                        width: 180px;
-                       font-size: 18px;
+                       font-size: 16px;
                        text-align: center;
-                       padding: 6px 10px;
-                       border: 2px solid #ffd700;
-                       border-radius: 4px;
-                       background: rgba(0, 0, 0, 0.7);
+                       padding: 4px 8px;
+                       border: none;
+                       background: transparent;
                        color: #ffffff;
                        font-family: Arial, sans-serif;
+                       outline: none;
+                       caret-color: #ffd700;
                    "
             />
         `;
