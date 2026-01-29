@@ -105,8 +105,8 @@ export class CharacterSelectNewScene extends Phaser.Scene {
     private createNameInput(): void {
         // Position adjusted to center in the wooden name frame
         // Fine-tuned to visually center in the frame
-        const inputX = 635;
-        const inputY = 547;
+        const inputX = 648;
+        const inputY = 557;
 
         // Create HTML input element - transparent to blend with UI
         const inputHtml = `
