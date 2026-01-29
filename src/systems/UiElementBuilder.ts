@@ -157,12 +157,11 @@ export class UiElementBuilder {
     container.setData('layerObjects', layerObjects);
     container.setData('layers', template.layers);
 
-    // Set hit area for interactivity
-    // Let Phaser calculate hit area automatically based on container size
-    // NOTE: Do NOT use custom Rectangle with origin offset - causes misaligned click areas!
-    // This bug has been fixed multiple times. See commit 86694f9.
+    // Set container size and make it interactive for click events
+    // NOTE: useHandCursor is FALSE - only individual layers show the hand cursor
+    // This prevents the hand cursor from appearing over the entire element area
     container.setSize(template.size.w, template.size.h);
-    container.setInteractive({ useHandCursor: true });
+    container.setInteractive({ useHandCursor: false });
   }
 
   /**
