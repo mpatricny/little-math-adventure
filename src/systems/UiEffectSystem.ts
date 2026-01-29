@@ -208,26 +208,29 @@ export class UiEffectSystem {
   }
 
   /**
-   * Apply brightness effect via tint
-   * For containers, applies to each child that supports tint
+   * Apply brightness effect
+   * For brightness > 1: uses postFX color matrix (can actually brighten)
+   * For brightness < 1: uses tint (darken)
    */
   private applyBrightness(obj: Phaser.GameObjects.GameObject, brightness: number): void {
     const targets = this.getEffectTargets(obj);
 
     for (const target of targets) {
-      if (!('setTint' in target) || typeof (target as any).setTint !== 'function') continue;
-
-      if (brightness >= 1) {
-        // Brighten: tint toward white (0xffffff)
-        // At brightness 1.2, blend 20% toward white
-        const blend = Math.min(brightness - 1, 1);
-        const v = Math.round(255 * (1 - blend * 0.5) + 255 * blend * 0.5);
-        (target as any).setTint(Phaser.Display.Color.GetColor(v, v, v));
-      } else {
-        // Darken: reduce RGB values
-        const v = Math.round(255 * brightness);
-        (target as any).setTint(Phaser.Display.Color.GetColor(v, v, v));
+      if (brightness > 1) {
+        // Brighten: use postFX color matrix (tint can only darken)
+        if ('postFX' in target && (target as any).postFX) {
+          const postFX = (target as any).postFX;
+          // brightness() expects a value where 0 = black, 1 = normal, 2 = very bright
+          postFX.addColorMatrix().brightness(brightness);
+        }
+      } else if (brightness < 1) {
+        // Darken: use tint (more efficient than postFX)
+        if ('setTint' in target && typeof (target as any).setTint === 'function') {
+          const v = Math.round(255 * brightness);
+          (target as any).setTint(Phaser.Display.Color.GetColor(v, v, v));
+        }
       }
+      // brightness === 1 means no change, skip
     }
   }
 

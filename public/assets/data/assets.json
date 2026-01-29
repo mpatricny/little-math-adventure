@@ -1272,6 +1272,22 @@
                 0.5
             ],
             "scale": 1.2
+        },
+        "testelement": {
+            "type": "staticImage",
+            "texture": "TestElement",
+            "origin": [
+                0.5,
+                0.5
+            ]
+        },
+        "test2": {
+            "type": "staticImage",
+            "texture": "test2",
+            "origin": [
+                0.5,
+                0.5
+            ]
         }
     }
 }

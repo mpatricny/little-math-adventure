@@ -1419,16 +1419,6 @@
       "elements": [],
       "ui": [
         {
-          "id": "Arrow",
-          "asset": "misc.arrow",
-          "x": 288,
-          "y": 320,
-          "uiElement": {
-            "templateId": "1768918531203-8o2htxgfn"
-          },
-          "visible": true
-        },
-        {
           "id": "Green_button",
           "asset": "Green_button",
           "x": 415,
@@ -1442,7 +1432,6 @@
           "asset": "Arrow",
           "x": 1072,
           "y": 348,
-          "flipX": true,
           "uiElement": {
             "templateId": "1768918531203-8o2htxgfn"
           }
@@ -1457,21 +1446,21 @@
           }
         },
         {
-          "id": "Character select",
-          "asset": "Character select",
-          "x": 780,
-          "y": 319,
+          "id": "TestElement",
+          "asset": "misc.testelement",
+          "x": 727,
+          "y": 273,
           "uiElement": {
-            "templateId": "1768919608689-8otqazir2"
+            "templateId": "1769693066140-2ralxm6zc"
           }
         },
         {
-          "id": "Back button_1",
-          "asset": "Back button",
-          "x": 158,
-          "y": 427,
+          "id": "test2",
+          "asset": "misc.test2",
+          "x": 230,
+          "y": 298,
           "uiElement": {
-            "templateId": "1768730825297-e6lnuaoyj"
+            "templateId": "1769696963661-i46etvvkk"
           }
         }
       ]
