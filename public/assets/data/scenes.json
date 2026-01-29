@@ -347,10 +347,6 @@
                     "asset": "environments.backgrounds.battle-field",
                     "x": 640,
                     "y": 360,
-                    "origin": [
-                        0.5,
-                        0.5
-                    ],
                     "depth": -10,
                     "scale": 1,
                     "visible": true
@@ -379,10 +375,6 @@
                     "events": {
                         "click": "onAttack"
                     },
-                    "origin": [
-                        0.5,
-                        0.5
-                    ],
                     "depth": 50,
                     "scale": 1,
                     "visible": true
@@ -392,10 +384,6 @@
                     "asset": "ui.containers.empty",
                     "x": 480,
                     "y": 660,
-                    "origin": [
-                        0.5,
-                        0.5
-                    ],
                     "depth": 0,
                     "scale": 1,
                     "visible": true
@@ -455,10 +443,6 @@
                     "asset": "environments.backgrounds.town",
                     "x": 0,
                     "y": 0,
-                    "origin": [
-                        0,
-                        0
-                    ],
                     "depth": -10,
                     "width": 1280,
                     "height": 720,
@@ -469,10 +453,6 @@
                     "asset": "environments.terrain.grass-layer",
                     "x": 0,
                     "y": 648,
-                    "origin": [
-                        0,
-                        0
-                    ],
                     "depth": -5,
                     "width": 1280,
                     "height": 80,
@@ -484,10 +464,6 @@
                     "asset": "environments.buildings.witch-hut",
                     "x": 220,
                     "y": 670,
-                    "origin": [
-                        0.5,
-                        1
-                    ],
                     "scale": 0.224,
                     "visible": true
                 },
@@ -496,10 +472,6 @@
                     "asset": "environments.buildings.guild",
                     "x": 455,
                     "y": 700,
-                    "origin": [
-                        0.5,
-                        1
-                    ],
                     "scale": 0.224,
                     "visible": true
                 },
@@ -508,10 +480,6 @@
                     "asset": "environments.buildings.tavern",
                     "x": 655,
                     "y": 665,
-                    "origin": [
-                        0.5,
-                        1
-                    ],
                     "scale": 0.224,
                     "visible": true
                 },
@@ -520,10 +488,6 @@
                     "asset": "environments.buildings.shop",
                     "x": 880,
                     "y": 670,
-                    "origin": [
-                        0,
-                        1
-                    ],
                     "scale": 0.184,
                     "visible": true
                 },
@@ -532,10 +496,6 @@
                     "asset": "environments.terrain.grass-layer",
                     "x": 0,
                     "y": 710,
-                    "origin": [
-                        0,
-                        0
-                    ],
                     "scaleX": 0.9999999999999997,
                     "scaleY": 0.7155963302752293,
                     "depth": 5,
@@ -556,10 +516,6 @@
                     "asset": "ui.labels.building-label",
                     "x": 220,
                     "y": 430,
-                    "origin": [
-                        0.5,
-                        1
-                    ],
                     "depth": 10,
                     "text": "$buildings.BLD_001",
                     "visible": true
@@ -569,10 +525,6 @@
                     "asset": "ui.labels.building-label",
                     "x": 454,
                     "y": 446,
-                    "origin": [
-                        0.5,
-                        1
-                    ],
                     "depth": 10,
                     "text": "$buildings.BLD_002",
                     "visible": true
@@ -582,10 +534,6 @@
                     "asset": "ui.labels.building-label",
                     "x": 655,
                     "y": 420,
-                    "origin": [
-                        0.5,
-                        1
-                    ],
                     "depth": 10,
                     "text": "$buildings.BLD_003",
                     "visible": true
@@ -595,10 +543,6 @@
                     "asset": "ui.labels.building-label",
                     "x": 882,
                     "y": 442,
-                    "origin": [
-                        0.5,
-                        1
-                    ],
                     "depth": 10,
                     "text": "$buildings.BLD_004",
                     "visible": true
@@ -608,10 +552,6 @@
                     "asset": "ui.labels.building-label",
                     "x": 1220,
                     "y": 410,
-                    "origin": [
-                        0.5,
-                        1
-                    ],
                     "depth": 10,
                     "text": "$ui.titles.TTL_001",
                     "visible": true
@@ -717,10 +657,6 @@
                     "y": 360,
                     "width": 1280,
                     "height": 720,
-                    "origin": [
-                        0.5,
-                        0.5
-                    ],
                     "depth": -10,
                     "scale": 1,
                     "visible": true
@@ -732,10 +668,6 @@
                     "y": 632,
                     "scaleX": 0.851,
                     "scaleY": 0.716,
-                    "origin": [
-                        0.5,
-                        0.5
-                    ],
                     "depth": 5,
                     "visible": true
                 },
@@ -746,10 +678,6 @@
                     "y": 629,
                     "scaleX": 0.767,
                     "scaleY": 0.729,
-                    "origin": [
-                        0.5,
-                        0.5
-                    ],
                     "depth": 5,
                     "visible": true
                 },
@@ -759,10 +687,6 @@
                     "x": 493,
                     "y": 589,
                     "scale": 0.368,
-                    "origin": [
-                        0.5,
-                        0.5
-                    ],
                     "depth": 5,
                     "visible": true
                 },
@@ -771,10 +695,6 @@
                     "asset": "closeButton",
                     "x": 1137,
                     "y": 697,
-                    "origin": [
-                        0.5,
-                        0.5
-                    ],
                     "depth": 100,
                     "scale": 1,
                     "visible": true
@@ -796,10 +716,6 @@
                     "x": 120,
                     "y": 50,
                     "text": "MEČE",
-                    "origin": [
-                        0.5,
-                        0.5
-                    ],
                     "depth": 20,
                     "scale": 1,
                     "visible": true
@@ -810,10 +726,6 @@
                     "x": 220,
                     "y": 50,
                     "text": "ŠTÍTY",
-                    "origin": [
-                        0.5,
-                        0.5
-                    ],
                     "depth": 20,
                     "scale": 1,
                     "visible": true
@@ -823,10 +735,6 @@
                     "asset": "ui.buttons.shop-item-slot",
                     "x": 80,
                     "y": 120,
-                    "origin": [
-                        0.5,
-                        0.5
-                    ],
                     "depth": 20,
                     "scale": 1,
                     "visible": true
@@ -836,10 +744,6 @@
                     "asset": "ui.buttons.shop-item-slot",
                     "x": 160,
                     "y": 120,
-                    "origin": [
-                        0.5,
-                        0.5
-                    ],
                     "depth": 20,
                     "scale": 1,
                     "visible": true
@@ -849,10 +753,6 @@
                     "asset": "ui.buttons.shop-item-slot",
                     "x": 240,
                     "y": 120,
-                    "origin": [
-                        0.5,
-                        0.5
-                    ],
                     "depth": 20,
                     "scale": 1,
                     "visible": true
@@ -862,10 +762,6 @@
                     "asset": "ui.buttons.shop-item-slot",
                     "x": 320,
                     "y": 120,
-                    "origin": [
-                        0.5,
-                        0.5
-                    ],
                     "depth": 20,
                     "scale": 1,
                     "visible": true
@@ -878,10 +774,6 @@
                     "width": 280,
                     "height": 80,
                     "visible": false,
-                    "origin": [
-                        0.5,
-                        0.5
-                    ],
                     "depth": 25,
                     "scale": 1
                 },
@@ -892,10 +784,6 @@
                     "y": 502,
                     "text": "",
                     "visible": false,
-                    "origin": [
-                        0,
-                        0.5
-                    ],
                     "depth": 26,
                     "scale": 1
                 },
@@ -907,10 +795,6 @@
                     "text": "",
                     "color": "#ffaa00",
                     "visible": false,
-                    "origin": [
-                        0,
-                        0.5
-                    ],
                     "depth": 26,
                     "scale": 1
                 },
@@ -920,10 +804,6 @@
                     "x": 912,
                     "y": 502,
                     "text": "TVOJE PENÍZE",
-                    "origin": [
-                        0.5,
-                        0.5
-                    ],
                     "depth": 10,
                     "scale": 1,
                     "visible": true
@@ -934,10 +814,6 @@
                     "x": 505,
                     "y": 468,
                     "text": "PLATBA",
-                    "origin": [
-                        0.5,
-                        0.5
-                    ],
                     "depth": 10,
                     "scale": 1,
                     "visible": true
@@ -949,10 +825,6 @@
                     "y": 669,
                     "text": "CELKEM: 0 měďáků",
                     "color": "#ffffff",
-                    "origin": [
-                        0.5,
-                        0.5
-                    ],
                     "depth": 10,
                     "scale": 1,
                     "visible": true
@@ -965,10 +837,6 @@
                     "events": {
                         "click": "onBuy"
                     },
-                    "origin": [
-                        0.5,
-                        0.5
-                    ],
                     "depth": 20,
                     "scale": 1,
                     "visible": true
@@ -978,10 +846,6 @@
                     "asset": "strike0",
                     "x": 1150,
                     "y": 70,
-                    "origin": [
-                        0.5,
-                        0.5
-                    ],
                     "depth": 30,
                     "scale": 1,
                     "visible": true
@@ -991,10 +855,6 @@
                     "asset": "strike1",
                     "x": 1175,
                     "y": 70,
-                    "origin": [
-                        0.5,
-                        0.5
-                    ],
                     "depth": 30,
                     "scale": 1,
                     "visible": true
@@ -1004,10 +864,6 @@
                     "asset": "strike2",
                     "x": 1200,
                     "y": 70,
-                    "origin": [
-                        0.5,
-                        0.5
-                    ],
                     "depth": 30,
                     "scale": 1,
                     "visible": true
@@ -1313,10 +1169,6 @@
                     "asset": "environments.backgrounds.arena",
                     "x": 640,
                     "y": 360,
-                    "origin": [
-                        0.5,
-                        0.5
-                    ],
                     "depth": -10,
                     "scale": 1,
                     "visible": true
@@ -1330,10 +1182,6 @@
                     "y": 204,
                     "text": "VLNA 1",
                     "color": "#ffffff",
-                    "origin": [
-                        0.5,
-                        0.5
-                    ],
                     "depth": 10,
                     "scale": 1,
                     "visible": true
@@ -1347,10 +1195,6 @@
                     "events": {
                         "click": "startBattle"
                     },
-                    "origin": [
-                        0.5,
-                        0.5
-                    ],
                     "depth": 50,
                     "scale": 1,
                     "visible": true
@@ -1364,10 +1208,6 @@
                     "events": {
                         "click": "leaveArena"
                     },
-                    "origin": [
-                        0.5,
-                        0.5
-                    ],
                     "depth": 50,
                     "scale": 1,
                     "visible": true
@@ -1429,10 +1269,6 @@
                     "y": 0,
                     "width": 1280,
                     "height": 720,
-                    "origin": [
-                        0,
-                        0
-                    ],
                     "depth": -10,
                     "visible": true
                 },
@@ -1445,10 +1281,6 @@
                     "height": 80,
                     "depth": -5,
                     "alpha": 0.8,
-                    "origin": [
-                        0,
-                        1
-                    ],
                     "visible": true
                 },
                 {
@@ -1456,10 +1288,6 @@
                     "asset": "environments.buildings.witch-hut",
                     "x": 220,
                     "y": 670,
-                    "origin": [
-                        0.5,
-                        1
-                    ],
                     "depth": 0,
                     "scale": 0.224,
                     "visible": true
@@ -1469,10 +1297,6 @@
                     "asset": "environments.buildings.guild",
                     "x": 455,
                     "y": 700,
-                    "origin": [
-                        0.5,
-                        1
-                    ],
                     "depth": 0,
                     "scale": 0.224,
                     "visible": true
@@ -1482,10 +1306,6 @@
                     "asset": "environments.buildings.tavern",
                     "x": 655,
                     "y": 665,
-                    "origin": [
-                        0.5,
-                        1
-                    ],
                     "depth": 0,
                     "scale": 0.224,
                     "visible": true
@@ -1495,10 +1315,6 @@
                     "asset": "environments.buildings.shop",
                     "x": 880,
                     "y": 670,
-                    "origin": [
-                        0.5,
-                        1
-                    ],
                     "depth": 0,
                     "scale": 0.184,
                     "visible": true
@@ -1511,10 +1327,6 @@
                     "width": 1280,
                     "height": 70,
                     "depth": 5,
-                    "origin": [
-                        0,
-                        1
-                    ],
                     "visible": true
                 }
             ],
@@ -1532,10 +1344,6 @@
                     "asset": "ui.containers.empty",
                     "x": 640,
                     "y": 360,
-                    "origin": [
-                        0.5,
-                        0.5
-                    ],
                     "depth": 500,
                     "visible": true
                 },
@@ -1548,10 +1356,6 @@
                     "events": {
                         "click": "onBackToTown"
                     },
-                    "origin": [
-                        0.5,
-                        0.5
-                    ],
                     "depth": 80,
                     "visible": true
                 }
@@ -1570,10 +1374,6 @@
                     "y": 360,
                     "width": 1280,
                     "height": 720,
-                    "origin": [
-                        0.5,
-                        0.5
-                    ],
                     "depth": -10,
                     "visible": true
                 },
@@ -1584,10 +1384,6 @@
                     "y": 360,
                     "width": 1280,
                     "height": 720,
-                    "origin": [
-                        0.5,
-                        0.5
-                    ],
                     "depth": -5,
                     "visible": true
                 }
@@ -1599,10 +1395,6 @@
                     "x": 640,
                     "y": 40,
                     "text": "TESTING - ČARODĚJNICE",
-                    "origin": [
-                        0.5,
-                        0.5
-                    ],
                     "depth": 10,
                     "visible": true
                 },
@@ -1614,10 +1406,6 @@
                     "events": {
                         "click": "enterScene:TestingTownScene"
                     },
-                    "origin": [
-                        0.5,
-                        0.5
-                    ],
                     "depth": 50,
                     "visible": true
                 }
