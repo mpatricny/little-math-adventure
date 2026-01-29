@@ -1,1488 +1,1488 @@
 {
-    "scenes": {
-        "SaveSlotScene": {
-            "viewport": {
-                "width": 1280,
-                "height": 720
-            },
-            "ui": [
-                {
-                    "id": "title",
-                    "asset": "ui.labels.title-label",
-                    "x": 640,
-                    "y": 60,
-                    "text": "ULOZENE HRY",
-                    "depth": 10,
-                    "visible": true
-                },
-                {
-                    "id": "arrowLeft",
-                    "asset": "ui.buttons.back-button",
-                    "x": 200,
-                    "y": 360,
-                    "text": "<",
-                    "events": {
-                        "click": "onPrevSlot"
-                    },
-                    "depth": 50,
-                    "visible": true
-                },
-                {
-                    "id": "arrowRight",
-                    "asset": "ui.buttons.back-button",
-                    "x": 1080,
-                    "y": 360,
-                    "text": ">",
-                    "events": {
-                        "click": "onNextSlot"
-                    },
-                    "depth": 50,
-                    "visible": true
-                },
-                {
-                    "id": "slotCard",
-                    "asset": "ui.panels.dialog-panel",
-                    "x": 640,
-                    "y": 350,
-                    "width": 400,
-                    "height": 380,
-                    "depth": 5,
-                    "visible": true
-                },
-                {
-                    "id": "slotNumber",
-                    "asset": "ui.labels.title-label",
-                    "x": 640,
-                    "y": 140,
-                    "text": "SLOT 1/8",
-                    "depth": 10,
-                    "visible": true
-                },
-                {
-                    "id": "characterPreview",
-                    "asset": "ui.containers.empty",
-                    "x": 640,
-                    "y": 280,
-                    "depth": 10,
-                    "visible": true
-                },
-                {
-                    "id": "emptySlotText",
-                    "asset": "ui.labels.title-label",
-                    "x": 640,
-                    "y": 320,
-                    "text": "PRAZDNY SLOT",
-                    "visible": false,
-                    "depth": 10
-                },
-                {
-                    "id": "characterName",
-                    "asset": "ui.labels.gold-label",
-                    "x": 640,
-                    "y": 400,
-                    "text": "",
-                    "depth": 10,
-                    "visible": true
-                },
-                {
-                    "id": "characterLevel",
-                    "asset": "ui.labels.gold-label",
-                    "x": 640,
-                    "y": 430,
-                    "text": "",
-                    "depth": 10,
-                    "visible": true
-                },
-                {
-                    "id": "problemsSolved",
-                    "asset": "ui.labels.gold-label",
-                    "x": 640,
-                    "y": 460,
-                    "text": "",
-                    "depth": 10,
-                    "visible": true
-                },
-                {
-                    "id": "btnPlay",
-                    "asset": "ui.buttons.attack-button",
-                    "x": 540,
-                    "y": 570,
-                    "text": "HRAT",
-                    "events": {
-                        "click": "onPlay"
-                    },
-                    "depth": 50,
-                    "visible": true
-                },
-                {
-                    "id": "btnDelete",
-                    "asset": "ui.buttons.back-button",
-                    "x": 740,
-                    "y": 570,
-                    "text": "SMAZAT",
-                    "events": {
-                        "click": "onDelete"
-                    },
-                    "depth": 50,
-                    "visible": true
-                },
-                {
-                    "id": "btnBack",
-                    "asset": "ui.buttons.back-button",
-                    "x": 640,
-                    "y": 660,
-                    "text": "ZPET",
-                    "events": {
-                        "click": "onBack"
-                    },
-                    "depth": 50,
-                    "visible": true
-                },
-                {
-                    "id": "deleteOverlay",
-                    "asset": "ui.panels.dark-overlay",
-                    "x": 640,
-                    "y": 360,
-                    "width": 1280,
-                    "height": 720,
-                    "visible": false,
-                    "depth": 100
-                },
-                {
-                    "id": "deleteDialog",
-                    "asset": "ui.panels.dialog-panel",
-                    "x": 640,
-                    "y": 360,
-                    "width": 400,
-                    "height": 200,
-                    "visible": false,
-                    "depth": 101
-                },
-                {
-                    "id": "deleteTitle",
-                    "asset": "ui.labels.title-label",
-                    "x": 640,
-                    "y": 300,
-                    "text": "SMAZAT POSTAVU?",
-                    "visible": false,
-                    "depth": 102
-                },
-                {
-                    "id": "btnConfirmDelete",
-                    "asset": "ui.buttons.attack-button",
-                    "x": 570,
-                    "y": 400,
-                    "text": "ANO",
-                    "visible": false,
-                    "events": {
-                        "click": "onConfirmDelete"
-                    },
-                    "depth": 102
-                },
-                {
-                    "id": "btnCancelDelete",
-                    "asset": "ui.buttons.back-button",
-                    "x": 710,
-                    "y": 400,
-                    "text": "NE",
-                    "visible": false,
-                    "events": {
-                        "click": "onCancelDelete"
-                    },
-                    "depth": 102
-                }
-            ]
+  "scenes": {
+    "SaveSlotScene": {
+      "viewport": {
+        "width": 1280,
+        "height": 720
+      },
+      "ui": [
+        {
+          "id": "title",
+          "asset": "ui.labels.title-label",
+          "x": 640,
+          "y": 60,
+          "text": "ULOZENE HRY",
+          "depth": 10,
+          "visible": true
         },
-        "CharacterSelectScene": {
-            "viewport": {
-                "width": 1280,
-                "height": 720
-            },
-            "ui": [
-                {
-                    "id": "title",
-                    "asset": "ui.labels.title-label",
-                    "x": 640,
-                    "y": 80,
-                    "text": "VYBER SI POSTAVU",
-                    "depth": 10,
-                    "visible": true
-                },
-                {
-                    "id": "girlKnightPreview",
-                    "asset": "ui.containers.empty",
-                    "x": 400,
-                    "y": 400,
-                    "depth": 10,
-                    "visible": true
-                },
-                {
-                    "id": "boyKnightPreview",
-                    "asset": "ui.containers.empty",
-                    "x": 880,
-                    "y": 400,
-                    "depth": 10,
-                    "visible": true
-                },
-                {
-                    "id": "girlLabel",
-                    "asset": "ui.labels.building-label",
-                    "x": 400,
-                    "y": 550,
-                    "text": "RYTÍŘKA",
-                    "depth": 10,
-                    "visible": true
-                },
-                {
-                    "id": "boyLabel",
-                    "asset": "ui.labels.building-label",
-                    "x": 880,
-                    "y": 550,
-                    "text": "RYTÍŘ",
-                    "depth": 10,
-                    "visible": true
-                },
-                {
-                    "id": "nameInputLabel",
-                    "asset": "ui.labels.building-label",
-                    "x": 640,
-                    "y": 575,
-                    "text": "JMENO:",
-                    "depth": 10,
-                    "visible": true
-                },
-                {
-                    "id": "nameInputContainer",
-                    "asset": "ui.containers.empty",
-                    "x": 640,
-                    "y": 605,
-                    "depth": 10,
-                    "visible": true
-                },
-                {
-                    "id": "btnConfirm",
-                    "asset": "ui.buttons.attack-button",
-                    "x": 640,
-                    "y": 660,
-                    "text": "POTVRDIT",
-                    "events": {
-                        "click": "onConfirm"
-                    },
-                    "depth": 50,
-                    "visible": true
-                },
-                {
-                    "id": "btnBack",
-                    "asset": "ui.buttons.back-button",
-                    "x": 100,
-                    "y": 700,
-                    "text": "ZPĚT",
-                    "events": {
-                        "click": "onBack"
-                    },
-                    "depth": 50,
-                    "visible": true
-                }
-            ]
+        {
+          "id": "arrowLeft",
+          "asset": "ui.buttons.back-button",
+          "x": 200,
+          "y": 360,
+          "text": "<",
+          "events": {
+            "click": "onPrevSlot"
+          },
+          "depth": 50,
+          "visible": true
         },
-        "MenuScene": {
-            "viewport": {
-                "width": 1280,
-                "height": 720
-            },
-            "ui": [
-                {
-                    "id": "title",
-                    "asset": "ui.labels.game-title",
-                    "x": 640,
-                    "y": 180
-                },
-                {
-                    "id": "subtitle",
-                    "asset": "ui.labels.game-subtitle",
-                    "x": 640,
-                    "y": 230
-                },
-                {
-                    "id": "btnContinue",
-                    "asset": "ui.buttons.attack-button",
-                    "x": 640,
-                    "y": 360,
-                    "text": "$ui.buttons.BTN_004",
-                    "events": {
-                        "click": "onContinue"
-                    },
-                    "visible": false
-                },
-                {
-                    "id": "btnNewGame",
-                    "asset": "ui.buttons.attack-button",
-                    "x": 640,
-                    "y": 420,
-                    "text": "$ui.buttons.BTN_005",
-                    "events": {
-                        "click": "onNewGame"
-                    }
-                },
-                {
-                    "id": "btnTestScene",
-                    "asset": "ui.buttons.attack-button",
-                    "x": 640,
-                    "y": 480,
-                    "text": "Test Scene",
-                    "events": {
-                        "click": "onTestScene"
-                    }
-                }
-            ]
+        {
+          "id": "arrowRight",
+          "asset": "ui.buttons.back-button",
+          "x": 1080,
+          "y": 360,
+          "text": ">",
+          "events": {
+            "click": "onNextSlot"
+          },
+          "depth": 50,
+          "visible": true
         },
-        "BattleScene": {
-            "viewport": {
-                "width": 1280,
-                "height": 720
-            },
-            "elements": [
-                {
-                    "id": "bg",
-                    "asset": "environments.backgrounds.battle-field",
-                    "x": 640,
-                    "y": 360,
-                    "depth": -10,
-                    "scale": 1,
-                    "visible": true
-                }
-            ],
-            "zones": [
-                {
-                    "id": "playerSpawn",
-                    "zone": "zones.spawns.player-spawn-battle",
-                    "x": 300,
-                    "y": 480
-                },
-                {
-                    "id": "enemySpawn",
-                    "zone": "zones.spawns.enemy-spawn-battle",
-                    "x": 900,
-                    "y": 480
-                }
-            ],
-            "ui": [
-                {
-                    "id": "attackBtn",
-                    "asset": "ui.buttons.attack-button",
-                    "x": 640,
-                    "y": 660,
-                    "events": {
-                        "click": "onAttack"
-                    },
-                    "depth": 50,
-                    "scale": 1,
-                    "visible": true
-                },
-                {
-                    "id": "potionBtn",
-                    "asset": "ui.containers.empty",
-                    "x": 480,
-                    "y": 660,
-                    "depth": 0,
-                    "scale": 1,
-                    "visible": true
-                }
-            ],
-            "spawnPoints": {
-                "player": {
-                    "x": 300,
-                    "y": 480
-                },
-                "pet": {
-                    "x": 371,
-                    "y": 609
-                },
-                "enemies": {
-                    "1": [
-                        {
-                            "x": 900,
-                            "y": 480
-                        }
-                    ],
-                    "2": [
-                        {
-                            "x": 873,
-                            "y": 472
-                        },
-                        {
-                            "x": 970,
-                            "y": 560
-                        }
-                    ],
-                    "3": [
-                        {
-                            "x": 772,
-                            "y": 462
-                        },
-                        {
-                            "x": 845,
-                            "y": 574
-                        },
-                        {
-                            "x": 982,
-                            "y": 503
-                        }
-                    ]
-                }
-            }
+        {
+          "id": "slotCard",
+          "asset": "ui.panels.dialog-panel",
+          "x": 640,
+          "y": 350,
+          "width": 400,
+          "height": 380,
+          "depth": 5,
+          "visible": true
         },
-        "TownScene": {
-            "viewport": {
-                "width": 1280,
-                "height": 720
-            },
-            "elements": [
-                {
-                    "id": "bg",
-                    "asset": "environments.backgrounds.town",
-                    "x": 0,
-                    "y": 0,
-                    "depth": -10,
-                    "width": 1280,
-                    "height": 720,
-                    "visible": true
-                },
-                {
-                    "id": "bgGrass",
-                    "asset": "environments.terrain.grass-layer",
-                    "x": 0,
-                    "y": 648,
-                    "depth": -5,
-                    "width": 1280,
-                    "height": 80,
-                    "visible": true,
-                    "alpha": 0.8
-                },
-                {
-                    "id": "witch",
-                    "asset": "environments.buildings.witch-hut",
-                    "x": 220,
-                    "y": 670,
-                    "scale": 0.224,
-                    "visible": true
-                },
-                {
-                    "id": "guild",
-                    "asset": "environments.buildings.guild",
-                    "x": 455,
-                    "y": 700,
-                    "scale": 0.224,
-                    "visible": true
-                },
-                {
-                    "id": "tavern",
-                    "asset": "environments.buildings.tavern",
-                    "x": 655,
-                    "y": 665,
-                    "scale": 0.224,
-                    "visible": true
-                },
-                {
-                    "id": "shop",
-                    "asset": "environments.buildings.shop",
-                    "x": 880,
-                    "y": 670,
-                    "scale": 0.184,
-                    "visible": true
-                },
-                {
-                    "id": "fgGrass",
-                    "asset": "environments.terrain.grass-layer",
-                    "x": 0,
-                    "y": 710,
-                    "scaleX": 0.9999999999999997,
-                    "scaleY": 0.7155963302752293,
-                    "depth": 5,
-                    "visible": true
-                }
-            ],
-            "zones": [
-                {
-                    "id": "playerSpawn",
-                    "zone": "zones.spawns.player-spawn-town",
-                    "x": 80,
-                    "y": 615
-                }
-            ],
-            "ui": [
-                {
-                    "id": "witch-label",
-                    "asset": "ui.labels.building-label",
-                    "x": 220,
-                    "y": 430,
-                    "depth": 10,
-                    "text": "$buildings.BLD_001",
-                    "visible": true
-                },
-                {
-                    "id": "guild-label",
-                    "asset": "ui.labels.building-label",
-                    "x": 454,
-                    "y": 446,
-                    "depth": 10,
-                    "text": "$buildings.BLD_002",
-                    "visible": true
-                },
-                {
-                    "id": "tavern-label",
-                    "asset": "ui.labels.building-label",
-                    "x": 655,
-                    "y": 420,
-                    "depth": 10,
-                    "text": "$buildings.BLD_003",
-                    "visible": true
-                },
-                {
-                    "id": "shop-label",
-                    "asset": "ui.labels.building-label",
-                    "x": 882,
-                    "y": 442,
-                    "depth": 10,
-                    "text": "$buildings.BLD_004",
-                    "visible": true
-                },
-                {
-                    "id": "arena-label",
-                    "asset": "ui.labels.building-label",
-                    "x": 1220,
-                    "y": 410,
-                    "depth": 10,
-                    "text": "$ui.titles.TTL_001",
-                    "visible": true
-                },
-                {
-                    "id": "guild-notification",
-                    "asset": "ui.indicators.notification-badge",
-                    "x": 455,
-                    "y": 380,
-                    "depth": 80,
-                    "visible": false
-                },
-                {
-                    "id": "btnQuitToMenu",
-                    "asset": "ui.buttons.back-button",
-                    "x": 85,
-                    "y": 40,
-                    "depth": 80,
-                    "text": "MENU",
-                    "events": {
-                        "click": "onQuitToMenu"
-                    },
-                    "visible": true
-                }
-            ]
+        {
+          "id": "slotNumber",
+          "asset": "ui.labels.title-label",
+          "x": 640,
+          "y": 140,
+          "text": "SLOT 1/8",
+          "depth": 10,
+          "visible": true
         },
-        "WitchHutScene": {
-            "viewport": {
-                "width": 1280,
-                "height": 720
-            },
-            "elements": [
-                {
-                    "id": "interior",
-                    "asset": "environments.interiors.witch-hut-interior",
-                    "x": 640,
-                    "y": 360,
-                    "width": 1280,
-                    "height": 720
-                },
-                {
-                    "id": "overlay",
-                    "asset": "ui.panels.dark-overlay",
-                    "x": 640,
-                    "y": 360,
-                    "width": 1280,
-                    "height": 720
-                }
-            ],
-            "ui": [
-                {
-                    "id": "title",
-                    "asset": "ui.labels.title-label",
-                    "x": 640,
-                    "y": 40,
-                    "text": "$ui.titles.TTL_003"
-                },
-                {
-                    "id": "potionTitle",
-                    "asset": "ui.labels.title-label",
-                    "x": 280,
-                    "y": 160,
-                    "text": "LEKTVARY",
-                    "fontSize": "24px",
-                    "color": "#ff88ff"
-                },
-                {
-                    "id": "petsTitle",
-                    "asset": "ui.labels.title-label",
-                    "x": 800,
-                    "y": 140,
-                    "text": "$ui.titles.TTL_005",
-                    "fontSize": "24px",
-                    "color": "#ff88ff"
-                },
-                {
-                    "id": "potionPanel",
-                    "asset": "ui.containers.empty",
-                    "x": 280,
-                    "y": 280
-                },
-                {
-                    "id": "backBtn",
-                    "asset": "ui.buttons.back-button",
-                    "x": 640,
-                    "y": 630,
-                    "events": {
-                        "click": "enterScene:TownScene"
-                    }
-                }
-            ]
+        {
+          "id": "characterPreview",
+          "asset": "ui.containers.empty",
+          "x": 640,
+          "y": 280,
+          "depth": 10,
+          "visible": true
         },
-        "ShopScene": {
-            "viewport": {
-                "width": 1280,
-                "height": 720
-            },
-            "elements": [
-                {
-                    "id": "interior",
-                    "asset": "environments.interiors.shop-interior",
-                    "x": 640,
-                    "y": 360,
-                    "width": 1280,
-                    "height": 720,
-                    "depth": -10,
-                    "scale": 1,
-                    "visible": true
-                },
-                {
-                    "id": "tablePouch",
-                    "asset": "environments.props.shop-table-pouch",
-                    "x": 938,
-                    "y": 632,
-                    "scaleX": 0.851,
-                    "scaleY": 0.716,
-                    "depth": 5,
-                    "visible": true
-                },
-                {
-                    "id": "tableTop",
-                    "asset": "environments.props.shop-table-top",
-                    "x": 244,
-                    "y": 629,
-                    "scaleX": 0.767,
-                    "scaleY": 0.729,
-                    "depth": 5,
-                    "visible": true
-                },
-                {
-                    "id": "coinTray",
-                    "asset": "environments.props.shop-coin-tray",
-                    "x": 493,
-                    "y": 589,
-                    "scale": 0.368,
-                    "depth": 5,
-                    "visible": true
-                },
-                {
-                    "id": "closeButton",
-                    "asset": "closeButton",
-                    "x": 1137,
-                    "y": 697,
-                    "depth": 100,
-                    "scale": 1,
-                    "visible": true
-                }
-            ],
-            "ui": [
-                {
-                    "id": "backButton",
-                    "asset": "ui.buttons.back-button",
-                    "x": 100,
-                    "y": 670,
-                    "events": {
-                        "click": "enterScene:TownScene"
-                    }
-                },
-                {
-                    "id": "tabWeapons",
-                    "asset": "ui.buttons.shop-tab",
-                    "x": 120,
-                    "y": 50,
-                    "text": "MEČE",
-                    "depth": 20,
-                    "scale": 1,
-                    "visible": true
-                },
-                {
-                    "id": "tabShields",
-                    "asset": "ui.buttons.shop-tab",
-                    "x": 220,
-                    "y": 50,
-                    "text": "ŠTÍTY",
-                    "depth": 20,
-                    "scale": 1,
-                    "visible": true
-                },
-                {
-                    "id": "itemSlot0",
-                    "asset": "ui.buttons.shop-item-slot",
-                    "x": 80,
-                    "y": 120,
-                    "depth": 20,
-                    "scale": 1,
-                    "visible": true
-                },
-                {
-                    "id": "itemSlot1",
-                    "asset": "ui.buttons.shop-item-slot",
-                    "x": 160,
-                    "y": 120,
-                    "depth": 20,
-                    "scale": 1,
-                    "visible": true
-                },
-                {
-                    "id": "itemSlot2",
-                    "asset": "ui.buttons.shop-item-slot",
-                    "x": 240,
-                    "y": 120,
-                    "depth": 20,
-                    "scale": 1,
-                    "visible": true
-                },
-                {
-                    "id": "itemSlot3",
-                    "asset": "ui.buttons.shop-item-slot",
-                    "x": 320,
-                    "y": 120,
-                    "depth": 20,
-                    "scale": 1,
-                    "visible": true
-                },
-                {
-                    "id": "purchasePanel",
-                    "asset": "ui.panels.shop-purchase-panel",
-                    "x": 174,
-                    "y": 520,
-                    "width": 280,
-                    "height": 80,
-                    "visible": false,
-                    "depth": 25,
-                    "scale": 1
-                },
-                {
-                    "id": "purchaseName",
-                    "asset": "ui.labels.gold-label",
-                    "x": 175,
-                    "y": 502,
-                    "text": "",
-                    "visible": false,
-                    "depth": 26,
-                    "scale": 1
-                },
-                {
-                    "id": "purchasePrice",
-                    "asset": "ui.labels.gold-label",
-                    "x": 175,
-                    "y": 550,
-                    "text": "",
-                    "color": "#ffaa00",
-                    "visible": false,
-                    "depth": 26,
-                    "scale": 1
-                },
-                {
-                    "id": "labelPlayerCoins",
-                    "asset": "ui.labels.gold-label",
-                    "x": 912,
-                    "y": 502,
-                    "text": "TVOJE PENÍZE",
-                    "depth": 10,
-                    "scale": 1,
-                    "visible": true
-                },
-                {
-                    "id": "labelPayment",
-                    "asset": "ui.labels.gold-label",
-                    "x": 505,
-                    "y": 468,
-                    "text": "PLATBA",
-                    "depth": 10,
-                    "scale": 1,
-                    "visible": true
-                },
-                {
-                    "id": "labelTotal",
-                    "asset": "ui.labels.gold-label",
-                    "x": 449,
-                    "y": 669,
-                    "text": "CELKEM: 0 měďáků",
-                    "color": "#ffffff",
-                    "depth": 10,
-                    "scale": 1,
-                    "visible": true
-                },
-                {
-                    "id": "buyButton",
-                    "asset": "ui.buttons.buy-button",
-                    "x": 599,
-                    "y": 667,
-                    "events": {
-                        "click": "onBuy"
-                    },
-                    "depth": 20,
-                    "scale": 1,
-                    "visible": true
-                },
-                {
-                    "id": "strike0",
-                    "asset": "strike0",
-                    "x": 1150,
-                    "y": 70,
-                    "depth": 30,
-                    "scale": 1,
-                    "visible": true
-                },
-                {
-                    "id": "strike1",
-                    "asset": "strike1",
-                    "x": 1175,
-                    "y": 70,
-                    "depth": 30,
-                    "scale": 1,
-                    "visible": true
-                },
-                {
-                    "id": "strike2",
-                    "asset": "strike2",
-                    "x": 1200,
-                    "y": 70,
-                    "depth": 30,
-                    "scale": 1,
-                    "visible": true
-                }
-            ]
+        {
+          "id": "emptySlotText",
+          "asset": "ui.labels.title-label",
+          "x": 640,
+          "y": 320,
+          "text": "PRAZDNY SLOT",
+          "visible": false,
+          "depth": 10
         },
-        "GuildScene": {
-            "viewport": {
-                "width": 1280,
-                "height": 720
-            },
-            "elements": [
-                {
-                    "id": "interior",
-                    "asset": "environments.interiors.guild-interior",
-                    "x": 640,
-                    "y": 360,
-                    "depth": -10,
-                    "width": 1280,
-                    "height": 720,
-                    "visible": true
-                },
-                {
-                    "id": "overlay",
-                    "asset": "ui.panels.dark-overlay",
-                    "x": 640,
-                    "y": 360,
-                    "depth": -5,
-                    "width": 1280,
-                    "height": 720,
-                    "visible": true,
-                    "alpha": 0.3
-                },
-                {
-                    "id": "guildmaster",
-                    "asset": "characters.npcs.guildmaster",
-                    "x": 176,
-                    "y": 174,
-                    "scale": 0.4,
-                    "depth": 10,
-                    "visible": true
-                },
-                {
-                    "id": "resultsTable",
-                    "asset": "ui.tables.results-table",
-                    "x": 893,
-                    "y": 383,
-                    "scaleX": 1.5,
-                    "depth": 5,
-                    "visible": true
-                },
-                {
-                    "id": "listPanel",
-                    "asset": "ui.containers.empty",
-                    "x": 940,
-                    "y": 333,
-                    "depth": 6,
-                    "visible": true
-                }
-            ],
-            "ui": [
-                {
-                    "id": "title",
-                    "asset": "ui.labels.title-label",
-                    "x": 890,
-                    "y": 39,
-                    "depth": 10,
-                    "text": "PŘEHLED UČENÍ",
-                    "visible": true
-                },
-                {
-                    "id": "statsPanel",
-                    "asset": "ui.panels.info-panel",
-                    "x": 891,
-                    "y": 86,
-                    "depth": 5,
-                    "width": 300,
-                    "height": 50,
-                    "visible": true
-                },
-                {
-                    "id": "totalStatsPanel",
-                    "asset": "ui.panels.info-panel",
-                    "x": 848,
-                    "y": 577,
-                    "depth": 6,
-                    "width": 350,
-                    "height": 80,
-                    "visible": true
-                },
-                {
-                    "id": "collectButton",
-                    "asset": "ui.buttons.collect-button",
-                    "x": 1041,
-                    "y": 574,
-                    "depth": 15,
-                    "text": "SBÍRAT",
-                    "visible": true
-                },
-                {
-                    "id": "trialDialog",
-                    "asset": "ui.labels.title-label",
-                    "x": 203,
-                    "y": 267,
-                    "depth": 10,
-                    "text": "VIDÍM, ŽE JSI ZESÍLIL.\nUKAŽ MI, CO UMÍŠ!",
-                    "visible": false,
-                    "fontSize": "14px"
-                },
-                {
-                    "id": "trialStartButton",
-                    "asset": "ui.buttons.exam-button",
-                    "x": 210,
-                    "y": 410,
-                    "depth": 50,
-                    "text": "ZAČÍT ZKOUŠKU",
-                    "visible": false
-                },
-                {
-                    "id": "trialOverlay",
-                    "asset": "ui.panels.dark-overlay",
-                    "x": 640,
-                    "y": 360,
-                    "depth": -5,
-                    "width": 1280,
-                    "height": 720,
-                    "visible": false,
-                    "alpha": 0.9
-                },
-                {
-                    "id": "trialTitle",
-                    "asset": "ui.labels.title-label",
-                    "x": 640,
-                    "y": 110,
-                    "depth": 10,
-                    "text": "ZKOUŠKA HRDINY",
-                    "visible": false,
-                    "fontSize": "36px"
-                },
-                {
-                    "id": "timerFrame",
-                    "asset": "ui.frames.timer-frame",
-                    "x": 640,
-                    "y": 173,
-                    "scaleX": 0.606,
-                    "scaleY": 0.548,
-                    "depth": 200,
-                    "width": 365,
-                    "height": 91,
-                    "visible": false
-                },
-                {
-                    "id": "timerBar",
-                    "asset": "ui.bars.exam-timer-bar",
-                    "x": 639,
-                    "y": 175,
-                    "depth": 199,
-                    "width": 400,
-                    "height": 48,
-                    "visible": false
-                },
-                {
-                    "id": "scoreText",
-                    "asset": "ui.labels.title-label",
-                    "x": 640,
-                    "y": 240,
-                    "depth": 10,
-                    "text": "SKÓRE: 0 / 10",
-                    "visible": false,
-                    "fontSize": "24px"
-                },
-                {
-                    "id": "problemText",
-                    "asset": "ui.labels.title-label",
-                    "x": 640,
-                    "y": 360,
-                    "depth": 10,
-                    "text": "5 + 3 = ?",
-                    "visible": false,
-                    "fontSize": "64px"
-                },
-                {
-                    "id": "answerButton1",
-                    "asset": "ui.buttons.answer-button",
-                    "x": 490,
-                    "y": 480,
-                    "depth": 200,
-                    "text": "8",
-                    "visible": false
-                },
-                {
-                    "id": "answerButton2",
-                    "asset": "ui.buttons.answer-button",
-                    "x": 640,
-                    "y": 480,
-                    "depth": 200,
-                    "text": "7",
-                    "visible": false
-                },
-                {
-                    "id": "answerButton3",
-                    "asset": "ui.buttons.answer-button",
-                    "x": 790,
-                    "y": 480,
-                    "depth": 200,
-                    "text": "9",
-                    "visible": false
-                },
-                {
-                    "id": "resultsTitle",
-                    "asset": "ui.labels.title-label",
-                    "x": 640,
-                    "y": 260,
-                    "depth": 10,
-                    "text": "ZKOUŠKA SPLNĚNA!",
-                    "visible": false,
-                    "fontSize": "48px"
-                },
-                {
-                    "id": "resultsMessage",
-                    "asset": "ui.labels.title-label",
-                    "x": 774,
-                    "y": 361,
-                    "depth": 10,
-                    "text": "Gratuluji! Prokázal jsi své schopnosti.",
-                    "visible": false,
-                    "color": "#cccccc",
-                    "fontSize": "24px"
-                },
-                {
-                    "id": "continueButton",
-                    "asset": "ui.buttons.back-button",
-                    "x": 640,
-                    "y": 478,
-                    "depth": 50,
-                    "text": "POKRAČOVAT",
-                    "visible": false
-                },
-                {
-                    "id": "backButton",
-                    "asset": "ui.buttons.back-button",
-                    "x": 100,
-                    "y": 637,
-                    "depth": 50,
-                    "events": {
-                        "click": "enterScene:TownScene"
-                    },
-                    "visible": true
-                }
-            ]
+        {
+          "id": "characterName",
+          "asset": "ui.labels.gold-label",
+          "x": 640,
+          "y": 400,
+          "text": "",
+          "depth": 10,
+          "visible": true
         },
-        "TavernScene": {
-            "viewport": {
-                "width": 1280,
-                "height": 720
-            },
-            "elements": [
-                {
-                    "id": "interior",
-                    "asset": "environments.interiors.tavern-interior",
-                    "x": 640,
-                    "y": 360,
-                    "width": 1280,
-                    "height": 720
-                },
-                {
-                    "id": "overlay",
-                    "asset": "ui.panels.dark-overlay",
-                    "x": 640,
-                    "y": 360,
-                    "width": 1280,
-                    "height": 720,
-                    "alpha": 0.5
-                }
-            ],
-            "ui": [
-                {
-                    "id": "title",
-                    "asset": "ui.labels.title-label",
-                    "x": 640,
-                    "y": 50,
-                    "text": "HOSPODA - TRANSMUTACE"
-                },
-                {
-                    "id": "backButton",
-                    "asset": "ui.buttons.back-button",
-                    "x": 100,
-                    "y": 670,
-                    "events": {
-                        "click": "enterScene:TownScene"
-                    }
-                }
-            ]
+        {
+          "id": "characterLevel",
+          "asset": "ui.labels.gold-label",
+          "x": 640,
+          "y": 430,
+          "text": "",
+          "depth": 10,
+          "visible": true
         },
-        "ArenaScene": {
-            "viewport": {
-                "width": 1280,
-                "height": 720
-            },
-            "elements": [
-                {
-                    "id": "bg",
-                    "asset": "environments.backgrounds.arena",
-                    "x": 640,
-                    "y": 360,
-                    "depth": -10,
-                    "scale": 1,
-                    "visible": true
-                }
-            ],
-            "ui": [
-                {
-                    "id": "waveText",
-                    "asset": "ui.labels.title-label",
-                    "x": 889,
-                    "y": 204,
-                    "text": "VLNA 1",
-                    "color": "#ffffff",
-                    "depth": 10,
-                    "scale": 1,
-                    "visible": true
-                },
-                {
-                    "id": "startBattleButton",
-                    "asset": "ui.buttons.attack-button",
-                    "x": 890,
-                    "y": 655,
-                    "text": "ZAČÍT BOJ",
-                    "events": {
-                        "click": "startBattle"
-                    },
-                    "depth": 50,
-                    "scale": 1,
-                    "visible": true
-                },
-                {
-                    "id": "leaveButton",
-                    "asset": "ui.buttons.back-button",
-                    "x": 1065,
-                    "y": 655,
-                    "text": "ODEJÍT",
-                    "events": {
-                        "click": "leaveArena"
-                    },
-                    "depth": 50,
-                    "scale": 1,
-                    "visible": true
-                }
-            ],
-            "spawnPoints": {
-                "player": {
-                    "x": 216,
-                    "y": 563
-                },
-                "pet": {
-                    "x": 303,
-                    "y": 674
-                },
-                "enemies": {
-                    "1": [
-                        {
-                            "x": 892,
-                            "y": 457
-                        }
-                    ],
-                    "2": [
-                        {
-                            "x": 771,
-                            "y": 452
-                        },
-                        {
-                            "x": 1001,
-                            "y": 445
-                        }
-                    ],
-                    "3": [
-                        {
-                            "x": 887,
-                            "y": 449
-                        },
-                        {
-                            "x": 414,
-                            "y": 359
-                        },
-                        {
-                            "x": 1068,
-                            "y": 460
-                        }
-                    ]
-                }
-            }
+        {
+          "id": "problemsSolved",
+          "asset": "ui.labels.gold-label",
+          "x": 640,
+          "y": 460,
+          "text": "",
+          "depth": 10,
+          "visible": true
         },
-        "TestingTownScene": {
-            "viewport": {
-                "width": 1280,
-                "height": 720
-            },
-            "elements": [
-                {
-                    "id": "bg",
-                    "asset": "environments.backgrounds.town",
-                    "x": 0,
-                    "y": 0,
-                    "width": 1280,
-                    "height": 720,
-                    "depth": -10,
-                    "visible": true
-                },
-                {
-                    "id": "bgGrass",
-                    "asset": "environments.terrain.grass-layer",
-                    "x": 0,
-                    "y": 685,
-                    "width": 1280,
-                    "height": 80,
-                    "depth": -5,
-                    "alpha": 0.8,
-                    "visible": true
-                },
-                {
-                    "id": "witch",
-                    "asset": "environments.buildings.witch-hut",
-                    "x": 220,
-                    "y": 670,
-                    "depth": 0,
-                    "scale": 0.224,
-                    "visible": true
-                },
-                {
-                    "id": "guild",
-                    "asset": "environments.buildings.guild",
-                    "x": 455,
-                    "y": 700,
-                    "depth": 0,
-                    "scale": 0.224,
-                    "visible": true
-                },
-                {
-                    "id": "tavern",
-                    "asset": "environments.buildings.tavern",
-                    "x": 655,
-                    "y": 665,
-                    "depth": 0,
-                    "scale": 0.224,
-                    "visible": true
-                },
-                {
-                    "id": "shop",
-                    "asset": "environments.buildings.shop",
-                    "x": 880,
-                    "y": 670,
-                    "depth": 0,
-                    "scale": 0.184,
-                    "visible": true
-                },
-                {
-                    "id": "fgGrass",
-                    "asset": "environments.terrain.grass-layer",
-                    "x": 0,
-                    "y": 705,
-                    "width": 1280,
-                    "height": 70,
-                    "depth": 5,
-                    "visible": true
-                }
-            ],
-            "zones": [
-                {
-                    "id": "playerSpawn",
-                    "zone": "zones.spawns.player-spawn-town",
-                    "x": 80,
-                    "y": 615
-                }
-            ],
-            "ui": [
-                {
-                    "id": "testingLabel",
-                    "asset": "ui.containers.empty",
-                    "x": 640,
-                    "y": 360,
-                    "depth": 500,
-                    "visible": true
-                },
-                {
-                    "id": "btnBackToTown",
-                    "asset": "ui.buttons.back-button",
-                    "x": 60,
-                    "y": 40,
-                    "text": "ZPĚT",
-                    "events": {
-                        "click": "onBackToTown"
-                    },
-                    "depth": 80,
-                    "visible": true
-                }
-            ]
+        {
+          "id": "btnPlay",
+          "asset": "ui.buttons.attack-button",
+          "x": 540,
+          "y": 570,
+          "text": "HRAT",
+          "events": {
+            "click": "onPlay"
+          },
+          "depth": 50,
+          "visible": true
         },
-        "TestingWitchHutScene": {
-            "viewport": {
-                "width": 1280,
-                "height": 720
-            },
-            "elements": [
-                {
-                    "id": "interior",
-                    "asset": "environments.interiors.witch-hut-interior",
-                    "x": 640,
-                    "y": 360,
-                    "width": 1280,
-                    "height": 720,
-                    "depth": -10,
-                    "visible": true
-                },
-                {
-                    "id": "overlay",
-                    "asset": "ui.panels.dark-overlay",
-                    "x": 640,
-                    "y": 360,
-                    "width": 1280,
-                    "height": 720,
-                    "depth": -5,
-                    "visible": true
-                }
-            ],
-            "ui": [
-                {
-                    "id": "title",
-                    "asset": "ui.labels.title-label",
-                    "x": 640,
-                    "y": 40,
-                    "text": "TESTING - ČARODĚJNICE",
-                    "depth": 10,
-                    "visible": true
-                },
-                {
-                    "id": "backBtn",
-                    "asset": "ui.buttons.back-button",
-                    "x": 640,
-                    "y": 630,
-                    "events": {
-                        "click": "enterScene:TestingTownScene"
-                    },
-                    "depth": 50,
-                    "visible": true
-                }
-            ]
+        {
+          "id": "btnDelete",
+          "asset": "ui.buttons.back-button",
+          "x": 740,
+          "y": 570,
+          "text": "SMAZAT",
+          "events": {
+            "click": "onDelete"
+          },
+          "depth": 50,
+          "visible": true
         },
-        "AssetFactoryTestScene": {
-            "viewport": {
-                "width": 1280,
-                "height": 720
-            },
-            "elements": [],
-            "ui": [
-                {
-                    "id": "Arrow",
-                    "asset": "misc.arrow",
-                    "x": 288,
-                    "y": 320,
-                    "uiElement": {
-                        "templateId": "1768918531203-8o2htxgfn"
-                    },
-                    "visible": true
-                },
-                {
-                    "id": "Green_button",
-                    "asset": "Green_button",
-                    "x": 415,
-                    "y": 543,
-                    "uiElement": {
-                        "templateId": "1768922130266-28htorb5x"
-                    }
-                },
-                {
-                    "id": "Arrow_1",
-                    "asset": "Arrow",
-                    "x": 1072,
-                    "y": 348,
-                    "flipX": true,
-                    "uiElement": {
-                        "templateId": "1768918531203-8o2htxgfn"
-                    }
-                },
-                {
-                    "id": "Back button",
-                    "asset": "Back button",
-                    "x": 179,
-                    "y": 635,
-                    "uiElement": {
-                        "templateId": "1768730825297-e6lnuaoyj"
-                    }
-                },
-                {
-                    "id": "Character select",
-                    "asset": "Character select",
-                    "x": 780,
-                    "y": 319,
-                    "uiElement": {
-                        "templateId": "1768919608689-8otqazir2"
-                    }
-                },
-                {
-                    "id": "Back button_1",
-                    "asset": "Back button",
-                    "x": 158,
-                    "y": 427,
-                    "uiElement": {
-                        "templateId": "1768730825297-e6lnuaoyj"
-                    }
-                }
-            ]
+        {
+          "id": "btnBack",
+          "asset": "ui.buttons.back-button",
+          "x": 640,
+          "y": 660,
+          "text": "ZPET",
+          "events": {
+            "click": "onBack"
+          },
+          "depth": 50,
+          "visible": true
         },
-        "TestScene": {
-            "viewport": {
-                "width": 1280,
-                "height": 720
-            },
-            "elements": [],
-            "ui": []
+        {
+          "id": "deleteOverlay",
+          "asset": "ui.panels.dark-overlay",
+          "x": 640,
+          "y": 360,
+          "width": 1280,
+          "height": 720,
+          "visible": false,
+          "depth": 100
+        },
+        {
+          "id": "deleteDialog",
+          "asset": "ui.panels.dialog-panel",
+          "x": 640,
+          "y": 360,
+          "width": 400,
+          "height": 200,
+          "visible": false,
+          "depth": 101
+        },
+        {
+          "id": "deleteTitle",
+          "asset": "ui.labels.title-label",
+          "x": 640,
+          "y": 300,
+          "text": "SMAZAT POSTAVU?",
+          "visible": false,
+          "depth": 102
+        },
+        {
+          "id": "btnConfirmDelete",
+          "asset": "ui.buttons.attack-button",
+          "x": 570,
+          "y": 400,
+          "text": "ANO",
+          "visible": false,
+          "events": {
+            "click": "onConfirmDelete"
+          },
+          "depth": 102
+        },
+        {
+          "id": "btnCancelDelete",
+          "asset": "ui.buttons.back-button",
+          "x": 710,
+          "y": 400,
+          "text": "NE",
+          "visible": false,
+          "events": {
+            "click": "onCancelDelete"
+          },
+          "depth": 102
         }
+      ]
+    },
+    "CharacterSelectScene": {
+      "viewport": {
+        "width": 1280,
+        "height": 720
+      },
+      "ui": [
+        {
+          "id": "title",
+          "asset": "ui.labels.title-label",
+          "x": 640,
+          "y": 80,
+          "text": "VYBER SI POSTAVU",
+          "depth": 10,
+          "visible": true
+        },
+        {
+          "id": "girlKnightPreview",
+          "asset": "ui.containers.empty",
+          "x": 400,
+          "y": 400,
+          "depth": 10,
+          "visible": true
+        },
+        {
+          "id": "boyKnightPreview",
+          "asset": "ui.containers.empty",
+          "x": 880,
+          "y": 400,
+          "depth": 10,
+          "visible": true
+        },
+        {
+          "id": "girlLabel",
+          "asset": "ui.labels.building-label",
+          "x": 400,
+          "y": 550,
+          "text": "RYTÍŘKA",
+          "depth": 10,
+          "visible": true
+        },
+        {
+          "id": "boyLabel",
+          "asset": "ui.labels.building-label",
+          "x": 880,
+          "y": 550,
+          "text": "RYTÍŘ",
+          "depth": 10,
+          "visible": true
+        },
+        {
+          "id": "nameInputLabel",
+          "asset": "ui.labels.building-label",
+          "x": 640,
+          "y": 575,
+          "text": "JMENO:",
+          "depth": 10,
+          "visible": true
+        },
+        {
+          "id": "nameInputContainer",
+          "asset": "ui.containers.empty",
+          "x": 640,
+          "y": 605,
+          "depth": 10,
+          "visible": true
+        },
+        {
+          "id": "btnConfirm",
+          "asset": "ui.buttons.attack-button",
+          "x": 640,
+          "y": 660,
+          "text": "POTVRDIT",
+          "events": {
+            "click": "onConfirm"
+          },
+          "depth": 50,
+          "visible": true
+        },
+        {
+          "id": "btnBack",
+          "asset": "ui.buttons.back-button",
+          "x": 100,
+          "y": 700,
+          "text": "ZPĚT",
+          "events": {
+            "click": "onBack"
+          },
+          "depth": 50,
+          "visible": true
+        }
+      ]
+    },
+    "MenuScene": {
+      "viewport": {
+        "width": 1280,
+        "height": 720
+      },
+      "ui": [
+        {
+          "id": "title",
+          "asset": "ui.labels.game-title",
+          "x": 640,
+          "y": 180
+        },
+        {
+          "id": "subtitle",
+          "asset": "ui.labels.game-subtitle",
+          "x": 640,
+          "y": 230
+        },
+        {
+          "id": "btnContinue",
+          "asset": "ui.buttons.attack-button",
+          "x": 640,
+          "y": 360,
+          "text": "$ui.buttons.BTN_004",
+          "events": {
+            "click": "onContinue"
+          },
+          "visible": false
+        },
+        {
+          "id": "btnNewGame",
+          "asset": "ui.buttons.attack-button",
+          "x": 640,
+          "y": 420,
+          "text": "$ui.buttons.BTN_005",
+          "events": {
+            "click": "onNewGame"
+          }
+        },
+        {
+          "id": "btnTestScene",
+          "asset": "ui.buttons.attack-button",
+          "x": 640,
+          "y": 480,
+          "text": "Test Scene",
+          "events": {
+            "click": "onTestScene"
+          }
+        }
+      ]
+    },
+    "BattleScene": {
+      "viewport": {
+        "width": 1280,
+        "height": 720
+      },
+      "elements": [
+        {
+          "id": "bg",
+          "asset": "environments.backgrounds.battle-field",
+          "x": 640,
+          "y": 360,
+          "depth": -10,
+          "scale": 1,
+          "visible": true
+        }
+      ],
+      "zones": [
+        {
+          "id": "playerSpawn",
+          "zone": "zones.spawns.player-spawn-battle",
+          "x": 300,
+          "y": 480
+        },
+        {
+          "id": "enemySpawn",
+          "zone": "zones.spawns.enemy-spawn-battle",
+          "x": 900,
+          "y": 480
+        }
+      ],
+      "ui": [
+        {
+          "id": "attackBtn",
+          "asset": "ui.buttons.attack-button",
+          "x": 640,
+          "y": 660,
+          "events": {
+            "click": "onAttack"
+          },
+          "depth": 50,
+          "scale": 1,
+          "visible": true
+        },
+        {
+          "id": "potionBtn",
+          "asset": "ui.containers.empty",
+          "x": 480,
+          "y": 660,
+          "depth": 0,
+          "scale": 1,
+          "visible": true
+        }
+      ],
+      "spawnPoints": {
+        "player": {
+          "x": 300,
+          "y": 480
+        },
+        "pet": {
+          "x": 371,
+          "y": 609
+        },
+        "enemies": {
+          "1": [
+            {
+              "x": 900,
+              "y": 480
+            }
+          ],
+          "2": [
+            {
+              "x": 873,
+              "y": 472
+            },
+            {
+              "x": 970,
+              "y": 560
+            }
+          ],
+          "3": [
+            {
+              "x": 772,
+              "y": 462
+            },
+            {
+              "x": 845,
+              "y": 574
+            },
+            {
+              "x": 982,
+              "y": 503
+            }
+          ]
+        }
+      }
+    },
+    "TownScene": {
+      "viewport": {
+        "width": 1280,
+        "height": 720
+      },
+      "elements": [
+        {
+          "id": "bg",
+          "asset": "environments.backgrounds.town",
+          "x": 0,
+          "y": 0,
+          "depth": -10,
+          "width": 1280,
+          "height": 720,
+          "visible": true
+        },
+        {
+          "id": "bgGrass",
+          "asset": "environments.terrain.grass-layer",
+          "x": 0,
+          "y": 682,
+          "depth": -5,
+          "width": 1280,
+          "height": 80,
+          "visible": true,
+          "alpha": 0.8
+        },
+        {
+          "id": "witch",
+          "asset": "environments.buildings.witch-hut",
+          "x": 220,
+          "y": 670,
+          "scale": 0.224,
+          "visible": true
+        },
+        {
+          "id": "guild",
+          "asset": "environments.buildings.guild",
+          "x": 455,
+          "y": 700,
+          "scale": 0.224,
+          "visible": true
+        },
+        {
+          "id": "tavern",
+          "asset": "environments.buildings.tavern",
+          "x": 655,
+          "y": 665,
+          "scale": 0.224,
+          "visible": true
+        },
+        {
+          "id": "shop",
+          "asset": "environments.buildings.shop",
+          "x": 880,
+          "y": 670,
+          "scale": 0.184,
+          "visible": true
+        },
+        {
+          "id": "fgGrass",
+          "asset": "environments.terrain.grass-layer",
+          "x": 0,
+          "y": 706,
+          "scaleX": 0.9999999999999997,
+          "scaleY": 0.7155963302752293,
+          "depth": 5,
+          "visible": true
+        }
+      ],
+      "zones": [
+        {
+          "id": "playerSpawn",
+          "zone": "zones.spawns.player-spawn-town",
+          "x": 80,
+          "y": 615
+        }
+      ],
+      "ui": [
+        {
+          "id": "witch-label",
+          "asset": "ui.labels.building-label",
+          "x": 220,
+          "y": 430,
+          "depth": 10,
+          "text": "$buildings.BLD_001",
+          "visible": true
+        },
+        {
+          "id": "guild-label",
+          "asset": "ui.labels.building-label",
+          "x": 454,
+          "y": 446,
+          "depth": 10,
+          "text": "$buildings.BLD_002",
+          "visible": true
+        },
+        {
+          "id": "tavern-label",
+          "asset": "ui.labels.building-label",
+          "x": 655,
+          "y": 420,
+          "depth": 10,
+          "text": "$buildings.BLD_003",
+          "visible": true
+        },
+        {
+          "id": "shop-label",
+          "asset": "ui.labels.building-label",
+          "x": 882,
+          "y": 442,
+          "depth": 10,
+          "text": "$buildings.BLD_004",
+          "visible": true
+        },
+        {
+          "id": "arena-label",
+          "asset": "ui.labels.building-label",
+          "x": 1220,
+          "y": 410,
+          "depth": 10,
+          "text": "$ui.titles.TTL_001",
+          "visible": true
+        },
+        {
+          "id": "guild-notification",
+          "asset": "ui.indicators.notification-badge",
+          "x": 455,
+          "y": 380,
+          "depth": 80,
+          "visible": false
+        },
+        {
+          "id": "btnQuitToMenu",
+          "asset": "ui.buttons.back-button",
+          "x": 85,
+          "y": 40,
+          "depth": 80,
+          "text": "MENU",
+          "events": {
+            "click": "onQuitToMenu"
+          },
+          "visible": true
+        }
+      ]
+    },
+    "WitchHutScene": {
+      "viewport": {
+        "width": 1280,
+        "height": 720
+      },
+      "elements": [
+        {
+          "id": "interior",
+          "asset": "environments.interiors.witch-hut-interior",
+          "x": 640,
+          "y": 360,
+          "width": 1280,
+          "height": 720
+        },
+        {
+          "id": "overlay",
+          "asset": "ui.panels.dark-overlay",
+          "x": 640,
+          "y": 360,
+          "width": 1280,
+          "height": 720
+        }
+      ],
+      "ui": [
+        {
+          "id": "title",
+          "asset": "ui.labels.title-label",
+          "x": 640,
+          "y": 40,
+          "text": "$ui.titles.TTL_003"
+        },
+        {
+          "id": "potionTitle",
+          "asset": "ui.labels.title-label",
+          "x": 280,
+          "y": 160,
+          "text": "LEKTVARY",
+          "fontSize": "24px",
+          "color": "#ff88ff"
+        },
+        {
+          "id": "petsTitle",
+          "asset": "ui.labels.title-label",
+          "x": 800,
+          "y": 140,
+          "text": "$ui.titles.TTL_005",
+          "fontSize": "24px",
+          "color": "#ff88ff"
+        },
+        {
+          "id": "potionPanel",
+          "asset": "ui.containers.empty",
+          "x": 280,
+          "y": 280
+        },
+        {
+          "id": "backBtn",
+          "asset": "ui.buttons.back-button",
+          "x": 640,
+          "y": 630,
+          "events": {
+            "click": "enterScene:TownScene"
+          }
+        }
+      ]
+    },
+    "ShopScene": {
+      "viewport": {
+        "width": 1280,
+        "height": 720
+      },
+      "elements": [
+        {
+          "id": "interior",
+          "asset": "environments.interiors.shop-interior",
+          "x": 640,
+          "y": 360,
+          "width": 1280,
+          "height": 720,
+          "depth": -10,
+          "scale": 1,
+          "visible": true
+        },
+        {
+          "id": "tablePouch",
+          "asset": "environments.props.shop-table-pouch",
+          "x": 938,
+          "y": 632,
+          "scaleX": 0.851,
+          "scaleY": 0.716,
+          "depth": 5,
+          "visible": true
+        },
+        {
+          "id": "tableTop",
+          "asset": "environments.props.shop-table-top",
+          "x": 244,
+          "y": 629,
+          "scaleX": 0.767,
+          "scaleY": 0.729,
+          "depth": 5,
+          "visible": true
+        },
+        {
+          "id": "coinTray",
+          "asset": "environments.props.shop-coin-tray",
+          "x": 493,
+          "y": 589,
+          "scale": 0.368,
+          "depth": 5,
+          "visible": true
+        },
+        {
+          "id": "closeButton",
+          "asset": "closeButton",
+          "x": 1137,
+          "y": 697,
+          "depth": 100,
+          "scale": 1,
+          "visible": true
+        }
+      ],
+      "ui": [
+        {
+          "id": "backButton",
+          "asset": "ui.buttons.back-button",
+          "x": 100,
+          "y": 670,
+          "events": {
+            "click": "enterScene:TownScene"
+          }
+        },
+        {
+          "id": "tabWeapons",
+          "asset": "ui.buttons.shop-tab",
+          "x": 120,
+          "y": 50,
+          "text": "MEČE",
+          "depth": 20,
+          "scale": 1,
+          "visible": true
+        },
+        {
+          "id": "tabShields",
+          "asset": "ui.buttons.shop-tab",
+          "x": 220,
+          "y": 50,
+          "text": "ŠTÍTY",
+          "depth": 20,
+          "scale": 1,
+          "visible": true
+        },
+        {
+          "id": "itemSlot0",
+          "asset": "ui.buttons.shop-item-slot",
+          "x": 80,
+          "y": 120,
+          "depth": 20,
+          "scale": 1,
+          "visible": true
+        },
+        {
+          "id": "itemSlot1",
+          "asset": "ui.buttons.shop-item-slot",
+          "x": 160,
+          "y": 120,
+          "depth": 20,
+          "scale": 1,
+          "visible": true
+        },
+        {
+          "id": "itemSlot2",
+          "asset": "ui.buttons.shop-item-slot",
+          "x": 240,
+          "y": 120,
+          "depth": 20,
+          "scale": 1,
+          "visible": true
+        },
+        {
+          "id": "itemSlot3",
+          "asset": "ui.buttons.shop-item-slot",
+          "x": 320,
+          "y": 120,
+          "depth": 20,
+          "scale": 1,
+          "visible": true
+        },
+        {
+          "id": "purchasePanel",
+          "asset": "ui.panels.shop-purchase-panel",
+          "x": 174,
+          "y": 520,
+          "width": 280,
+          "height": 80,
+          "visible": false,
+          "depth": 25,
+          "scale": 1
+        },
+        {
+          "id": "purchaseName",
+          "asset": "ui.labels.gold-label",
+          "x": 175,
+          "y": 502,
+          "text": "",
+          "visible": false,
+          "depth": 26,
+          "scale": 1
+        },
+        {
+          "id": "purchasePrice",
+          "asset": "ui.labels.gold-label",
+          "x": 175,
+          "y": 550,
+          "text": "",
+          "color": "#ffaa00",
+          "visible": false,
+          "depth": 26,
+          "scale": 1
+        },
+        {
+          "id": "labelPlayerCoins",
+          "asset": "ui.labels.gold-label",
+          "x": 912,
+          "y": 502,
+          "text": "TVOJE PENÍZE",
+          "depth": 10,
+          "scale": 1,
+          "visible": true
+        },
+        {
+          "id": "labelPayment",
+          "asset": "ui.labels.gold-label",
+          "x": 505,
+          "y": 468,
+          "text": "PLATBA",
+          "depth": 10,
+          "scale": 1,
+          "visible": true
+        },
+        {
+          "id": "labelTotal",
+          "asset": "ui.labels.gold-label",
+          "x": 449,
+          "y": 669,
+          "text": "CELKEM: 0 měďáků",
+          "color": "#ffffff",
+          "depth": 10,
+          "scale": 1,
+          "visible": true
+        },
+        {
+          "id": "buyButton",
+          "asset": "ui.buttons.buy-button",
+          "x": 599,
+          "y": 667,
+          "events": {
+            "click": "onBuy"
+          },
+          "depth": 20,
+          "scale": 1,
+          "visible": true
+        },
+        {
+          "id": "strike0",
+          "asset": "strike0",
+          "x": 1150,
+          "y": 70,
+          "depth": 30,
+          "scale": 1,
+          "visible": true
+        },
+        {
+          "id": "strike1",
+          "asset": "strike1",
+          "x": 1175,
+          "y": 70,
+          "depth": 30,
+          "scale": 1,
+          "visible": true
+        },
+        {
+          "id": "strike2",
+          "asset": "strike2",
+          "x": 1200,
+          "y": 70,
+          "depth": 30,
+          "scale": 1,
+          "visible": true
+        }
+      ]
+    },
+    "GuildScene": {
+      "viewport": {
+        "width": 1280,
+        "height": 720
+      },
+      "elements": [
+        {
+          "id": "interior",
+          "asset": "environments.interiors.guild-interior",
+          "x": 640,
+          "y": 360,
+          "depth": -10,
+          "width": 1280,
+          "height": 720,
+          "visible": true
+        },
+        {
+          "id": "overlay",
+          "asset": "ui.panels.dark-overlay",
+          "x": 640,
+          "y": 360,
+          "depth": -5,
+          "width": 1280,
+          "height": 720,
+          "visible": true,
+          "alpha": 0.3
+        },
+        {
+          "id": "guildmaster",
+          "asset": "characters.npcs.guildmaster",
+          "x": 176,
+          "y": 174,
+          "scale": 0.4,
+          "depth": 10,
+          "visible": true
+        },
+        {
+          "id": "resultsTable",
+          "asset": "ui.tables.results-table",
+          "x": 893,
+          "y": 383,
+          "scaleX": 1.5,
+          "depth": 5,
+          "visible": true
+        },
+        {
+          "id": "listPanel",
+          "asset": "ui.containers.empty",
+          "x": 940,
+          "y": 333,
+          "depth": 6,
+          "visible": true
+        }
+      ],
+      "ui": [
+        {
+          "id": "title",
+          "asset": "ui.labels.title-label",
+          "x": 890,
+          "y": 39,
+          "depth": 10,
+          "text": "PŘEHLED UČENÍ",
+          "visible": true
+        },
+        {
+          "id": "statsPanel",
+          "asset": "ui.panels.info-panel",
+          "x": 891,
+          "y": 86,
+          "depth": 5,
+          "width": 300,
+          "height": 50,
+          "visible": true
+        },
+        {
+          "id": "totalStatsPanel",
+          "asset": "ui.panels.info-panel",
+          "x": 848,
+          "y": 577,
+          "depth": 6,
+          "width": 350,
+          "height": 80,
+          "visible": true
+        },
+        {
+          "id": "collectButton",
+          "asset": "ui.buttons.collect-button",
+          "x": 1041,
+          "y": 574,
+          "depth": 15,
+          "text": "SBÍRAT",
+          "visible": true
+        },
+        {
+          "id": "trialDialog",
+          "asset": "ui.labels.title-label",
+          "x": 203,
+          "y": 267,
+          "depth": 10,
+          "text": "VIDÍM, ŽE JSI ZESÍLIL.\nUKAŽ MI, CO UMÍŠ!",
+          "visible": false,
+          "fontSize": "14px"
+        },
+        {
+          "id": "trialStartButton",
+          "asset": "ui.buttons.exam-button",
+          "x": 210,
+          "y": 410,
+          "depth": 50,
+          "text": "ZAČÍT ZKOUŠKU",
+          "visible": false
+        },
+        {
+          "id": "trialOverlay",
+          "asset": "ui.panels.dark-overlay",
+          "x": 640,
+          "y": 360,
+          "depth": -5,
+          "width": 1280,
+          "height": 720,
+          "visible": false,
+          "alpha": 0.9
+        },
+        {
+          "id": "trialTitle",
+          "asset": "ui.labels.title-label",
+          "x": 640,
+          "y": 110,
+          "depth": 10,
+          "text": "ZKOUŠKA HRDINY",
+          "visible": false,
+          "fontSize": "36px"
+        },
+        {
+          "id": "timerFrame",
+          "asset": "ui.frames.timer-frame",
+          "x": 640,
+          "y": 173,
+          "scaleX": 0.606,
+          "scaleY": 0.548,
+          "depth": 200,
+          "width": 365,
+          "height": 91,
+          "visible": false
+        },
+        {
+          "id": "timerBar",
+          "asset": "ui.bars.exam-timer-bar",
+          "x": 639,
+          "y": 175,
+          "depth": 199,
+          "width": 400,
+          "height": 48,
+          "visible": false
+        },
+        {
+          "id": "scoreText",
+          "asset": "ui.labels.title-label",
+          "x": 640,
+          "y": 240,
+          "depth": 10,
+          "text": "SKÓRE: 0 / 10",
+          "visible": false,
+          "fontSize": "24px"
+        },
+        {
+          "id": "problemText",
+          "asset": "ui.labels.title-label",
+          "x": 640,
+          "y": 360,
+          "depth": 10,
+          "text": "5 + 3 = ?",
+          "visible": false,
+          "fontSize": "64px"
+        },
+        {
+          "id": "answerButton1",
+          "asset": "ui.buttons.answer-button",
+          "x": 490,
+          "y": 480,
+          "depth": 200,
+          "text": "8",
+          "visible": false
+        },
+        {
+          "id": "answerButton2",
+          "asset": "ui.buttons.answer-button",
+          "x": 640,
+          "y": 480,
+          "depth": 200,
+          "text": "7",
+          "visible": false
+        },
+        {
+          "id": "answerButton3",
+          "asset": "ui.buttons.answer-button",
+          "x": 790,
+          "y": 480,
+          "depth": 200,
+          "text": "9",
+          "visible": false
+        },
+        {
+          "id": "resultsTitle",
+          "asset": "ui.labels.title-label",
+          "x": 640,
+          "y": 260,
+          "depth": 10,
+          "text": "ZKOUŠKA SPLNĚNA!",
+          "visible": false,
+          "fontSize": "48px"
+        },
+        {
+          "id": "resultsMessage",
+          "asset": "ui.labels.title-label",
+          "x": 774,
+          "y": 361,
+          "depth": 10,
+          "text": "Gratuluji! Prokázal jsi své schopnosti.",
+          "visible": false,
+          "color": "#cccccc",
+          "fontSize": "24px"
+        },
+        {
+          "id": "continueButton",
+          "asset": "ui.buttons.back-button",
+          "x": 640,
+          "y": 478,
+          "depth": 50,
+          "text": "POKRAČOVAT",
+          "visible": false
+        },
+        {
+          "id": "backButton",
+          "asset": "ui.buttons.back-button",
+          "x": 100,
+          "y": 637,
+          "depth": 50,
+          "events": {
+            "click": "enterScene:TownScene"
+          },
+          "visible": true
+        }
+      ]
+    },
+    "TavernScene": {
+      "viewport": {
+        "width": 1280,
+        "height": 720
+      },
+      "elements": [
+        {
+          "id": "interior",
+          "asset": "environments.interiors.tavern-interior",
+          "x": 640,
+          "y": 360,
+          "width": 1280,
+          "height": 720
+        },
+        {
+          "id": "overlay",
+          "asset": "ui.panels.dark-overlay",
+          "x": 640,
+          "y": 360,
+          "width": 1280,
+          "height": 720,
+          "alpha": 0.5
+        }
+      ],
+      "ui": [
+        {
+          "id": "title",
+          "asset": "ui.labels.title-label",
+          "x": 640,
+          "y": 50,
+          "text": "HOSPODA - TRANSMUTACE"
+        },
+        {
+          "id": "backButton",
+          "asset": "ui.buttons.back-button",
+          "x": 100,
+          "y": 670,
+          "events": {
+            "click": "enterScene:TownScene"
+          }
+        }
+      ]
+    },
+    "ArenaScene": {
+      "viewport": {
+        "width": 1280,
+        "height": 720
+      },
+      "elements": [
+        {
+          "id": "bg",
+          "asset": "environments.backgrounds.arena",
+          "x": 640,
+          "y": 360,
+          "depth": -10,
+          "scale": 1,
+          "visible": true
+        }
+      ],
+      "ui": [
+        {
+          "id": "waveText",
+          "asset": "ui.labels.title-label",
+          "x": 889,
+          "y": 204,
+          "text": "VLNA 1",
+          "color": "#ffffff",
+          "depth": 10,
+          "scale": 1,
+          "visible": true
+        },
+        {
+          "id": "startBattleButton",
+          "asset": "ui.buttons.attack-button",
+          "x": 890,
+          "y": 655,
+          "text": "ZAČÍT BOJ",
+          "events": {
+            "click": "startBattle"
+          },
+          "depth": 50,
+          "scale": 1,
+          "visible": true
+        },
+        {
+          "id": "leaveButton",
+          "asset": "ui.buttons.back-button",
+          "x": 1065,
+          "y": 655,
+          "text": "ODEJÍT",
+          "events": {
+            "click": "leaveArena"
+          },
+          "depth": 50,
+          "scale": 1,
+          "visible": true
+        }
+      ],
+      "spawnPoints": {
+        "player": {
+          "x": 216,
+          "y": 563
+        },
+        "pet": {
+          "x": 303,
+          "y": 674
+        },
+        "enemies": {
+          "1": [
+            {
+              "x": 892,
+              "y": 457
+            }
+          ],
+          "2": [
+            {
+              "x": 771,
+              "y": 452
+            },
+            {
+              "x": 1001,
+              "y": 445
+            }
+          ],
+          "3": [
+            {
+              "x": 887,
+              "y": 449
+            },
+            {
+              "x": 414,
+              "y": 359
+            },
+            {
+              "x": 1068,
+              "y": 460
+            }
+          ]
+        }
+      }
+    },
+    "TestingTownScene": {
+      "viewport": {
+        "width": 1280,
+        "height": 720
+      },
+      "elements": [
+        {
+          "id": "bg",
+          "asset": "environments.backgrounds.town",
+          "x": 0,
+          "y": 0,
+          "width": 1280,
+          "height": 720,
+          "depth": -10,
+          "visible": true
+        },
+        {
+          "id": "bgGrass",
+          "asset": "environments.terrain.grass-layer",
+          "x": 0,
+          "y": 685,
+          "width": 1280,
+          "height": 80,
+          "depth": -5,
+          "alpha": 0.8,
+          "visible": true
+        },
+        {
+          "id": "witch",
+          "asset": "environments.buildings.witch-hut",
+          "x": 220,
+          "y": 670,
+          "depth": 0,
+          "scale": 0.224,
+          "visible": true
+        },
+        {
+          "id": "guild",
+          "asset": "environments.buildings.guild",
+          "x": 455,
+          "y": 700,
+          "depth": 0,
+          "scale": 0.224,
+          "visible": true
+        },
+        {
+          "id": "tavern",
+          "asset": "environments.buildings.tavern",
+          "x": 655,
+          "y": 665,
+          "depth": 0,
+          "scale": 0.224,
+          "visible": true
+        },
+        {
+          "id": "shop",
+          "asset": "environments.buildings.shop",
+          "x": 880,
+          "y": 670,
+          "depth": 0,
+          "scale": 0.184,
+          "visible": true
+        },
+        {
+          "id": "fgGrass",
+          "asset": "environments.terrain.grass-layer",
+          "x": 0,
+          "y": 705,
+          "width": 1280,
+          "height": 70,
+          "depth": 5,
+          "visible": true
+        }
+      ],
+      "zones": [
+        {
+          "id": "playerSpawn",
+          "zone": "zones.spawns.player-spawn-town",
+          "x": 80,
+          "y": 615
+        }
+      ],
+      "ui": [
+        {
+          "id": "testingLabel",
+          "asset": "ui.containers.empty",
+          "x": 640,
+          "y": 360,
+          "depth": 500,
+          "visible": true
+        },
+        {
+          "id": "btnBackToTown",
+          "asset": "ui.buttons.back-button",
+          "x": 60,
+          "y": 40,
+          "text": "ZPĚT",
+          "events": {
+            "click": "onBackToTown"
+          },
+          "depth": 80,
+          "visible": true
+        }
+      ]
+    },
+    "TestingWitchHutScene": {
+      "viewport": {
+        "width": 1280,
+        "height": 720
+      },
+      "elements": [
+        {
+          "id": "interior",
+          "asset": "environments.interiors.witch-hut-interior",
+          "x": 640,
+          "y": 360,
+          "width": 1280,
+          "height": 720,
+          "depth": -10,
+          "visible": true
+        },
+        {
+          "id": "overlay",
+          "asset": "ui.panels.dark-overlay",
+          "x": 640,
+          "y": 360,
+          "width": 1280,
+          "height": 720,
+          "depth": -5,
+          "visible": true
+        }
+      ],
+      "ui": [
+        {
+          "id": "title",
+          "asset": "ui.labels.title-label",
+          "x": 640,
+          "y": 40,
+          "text": "TESTING - ČARODĚJNICE",
+          "depth": 10,
+          "visible": true
+        },
+        {
+          "id": "backBtn",
+          "asset": "ui.buttons.back-button",
+          "x": 640,
+          "y": 630,
+          "events": {
+            "click": "enterScene:TestingTownScene"
+          },
+          "depth": 50,
+          "visible": true
+        }
+      ]
+    },
+    "AssetFactoryTestScene": {
+      "viewport": {
+        "width": 1280,
+        "height": 720
+      },
+      "elements": [],
+      "ui": [
+        {
+          "id": "Arrow",
+          "asset": "misc.arrow",
+          "x": 288,
+          "y": 320,
+          "uiElement": {
+            "templateId": "1768918531203-8o2htxgfn"
+          },
+          "visible": true
+        },
+        {
+          "id": "Green_button",
+          "asset": "Green_button",
+          "x": 415,
+          "y": 543,
+          "uiElement": {
+            "templateId": "1768922130266-28htorb5x"
+          }
+        },
+        {
+          "id": "Arrow_1",
+          "asset": "Arrow",
+          "x": 1072,
+          "y": 348,
+          "flipX": true,
+          "uiElement": {
+            "templateId": "1768918531203-8o2htxgfn"
+          }
+        },
+        {
+          "id": "Back button",
+          "asset": "Back button",
+          "x": 179,
+          "y": 635,
+          "uiElement": {
+            "templateId": "1768730825297-e6lnuaoyj"
+          }
+        },
+        {
+          "id": "Character select",
+          "asset": "Character select",
+          "x": 780,
+          "y": 319,
+          "uiElement": {
+            "templateId": "1768919608689-8otqazir2"
+          }
+        },
+        {
+          "id": "Back button_1",
+          "asset": "Back button",
+          "x": 158,
+          "y": 427,
+          "uiElement": {
+            "templateId": "1768730825297-e6lnuaoyj"
+          }
+        }
+      ]
+    },
+    "TestScene": {
+      "viewport": {
+        "width": 1280,
+        "height": 720
+      },
+      "elements": [],
+      "ui": []
     }
+  }
 }
