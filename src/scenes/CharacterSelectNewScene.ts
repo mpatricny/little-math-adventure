@@ -103,9 +103,12 @@ export class CharacterSelectNewScene extends Phaser.Scene {
     }
 
     private createNameInput(): void {
-        // Text 4 area: template (151+98, 390+15) = (249, 405) -> screen (638-250+249, 378-250+405) = (637, 533)
-        const inputX = 637;
-        const inputY = 533;
+        // Position adjusted to center in the wooden name frame
+        // The frame layer is at template bounds (113, 360, 280, 100)
+        // Frame center: (113+140, 360+50) = (253, 410) -> screen (638-250+253, 378-250+410) = (641, 538)
+        // Adjusted down slightly to visually center in the frame
+        const inputX = 640;
+        const inputY = 555;
 
         // Create HTML input element - transparent to blend with UI
         const inputHtml = `
@@ -115,8 +118,8 @@ export class CharacterSelectNewScene extends Phaser.Scene {
                    placeholder="Hrdina"
                    value="Hrdina"
                    style="
-                       width: 180px;
-                       font-size: 16px;
+                       width: 200px;
+                       font-size: 22px;
                        text-align: center;
                        padding: 4px 8px;
                        border: none;
