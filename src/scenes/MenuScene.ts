@@ -37,7 +37,7 @@ export class MenuScene extends Phaser.Scene {
         });
 
         this.sceneBuilder.registerHandler('onTestScene', () => {
-            this.scene.start('AssetFactoryTestScene');
+            this.scene.start('CharacterSelectNewScene');
         });
 
         // Build the scene from JSON
