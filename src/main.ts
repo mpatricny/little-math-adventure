@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import { BootScene, AssetLoaderScene } from './scenes/BootScene';
 import { MenuScene } from './scenes/MenuScene';
+import { MenuNewScene } from './scenes/MenuNewScene';
 import { SaveSlotScene } from './scenes/SaveSlotScene';
 import { CharacterSelectScene } from './scenes/CharacterSelectScene';
 import { CharacterSelectNewScene } from './scenes/CharacterSelectNewScene';
@@ -36,7 +37,7 @@ const config: Phaser.Types.Core.GameConfig = {
     dom: {
         createContainer: true
     },
-    scene: [BootScene, AssetLoaderScene, MenuScene, SaveSlotScene, CharacterSelectScene, CharacterSelectNewScene, TownScene, TestingTownScene, TestingWitchHutScene, BattleScene, ArenaScene, VictoryScene, WitchHutScene, ShopScene, GuildScene, TavernScene, MathBoardDebugScene, AssetFactoryTestScene],
+    scene: [BootScene, AssetLoaderScene, MenuScene, MenuNewScene, SaveSlotScene, CharacterSelectScene, CharacterSelectNewScene, TownScene, TestingTownScene, TestingWitchHutScene, BattleScene, ArenaScene, VictoryScene, WitchHutScene, ShopScene, GuildScene, TavernScene, MathBoardDebugScene, AssetFactoryTestScene],
 };
 
 new Phaser.Game(config);

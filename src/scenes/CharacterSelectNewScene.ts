@@ -39,7 +39,7 @@ export class CharacterSelectNewScene extends Phaser.Scene {
 
         // Register handlers before building
         this.sceneBuilder.registerHandler('onConfirm', () => this.confirmSelection());
-        this.sceneBuilder.registerHandler('onBack', () => this.scene.start('SaveSlotScene'));
+        this.sceneBuilder.registerHandler('onBack', () => this.scene.start('MenuNewScene'));
 
         // Build the scene from JSON
         this.sceneBuilder.buildScene('CharacterSelectNewScene');

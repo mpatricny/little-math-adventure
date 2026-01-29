@@ -20,7 +20,7 @@ export class MenuScene extends Phaser.Scene {
         // Register handlers before building
         this.sceneBuilder.registerHandler('onContinue', () => {
             // Go to save slot selection
-            this.scene.start('SaveSlotScene');
+            this.scene.start('MenuNewScene');
         });
 
         this.sceneBuilder.registerHandler('onNewGame', () => {
@@ -32,12 +32,12 @@ export class MenuScene extends Phaser.Scene {
                 this.scene.start('CharacterSelectNewScene', { slotIndex: firstEmptySlot });
             } else {
                 // All slots full - show save slot scene to let user manage slots
-                this.scene.start('SaveSlotScene');
+                this.scene.start('MenuNewScene');
             }
         });
 
         this.sceneBuilder.registerHandler('onTestScene', () => {
-            this.scene.start('CharacterSelectNewScene');
+            this.scene.start('MenuNewScene');
         });
 
         // Build the scene from JSON

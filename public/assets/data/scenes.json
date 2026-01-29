@@ -1546,29 +1546,37 @@
       },
       "elements": [
         {
-          "id": "New_game_background-1280",
-          "asset": "New_game_background-1280",
+          "id": "new-game-background-1280",
+          "asset": "misc.new-game-background-1280",
           "x": 640,
-          "y": 360
+          "y": 360,
+          "depth": -1
         }
       ],
       "ui": [
         {
           "id": "NewArrow",
           "asset": "misc.newarrow",
-          "x": 150,
+          "x": 169,
           "y": 330,
           "uiElement": {
             "templateId": "1769722721277-p7d9kn6kj"
+          },
+          "events": {
+            "click": "onPrevSlot"
           }
         },
         {
           "id": "NewArrow_1",
           "asset": "misc.newarrow-1",
-          "x": 576,
-          "y": 334,
+          "x": 556,
+          "y": 330,
+          "flipX": true,
           "uiElement": {
             "templateId": "1769722721277-p7d9kn6kj"
+          },
+          "events": {
+            "click": "onNextSlot"
           }
         },
         {
@@ -1583,35 +1591,44 @@
         {
           "id": "Green_button",
           "asset": "Green_button",
-          "x": 484,
+          "x": 501,
           "y": 510,
           "uiElement": {
             "templateId": "1768922130266-28htorb5x"
+          },
+          "events": {
+            "click": "onLoad"
           }
         },
         {
           "id": "Back button",
           "asset": "Back button",
-          "x": 339,
+          "x": 134,
           "y": 639,
           "uiElement": {
             "templateId": "1768730825297-e6lnuaoyj"
+          },
+          "events": {
+            "click": "onBack"
           }
         },
         {
           "id": "Red_button",
           "asset": "misc.red-button",
-          "x": 181,
-          "y": 514,
+          "x": 222,
+          "y": 512,
           "uiElement": {
             "templateId": "1769726663069-rpj2fcs8s"
+          },
+          "events": {
+            "click": "onDelete"
           }
         },
         {
           "id": "Load game",
           "asset": "misc.load-game",
           "x": 361,
-          "y": 112,
+          "y": 151,
           "uiElement": {
             "templateId": "1769727002078-pz315evpc"
           }
@@ -1619,8 +1636,8 @@
         {
           "id": "Slot",
           "asset": "misc.slot",
-          "x": 366,
-          "y": 351,
+          "x": 358,
+          "y": 349,
           "scale": 3,
           "uiElement": {
             "templateId": "1769727172111-u2xhyww60"
