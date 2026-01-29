@@ -61,6 +61,7 @@ export interface TextAreaConfig {
   fitMode: 'shrinkToFit' | 'wrap' | 'truncate' | 'overflow';
   defaultText: string;
   textStyle: TextStyleConfig;
+  parentLayerId?: string;  // Optional: layer whose effects this text inherits
 }
 
 export interface UiElementTemplate {

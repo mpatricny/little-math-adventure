@@ -157,11 +157,8 @@ export class UiElementBuilder {
     container.setData('layerObjects', layerObjects);
     container.setData('layers', template.layers);
 
-    // Set container size and make it interactive for click events
-    // NOTE: useHandCursor is FALSE - only individual layers show the hand cursor
-    // This prevents the hand cursor from appearing over the entire element area
+    // Set container size (no interactivity - only layers with effects are interactive)
     container.setSize(template.size.w, template.size.h);
-    container.setInteractive({ useHandCursor: false });
   }
 
   /**
@@ -178,6 +175,9 @@ export class UiElementBuilder {
     const originOffsetX = -origin[0] * template.size.w;
     const originOffsetY = -origin[1] * template.size.h;
     const localization = LocalizationService.getInstance();
+
+    // Store text objects for parent layer binding
+    const textObjects = new Map<string, { text: Phaser.GameObjects.Text; parentLayerId: string | null }>();
 
     for (const textArea of template.textAreas) {
       // Get text: override > defaultText
@@ -255,10 +255,18 @@ export class UiElementBuilder {
         text.setWordWrapWidth(textArea.bounds.w);
       }
 
-      // Store text area id for later access
+      // Store text area id and parent info
       text.setData('textAreaId', textArea.id);
+      textObjects.set(textArea.id, {
+        text,
+        parentLayerId: textArea.parentLayerId ?? null
+      });
+
       container.add(text);
     }
+
+    // Store text objects map on container for effect system
+    container.setData('textObjects', textObjects);
   }
 
   /**
@@ -310,6 +318,20 @@ export class UiElementBuilder {
     return nineSlice;
   }
 
+  /**
+   * Check if a layer has interactive effects (hover or pressed)
+   */
+  private layerHasInteractiveEffects(
+    layer: UiElementLayer,
+    templateEffects: { hover?: LayerVisualConfig; pressed?: LayerVisualConfig }
+  ): boolean {
+    // Layer has its own hover/pressed states?
+    const hasLayerEffects = !!(layer.states?.hover || layer.states?.pressed);
+    // Template has hover/pressed defaults?
+    const hasTemplateEffects = !!(templateEffects.hover || templateEffects.pressed);
+    return hasLayerEffects || hasTemplateEffects;
+  }
+
   private setupInteractivity(
     container: Phaser.GameObjects.Container,
     effectConfig: { normal?: LayerVisualConfig; hover?: LayerVisualConfig; pressed?: LayerVisualConfig },
@@ -319,12 +341,15 @@ export class UiElementBuilder {
     const layerObjects = container.getData('layerObjects') as Map<string, Phaser.GameObjects.Image | Phaser.GameObjects.NineSlice> | undefined;
     if (!layerObjects || !layers) return;
 
-    // Always apply effects to individual layers
+    // Only set up interactivity for layers that have hover/pressed effects
     for (const layer of layers) {
       const gameObj = layerObjects.get(layer.id);
       if (!gameObj) continue;
 
-      this.setupLayerInteractivity(gameObj, layer, effectConfig, animation);
+      // Skip layers without interactive effects
+      if (!this.layerHasInteractiveEffects(layer, effectConfig)) continue;
+
+      this.setupLayerInteractivity(gameObj, layer, effectConfig, animation, container);
     }
   }
 
@@ -336,16 +361,22 @@ export class UiElementBuilder {
     gameObj: Phaser.GameObjects.Image | Phaser.GameObjects.NineSlice,
     layer: UiElementLayer,
     templateEffects: { normal?: LayerVisualConfig; hover?: LayerVisualConfig; pressed?: LayerVisualConfig },
-    animation?: TemplateEffectConfig['animation']
+    animation?: TemplateEffectConfig['animation'],
+    container?: Phaser.GameObjects.Container
   ): void {
     // Make layer interactive
     gameObj.setInteractive({ useHandCursor: true });
+
+    // Get child text areas that inherit from this layer
+    const textObjects = container?.getData('textObjects') as Map<string, { text: Phaser.GameObjects.Text; parentLayerId: string | null }> | undefined;
+    const childTextAreas = this.getChildTextAreas(textObjects, layer.id);
 
     let isPressed = false;
 
     gameObj.on('pointerover', () => {
       if (!isPressed) {
         this.applyStateToLayer(gameObj, layer, 'hover', templateEffects, animation?.toHover);
+        this.applyStateToTextAreas(childTextAreas, layer, 'hover', templateEffects, animation?.toHover);
       }
     });
 
@@ -355,16 +386,19 @@ export class UiElementBuilder {
       const layerBase = this.getLayerBaseProps(gameObj);
       uiEffectSystem.resetToBase(gameObj, layerBase);
       this.applyStateToLayer(gameObj, layer, 'normal', templateEffects, animation?.toNormal);
+      this.resetTextAreas(childTextAreas, animation?.toNormal);
     });
 
     gameObj.on('pointerdown', () => {
       isPressed = true;
       this.applyStateToLayer(gameObj, layer, 'pressed', templateEffects, animation?.toPressed);
+      this.applyStateToTextAreas(childTextAreas, layer, 'pressed', templateEffects, animation?.toPressed);
     });
 
     gameObj.on('pointerup', () => {
       isPressed = false;
       this.applyStateToLayer(gameObj, layer, 'hover', templateEffects, animation?.toHover);
+      this.applyStateToTextAreas(childTextAreas, layer, 'hover', templateEffects, animation?.toHover);
     });
   }
 
@@ -423,6 +457,102 @@ export class UiElementBuilder {
       gameObj.setData('baseProps', baseProps);
     }
     return baseProps;
+  }
+
+  /**
+   * Get text areas that have the specified layer as their parent
+   */
+  private getChildTextAreas(
+    textObjects: Map<string, { text: Phaser.GameObjects.Text; parentLayerId: string | null }> | undefined,
+    layerId: string
+  ): { text: Phaser.GameObjects.Text; baseProps: BaseProps }[] {
+    if (!textObjects) return [];
+
+    const children: { text: Phaser.GameObjects.Text; baseProps: BaseProps }[] = [];
+    for (const [, info] of textObjects) {
+      if (info.parentLayerId === layerId) {
+        // Store base props on first access
+        let baseProps = info.text.getData('baseProps') as BaseProps | undefined;
+        if (!baseProps) {
+          baseProps = {
+            x: info.text.x,
+            y: info.text.y,
+            scaleX: info.text.scaleX,
+            scaleY: info.text.scaleY,
+            alpha: info.text.alpha
+          };
+          info.text.setData('baseProps', baseProps);
+        }
+        children.push({ text: info.text, baseProps });
+      }
+    }
+    return children;
+  }
+
+  /**
+   * Apply scale and offset effects to text areas (inheriting from parent layer)
+   */
+  private applyStateToTextAreas(
+    textAreas: { text: Phaser.GameObjects.Text; baseProps: BaseProps }[],
+    layer: UiElementLayer,
+    state: 'normal' | 'hover' | 'pressed',
+    templateEffects: { normal?: LayerVisualConfig; hover?: LayerVisualConfig; pressed?: LayerVisualConfig },
+    timing?: AnimationTiming
+  ): void {
+    if (textAreas.length === 0) return;
+
+    const layerConfig = layer.states?.[state];
+    const templateConfig = templateEffects[state];
+    const mergedConfig = { ...templateConfig, ...layerConfig };
+
+    const duration = timing?.duration ?? 150;
+    const ease = this.mapEasing(timing?.easing ?? 'easeOut');
+
+    // Only apply scale and offset to text (not brightness, tint, glow, etc.)
+    for (const { text, baseProps } of textAreas) {
+      this.scene.tweens.killTweensOf(text);
+
+      const targetScaleX = baseProps.scaleX * (mergedConfig.scale?.x ?? 1);
+      const targetScaleY = baseProps.scaleY * (mergedConfig.scale?.y ?? 1);
+      const targetX = baseProps.x + (mergedConfig.offset?.x ?? 0);
+      const targetY = baseProps.y + (mergedConfig.offset?.y ?? 0);
+
+      this.scene.tweens.add({
+        targets: text,
+        scaleX: targetScaleX,
+        scaleY: targetScaleY,
+        x: targetX,
+        y: targetY,
+        duration,
+        ease
+      });
+    }
+  }
+
+  /**
+   * Reset text areas to their base state
+   */
+  private resetTextAreas(
+    textAreas: { text: Phaser.GameObjects.Text; baseProps: BaseProps }[],
+    timing?: AnimationTiming
+  ): void {
+    if (textAreas.length === 0) return;
+
+    const duration = timing?.duration ?? 150;
+    const ease = this.mapEasing(timing?.easing ?? 'easeOut');
+
+    for (const { text, baseProps } of textAreas) {
+      this.scene.tweens.killTweensOf(text);
+      this.scene.tweens.add({
+        targets: text,
+        scaleX: baseProps.scaleX,
+        scaleY: baseProps.scaleY,
+        x: baseProps.x,
+        y: baseProps.y,
+        duration,
+        ease
+      });
+    }
   }
 
   /**

@@ -1,180 +1,181 @@
 {
-  "version": "1.0",
-  "spritesheets": {
-    "knight-idle-sheet": {
-      "path": "sprites/knight-idle.png",
-      "frameWidth": 200,
-      "frameHeight": 200
+    "version": "1.0",
+    "spritesheets": {
+        "knight-idle-sheet": {
+            "path": "sprites/knight-idle.png",
+            "frameWidth": 200,
+            "frameHeight": 200
+        },
+        "knight-attack-sheet": {
+            "path": "sprites/knight-attack.png",
+            "frameWidth": 200,
+            "frameHeight": 200
+        },
+        "boy-knight-idle-sheet": {
+            "path": "sprites/boy-knight-idle.png",
+            "frameWidth": 200,
+            "frameHeight": 200
+        },
+        "boy-knight-attack-sheet": {
+            "path": "sprites/boy-knight-attack.png",
+            "frameWidth": 200,
+            "frameHeight": 200
+        },
+        "slime-sheet": {
+            "path": "sprites/slime.png",
+            "frameWidth": 200,
+            "frameHeight": 200
+        },
+        "pink-idle-sheet": {
+            "path": "sprites/pink-idle.png",
+            "frameWidth": 210,
+            "frameHeight": 200
+        },
+        "pink-attack-sheet": {
+            "path": "sprites/pink-attack.png",
+            "frameWidth": 213,
+            "frameHeight": 200
+        },
+        "pink-hit-sheet": {
+            "path": "sprites/pink-hit.png",
+            "frameWidth": 210,
+            "frameHeight": 200
+        },
+        "purple-attack-sheet": {
+            "path": "sprites/Purple-attack.png",
+            "frameWidth": 187,
+            "frameHeight": 200
+        },
+        "purple-hit-sheet": {
+            "path": "sprites/purple-hit-fall.png",
+            "frameWidth": 200,
+            "frameHeight": 200
+        },
+        "leafy-idle-sheet": {
+            "path": "sprites/leafy-idle.png",
+            "frameWidth": 220,
+            "frameHeight": 200
+        },
+        "leafy-attack-sheet": {
+            "path": "sprites/leafy-attack.png",
+            "frameWidth": 220,
+            "frameHeight": 200
+        },
+        "leafy-hit-sheet": {
+            "path": "sprites/leafy-hit.png",
+            "frameWidth": 217,
+            "frameHeight": 200
+        },
+        "hint-items-sheet": {
+            "path": "sprites/hint-items.png",
+            "frameWidth": 200,
+            "frameHeight": 200
+        },
+        "shop-coins-sheet": {
+            "path": "town/shop/coins.png",
+            "frameWidth": 239,
+            "frameHeight": 242
+        },
+        "shop-swords-sheet": {
+            "path": "town/shop/sword-set.png",
+            "frameWidth": 239,
+            "frameHeight": 300
+        },
+        "shop-shields-sheet": {
+            "path": "town/shop/shield-set.png",
+            "frameWidth": 260,
+            "frameHeight": 232
+        },
+        "pet-porcupine-sheet": {
+            "path": "sprites/pets/pet-porcupine.png",
+            "frameWidth": 200,
+            "frameHeight": 200
+        },
+        "pet-porcupine-2": {
+            "path": "sprites/spritesheet (23).png",
+            "frameWidth": 200,
+            "frameHeight": 200
+        },
+        "knight-walk-sheet": {
+            "path": "sprites/knight-walk.png",
+            "frameWidth": 300,
+            "frameHeight": 300
+        },
+        "knight-defend-sheet": {
+            "path": "sprites/knight-defend.png",
+            "frameWidth": 300,
+            "frameHeight": 300
+        },
+        "boy-knight-walk-sheet": {
+            "path": "sprites/boy-knight-walk.png",
+            "frameWidth": 200,
+            "frameHeight": 200
+        },
+        "boy-knight-defend-sheet": {
+            "path": "sprites/boy-knight-defend.png",
+            "frameWidth": 200,
+            "frameHeight": 200
+        },
+        "girl-knight-walk-sheet": {
+            "path": "sprites/girl-knight-walk.png",
+            "frameWidth": 200,
+            "frameHeight": 200
+        },
+        "girl-knight-def-sheet": {
+            "path": "sprites/girl-knight-def.png",
+            "frameWidth": 200,
+            "frameHeight": 200
+        }
     },
-    "knight-attack-sheet": {
-      "path": "sprites/knight-attack.png",
-      "frameWidth": 200,
-      "frameHeight": 200
-    },
-    "boy-knight-idle-sheet": {
-      "path": "sprites/boy-knight-idle.png",
-      "frameWidth": 200,
-      "frameHeight": 200
-    },
-    "boy-knight-attack-sheet": {
-      "path": "sprites/boy-knight-attack.png",
-      "frameWidth": 200,
-      "frameHeight": 200
-    },
-    "slime-sheet": {
-      "path": "sprites/slime.png",
-      "frameWidth": 200,
-      "frameHeight": 200
-    },
-    "pink-idle-sheet": {
-      "path": "sprites/pink-idle.png",
-      "frameWidth": 210,
-      "frameHeight": 200
-    },
-    "pink-attack-sheet": {
-      "path": "sprites/pink-attack.png",
-      "frameWidth": 213,
-      "frameHeight": 200
-    },
-    "pink-hit-sheet": {
-      "path": "sprites/pink-hit.png",
-      "frameWidth": 210,
-      "frameHeight": 200
-    },
-    "purple-attack-sheet": {
-      "path": "sprites/Purple-attack.png",
-      "frameWidth": 187,
-      "frameHeight": 200
-    },
-    "purple-hit-sheet": {
-      "path": "sprites/purple-hit-fall.png",
-      "frameWidth": 200,
-      "frameHeight": 200
-    },
-    "leafy-idle-sheet": {
-      "path": "sprites/leafy-idle.png",
-      "frameWidth": 220,
-      "frameHeight": 200
-    },
-    "leafy-attack-sheet": {
-      "path": "sprites/leafy-attack.png",
-      "frameWidth": 220,
-      "frameHeight": 200
-    },
-    "leafy-hit-sheet": {
-      "path": "sprites/leafy-hit.png",
-      "frameWidth": 217,
-      "frameHeight": 200
-    },
-    "hint-items-sheet": {
-      "path": "sprites/hint-items.png",
-      "frameWidth": 200,
-      "frameHeight": 200
-    },
-    "shop-coins-sheet": {
-      "path": "town/shop/coins.png",
-      "frameWidth": 239,
-      "frameHeight": 242
-    },
-    "shop-swords-sheet": {
-      "path": "town/shop/sword-set.png",
-      "frameWidth": 239,
-      "frameHeight": 300
-    },
-    "shop-shields-sheet": {
-      "path": "town/shop/shield-set.png",
-      "frameWidth": 260,
-      "frameHeight": 232
-    },
-    "pet-porcupine-sheet": {
-      "path": "sprites/pets/pet-porcupine.png",
-      "frameWidth": 200,
-      "frameHeight": 200
-    },
-    "pet-porcupine-2": {
-      "path": "sprites/spritesheet (23).png",
-      "frameWidth": 200,
-      "frameHeight": 200
-    },
-    "knight-walk-sheet": {
-      "path": "sprites/knight-walk.png",
-      "frameWidth": 300,
-      "frameHeight": 300
-    },
-    "knight-defend-sheet": {
-      "path": "sprites/knight-defend.png",
-      "frameWidth": 300,
-      "frameHeight": 300
-    },
-    "boy-knight-walk-sheet": {
-      "path": "sprites/boy-knight-walk.png",
-      "frameWidth": 200,
-      "frameHeight": 200
-    },
-    "boy-knight-defend-sheet": {
-      "path": "sprites/boy-knight-defend.png",
-      "frameWidth": 200,
-      "frameHeight": 200
-    },
-    "girl-knight-walk-sheet": {
-      "path": "sprites/girl-knight-walk.png",
-      "frameWidth": 200,
-      "frameHeight": 200
-    },
-    "girl-knight-def-sheet": {
-      "path": "sprites/girl-knight-def.png",
-      "frameWidth": 200,
-      "frameHeight": 200
+    "images": {
+        "bg-battle": "backgrounds/field.png",
+        "bg-arena": "backgrounds/arena-view.png",
+        "bg-town": "town/background.png",
+        "town-grass": "town/grass.png",
+        "building-witch-hut": "town/witch-hut.png",
+        "building-guild": "town/guild.png",
+        "building-tavern": "town/tavern.png",
+        "building-shop": "town/weapon-shop.png",
+        "interior-witch-hut": "town/witch-hut-interior.png",
+        "interior-guild": "town/guild/guild-interior.png",
+        "interior-tavern": "town/tavern-interior.png",
+        "interior-shop": "town/shop/shop-interior.png",
+        "npc-blacksmith": "town/shop/blacksmith.png",
+        "npc-guildmaster": "town/guild/Dialog - guildmaster.png",
+        "shop-table-pouch": "town/shop/table-with-pouch.png",
+        "shop-table-top": "town/shop/table-top.png",
+        "shop-coin-tray": "town/shop/coin-tray.png",
+        "shop-inventory": "town/shop/empty inventory.png",
+        "ui-math-board": "ui/math-board-larger.png",
+        "ui-button": "ui/small_board_button.png",
+        "ui-button-pressed": "ui/small_board_button_pressed.png",
+        "ui-results-table": "ui/results-table.png",
+        "ui-stone-bar-frame": "ui/stone-bar-frame.png",
+        "ui-exclamation": "ui/exclamation-mark.png",
+        "arrow-256cropped": "library:originals/74636147-83687a13.png",
+        "intro-comic-2-cropped": "library:originals/d6ff02b1-d924a196.png",
+        "Button isolated-small": "library:originals/1b1c5ea8-29a1c2d8.png",
+        "alternate title_scroll": "library:originals/de862222-d00d3d96.png",
+        "name banner-cropped": "library:originals/10b4ba94-ca253133.png",
+        "isolate-2026-01-20t14-15-47": "library:originals/d2f65138-4927f6f4.png",
+        "Intro_Comic_1-cropped": "library:originals/28e4f65f-75e4d1f8.png",
+        "Gemini_Generated_Image_r43gbar43gbar43g": "library:originals/57d02e56-7d27cccc.png",
+        "Arrow-cropped": "library:originals/d1d5ac55-1cfbf0b8.png",
+        "12aef62b-ac16-4077-af64-14f2a40cbff6": "library:originals/21efcce0-1946495a.png",
+        "a49772d4-89b0-4291-bf1b-9d3adfbe56dd": "library:originals/de862222-d00d3d96.png",
+        "7af0aa38-2004-4508-87b5-94ef97488d3f": "library:originals/1c1ed641-fa5333f5.png",
+        "b39d529d-ed68-4d36-b1d9-f660a3f7c1d0": "library:originals/9ff7d579-a5057eef.png",
+        "8543a828-7208-457b-92ad-15b4bd6e8c4d": "library:originals/07d4f012-a02d0df4.png",
+        "725a75ec-1e3a-4ec5-925c-838ab3d6302e": "library:originals/10b4ba94-ca253133.png",
+        "a0c1b437-0a95-427f-a60c-09c6570d0bd6": "library:originals/1b1c5ea8-29a1c2d8.png",
+        "d51d97c8-6306-4a22-831c-ebc7c05e7825": "library:originals/9a5d2773-5ff03771.png",
+        "b62cfbee-abe4-445d-bfa3-53aacec649fa": "library:originals/d2f65138-9b1c920a.png",
+        "85f06d42-47d9-4aaf-80c2-17a1bb6a668d": "library:originals/b0a2cda5-e1830791.png",
+        "48491a2f-ba31-47a7-9a2f-1688b07791cf": "library:originals/4faac94d-3611c94b.png",
+        "7649a893-a2be-48ff-9955-d1d3541545cf": "library:originals/dc73913c-e84fe5fe.png",
+        "d406a3fd-394c-4328-b2bc-6b57db11483a": "library:originals/52a2a9e9-4997b23f.png",
+        "ca86427a-98eb-4512-9bfb-09b9bbfd9f17": "library:originals/6df78613-152b60a8.png",
+        "3f955692-2c14-49d8-94ce-77b6e5bc2d9c": "library:originals/74636147-83687a13.png",
+        "New_game_background-1280": "library:originals/0a92cea1-b19bde79.png"
     }
-  },
-  "images": {
-    "bg-battle": "backgrounds/field.png",
-    "bg-arena": "backgrounds/arena-view.png",
-    "bg-town": "town/background.png",
-    "town-grass": "town/grass.png",
-    "building-witch-hut": "town/witch-hut.png",
-    "building-guild": "town/guild.png",
-    "building-tavern": "town/tavern.png",
-    "building-shop": "town/weapon-shop.png",
-    "interior-witch-hut": "town/witch-hut-interior.png",
-    "interior-guild": "town/guild/guild-interior.png",
-    "interior-tavern": "town/tavern-interior.png",
-    "interior-shop": "town/shop/shop-interior.png",
-    "npc-blacksmith": "town/shop/blacksmith.png",
-    "npc-guildmaster": "town/guild/Dialog - guildmaster.png",
-    "shop-table-pouch": "town/shop/table-with-pouch.png",
-    "shop-table-top": "town/shop/table-top.png",
-    "shop-coin-tray": "town/shop/coin-tray.png",
-    "shop-inventory": "town/shop/empty inventory.png",
-    "ui-math-board": "ui/math-board-larger.png",
-    "ui-button": "ui/small_board_button.png",
-    "ui-button-pressed": "ui/small_board_button_pressed.png",
-    "ui-results-table": "ui/results-table.png",
-    "ui-stone-bar-frame": "ui/stone-bar-frame.png",
-    "ui-exclamation": "ui/exclamation-mark.png",
-    "arrow-256cropped": "library:originals/74636147-83687a13.png",
-    "intro-comic-2-cropped": "library:originals/d6ff02b1-d924a196.png",
-    "Button isolated-small": "library:originals/1b1c5ea8-29a1c2d8.png",
-    "alternate title_scroll": "library:originals/de862222-d00d3d96.png",
-    "name banner-cropped": "library:originals/10b4ba94-ca253133.png",
-    "isolate-2026-01-20t14-15-47": "library:originals/d2f65138-4927f6f4.png",
-    "Intro_Comic_1-cropped": "library:originals/28e4f65f-75e4d1f8.png",
-    "Gemini_Generated_Image_r43gbar43gbar43g": "library:originals/57d02e56-7d27cccc.png",
-    "Arrow-cropped": "library:originals/d1d5ac55-1cfbf0b8.png",
-    "12aef62b-ac16-4077-af64-14f2a40cbff6": "library:originals/21efcce0-1946495a.png",
-    "a49772d4-89b0-4291-bf1b-9d3adfbe56dd": "library:originals/de862222-d00d3d96.png",
-    "7af0aa38-2004-4508-87b5-94ef97488d3f": "library:originals/1c1ed641-fa5333f5.png",
-    "b39d529d-ed68-4d36-b1d9-f660a3f7c1d0": "library:originals/9ff7d579-a5057eef.png",
-    "8543a828-7208-457b-92ad-15b4bd6e8c4d": "library:originals/07d4f012-a02d0df4.png",
-    "725a75ec-1e3a-4ec5-925c-838ab3d6302e": "library:originals/10b4ba94-ca253133.png",
-    "a0c1b437-0a95-427f-a60c-09c6570d0bd6": "library:originals/1b1c5ea8-29a1c2d8.png",
-    "d51d97c8-6306-4a22-831c-ebc7c05e7825": "library:originals/9a5d2773-5ff03771.png",
-    "b62cfbee-abe4-445d-bfa3-53aacec649fa": "library:originals/d2f65138-9b1c920a.png",
-    "85f06d42-47d9-4aaf-80c2-17a1bb6a668d": "library:originals/b0a2cda5-e1830791.png",
-    "48491a2f-ba31-47a7-9a2f-1688b07791cf": "library:originals/4faac94d-3611c94b.png",
-    "7649a893-a2be-48ff-9955-d1d3541545cf": "library:originals/dc73913c-e84fe5fe.png",
-    "d406a3fd-394c-4328-b2bc-6b57db11483a": "library:originals/52a2a9e9-4997b23f.png",
-    "ca86427a-98eb-4512-9bfb-09b9bbfd9f17": "library:originals/6df78613-152b60a8.png",
-    "3f955692-2c14-49d8-94ce-77b6e5bc2d9c": "library:originals/74636147-83687a13.png"
-  }
 }

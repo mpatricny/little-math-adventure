@@ -1288,6 +1288,14 @@
                 0.5,
                 0.5
             ]
+        },
+        "new-game-background-1280": {
+            "type": "staticImage",
+            "texture": "New_game_background-1280",
+            "origin": [
+                0.5,
+                0.5
+            ]
         }
     }
 }
