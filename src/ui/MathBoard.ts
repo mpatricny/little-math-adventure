@@ -47,6 +47,7 @@ export interface MathBoardLayout {
 interface ProblemRow {
     container: Phaser.GameObjects.Container;
     problemText: Phaser.GameObjects.Text;
+    sourceLabel: Phaser.GameObjects.Text | null;
     buttons: Phaser.GameObjects.Container[];
     statusIcon: Phaser.GameObjects.Text;
     problem: MathProblem;
@@ -235,22 +236,45 @@ export class MathBoard {
         const rowContainer = this.scene.add.container(rowX, rowY);
 
         // Problem text (left side) - smaller for two-column mode
-        let problemString = `${problem.operand1} ${problem.operator} ${problem.operand2}`;
+        // Display × for multiplication operator
+        const displayOperator = problem.operator === '*' ? '×' : problem.operator;
+        let problemString = `${problem.operand1} ${displayOperator} ${problem.operand2}`;
         if (problem.operand3 !== undefined && problem.operator2) {
-            problemString += ` ${problem.operator2} ${problem.operand3}`;
+            const displayOperator2 = problem.operator2 === '*' ? '×' : problem.operator2;
+            problemString += ` ${displayOperator2} ${problem.operand3}`;
         }
         problemString += ' = ?';
 
         const fontSize = useTwoColumns ? '22px' : '32px';
         const textX = useTwoColumns ? this.layout.problemTextXTwoCol : this.layout.problemTextX;
 
+        // Determine text color based on source
+        const textColor = this.getSourceTextColor(problem.source);
+
         const problemText = this.scene.add.text(textX, 0, problemString, {
             fontSize: fontSize,
             fontFamily: 'Arial, sans-serif',
-            color: '#333333',
+            color: textColor,
             fontStyle: 'bold',
         }).setOrigin(0, 0.5);
         rowContainer.add(problemText);
+
+        // Source label (pet or sword indicator)
+        let sourceLabel: Phaser.GameObjects.Text | null = null;
+        if (problem.source === 'pet' || problem.source === 'sword') {
+            const labelText = this.getSourceLabelText(problem);
+            const labelColor = this.getSourceLabelColor(problem.source);
+            const labelFontSize = useTwoColumns ? '12px' : '14px';
+            const labelY = useTwoColumns ? -22 : -28;
+
+            sourceLabel = this.scene.add.text(textX, labelY, labelText, {
+                fontSize: labelFontSize,
+                fontFamily: 'Arial, sans-serif',
+                color: labelColor,
+                fontStyle: 'bold',
+            }).setOrigin(0, 0.5);
+            rowContainer.add(sourceLabel);
+        }
 
         // Answer buttons (3 buttons on right side) - use configurable spacing/scale
         const buttons: Phaser.GameObjects.Container[] = [];
@@ -292,12 +316,50 @@ export class MathBoard {
         return {
             container: rowContainer,
             problemText,
+            sourceLabel,
             buttons,
             statusIcon,
             problem,
             solved: false,
             correct: false,
         };
+    }
+
+    /**
+     * Get label text for source (pet or sword)
+     */
+    private getSourceLabelText(problem: MathProblem): string {
+        const multiplier = problem.damageMultiplier || 1;
+        if (problem.source === 'pet') {
+            return `🐾 Mazlíček (×${multiplier})`;
+        } else if (problem.source === 'sword') {
+            return `⚔️ Meč (×${multiplier})`;
+        }
+        return '';
+    }
+
+    /**
+     * Get color for source label
+     */
+    private getSourceLabelColor(source?: 'player' | 'pet' | 'sword'): string {
+        if (source === 'pet') {
+            return '#44aa44'; // Green
+        } else if (source === 'sword') {
+            return '#aa6644'; // Brown/orange
+        }
+        return '#666666';
+    }
+
+    /**
+     * Get text color based on source
+     */
+    private getSourceTextColor(source?: 'player' | 'pet' | 'sword'): string {
+        if (source === 'pet') {
+            return '#2d7a2d'; // Darker green
+        } else if (source === 'sword') {
+            return '#8b5a2b'; // Brown
+        }
+        return '#333333'; // Default dark gray
     }
 
     private createAnswerButton(

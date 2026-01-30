@@ -8,7 +8,7 @@
         "attack": 1,
         "defense": 0,
         "xpReward": 20,
-        "goldReward": [5, 15],
+        "goldReward": [1, 1],
         "difficulty": 1,
         "scale": 1.0
     },
@@ -21,7 +21,7 @@
         "attack": 2,
         "defense": 0,
         "xpReward": 40,
-        "goldReward": [15, 35],
+        "goldReward": [1, 1],
         "difficulty": 2,
         "scale": 1.0
     },
@@ -34,7 +34,7 @@
         "attack": 2,
         "defense": 0,
         "xpReward": 70,
-        "goldReward": [30, 55],
+        "goldReward": [2, 2],
         "difficulty": 3,
         "scale": 1.0
     },
@@ -47,7 +47,7 @@
         "attack": 3,
         "defense": 0,
         "xpReward": 100,
-        "goldReward": [50, 80],
+        "goldReward": [3, 3],
         "difficulty": 4,
         "scale": 1.0
     }

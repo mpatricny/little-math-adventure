@@ -63,10 +63,14 @@ export interface PetDefinition {
     spriteKey: string;       // Monster sprite to use for idle
     animPrefix: string;      // Animation prefix (e.g., 'slime', 'pink', 'purple', 'leafy')
     // Pet math problem (bonus attack)
-    mathProblemType?: 'addition' | 'subtraction' | 'threeOperand';  // Problem type
+    mathProblemType?: 'addition' | 'subtraction' | 'multiplication' | 'threeOperand';  // Problem type
     mathProblemMax?: number;     // Max result for pet problem
     damageMultiplier?: number;   // Damage multiplier (1 = normal, 2 = double, etc.)
     scale?: number;              // Character scale multiplier
+    attackEffect?: {
+        type: 'lightning' | 'fire' | 'ice';
+        tint?: string;
+    };
 }
 
 export type CharacterType = 'girl_knight' | 'boy_knight';
@@ -151,7 +155,7 @@ export interface InventoryItem {
 }
 
 // ===== MATH SYSTEM =====
-export type MathOperator = '+' | '-';
+export type MathOperator = '+' | '-' | '*';
 
 export interface MathProblem {
     id: string;               // Problem ID for tracking (e.g., "add_3_5")
@@ -186,7 +190,9 @@ export type BattlePhase =
     | 'player_math'
     | 'player_attack'
     | 'player_miss'
-    | 'pet_turn'           // NEW: Pet's turn after player
+    | 'pet_turn'           // Pet's turn after player
+    | 'pet_math'           // Pet's math board
+    | 'pet_attack'         // Pet executes attack
     | 'enemy_turn'
     | 'enemy_attack'
     | 'player_defend'
@@ -231,6 +237,7 @@ export interface EnemyDefinition {
     id: string;
     name: string;
     spriteKey: string;
+    animPrefix?: string;           // Animation prefix (e.g., 'slime', 'pink', 'purple')
     hp: number;
     attack: number;
     defense: number;
@@ -260,9 +267,12 @@ export interface ItemDefinition {
     blockTime?: number;      // Seconds to solve math problems
     blockAttempts?: number;  // Max problems to attempt
     // Sword math problem (bonus attack)
-    mathProblemType?: 'addition' | 'subtraction' | 'threeOperand';  // Problem type for sword bonus
+    mathProblemType?: 'addition' | 'subtraction' | 'multiplication' | 'threeOperand';  // Problem type for sword bonus
     mathProblemMax?: number;     // Max result for sword problem
     damageMultiplier?: number;   // Damage multiplier (1 = normal, 2 = double, etc.)
+    // Shield-specific math config
+    mathProblemTypes?: ('addition' | 'subtraction' | 'multiplication')[];
+    mathProblemMin?: number;
 }
 
 // ===== TOWN SCENE =====

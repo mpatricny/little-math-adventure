@@ -34,14 +34,14 @@
         "id": "sword_iron",
         "name": "Železný meč",
         "type": "weapon",
-        "description": "+5 Útok, bonus odčítání ≤5",
-        "price": 80,
+        "description": "+5 Útok, odčítání ≤5, 2× dmg",
+        "price": 20,
         "iconFrame": 1,
         "spriteKey": "shop-swords-sheet",
         "attackBonus": 5,
         "mathProblemType": "subtraction",
         "mathProblemMax": 5,
-        "damageMultiplier": 1
+        "damageMultiplier": 2
     },
     {
         "id": "sword_steel",
@@ -84,12 +84,15 @@
         "id": "shield_iron",
         "name": "Železný štít",
         "type": "shield",
-        "description": "Blok: 6s, 2 pokusy",
-        "price": 100,
+        "description": "Blok: 6s, 2 pokusy, +/- 1-6",
+        "price": 15,
         "iconFrame": 1,
         "spriteKey": "shop-shields-sheet",
         "blockTime": 6,
-        "blockAttempts": 2
+        "blockAttempts": 2,
+        "mathProblemTypes": ["addition", "subtraction"],
+        "mathProblemMax": 6,
+        "mathProblemMin": 1
     },
     {
         "id": "shield_steel",

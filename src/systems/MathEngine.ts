@@ -621,7 +621,7 @@ export class MathEngine {
      * Returns problem with damage multiplier metadata
      */
     private generateEquipmentProblem(
-        problemType: 'addition' | 'subtraction' | 'threeOperand',
+        problemType: 'addition' | 'subtraction' | 'multiplication' | 'threeOperand',
         maxResult: number,
         multiplier: number,
         source: 'pet' | 'sword'
@@ -630,6 +630,8 @@ export class MathEngine {
 
         if (problemType === 'threeOperand') {
             problem = this.generateThreeOperandProblem(maxResult);
+        } else if (problemType === 'multiplication') {
+            problem = this.generateMultiplicationProblem(maxResult);
         } else {
             const operator = problemType === 'addition' ? '+' : '-';
             problem = this.generateSpecificProblem(operator, maxResult);
@@ -643,25 +645,101 @@ export class MathEngine {
     }
 
     /**
+     * Generate a multiplication problem
+     * @param maxResult - maximum value for the answer (e.g., 12 means up to 12×12=144 or similar)
+     */
+    private generateMultiplicationProblem(maxResult: number): MathProblem {
+        // Generate a × b = result where both factors are reasonable
+        // For maxResult=12, we want problems like 2×6, 3×4, etc.
+        const factorMax = Math.min(maxResult, 12); // Cap factors at 12
+        const operand1 = this.randomInt(1, factorMax);
+        const operand2 = this.randomInt(1, factorMax);
+        const answer = operand1 * operand2;
+
+        const id = `mul_${operand1}_${operand2}`;
+        const choices = this.generateMultiplicationChoices(answer, factorMax);
+
+        // Set current problem ID for stats tracking
+        this.currentProblemId = id;
+
+        return {
+            id,
+            operand1,
+            operand2,
+            operator: '*',
+            answer,
+            choices,
+            showVisualHint: false, // Multiplication is too complex for visual hints
+            hintType: 'none',
+        };
+    }
+
+    /**
+     * Generate plausible wrong answers for multiplication
+     */
+    private generateMultiplicationChoices(correct: number, factorMax: number): number[] {
+        const choices = new Set<number>([correct]);
+
+        // Add plausible wrong answers
+        while (choices.size < 3) {
+            // Common mistakes: off by one factor, adjacent products
+            const mistakeType = Math.floor(Math.random() * 3);
+            let wrong: number;
+
+            if (mistakeType === 0) {
+                // Off by the smaller factor (e.g., 6×7=42, wrong: 36 or 48)
+                wrong = correct + this.randomInt(-6, 6);
+            } else if (mistakeType === 1) {
+                // Adjacent table entry
+                wrong = correct + this.randomInt(1, factorMax) * (Math.random() > 0.5 ? 1 : -1);
+            } else {
+                // Random nearby product
+                const a = this.randomInt(1, factorMax);
+                const b = this.randomInt(1, factorMax);
+                wrong = a * b;
+            }
+
+            if (wrong > 0 && wrong !== correct && !choices.has(wrong)) {
+                choices.add(wrong);
+            }
+        }
+
+        return this.shuffle([...choices]);
+    }
+
+    /**
+     * Generate a single problem specifically for pet's dedicated turn
+     * Returns problem with pet metadata set
+     */
+    generatePetTurnProblem(pet: PetDefinition): MathProblem {
+        const problemType = pet.mathProblemType || 'addition';
+        const maxResult = pet.mathProblemMax || 3;
+        const multiplier = pet.damageMultiplier || 1;
+
+        return this.generateEquipmentProblem(problemType, maxResult, multiplier, 'pet');
+    }
+
+    /**
      * Generate a specific type of problem with max result
      * @param operator - '+' or '-'
      * @param maxResult - maximum value for the answer
      * @param level - player level (used to determine hint visibility from config)
+     * @param minValue - minimum value for operands (default 0)
      */
-    private generateSpecificProblem(operator: '+' | '-', maxResult: number, level?: number): MathProblem {
+    private generateSpecificProblem(operator: '+' | '-', maxResult: number, level?: number, minValue: number = 0): MathProblem {
         let operand1: number;
         let operand2: number;
         let answer: number;
 
         if (operator === '+') {
-            // a + b = result where result <= maxResult
-            answer = this.randomInt(1, maxResult);
-            operand1 = this.randomInt(0, answer);
+            // a + b = result where result <= maxResult and operands >= minValue
+            answer = this.randomInt(minValue * 2, maxResult); // Ensure we can have both operands >= minValue
+            operand1 = this.randomInt(minValue, answer - minValue);
             operand2 = answer - operand1;
         } else {
-            // a - b = result where result >= 0 and a <= maxResult
-            operand1 = this.randomInt(1, maxResult);
-            operand2 = this.randomInt(0, operand1);
+            // a - b = result where result >= 0 and operands >= minValue
+            operand1 = this.randomInt(minValue, maxResult);
+            operand2 = this.randomInt(minValue, operand1 - minValue >= minValue ? operand1 - minValue : operand1);
             answer = operand1 - operand2;
         }
 
@@ -773,11 +851,41 @@ export class MathEngine {
     }
 
     /**
-     * Generate a shield block problem (easy: addition/subtraction at lowest difficulty)
+     * Generate a shield block problem
+     * @param shield - Optional shield item with math config (mathProblemTypes, mathProblemMax, mathProblemMin)
      */
-    generateBlockProblem(): MathProblem {
+    generateBlockProblem(shield?: ItemDefinition | null): MathProblem {
+        // Use shield config if available
+        if (shield && shield.mathProblemTypes && shield.mathProblemTypes.length > 0) {
+            const types = shield.mathProblemTypes;
+            const selectedType = types[Math.floor(Math.random() * types.length)];
+            const maxResult = shield.mathProblemMax || 6;
+            const minValue = shield.mathProblemMin || 0;
+
+            if (selectedType === 'multiplication') {
+                return this.generateMultiplicationProblem(maxResult);
+            } else {
+                const operator: '+' | '-' = selectedType === 'addition' ? '+' : '-';
+                return this.generateSpecificProblem(operator, maxResult, undefined, minValue);
+            }
+        }
+
+        // Fallback: basic addition/subtraction up to 5
         const operator: '+' | '-' = Math.random() > 0.5 ? '+' : '-';
         return this.generateSpecificProblem(operator, 5);
+    }
+
+    /**
+     * Generate multiple block problems at once
+     * @param count - Number of problems to generate
+     * @param shield - Optional shield item with math config
+     */
+    generateBlockProblems(count: number, shield?: ItemDefinition | null): MathProblem[] {
+        const problems: MathProblem[] = [];
+        for (let i = 0; i < count; i++) {
+            problems.push(this.generateBlockProblem(shield));
+        }
+        return problems;
     }
 
     /**

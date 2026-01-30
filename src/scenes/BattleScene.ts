@@ -81,7 +81,14 @@ export class BattleScene extends Phaser.Scene {
     private petContainer: Phaser.GameObjects.Container | null = null;
     private petSprite: Phaser.GameObjects.Sprite | null = null;
     private equippedPetDef: PetDefinition | null = null;
-    private petShouldAttack: boolean = false;
+
+    // Pet turn system
+    private petTargetIndex: number = 0;
+    private petMathProblem: MathProblem | null = null;
+
+    // Active character highlighting
+    private activeHighlight: Phaser.GameObjects.Graphics | null = null;
+    private activeHighlightTween: Phaser.Tweens.Tween | null = null;
 
     constructor() {
         super({ key: 'BattleScene' });
@@ -381,10 +388,121 @@ export class BattleScene extends Phaser.Scene {
     }
 
     /**
-     * Play pet attack animation (called after hero attack completes)
-     * Pet plays attack animation during approach, quick hit, then returns
+     * Return pet to its starting position after attack
      */
-    private playPetAttack(targetIdx: number, onComplete: () => void): void {
+    private returnPetToPosition(startX: number, startY: number, onComplete: () => void): void {
+        if (!this.petContainer) {
+            onComplete();
+            return;
+        }
+
+        this.tweens.add({
+            targets: this.petContainer,
+            x: startX,
+            y: startY,
+            duration: 300,
+            ease: 'Quad.easeIn',
+            onComplete: () => {
+                // Reset depth
+                this.petContainer?.setDepth(-1);
+                onComplete();
+            }
+        });
+    }
+
+    /**
+     * Show pet's dedicated math problem
+     */
+    private showPetMathProblem(): void {
+        if (!this.equippedPetDef) {
+            this.transitionToEnemyTurn();
+            return;
+        }
+
+        // Show active highlight on pet
+        if (this.petContainer) {
+            this.showActiveHighlight(this.petContainer.x, this.petContainer.y + 30, 'green');
+        }
+
+        // Generate pet's single problem
+        this.petMathProblem = this.mathEngine.generatePetTurnProblem(this.equippedPetDef);
+
+        // Show in MathBoard with pet styling
+        this.mathBoard.showSingle(this.petMathProblem, this.onPetMathComplete.bind(this));
+    }
+
+    /**
+     * Handle pet math problem completion
+     */
+    private onPetMathComplete(isCorrect: boolean): void {
+        this.mathBoard.hide();
+        this.hideActiveHighlight();
+
+        if (this.petMathProblem) {
+            this.mathEngine.recordResultForProblem(this.petMathProblem.id, isCorrect);
+        }
+
+        if (isCorrect) {
+            this.setPhase('pet_attack');
+        } else {
+            // Pet misses turn
+            this.showPetMissMessage();
+            this.time.delayedCall(500, () => this.transitionToEnemyTurn());
+        }
+    }
+
+    /**
+     * Show "miss" message for pet
+     */
+    private showPetMissMessage(): void {
+        if (!this.petContainer) return;
+
+        const missText = this.add.text(this.petContainer.x, this.petContainer.y - 50, 'VEDLE!', {
+            fontSize: '24px',
+            fontFamily: 'Arial, sans-serif',
+            color: '#aaaaaa',
+            fontStyle: 'bold',
+            stroke: '#000000',
+            strokeThickness: 3,
+        }).setOrigin(0.5);
+
+        this.tweens.add({
+            targets: missText,
+            y: missText.y - 30,
+            alpha: 0,
+            duration: 600,
+            onComplete: () => missText.destroy(),
+        });
+    }
+
+    /**
+     * Execute pet's attack
+     */
+    private executePetAttack(): void {
+        if (!this.equippedPetDef || !this.petMathProblem) {
+            this.transitionToEnemyTurn();
+            return;
+        }
+
+        const damage = this.petMathProblem.damageMultiplier || 1;
+        const targetIdx = this.petTargetIndex;
+
+        // Check for spell attack effect (like Bodlina's lightning)
+        if (this.equippedPetDef.attackEffect) {
+            this.playPetSpellAttack(targetIdx, damage, () => {
+                this.transitionToEnemyTurn();
+            });
+        } else {
+            this.playPetMeleeAttack(targetIdx, damage, () => {
+                this.transitionToEnemyTurn();
+            });
+        }
+    }
+
+    /**
+     * Play pet melee attack (same as original playPetAttack but with damage)
+     */
+    private playPetMeleeAttack(targetIdx: number, damage: number, onComplete: () => void): void {
         if (!this.petSprite || !this.equippedPetDef || !this.petContainer) {
             onComplete();
             return;
@@ -426,6 +544,9 @@ export class BattleScene extends Phaser.Scene {
             duration: moveDuration,
             ease: movement?.ease || 'Quad.easeOut',
             onComplete: () => {
+                // Apply damage
+                this.applyPetDamageToEnemy(targetIdx, damage);
+
                 // Brief pause at enemy (100ms), then return
                 this.time.delayedCall(100, () => {
                     this.petSprite!.play(`${animPrefix}-idle`);
@@ -436,26 +557,241 @@ export class BattleScene extends Phaser.Scene {
     }
 
     /**
-     * Return pet to its starting position after attack
+     * Play pet spell attack (lightning for Bodlina)
      */
-    private returnPetToPosition(startX: number, startY: number, onComplete: () => void): void {
-        if (!this.petContainer) {
+    private playPetSpellAttack(targetIdx: number, damage: number, onComplete: () => void): void {
+        if (!this.petSprite || !this.equippedPetDef || !this.petContainer) {
             onComplete();
             return;
         }
 
-        this.tweens.add({
-            targets: this.petContainer,
-            x: startX,
-            y: startY,
-            duration: 300,
-            ease: 'Quad.easeIn',
-            onComplete: () => {
-                // Reset depth
-                this.petContainer?.setDepth(-1);
-                onComplete();
+        const enemyContainer = this.enemyContainers[targetIdx];
+        if (!enemyContainer) {
+            onComplete();
+            return;
+        }
+
+        const animPrefix = this.equippedPetDef.animPrefix;
+        const attackEffect = this.equippedPetDef.attackEffect;
+
+        // Play attack animation in place (pet doesn't move for spells)
+        const attackAnim = `${animPrefix}-attack`;
+        if (this.anims.exists(attackAnim)) {
+            this.petSprite.play(attackAnim);
+        }
+
+        // Play effect based on type
+        if (attackEffect?.type === 'lightning') {
+            const tintColor = attackEffect.tint ? parseInt(attackEffect.tint, 16) : 0x44ff44;
+            this.playLightningEffect(
+                this.petContainer.x,
+                this.petContainer.y - 30,
+                enemyContainer.x,
+                enemyContainer.y,
+                tintColor,
+                () => {
+                    // Apply damage after effect
+                    this.applyPetDamageToEnemy(targetIdx, damage);
+
+                    // Return to idle
+                    this.time.delayedCall(200, () => {
+                        this.petSprite!.play(`${animPrefix}-idle`);
+                        onComplete();
+                    });
+                }
+            );
+        } else {
+            // Fallback to melee if effect type not recognized
+            this.playPetMeleeAttack(targetIdx, damage, onComplete);
+        }
+    }
+
+    /**
+     * Play lightning effect from start to end position
+     */
+    private playLightningEffect(
+        startX: number,
+        startY: number,
+        endX: number,
+        endY: number,
+        tintColor: number,
+        onComplete: () => void
+    ): void {
+        const graphics = this.add.graphics();
+        graphics.setDepth(50);
+
+        // Generate jagged lightning path with 12 segments
+        const segments = 12;
+        const points: { x: number; y: number }[] = [{ x: startX, y: startY }];
+
+        for (let i = 1; i < segments; i++) {
+            const t = i / segments;
+            const baseX = startX + (endX - startX) * t;
+            const baseY = startY + (endY - startY) * t;
+
+            // Add random offset (±35 perpendicular, ±25 parallel)
+            const perpOffset = (Math.random() - 0.5) * 70;
+            const paraOffset = (Math.random() - 0.5) * 50;
+
+            // Calculate perpendicular direction
+            const dx = endX - startX;
+            const dy = endY - startY;
+            const len = Math.sqrt(dx * dx + dy * dy);
+            const perpX = -dy / len;
+            const perpY = dx / len;
+
+            points.push({
+                x: baseX + perpX * perpOffset + (dx / len) * paraOffset,
+                y: baseY + perpY * perpOffset + (dy / len) * paraOffset,
+            });
+        }
+        points.push({ x: endX, y: endY });
+
+        // Draw 4 layers: outer glow (20px), middle (12px), main (6px), core (2px)
+        const layers = [
+            { width: 20, alpha: 0.2 },
+            { width: 12, alpha: 0.4 },
+            { width: 6, alpha: 0.8 },
+            { width: 2, alpha: 1.0 },
+        ];
+
+        layers.forEach(layer => {
+            graphics.lineStyle(layer.width, tintColor, layer.alpha);
+            graphics.beginPath();
+            graphics.moveTo(points[0].x, points[0].y);
+            for (let i = 1; i < points.length; i++) {
+                graphics.lineTo(points[i].x, points[i].y);
             }
+            graphics.strokePath();
         });
+
+        // Camera shake
+        this.cameras.main.shake(100, 0.005);
+
+        // Fade out and destroy
+        this.tweens.add({
+            targets: graphics,
+            alpha: 0,
+            duration: 300,
+            onComplete: () => {
+                graphics.destroy();
+                onComplete();
+            },
+        });
+    }
+
+    /**
+     * Apply damage from pet to enemy
+     */
+    private applyPetDamageToEnemy(targetIdx: number, damage: number): void {
+        const enemy = this.battleState.enemies[targetIdx];
+        const enemyContainer = this.enemyContainers[targetIdx];
+        const enemySprite = this.enemies[targetIdx];
+        const animPrefix = this.enemyAnimPrefixes[targetIdx];
+
+        enemy.hp -= damage;
+        this.updateHpBar(this.enemyHpBars[targetIdx], enemy.hp, enemy.maxHp);
+
+        // Show damage number
+        const dmgText = this.add.text(enemyContainer.x, enemyContainer.y - 50, `-${damage}`, {
+            fontSize: '24px',
+            fontFamily: 'Arial, sans-serif',
+            color: '#44ff44', // Green for pet damage
+            fontStyle: 'bold',
+            stroke: '#000000',
+            strokeThickness: 3,
+        }).setOrigin(0.5);
+
+        this.tweens.add({
+            targets: dmgText,
+            y: dmgText.y - 30,
+            alpha: 0,
+            duration: 600,
+            onComplete: () => dmgText.destroy(),
+        });
+
+        // Enemy hit effect
+        if (enemy.hp > 0) {
+            enemySprite.play(`${animPrefix}-hurt`);
+            enemySprite.setTint(0xff0000);
+            this.time.delayedCall(100, () => {
+                enemySprite.clearTint();
+            });
+            enemySprite.once('animationcomplete', () => {
+                if (enemy.hp > 0) {
+                    enemySprite.play(`${animPrefix}-idle`);
+                }
+            });
+        }
+    }
+
+    /**
+     * Transition to enemy turn after pet attack
+     */
+    private transitionToEnemyTurn(): void {
+        const targetIdx = this.petTargetIndex;
+        const enemy = this.battleState.enemies[targetIdx];
+        const enemySprite = this.enemies[targetIdx];
+        const animPrefix = this.enemyAnimPrefixes[targetIdx];
+
+        // Check if target enemy died from pet attack
+        if (enemy.hp <= 0) {
+            enemySprite.play(`${animPrefix}-death`);
+            enemySprite.once('animationcomplete', () => {
+                // Fade out the defeated monster after 1 second
+                this.time.delayedCall(1000, () => {
+                    this.tweens.add({
+                        targets: this.enemyContainers[targetIdx],
+                        alpha: 0,
+                        duration: 500,
+                        onComplete: () => {
+                            this.checkVictoryOrContinue();
+                        }
+                    });
+                });
+            });
+        } else {
+            this.setPhase('enemy_turn');
+        }
+    }
+
+    /**
+     * Show active character highlight (pulsing ellipse on ground)
+     */
+    private showActiveHighlight(x: number, y: number, color: 'green' | 'red'): void {
+        this.hideActiveHighlight();
+
+        this.activeHighlight = this.add.graphics();
+        this.activeHighlight.setDepth(-2); // Behind characters
+
+        const fillColor = color === 'green' ? 0x44aa44 : 0xaa4444;
+
+        // Draw ellipse
+        this.activeHighlight.fillStyle(fillColor, 0.3);
+        this.activeHighlight.fillEllipse(x, y, 80, 30);
+
+        // Pulsing animation
+        this.activeHighlightTween = this.tweens.add({
+            targets: this.activeHighlight,
+            alpha: { from: 0.6, to: 0.2 },
+            duration: 600,
+            yoyo: true,
+            repeat: -1,
+        });
+    }
+
+    /**
+     * Hide active character highlight
+     */
+    private hideActiveHighlight(): void {
+        if (this.activeHighlightTween) {
+            this.activeHighlightTween.stop();
+            this.activeHighlightTween = null;
+        }
+        if (this.activeHighlight) {
+            this.activeHighlight.destroy();
+            this.activeHighlight = null;
+        }
     }
 
     /**
@@ -711,6 +1047,7 @@ export class BattleScene extends Phaser.Scene {
                 // Show potion button if player has a potion
                 const playerForTurn = this.gameState.getPlayer();
                 this.potionButton.setVisible(playerForTurn.potions > 0);
+                this.hideActiveHighlight();
                 break;
 
             case 'player_math':
@@ -727,7 +1064,25 @@ export class BattleScene extends Phaser.Scene {
                 this.playHeroMiss();
                 break;
 
+            case 'pet_turn':
+                // Pet automatically targets same enemy as hero
+                this.petTargetIndex = this.battleState.selectedEnemyIndex;
+                // Go directly to pet math
+                this.setPhase('pet_math');
+                break;
+
+            case 'pet_math':
+                // Show pet's dedicated math problem
+                this.showPetMathProblem();
+                break;
+
+            case 'pet_attack':
+                // Pet executes attack
+                this.executePetAttack();
+                break;
+
             case 'enemy_turn':
+                this.hideActiveHighlight();
                 // Start enemy attacks from first alive enemy
                 this.currentAttackingEnemyIndex = this.findNextAliveEnemy(-1);
                 if (this.currentAttackingEnemyIndex >= 0) {
@@ -739,10 +1094,12 @@ export class BattleScene extends Phaser.Scene {
                 break;
 
             case 'victory':
+                this.hideActiveHighlight();
                 this.onVictory();
                 break;
 
             case 'defeat':
+                this.hideActiveHighlight();
                 this.onDefeat();
                 break;
         }
@@ -757,11 +1114,12 @@ export class BattleScene extends Phaser.Scene {
     private showAttackProblems(): void {
         const player = this.gameState.getPlayer();
 
-        // Get equipped pet definition
-        let equippedPet: PetDefinition | null = null;
+        // Store equipped pet definition for pet turn (but don't include in player's attack problems)
         if (player.activePet) {
             const petsData = this.cache.json.get('pets') as PetDefinition[];
-            equippedPet = petsData.find(p => p.id === player.activePet) || null;
+            this.equippedPetDef = petsData.find(p => p.id === player.activePet) || null;
+        } else {
+            this.equippedPetDef = null;
         }
 
         // Get equipped sword definition
@@ -771,17 +1129,40 @@ export class BattleScene extends Phaser.Scene {
             equippedSword = itemsData.find(i => i.id === player.equippedWeapon && i.type === 'weapon') || null;
         }
 
-        const problems = this.mathEngine.generateAttackProblems(player.level, equippedPet, equippedSword);
+        // Generate problems WITHOUT pet (pet has its own turn now)
+        const problems = this.mathEngine.generateAttackProblems(player.level, null, equippedSword);
         this.battleState.currentProblems = problems;
         this.mathBoard.show(problems);
     }
 
     private onMathComplete(damageDealt: number, results: boolean[]): void {
+        // Handle block phase completion
+        if (this.isBlockPhase) {
+            // Count correct answers for blocking
+            let correctCount = 0;
+            results.forEach((isCorrect, index) => {
+                const problem = this.battleState.currentProblems[index];
+                if (problem) {
+                    this.mathEngine.recordResultForProblem(problem.id, isCorrect);
+                }
+                if (isCorrect) correctCount++;
+            });
+            this.blockCorrectCount = correctCount;
+            this.blockAttemptsMade = results.length;
+
+            // Update UI with final count
+            const currentBlock = Math.min(this.blockCorrectCount, this.pendingDamage);
+            this.blockAttemptsText.setText(`BLOKUJI: ${currentBlock} DMG`);
+
+            // End block phase
+            this.endBlockPhase();
+            return;
+        }
+
         this.mathBoard.hide();
 
         // Calculate total damage with multipliers
         let totalDamage = 0;
-        let petAttacked = false;
 
         results.forEach((isCorrect, index) => {
             const problem = this.battleState.currentProblems[index];
@@ -793,12 +1174,6 @@ export class BattleScene extends Phaser.Scene {
                 if (isCorrect) {
                     const multiplier = problem.damageMultiplier || 1;
                     totalDamage += multiplier;
-
-                    // Mark pet to attack after hero (if this was the pet's problem)
-                    if (problem.source === 'pet' && !petAttacked) {
-                        petAttacked = true;
-                        this.petShouldAttack = true;
-                    }
                 }
             }
         });
@@ -809,30 +1184,6 @@ export class BattleScene extends Phaser.Scene {
             this.setPhase('player_attack');
         } else {
             this.setPhase('player_miss');
-        }
-    }
-
-    private onBlockAnswer(isCorrect: boolean): void {
-        this.blockAttemptsMade++;
-
-        if (isCorrect) {
-            this.blockCorrectCount++;
-        }
-
-        // Record result
-        this.mathEngine.recordResult(isCorrect);
-
-        // Update UI - show how much damage is being blocked
-        const currentBlock = Math.min(this.blockCorrectCount, this.pendingDamage);
-        this.blockAttemptsText.setText(`BLOKUJI: ${currentBlock} DMG`);
-
-        // Check if we should continue or end
-        if (this.blockAttemptsMade >= this.blockMaxAttempts || this.blockTimeRemaining <= 0) {
-            this.endBlockPhase();
-        } else {
-            // Show next problem (use block problem)
-            const problem = this.mathEngine.generateBlockProblem();
-            this.mathBoard.showSingle(problem, this.onBlockAnswer.bind(this));
         }
     }
 
@@ -883,9 +1234,10 @@ export class BattleScene extends Phaser.Scene {
             repeat: this.blockTimeRemaining - 1,
         });
 
-        // Show first problem (use block problem for shield)
-        const problem = this.mathEngine.generateBlockProblem();
-        this.mathBoard.showSingle(problem, this.onBlockAnswer.bind(this));
+        // Generate ALL block problems at once and show them together
+        const problems = this.mathEngine.generateBlockProblems(this.blockMaxAttempts, shield);
+        this.battleState.currentProblems = problems;
+        this.mathBoard.show(problems);
     }
 
     private endBlockPhase(): void {
@@ -1183,12 +1535,10 @@ export class BattleScene extends Phaser.Scene {
         // Reset depth
         this.heroContainer.setDepth(0);
 
-        // Check if pet should attack after hero
-        if (this.petShouldAttack) {
-            this.petShouldAttack = false;
-            this.playPetAttack(idx, () => {
-                this.continueAfterAttack(idx, enemy, enemySprite, animPrefix);
-            });
+        // Check if enemy is still alive and pet is equipped for pet turn
+        if (enemy.hp > 0 && this.equippedPetDef && this.petContainer) {
+            // Pet gets its own turn
+            this.setPhase('pet_turn');
         } else {
             this.continueAfterAttack(idx, enemy, enemySprite, animPrefix);
         }
@@ -1416,8 +1766,17 @@ export class BattleScene extends Phaser.Scene {
         const multiplier = this.fromArena ? 1 + (this.arenaWave * 0.2) : 1;
         const xpReward = Math.floor(baseXp * multiplier);
 
+        // Calculate total coins from all defeated enemies
+        let totalCoins = 0;
+        this.enemyDefs.forEach(def => {
+            // goldReward is [min, max], for fixed values they're equal
+            const minReward = def.goldReward[0];
+            const maxReward = def.goldReward[1];
+            totalCoins += Phaser.Math.Between(minReward, maxReward);
+        });
+
         // Update player state - award coins and XP
-        ProgressionSystem.awardBattleCoin(player);  // Award 1 small copper per battle
+        ProgressionSystem.awardBattleCoin(player, totalCoins);  // Award coins from all enemies
         player.hp = this.battleState.playerHp; // Persist HP loss
         ProgressionSystem.awardXp(player, xpReward);
 

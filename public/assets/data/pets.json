@@ -28,7 +28,7 @@
         },
         "mathProblemType": "addition",
         "mathProblemMax": 3,
-        "damageMultiplier": 1,
+        "damageMultiplier": 2,
         "scale": 1.0
     },
     {
@@ -86,13 +86,17 @@
         "animPrefix": "porcupine2",
         "unlockedByArenaLevel": 2,
         "cost": {
-            "common": 3,
+            "common": 0,
             "red": 0,
-            "green": 0
+            "green": 3
         },
-        "mathProblemType": "subtraction",
-        "mathProblemMax": 5,
-        "damageMultiplier": 2,
-        "scale": 1.0
+        "mathProblemType": "multiplication",
+        "mathProblemMax": 12,
+        "damageMultiplier": 3,
+        "scale": 1.0,
+        "attackEffect": {
+            "type": "lightning",
+            "tint": "0x44ff44"
+        }
     }
 ]

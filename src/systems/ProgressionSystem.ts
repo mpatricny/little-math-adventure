@@ -25,10 +25,12 @@ export class ProgressionSystem {
     }
 
     /**
-     * Award 1 small copper coin (battle reward)
+     * Award small copper coins (battle reward)
+     * @param player - Player state
+     * @param count - Number of coins to award (default 1)
      */
-    static awardBattleCoin(player: PlayerState): void {
-        player.coins.smallCopper += 1;
+    static awardBattleCoin(player: PlayerState, count: number = 1): void {
+        player.coins.smallCopper += count;
     }
 
     /**
