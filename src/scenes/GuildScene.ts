@@ -2,6 +2,7 @@ import Phaser from 'phaser';
 import { GameStateManager } from '../systems/GameStateManager';
 import { MathEngine } from '../systems/MathEngine';
 import { ProgressionSystem } from '../systems/ProgressionSystem';
+import { ManaSystem } from '../systems/ManaSystem';
 import { MathProblemDef, ProblemStats, MathProblem, TrialState } from '../types';
 import { SceneDebugger } from '../systems/SceneDebugger';
 import { SceneBuilder } from '../systems/SceneBuilder';
@@ -219,9 +220,9 @@ export class GuildScene extends Phaser.Scene {
             const problem = sortedProblems[i];
             const y = startY + i * ROW_HEIGHT - this.scrollOffset * ROW_HEIGHT;
 
-            // Diamond slots
+            // Mana slots (changed from diamond slots)
             const correct = problem.stats.correctCount;
-            const collected = problem.stats.diamondsCollected || 0;
+            const collected = problem.stats.manaCollected || 0;
             const thresholds = [5, 10, 20];
 
             for (let d = 0; d < 3; d++) {
@@ -233,15 +234,18 @@ export class GuildScene extends Phaser.Scene {
 
                 if (correct >= threshold) {
                     if (collected > d) {
-                        symbol = '◆';
-                        color = '#888888';
+                        // Already collected - gray
+                        symbol = '⚡';
+                        color = '#666666';
                     } else {
-                        symbol = '◆';
-                        color = '#44aaff';
+                        // Available to collect - bright cyan
+                        symbol = '⚡';
+                        color = '#44ffff';
                     }
                 } else {
+                    // Not yet reached - dim
                     symbol = '○';
-                    color = '#555555';
+                    color = '#444444';
                 }
 
                 const slot = this.add.text(slotX, y, symbol, {
@@ -341,6 +345,7 @@ export class GuildScene extends Phaser.Scene {
 
     private createTotalStats(x: number, y: number, collectX: number, panelDepth: number, buttonDepth: number): void {
         const stats = this.mathEngine.getStats();
+        const player = this.gameState.getPlayer();
 
         const allTimeTotal = stats.totalAttempts;
         const allTimeCorrect = stats.correctAnswers;
@@ -390,25 +395,25 @@ export class GuildScene extends Phaser.Scene {
         }).setOrigin(0, 0.5);
         statsPanel.add(allTimeText);
 
-        // Mastered count
-        const masteredCount = this.problemList.filter(p => (p.stats?.correctCount || 0) >= 5).length;
-        const masteredText = this.add.text(20, 30,
-            `💎 ${masteredCount} zvládnutých příkladů`, {
+        // Mana display
+        const manaCount = ManaSystem.getMana(player);
+        const manaText = this.add.text(20, 30,
+            `⚡ Mana: ${manaCount}`, {
             fontSize: '13px',
             fontFamily: 'Arial, sans-serif',
-            color: '#44ddff'
+            color: '#44ffff'
         }).setOrigin(0, 0.5);
-        statsPanel.add(masteredText);
+        statsPanel.add(manaText);
 
-        // Count collectable diamonds
-        let collectableDiamonds = 0;
+        // Count collectable mana
+        let collectableMana = 0;
         const thresholds = [5, 10, 20];
         for (const problem of this.problemList) {
             const correct = problem.stats.correctCount;
-            const collected = problem.stats.diamondsCollected || 0;
+            const collected = problem.stats.manaCollected || 0;
             for (let d = 0; d < 3; d++) {
                 if (correct >= thresholds[d] && collected <= d) {
-                    collectableDiamonds++;
+                    collectableMana++;
                 }
             }
         }
@@ -417,12 +422,12 @@ export class GuildScene extends Phaser.Scene {
         this.collectButtonContainer = this.add.container(collectX, y);
         this.collectButtonContainer.setDepth(buttonDepth);
 
-        if (collectableDiamonds > 0) {
-            const btnBg = this.add.rectangle(0, 0, 120, 32, 0x4488aa)
-                .setStrokeStyle(2, 0x66aacc);
+        if (collectableMana > 0) {
+            const btnBg = this.add.rectangle(0, 0, 140, 32, 0x2288aa)
+                .setStrokeStyle(2, 0x44aacc);
 
-            const btnText = this.add.text(0, 0, `◆ SBÍRAT (${collectableDiamonds})`, {
-                fontSize: '14px',
+            const btnText = this.add.text(0, 0, `⚡ SBÍRAT MANU (${collectableMana})`, {
+                fontSize: '12px',
                 fontFamily: 'Arial, sans-serif',
                 color: '#ffffff',
                 fontStyle: 'bold'
@@ -433,9 +438,9 @@ export class GuildScene extends Phaser.Scene {
             this.collectButtonContainer.add(btnText);
 
             btnBg.setInteractive({ useHandCursor: true })
-                .on('pointerover', () => btnBg.setFillStyle(0x5599bb))
-                .on('pointerout', () => btnBg.setFillStyle(0x4488aa))
-                .on('pointerdown', () => this.collectDiamonds());
+                .on('pointerover', () => btnBg.setFillStyle(0x3399bb))
+                .on('pointerout', () => btnBg.setFillStyle(0x2288aa))
+                .on('pointerdown', () => this.collectMana());
 
             this.tweens.add({
                 targets: this.collectButtonContainer,
@@ -447,7 +452,7 @@ export class GuildScene extends Phaser.Scene {
                 ease: 'Sine.easeInOut'
             });
         } else {
-            const infoText = this.add.text(0, 0, '(5✓ = ◆)', {
+            const infoText = this.add.text(0, 0, '(5✓ = ⚡)', {
                 fontSize: '12px',
                 fontFamily: 'Arial, sans-serif',
                 color: '#888888'
@@ -456,12 +461,12 @@ export class GuildScene extends Phaser.Scene {
         }
     }
 
-    private collectDiamonds(): void {
-        const collectedCount = this.mathEngine.collectAllDiamonds();
+    private collectMana(): void {
+        const collectedCount = this.mathEngine.collectAllMana();
 
         if (collectedCount > 0) {
             const player = this.gameState.getPlayer();
-            player.diamonds.common += collectedCount;
+            ManaSystem.add(player, collectedCount);
             this.gameState.save();
 
             this.showCollectionAnimation(collectedCount);
@@ -471,10 +476,10 @@ export class GuildScene extends Phaser.Scene {
     }
 
     private showCollectionAnimation(count: number): void {
-        const floatText = this.add.text(800, 620, `+${count} 💎`, {
+        const floatText = this.add.text(800, 620, `+${count} ⚡`, {
             fontSize: '28px',
             fontFamily: 'Arial, sans-serif',
-            color: '#44ddff',
+            color: '#44ffff',
             fontStyle: 'bold',
             stroke: '#000000',
             strokeThickness: 3

@@ -303,7 +303,7 @@ export class MathEngine {
                 wrongCount: 0,
                 lastAttempt: 0,
                 mastered: false,
-                diamondsCollected: 0,
+                manaCollected: 0,
             };
         }
 
@@ -343,7 +343,7 @@ export class MathEngine {
                     wrongCount: 0,
                     lastAttempt: 0,
                     mastered: false,
-                    diamondsCollected: 0,
+                    manaCollected: 0,
                 };
             }
 
@@ -456,10 +456,10 @@ export class MathEngine {
     }
 
     /**
-     * Calculate how many diamonds are available to collect for a problem
-     * Thresholds: 5, 10, 20 correct answers = 3 diamonds total per problem
+     * Calculate how many mana points are available to collect for a problem
+     * Thresholds: 5, 10, 20 correct answers = 3 mana total per problem
      */
-    getCollectableDiamonds(problemId: string): number {
+    getCollectableMana(problemId: string): number {
         const stats = this.stats.problemStats[problemId];
         if (!stats) return 0;
 
@@ -467,7 +467,7 @@ export class MathEngine {
         let available = 0;
 
         thresholds.forEach((threshold, index) => {
-            if (stats.correctCount >= threshold && stats.diamondsCollected <= index) {
+            if (stats.correctCount >= threshold && stats.manaCollected <= index) {
                 available++;
             }
         });
@@ -476,37 +476,37 @@ export class MathEngine {
     }
 
     /**
-     * Get total collectable diamonds across all problems
+     * Get total collectable mana across all problems
      */
-    getTotalCollectableDiamonds(): number {
+    getTotalCollectableMana(): number {
         let total = 0;
         for (const problemId in this.stats.problemStats) {
-            total += this.getCollectableDiamonds(problemId);
+            total += this.getCollectableMana(problemId);
         }
         return total;
     }
 
     /**
-     * Collect diamonds for a specific problem (marks them as collected)
-     * Returns the number of diamonds collected
+     * Collect mana for a specific problem (marks them as collected)
+     * Returns the amount of mana collected
      */
-    collectDiamondsForProblem(problemId: string): number {
-        const collectable = this.getCollectableDiamonds(problemId);
+    collectManaForProblem(problemId: string): number {
+        const collectable = this.getCollectableMana(problemId);
         if (collectable > 0 && this.stats.problemStats[problemId]) {
-            this.stats.problemStats[problemId].diamondsCollected += collectable;
+            this.stats.problemStats[problemId].manaCollected += collectable;
             this.saveStats();
         }
         return collectable;
     }
 
     /**
-     * Collect all available diamonds across all problems
-     * Returns the total number of diamonds collected
+     * Collect all available mana across all problems
+     * Returns the total amount of mana collected
      */
-    collectAllDiamonds(): number {
+    collectAllMana(): number {
         let totalCollected = 0;
         for (const problemId in this.stats.problemStats) {
-            totalCollected += this.collectDiamondsForProblem(problemId);
+            totalCollected += this.collectManaForProblem(problemId);
         }
         return totalCollected;
     }

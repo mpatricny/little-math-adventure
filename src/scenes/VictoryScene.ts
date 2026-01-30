@@ -2,6 +2,8 @@ import Phaser from 'phaser';
 import { SceneDebugger } from '../systems/SceneDebugger';
 import { GameStateManager } from '../systems/GameStateManager';
 import { ProgressionSystem } from '../systems/ProgressionSystem';
+import { CrystalSystem } from '../systems/CrystalSystem';
+import { Crystal } from '../types';
 
 interface VictoryData {
     xpReward?: number;
@@ -14,6 +16,9 @@ interface VictoryData {
     arenaLevel?: number;
     nextArenaLevel?: number;
     playerHp?: number;
+    // Crystal drops
+    crystalDrops?: Crystal[];
+    crystalOverflow?: boolean;
 }
 
 export class VictoryScene extends Phaser.Scene {
@@ -121,6 +126,11 @@ export class VictoryScene extends Phaser.Scene {
         // Arena Complete celebration
         if (isArenaComplete) {
             this.showArenaCompleteMessage(400);
+        }
+
+        // Crystal drops notification
+        if (this.victoryData.crystalDrops && this.victoryData.crystalDrops.length > 0) {
+            this.showCrystalDrops(isArenaComplete ? 480 : 360);
         }
 
         // Pet unlock notification
@@ -330,9 +340,74 @@ export class VictoryScene extends Phaser.Scene {
     }
 
     private returnToTown(): void {
-        // Clear pet unlock notifications before leaving
+        // Clear notifications before leaving
         this.registry.remove('newPetUnlocks');
+        this.registry.remove('crystalDrops');
+        this.registry.remove('crystalOverflow');
         this.scene.start('TownScene');
+    }
+
+    private showCrystalDrops(y: number): void {
+        const crystals = this.victoryData.crystalDrops!;
+        const overflow = this.victoryData.crystalOverflow || false;
+
+        // Create container
+        const container = this.add.container(640, y);
+
+        // Background
+        const bgWidth = Math.max(300, 100 + crystals.length * 80);
+        const bg = this.add.rectangle(0, 0, bgWidth, 60, 0x224466, 0.9)
+            .setStrokeStyle(2, 0x4488aa);
+        container.add(bg);
+
+        // Title
+        const title = this.add.text(-bgWidth / 2 + 20, 0, '💎', {
+            fontSize: '24px'
+        }).setOrigin(0, 0.5);
+        container.add(title);
+
+        // Crystal displays
+        let xOffset = -bgWidth / 2 + 60;
+        crystals.forEach((crystal, index) => {
+            const display = CrystalSystem.getCrystalDisplay(crystal);
+            const config = CrystalSystem.getTierConfig(crystal.tier);
+
+            const crystalText = this.add.text(xOffset + index * 70, 0, display, {
+                fontSize: '20px',
+                fontFamily: 'Arial, sans-serif',
+                color: config.color,
+                fontStyle: 'bold'
+            }).setOrigin(0, 0.5);
+            container.add(crystalText);
+        });
+
+        // Animate in
+        container.setScale(0).setAlpha(0);
+        this.tweens.add({
+            targets: container,
+            scale: 1,
+            alpha: 1,
+            duration: 500,
+            delay: 900,
+            ease: 'Back.out'
+        });
+
+        // Show overflow warning
+        if (overflow) {
+            const warningText = this.add.text(640, y + 45, '⚠️ Inventář plný! Krystaly zůstaly na zemi.', {
+                fontSize: '14px',
+                fontFamily: 'Arial, sans-serif',
+                color: '#ffaa44',
+                fontStyle: 'bold'
+            }).setOrigin(0.5).setAlpha(0);
+
+            this.tweens.add({
+                targets: warningText,
+                alpha: 1,
+                duration: 500,
+                delay: 1400
+            });
+        }
     }
 
     private showPetUnlockNotification(): void {

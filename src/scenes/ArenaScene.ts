@@ -48,6 +48,9 @@ export class ArenaScene extends Phaser.Scene {
     // Scene Builder
     private sceneBuilder!: SceneBuilder;
 
+    // Wave Progress UI
+    private waveProgressContainer!: Phaser.GameObjects.Container;
+
     // State
     private gameState!: GameStateManager;
     private enemyDefs: EnemyDefinition[] = [];
@@ -62,6 +65,16 @@ export class ArenaScene extends Phaser.Scene {
         this.gameState = GameStateManager.getInstance();
         const player = this.gameState.getPlayer();
 
+        // Debug: Log incoming data
+        console.log('[ArenaScene.init] Received data:', {
+            dataArenaLevel: data.arenaLevel,
+            dataWave: data.wave,
+            fromBattle: data.fromBattle,
+            playerArenaWaveResults: JSON.stringify(player.arena.waveResults),
+            playerArenaCurrentBattle: player.arena.currentBattle,
+            playerArenaIsActive: player.arena.isActive
+        });
+
         this.arenaLevel = data.arenaLevel || player.arena.arenaLevel || 1;
         this.currentWave = data.wave ?? player.arena.currentBattle ?? 0;
 
@@ -75,6 +88,8 @@ export class ArenaScene extends Phaser.Scene {
         player.arena.arenaLevel = this.arenaLevel;
         player.arena.currentBattle = this.currentWave;
         this.gameState.save();
+
+        console.log('[ArenaScene.init] Set currentWave to:', this.currentWave);
     }
 
     create(): void {
@@ -128,6 +143,9 @@ export class ArenaScene extends Phaser.Scene {
         this.createPlayerHpBar();
         this.createCoinDisplay();
         this.createPotionDisplay();
+
+        // Create Wave Progress Table inside the existing frame
+        this.createWaveProgressContent();
 
         // Setup debugger
         this.setupDebugger();
@@ -339,6 +357,152 @@ export class ArenaScene extends Phaser.Scene {
             stroke: '#000000',
             strokeThickness: 2,
         }).setOrigin(0.5);
+    }
+
+    /**
+     * Create Wave Progress Table content inside the existing "ARENA WITH TITLE" frame
+     * Shows 5 wave rows with enemy icons and completion/perfect indicators
+     */
+    private createWaveProgressContent(): void {
+        const player = this.gameState.getPlayer();
+        const waveResults = player.arena.waveResults || [];
+
+        // Debug: Log wave progress state
+        console.log('[ArenaScene] Wave progress:', {
+            currentWave: this.currentWave,
+            waveResults: JSON.stringify(waveResults),
+            isActive: player.arena.isActive
+        });
+
+        // Get the frame element position from sceneBuilder
+        const frameElement = this.sceneBuilder.get('ARENA WITH TITLE') as Phaser.GameObjects.Image | undefined;
+        const frameX = frameElement?.x ?? 227;
+        const frameY = frameElement?.y ?? 238;
+
+        // Create container for wave progress content
+        // Position relative to frame center
+        this.waveProgressContainer = this.add.container(frameX, frameY);
+        this.waveProgressContainer.setDepth(10);
+
+        // Get all enemy definitions for icon rendering
+        const allEnemies = this.cache.json.get('enemies') as EnemyDefinition[];
+
+        // Row layout constants
+        const rowHeight = 60;
+        const startY = -141;  // Fine-tuned position within frame
+        const iconScale = 0.22;
+        const iconSpacing = 35;
+
+        // Create 5 wave rows
+        for (let waveIdx = 0; waveIdx < 5; waveIdx++) {
+            const rowY = startY + waveIdx * rowHeight;
+            const waveConfig = ARENA_WAVES[this.arenaLevel]?.[waveIdx] || ['slime_green'];
+            const waveResult = waveResults[waveIdx];
+            const isCurrentWave = waveIdx === this.currentWave;
+            const isFutureWave = waveIdx > this.currentWave;
+            const isCompleted = waveResult?.completed || false;
+            const isPerfect = waveResult?.perfectWave || false;
+
+            // Row container
+            const rowContainer = this.add.container(0, rowY);
+
+            // Current wave highlight (golden border effect)
+            if (isCurrentWave) {
+                const highlight = this.add.rectangle(0, 0, 360, 52, 0xffd700, 0.15)
+                    .setStrokeStyle(2, 0xffd700);
+                rowContainer.add(highlight);
+
+                // Add ">>>" indicator
+                const arrow = this.add.text(-165, 0, '»', {
+                    fontSize: '24px',
+                    fontFamily: 'Arial, sans-serif',
+                    color: '#ffd700',
+                    fontStyle: 'bold'
+                }).setOrigin(0.5);
+                rowContainer.add(arrow);
+
+                // Pulse animation for current wave
+                this.tweens.add({
+                    targets: highlight,
+                    alpha: { from: 0.1, to: 0.25 },
+                    duration: 800,
+                    yoyo: true,
+                    repeat: -1
+                });
+            }
+
+            // Wave number
+            const waveNum = this.add.text(-140, 0, `${waveIdx + 1}`, {
+                fontSize: '20px',
+                fontFamily: 'Arial, sans-serif',
+                color: isCurrentWave ? '#ffd700' : '#ffffff',
+                fontStyle: 'bold',
+                stroke: '#000000',
+                strokeThickness: 2
+            }).setOrigin(0.5);
+            rowContainer.add(waveNum);
+
+            // Enemy icons (static sprites, first frame only)
+            const enemyIconsStartX = -100;
+            waveConfig.forEach((enemyId, enemyIdx) => {
+                const enemyDef = allEnemies.find(e => e.id === enemyId);
+                if (enemyDef) {
+                    // Create static image from enemy spritesheet (frame 0)
+                    const icon = this.add.image(
+                        enemyIconsStartX + enemyIdx * iconSpacing,
+                        0,
+                        enemyDef.spriteKey,
+                        0  // First frame
+                    ).setScale(iconScale);
+
+                    rowContainer.add(icon);
+                }
+            });
+
+            // Completion indicator (✓ or ○)
+            const completionX = 80;
+            const completionIcon = this.add.text(completionX, 0, isCompleted ? '✓' : '○', {
+                fontSize: '20px',
+                fontFamily: 'Arial, sans-serif',
+                color: isCompleted ? '#44ff44' : '#666666',
+                fontStyle: 'bold'
+            }).setOrigin(0.5);
+            rowContainer.add(completionIcon);
+
+            // Perfect indicator (★ or ☆)
+            const perfectX = 120;
+            const perfectIcon = this.add.text(perfectX, 0, isPerfect ? '★' : '☆', {
+                fontSize: '20px',
+                fontFamily: 'Arial, sans-serif',
+                color: isPerfect ? '#ffd700' : '#666666',
+                fontStyle: 'bold'
+            }).setOrigin(0.5);
+            rowContainer.add(perfectIcon);
+
+            // Future waves are dimmed
+            if (isFutureWave) {
+                rowContainer.setAlpha(0.4);
+            }
+
+            this.waveProgressContainer.add(rowContainer);
+        }
+
+        // Header labels (positioned above rows)
+        const headerY = startY - 35;
+
+        const headerDone = this.add.text(80, headerY, '✓', {
+            fontSize: '14px',
+            fontFamily: 'Arial, sans-serif',
+            color: '#aaaaaa'
+        }).setOrigin(0.5);
+
+        const headerPerfect = this.add.text(120, headerY, '★', {
+            fontSize: '14px',
+            fontFamily: 'Arial, sans-serif',
+            color: '#aaaaaa'
+        }).setOrigin(0.5);
+
+        this.waveProgressContainer.add([headerDone, headerPerfect]);
     }
 
     private startBattle(): void {

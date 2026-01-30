@@ -28,6 +28,8 @@ export class GameStateManager {
                 if (!this.player.characterType) {
                     this.player.characterType = 'girl_knight';
                 }
+                // Migration: add crystal and mana systems if missing
+                this.player = ProgressionSystem.migratePlayerState(this.player);
                 this.mathStats = this.migrateMathStats(saveData.mathStats);
                 return;
             }
@@ -89,6 +91,9 @@ export class GameStateManager {
         if (!this.player.characterType) {
             this.player.characterType = 'girl_knight';
         }
+        // Migration: add crystal and mana systems if missing
+        this.player = ProgressionSystem.migratePlayerState(this.player);
+
         this.mathStats = this.migrateMathStats(saveData.mathStats);
 
         console.log(`[GameStateManager] Loaded slot ${slotIndex}`);
@@ -174,17 +179,19 @@ export class GameStateManager {
             return this.createInitialMathStats();
         }
 
-        // Migrate problemStats to include diamondsCollected if missing
+        // Migrate problemStats to include manaCollected if missing
+        // Also migrate old diamondsCollected → manaCollected
         const migratedProblemStats: Record<string, ProblemStats> = {};
         if (stats.problemStats) {
             for (const [key, problemStats] of Object.entries(stats.problemStats)) {
-                const typedStats = problemStats as ProblemStats;
+                const typedStats = problemStats as ProblemStats & { diamondsCollected?: number };
                 migratedProblemStats[key] = {
                     correctCount: typedStats.correctCount || 0,
                     wrongCount: typedStats.wrongCount || 0,
                     lastAttempt: typedStats.lastAttempt || 0,
                     mastered: typedStats.mastered || false,
-                    diamondsCollected: typedStats.diamondsCollected || 0,
+                    // Migrate diamondsCollected → manaCollected (backwards compatibility)
+                    manaCollected: typedStats.manaCollected ?? typedStats.diamondsCollected ?? 0,
                 };
             }
         }
@@ -215,6 +222,8 @@ export class GameStateManager {
         const saveData = SaveSystem.load(this.activeSlotIndex);
         if (saveData) {
             this.player = saveData.player;
+            // Migration: add crystal and mana systems if missing
+            this.player = ProgressionSystem.migratePlayerState(this.player);
             this.mathStats = this.migrateMathStats(saveData.mathStats);
         }
     }

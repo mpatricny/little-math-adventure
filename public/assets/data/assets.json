@@ -1362,6 +1362,14 @@
                 0.5
             ],
             "scale": 3
+        },
+        "arena-with-title": {
+            "type": "staticImage",
+            "texture": "ARENA WITH TITLE",
+            "origin": [
+                0.5,
+                0.5
+            ]
         }
     }
 }

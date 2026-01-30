@@ -40,12 +40,19 @@ export interface TransmutationRecipe {
 }
 
 // ===== ARENA SYSTEM =====
+export interface ArenaWaveResult {
+    completed: boolean;       // Wave was completed
+    perfectWave: boolean;     // No wrong answers during wave
+    crystalsEarned: number;   // 1 (base) or 2 (base + perfect bonus)
+}
+
 export interface ArenaState {
     isActive: boolean;
     arenaLevel: number;         // Which arena level (1-5)
     currentBattle: number;      // 0-4 (5 battles per arena)
     playerHpAtStart: number;    // HP when arena started
     completedArenaLevels: number[];  // Tracks which arena levels have been completed
+    waveResults?: ArenaWaveResult[]; // Index 0-4 for waves 1-5, tracks completion and perfect status
 }
 
 // ===== PET SYSTEM =====
@@ -84,7 +91,7 @@ export interface PlayerState {
     hp: number;
     maxHp: number;
     coins: CoinCurrency;              // Replaces gold: number
-    diamonds: DiamondInventory;       // CHANGED: Multi-tier diamond inventory
+    diamonds: DiamondInventory;       // LEGACY: Multi-tier diamond inventory (migrated to crystals)
     status: 'healthy' | 'přizabitý';  // Health status
     attack: number;
     defense: number;
@@ -102,6 +109,11 @@ export interface PlayerState {
     arena: ArenaState;                // Arena progress tracking
     lastBuildingId?: string;          // Track last visited building for return position
     lastTestingBuildingId?: string;   // Track last visited building in testing scene
+    // === CRYSTAL & MANA SYSTEM ===
+    crystals?: CrystalInventory;      // Crystal inventory with numeric values
+    mana?: number;                    // Mana count for Crystal Forge operations (no max limit)
+    groundCrystals?: Crystal[];       // Overflow crystals dropped on ground
+    defeatedBosses?: string[];        // Track defeated boss IDs for progression
 }
 
 // ===== GUILD TRIAL SYSTEM =====
@@ -142,7 +154,7 @@ export interface ProblemStats {
     wrongCount: number;
     lastAttempt: number;        // timestamp
     mastered: boolean;          // true if correctly answered this session
-    diamondsCollected: number;  // NEW: 0, 1, 2, or 3 (tracks collected diamonds at 5x, 10x, 20x)
+    manaCollected: number;      // 0, 1, 2, or 3 (tracks collected mana at 5x, 10x, 20x thresholds)
 }
 
 export interface InventoryState {
@@ -301,3 +313,23 @@ export interface SaveSlotData {
     mathStats: MathStats;
     timestamp: number;
 }
+
+// ===== CRYSTAL SYSTEM =====
+export type CrystalTier = 'shard' | 'fragment' | 'prism' | 'core';
+
+export interface Crystal {
+    id: string;
+    tier: CrystalTier;
+    value: number;
+    locked: boolean;
+    createdAt: number;
+}
+
+export interface CrystalInventory {
+    crystals: Crystal[];
+    maxCapacity: number;
+}
+
+// ===== MANA SYSTEM =====
+// Mana is just a count (like crystals), no max limit
+// Earned by solving math problems in Guild, spent in Crystal Forge

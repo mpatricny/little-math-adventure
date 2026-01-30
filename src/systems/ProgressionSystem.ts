@@ -1,4 +1,6 @@
-import { PlayerState, CoinCurrency, DiamondInventory, DiamondType, CharacterType } from '../types';
+import { PlayerState, CoinCurrency, DiamondInventory, DiamondType, CharacterType, Crystal, CrystalInventory } from '../types';
+import { CrystalSystem } from './CrystalSystem';
+import { ManaSystem } from './ManaSystem';
 
 // XP needed per level transition (battles needed)
 const XP_PER_LEVEL: Record<number, number> = {
@@ -263,7 +265,7 @@ export class ProgressionSystem {
                 silver: 0,
                 gold: 0
             },
-            diamonds: {           // Multi-tier diamond inventory
+            diamonds: {           // Multi-tier diamond inventory (legacy, migrated to crystals)
                 common: 0,
                 red: 0,
                 green: 0
@@ -288,7 +290,84 @@ export class ProgressionSystem {
                 currentBattle: 0,
                 playerHpAtStart: 10,
                 completedArenaLevels: []
-            }
+            },
+            // === CRYSTAL & MANA SYSTEM ===
+            crystals: CrystalSystem.createInitialInventory(),
+            mana: ManaSystem.createInitialMana(),
+            groundCrystals: [],
+            defeatedBosses: []
         };
+    }
+
+    // === CRYSTAL MIGRATION ===
+
+    /**
+     * Create initial empty crystal inventory
+     */
+    static createInitialCrystals(): CrystalInventory {
+        return CrystalSystem.createInitialInventory();
+    }
+
+    /**
+     * Migrate old diamond inventory to new crystal system
+     * Common diamonds → shards with value 5
+     * Red diamonds → fragments with value 20
+     * Green diamonds → prisms with value 50
+     */
+    static migrateDiamondsToCrystals(diamonds: DiamondInventory): Crystal[] {
+        const crystals: Crystal[] = [];
+
+        // Common diamonds → shards with value 5
+        for (let i = 0; i < diamonds.common; i++) {
+            crystals.push(CrystalSystem.generateCrystal('shard', 5));
+        }
+
+        // Red diamonds → fragments with value 20
+        for (let i = 0; i < diamonds.red; i++) {
+            crystals.push(CrystalSystem.generateCrystal('fragment', 20));
+        }
+
+        // Green diamonds → prisms with value 50
+        for (let i = 0; i < diamonds.green; i++) {
+            crystals.push(CrystalSystem.generateCrystal('prism', 50));
+        }
+
+        return crystals;
+    }
+
+    /**
+     * Migrate player state to include crystal and mana systems
+     * Called when loading old saves
+     */
+    static migratePlayerState(player: PlayerState): PlayerState {
+        // Migrate: Add crystals if missing
+        if (!player.crystals) {
+            player.crystals = this.createInitialCrystals();
+            // Convert old diamonds to crystals
+            if (player.diamonds) {
+                player.crystals.crystals = this.migrateDiamondsToCrystals(player.diamonds);
+            }
+        }
+
+        // Migrate: Convert old ManaState format to number, or initialize
+        // Old format was { current: number, max: number }, new format is just number
+        player.mana = ManaSystem.migrateFromOldFormat(player.mana as any);
+
+        // Migrate: Add groundCrystals if missing
+        if (!player.groundCrystals) {
+            player.groundCrystals = [];
+        }
+
+        // Migrate: Add defeatedBosses if missing
+        if (!player.defeatedBosses) {
+            player.defeatedBosses = [];
+        }
+
+        // Migrate: Add waveResults to arena state if missing
+        if (player.arena && !player.arena.waveResults) {
+            player.arena.waveResults = [];
+        }
+
+        return player;
     }
 }

@@ -225,6 +225,79 @@ TileSprites use `width` and `height` to define the display area. The `scale` pro
 { "width": 1280, "height": 80 }
 ```
 
+## Arena System Architecture
+
+The game features multiple arena levels throughout the regions. All arenas share the same system architecture to ensure consistent behavior.
+
+### Wave System
+
+Each arena consists of **5 waves** with configurable enemy compositions. The system tracks:
+
+- **Current wave progress** (0-4) - which wave the player is on
+- **Historical best results** - preserved between arena runs for achievement tracking
+- **Crystal rewards** - based on improvement, not repetition
+
+### Wave Results Tracking
+
+```typescript
+interface ArenaWaveResult {
+    completed: boolean;       // Wave was completed
+    perfectWave: boolean;     // No wrong answers during wave
+    crystalsEarned: number;   // Cumulative crystals from this wave
+}
+```
+
+Historical results are stored in `player.arena.waveResults[]` (index 0-4 for waves 1-5).
+
+### Crystal Reward Logic
+
+Crystals are **only awarded for improvements**, not for repeated completions:
+
+| Scenario | Crystals Awarded |
+|----------|------------------|
+| First completion of wave | +1 💎 (base) |
+| First perfect completion | +1 💎 (bonus) |
+| Repeat completion (not perfect → perfect) | +1 💎 (now achieved perfect) |
+| Repeat completion (already perfect) | 0 💎 (no improvement) |
+
+This encourages replaying for perfection without infinite farming.
+
+### Wrong Answer Tracking
+
+Wrong answers are tracked per wave via `waveWrongAnswerCount` in BattleScene:
+- Reset when entering a new battle from arena
+- Incremented on wrong player math OR wrong pet math
+- Used at victory to determine if wave was "perfect"
+
+### Arena Start Behavior
+
+When player enters an arena (from TownScene):
+- **Always starts from wave 0** (first wave)
+- **Historical waveResults are preserved** (not reset)
+- Only awards crystals for improvements over historical best
+
+### UI: Wave Progress Table
+
+Located in ArenaScene, uses the `misc.arena-with-title` frame element. Shows:
+- 5 rows (one per wave)
+- Enemy sprite previews for each wave
+- Completion indicator (✓ for completed, ○ for pending)
+- Perfect indicator (★ for perfect, ☆ for non-perfect)
+- Current wave highlighted, future waves dimmed
+
+### Adding New Arenas
+
+To add a new arena level:
+1. Add wave configuration to `ARENA_WAVES` in ArenaScene.ts
+2. Configure enemies per wave in format: `{ level: number, waves: EnemyDefinition[][] }`
+3. The Wave Progress Table and reward system work automatically
+
+All arena levels share the same:
+- Wave Progress Table UI positioning
+- Crystal reward calculation logic
+- Wrong answer tracking
+- Historical progress preservation
+
 ## Known Recurring Bugs
 
 ### Hit Area Offset Bug (UI Elements)
@@ -253,11 +326,47 @@ container.setInteractive({ useHandCursor: true });
 
 **Prevention**: When making containers interactive, ALWAYS use `setInteractive({ useHandCursor: true })` and let Phaser calculate the hit area automatically based on container size. Never use custom Rectangle offsets.
 
+## Design Documents
+
+### GAME_DESIGN_DOCUMENT.md
+
+Location: `docs/GAME_DESIGN_DOCUMENT.md`
+
+The master design document containing:
+- **Story**: The Starfall Scholar - Zyx the alien, Numera Energy, corrupted creatures
+- **Characters**: Zyx (mentor), Pythia (crystal witch), Player
+- **8 Regions**: Mathoria → Forest → Silverpond → Mountains → Dwarven City → Caves → Last Outpost → Zyx's Ship
+- **Crystal System**: Shards (💎) → Fragments (💠) → Prisms (🔮) → Core (⭐) with numeric values
+- **Mana System**: Energy for crystal forge operations
+- **Pet System**: Binding freed creatures with exact-value amulets
+- **Buildings**: Pythia's Workshop (pet binding, potions), Crystal Forge (crystal math operations)
+- **Problem Variability**: Standard, Missing Operand, Comparison, True/False formats
+- **UI Specifications**: Pet binding UI, Crystal Forge UI, Journey Map
+- **AI Image Prompts**: For generating game assets
+- **Data Structures**: JSON schemas for crystals, pets, forge operations
+
+### FOREST_DESIGN.md
+
+Location: `docs/FOREST_DESIGN.md`
+
+Detailed balance data for Verdant Forest journey including:
+- Entry requirements and completion rates
+- Enemy stats (simulation-verified)
+- Boss phases and mechanics
+- Puzzle descriptions
+
+### BALANCE_REPORT.md
+
+Location: `docs/BALANCE_REPORT.md`
+
+Simulation results for game economy and progression balance.
+
 ## File Locations
 
 - **Game source**: `/Users/datamole/little-math-adventure/src/`
 - **Scenes**: `/Users/datamole/little-math-adventure/src/scenes/`
 - **Data files**: `/Users/datamole/little-math-adventure/public/assets/data/`
+- **Design docs**: `/Users/datamole/little-math-adventure/docs/`
 - **Scene Editor**: `/Users/datamole/SimpleGame/scene-editor/`
 
 ## Running the Project

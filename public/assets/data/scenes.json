@@ -1170,7 +1170,6 @@
           "x": 640,
           "y": 360,
           "depth": -10,
-          "scale": 1,
           "visible": true
         }
       ],
@@ -1180,23 +1179,21 @@
           "asset": "ui.labels.title-label",
           "x": 889,
           "y": 204,
-          "text": "VLNA 1",
-          "color": "#ffffff",
           "depth": 10,
-          "scale": 1,
-          "visible": true
+          "text": "VLNA 1",
+          "visible": true,
+          "color": "#ffffff"
         },
         {
           "id": "startBattleButton",
           "asset": "ui.buttons.attack-button",
           "x": 890,
           "y": 655,
+          "depth": 50,
           "text": "ZAČÍT BOJ",
           "events": {
             "click": "startBattle"
           },
-          "depth": 50,
-          "scale": 1,
           "visible": true
         },
         {
@@ -1204,13 +1201,21 @@
           "asset": "ui.buttons.back-button",
           "x": 1065,
           "y": 655,
+          "depth": 50,
           "text": "ODEJÍT",
           "events": {
             "click": "leaveArena"
           },
-          "depth": 50,
-          "scale": 1,
           "visible": true
+        },
+        {
+          "id": "ARENA WITH TITLE",
+          "asset": "misc.arena-with-title",
+          "x": 227,
+          "y": 238,
+          "uiElement": {
+            "templateId": "1769790026152-n7qtn1nyx"
+          }
         }
       ],
       "spawnPoints": {
@@ -1219,14 +1224,14 @@
           "y": 563
         },
         "pet": {
-          "x": 303,
-          "y": 674
+          "x": 325,
+          "y": 650
         },
         "enemies": {
           "1": [
             {
-              "x": 892,
-              "y": 457
+              "x": 872,
+              "y": 446
             }
           ],
           "2": [
@@ -1644,6 +1649,15 @@
           }
         }
       ],
+      "zones": []
+    },
+    "PythiaWorkshopScene": {
+      "viewport": {
+        "width": 1280,
+        "height": 720
+      },
+      "elements": [],
+      "ui": [],
       "zones": []
     }
   }

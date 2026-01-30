@@ -3,7 +3,9 @@ import { CharacterUI } from '../ui/CharacterUI';
 import { GameStateManager } from '../systems/GameStateManager';
 import { SceneDebugger } from '../systems/SceneDebugger';
 import { SceneBuilder } from '../systems/SceneBuilder';
+import { CrystalSystem } from '../systems/CrystalSystem';
 import { getPlayerSpriteConfig } from '../utils/characterUtils';
+import { Crystal } from '../types';
 
 export class TownScene extends Phaser.Scene {
     private sceneBuilder!: SceneBuilder;
@@ -12,6 +14,7 @@ export class TownScene extends Phaser.Scene {
     private player!: Phaser.GameObjects.Sprite;
     private debugArrow?: Phaser.GameObjects.Container;
     private isDebugMode: boolean = false;
+    private groundCrystalsContainer?: Phaser.GameObjects.Container;
 
     constructor() {
         super({ key: 'TownScene' });
@@ -81,6 +84,9 @@ export class TownScene extends Phaser.Scene {
 
         // Create arena button (dynamic element)
         this.createArenaButton();
+
+        // Show ground crystals if any
+        this.showGroundCrystals();
 
         // Setup universal debugger
         this.debugger = new SceneDebugger(this, 'TownScene');
@@ -254,7 +260,7 @@ export class TownScene extends Phaser.Scene {
         const buildings = [
             { id: 'witch', scene: 'WitchHutScene' },
             { id: 'guild', scene: 'GuildScene' },
-            { id: 'tavern', scene: 'TavernScene' },
+            { id: 'tavern', scene: 'CrystalForgeScene' },  // Crystal Forge replaces Tavern
             { id: 'shop', scene: 'ShopScene' }
         ];
 
@@ -344,7 +350,28 @@ export class TownScene extends Phaser.Scene {
                     onComplete: () => {
                         const player = GameStateManager.getInstance().getPlayer();
                         const arenaLevel = player.arena.arenaLevel || 1;
-                        const wave = player.arena.isActive ? player.arena.currentBattle : 0;
+
+                        // Check if we have existing progress to preserve
+                        const hasExistingProgress = player.arena.waveResults && player.arena.waveResults.length > 0;
+
+                        console.log('[TownScene] Entering arena:', {
+                            isActive: player.arena.isActive,
+                            currentBattle: player.arena.currentBattle,
+                            waveResults: JSON.stringify(player.arena.waveResults),
+                            hasExistingProgress,
+                            willReset: !player.arena.isActive && !hasExistingProgress
+                        });
+
+                        // waveResults stores BEST historical results - never reset
+                        // Only initialize if missing
+                        if (!player.arena.waveResults) {
+                            player.arena.waveResults = [];
+                        }
+
+                        // Always start from wave 0 (players must complete all waves each run)
+                        // But historical progress (for UI and crystal tracking) is preserved
+                        const wave = 0;
+                        console.log('[TownScene] Starting arena from wave 0, historical progress preserved:', hasExistingProgress);
 
                         player.arena.isActive = true;
                         player.arena.playerHpAtStart = player.hp;
@@ -354,6 +381,142 @@ export class TownScene extends Phaser.Scene {
                     }
                 });
             }
+        });
+    }
+
+    /**
+     * Display ground crystals that couldn't fit in inventory
+     */
+    private showGroundCrystals(): void {
+        const gameState = GameStateManager.getInstance();
+        const player = gameState.getPlayer();
+
+        if (!player.groundCrystals || player.groundCrystals.length === 0) return;
+
+        // Remove old container if exists
+        if (this.groundCrystalsContainer) {
+            this.groundCrystalsContainer.destroy();
+        }
+
+        // Create container for ground crystals at bottom of screen
+        const startX = 500;
+        const startY = 650;
+        this.groundCrystalsContainer = this.add.container(startX, startY);
+        this.groundCrystalsContainer.setDepth(50);
+
+        // Label
+        const label = this.add.text(0, -40, '💎 Krystaly na zemi:', {
+            fontSize: '14px',
+            fontFamily: 'Arial, sans-serif',
+            color: '#ffaa44',
+            fontStyle: 'bold',
+            stroke: '#000000',
+            strokeThickness: 2
+        }).setOrigin(0.5);
+        this.groundCrystalsContainer.add(label);
+
+        // Display each ground crystal
+        player.groundCrystals.forEach((crystal, index) => {
+            const x = (index % 5) * 50 - 100;
+            const y = Math.floor(index / 5) * 40;
+
+            const config = CrystalSystem.getTierConfig(crystal.tier);
+
+            // Crystal container
+            const crystalContainer = this.add.container(x, y);
+
+            // Background
+            const bg = this.add.rectangle(0, 0, 44, 36, 0x333366, 0.8)
+                .setStrokeStyle(2, 0x4466aa);
+
+            // Emoji
+            const emoji = this.add.text(0, -6, config.emoji, {
+                fontSize: '20px'
+            }).setOrigin(0.5);
+
+            // Value
+            const value = this.add.text(0, 12, `(${crystal.value})`, {
+                fontSize: '10px',
+                fontFamily: 'Arial, sans-serif',
+                color: config.color
+            }).setOrigin(0.5);
+
+            crystalContainer.add([bg, emoji, value]);
+            this.groundCrystalsContainer.add(crystalContainer);
+
+            // Make clickable
+            bg.setInteractive({ useHandCursor: true })
+                .on('pointerover', () => bg.setFillStyle(0x445588))
+                .on('pointerout', () => bg.setFillStyle(0x333366))
+                .on('pointerdown', () => this.pickupCrystal(crystal.id));
+
+            // Bounce animation to attract attention
+            this.tweens.add({
+                targets: crystalContainer,
+                y: y - 5,
+                duration: 500 + index * 50,
+                yoyo: true,
+                repeat: -1,
+                ease: 'Sine.easeInOut'
+            });
+        });
+    }
+
+    /**
+     * Try to pick up a ground crystal
+     */
+    private pickupCrystal(crystalId: string): void {
+        const gameState = GameStateManager.getInstance();
+        const player = gameState.getPlayer();
+
+        if (CrystalSystem.collectFromGround(player, crystalId)) {
+            gameState.save();
+
+            // Show pickup animation
+            const floatText = this.add.text(640, 600, '+1 💎', {
+                fontSize: '24px',
+                fontFamily: 'Arial, sans-serif',
+                color: '#88ccff',
+                fontStyle: 'bold',
+                stroke: '#000000',
+                strokeThickness: 3
+            }).setOrigin(0.5).setDepth(100);
+
+            this.tweens.add({
+                targets: floatText,
+                y: 550,
+                alpha: 0,
+                duration: 800,
+                onComplete: () => floatText.destroy()
+            });
+
+            // Refresh display
+            this.showGroundCrystals();
+        } else {
+            // Inventory full - show message
+            this.showToast('Inventář plný! Zajdi do kovárny.');
+        }
+    }
+
+    /**
+     * Show a temporary toast message
+     */
+    private showToast(message: string): void {
+        const toast = this.add.text(640, 300, message, {
+            fontSize: '20px',
+            fontFamily: 'Arial, sans-serif',
+            color: '#ffffff',
+            backgroundColor: '#aa4444',
+            padding: { x: 16, y: 8 }
+        }).setOrigin(0.5).setDepth(200);
+
+        this.tweens.add({
+            targets: toast,
+            alpha: 0,
+            y: 260,
+            duration: 2000,
+            delay: 1000,
+            onComplete: () => toast.destroy()
         });
     }
 

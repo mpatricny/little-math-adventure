@@ -1,9 +1,10 @@
 import Phaser from 'phaser';
-import { BattleState, BattlePhase, BattleEnemy, EnemyDefinition, ItemDefinition, PetDefinition, MathProblem } from '../types';
+import { BattleState, BattlePhase, BattleEnemy, EnemyDefinition, ItemDefinition, PetDefinition, MathProblem, Crystal } from '../types';
 import { MathEngine } from '../systems/MathEngine';
 import { MathBoard } from '../ui/MathBoard';
 import { GameStateManager } from '../systems/GameStateManager';
 import { ProgressionSystem } from '../systems/ProgressionSystem';
+import { CrystalSystem } from '../systems/CrystalSystem';
 import { SceneDebugger } from '../systems/SceneDebugger';
 import { SceneBuilder } from '../systems/SceneBuilder';
 import { getPlayerSpriteConfig, PlayerSpriteConfig } from '../utils/characterUtils';
@@ -85,6 +86,9 @@ export class BattleScene extends Phaser.Scene {
     // Pet turn system
     private petTargetIndex: number = 0;
     private petMathProblem: MathProblem | null = null;
+    private petAttackButton!: Phaser.GameObjects.Container;
+    private petTargetIndicator: Phaser.GameObjects.Image | null = null;
+    private petTargetIndicatorTween: Phaser.Tweens.Tween | null = null;
 
     // Active character highlighting
     private activeHighlight: Phaser.GameObjects.Graphics | null = null;
@@ -98,6 +102,7 @@ export class BattleScene extends Phaser.Scene {
     private fromArena: boolean = false;
     private arenaLevel: number = 1;
     private arenaWave: number = 0;
+    private waveWrongAnswerCount: number = 0;
 
     // Enemy attack tween tracking for mid-attack pause
     private enemyAttackTweens: Phaser.Tweens.Tween[] = [];
@@ -113,6 +118,7 @@ export class BattleScene extends Phaser.Scene {
         this.fromArena = data.fromArena || false;
         this.arenaLevel = data.arenaLevel || 1;
         this.arenaWave = data.wave || 0;
+        this.waveWrongAnswerCount = 0;
 
         // Get enemy data - either from arena or single enemy
         if (data.enemyDefs && data.enemyDefs.length > 0) {
@@ -261,9 +267,15 @@ export class BattleScene extends Phaser.Scene {
             const hpBar = this.createHpBar(0, -80, enemy.hp, enemy.maxHp, '#cc4444');
             container.add([sprite, hpBar.container]);
 
-            // Make enemy clickable to select as target
+            // Make enemy clickable to select as target (for both player and pet turns)
             sprite.setInteractive({ useHandCursor: true });
-            sprite.on('pointerdown', () => this.selectTarget(index));
+            sprite.on('pointerdown', () => {
+                if (this.battleState.phase === 'player_turn') {
+                    this.selectTarget(index);
+                } else if (this.battleState.phase === 'pet_turn') {
+                    this.selectPetTarget(index);
+                }
+            });
 
             this.enemyContainers.push(container);
             this.enemies.push(sprite);
@@ -287,6 +299,17 @@ export class BattleScene extends Phaser.Scene {
         });
 
         this.updateTargetIndicator();
+
+        // Create pet target indicator (green-tinted sword for pet's target)
+        this.petTargetIndicator = this.add.image(0, 0, 'shop-swords-sheet', 1)
+            .setScale(0.18)
+            .setAngle(180)
+            .setTint(0x44ff44)  // Green tint for pet
+            .setDepth(50)
+            .setVisible(false);
+
+        // Create pet attack button (same position as attack button, shown during pet_turn)
+        this.createPetAttackButton();
 
         // Set player level in registry for MathEngine's adaptive difficulty
         this.registry.set('playerLevel', player.level);
@@ -440,6 +463,11 @@ export class BattleScene extends Phaser.Scene {
 
         if (this.petMathProblem) {
             this.mathEngine.recordResultForProblem(this.petMathProblem.id, isCorrect);
+        }
+
+        // Track wrong answers for arena perfect wave calculation
+        if (this.fromArena && !isCorrect) {
+            this.waveWrongAnswerCount++;
         }
 
         if (isCorrect) {
@@ -993,6 +1021,82 @@ export class BattleScene extends Phaser.Scene {
         this.potionButton.setVisible(false);
     }
 
+    private createPetAttackButton(): void {
+        // Same position as attack button - centered at 640, 660
+        this.petAttackButton = this.add.container(640, 660);
+        this.petAttackButton.setDepth(50);
+
+        const petBtnBg = this.add.rectangle(0, 0, 150, 50, 0x44aa44)  // Green background
+            .setStrokeStyle(2, 0xffffff)
+            .setInteractive({ useHandCursor: true });
+
+        const petBtnText = this.add.text(0, 0, '🐾 ÚTOK', {
+            fontSize: '22px',
+            fontFamily: 'Arial, sans-serif',
+            color: '#ffffff',
+            fontStyle: 'bold',
+        }).setOrigin(0.5);
+
+        this.petAttackButton.add([petBtnBg, petBtnText]);
+        this.petAttackButton.setVisible(false);
+
+        petBtnBg.on('pointerdown', () => this.onPetAttackClicked());
+        petBtnBg.on('pointerover', () => petBtnBg.setFillStyle(0x55bb55));
+        petBtnBg.on('pointerout', () => petBtnBg.setFillStyle(0x44aa44));
+    }
+
+    private onPetAttackClicked(): void {
+        if (this.battleState.phase !== 'pet_turn') return;
+
+        this.petAttackButton.setVisible(false);
+        this.hidePetTargetIndicator();
+        this.setPhase('pet_math');
+    }
+
+    private selectPetTarget(index: number): void {
+        if (this.battleState.phase !== 'pet_turn') return;
+        if (this.battleState.enemies[index].hp <= 0) return;
+
+        this.petTargetIndex = index;
+        this.updatePetTargetIndicator();
+    }
+
+    private updatePetTargetIndicator(): void {
+        const idx = this.petTargetIndex;
+        const container = this.enemyContainers[idx];
+
+        if (!container || this.battleState.enemies[idx].hp <= 0) {
+            this.hidePetTargetIndicator();
+            return;
+        }
+
+        // Position above enemy (same height as player indicator)
+        const baseY = container.y - 100;
+        this.petTargetIndicator?.setPosition(container.x, baseY);
+        this.petTargetIndicator?.setVisible(true);
+
+        // Restart bobbing tween with absolute position
+        if (this.petTargetIndicatorTween) {
+            this.petTargetIndicatorTween.stop();
+        }
+        this.petTargetIndicatorTween = this.tweens.add({
+            targets: this.petTargetIndicator,
+            y: { from: baseY, to: baseY - 8 },
+            duration: 400,
+            yoyo: true,
+            repeat: -1,
+            ease: 'Sine.inOut'
+        });
+    }
+
+    private hidePetTargetIndicator(): void {
+        this.petTargetIndicator?.setVisible(false);
+        if (this.petTargetIndicatorTween) {
+            this.petTargetIndicatorTween.stop();
+            this.petTargetIndicatorTween = null;
+        }
+    }
+
     private usePotion(): void {
         // Only allow during player_turn phase
         if (this.battleState.phase !== 'player_turn') return;
@@ -1065,10 +1169,17 @@ export class BattleScene extends Phaser.Scene {
                 break;
 
             case 'pet_turn':
-                // Pet automatically targets same enemy as hero
-                this.petTargetIndex = this.battleState.selectedEnemyIndex;
-                // Go directly to pet math
-                this.setPhase('pet_math');
+                // Show pet attack button for target selection
+                this.petAttackButton.setVisible(true);
+                // Hide player's target indicator
+                this.targetIndicator.setVisible(false);
+                // Show green highlight on pet
+                if (this.petContainer) {
+                    this.showActiveHighlight(this.petContainer.x, this.petContainer.y + 30, 'green');
+                }
+                // Auto-select first alive enemy (can be changed by clicking)
+                this.petTargetIndex = this.battleState.enemies.findIndex(e => e.hp > 0);
+                this.updatePetTargetIndicator();
                 break;
 
             case 'pet_math':
@@ -1174,6 +1285,9 @@ export class BattleScene extends Phaser.Scene {
                 if (isCorrect) {
                     const multiplier = problem.damageMultiplier || 1;
                     totalDamage += multiplier;
+                } else if (this.fromArena) {
+                    // Track wrong answers for arena perfect wave calculation
+                    this.waveWrongAnswerCount++;
                 }
             }
         });
@@ -1535,9 +1649,10 @@ export class BattleScene extends Phaser.Scene {
         // Reset depth
         this.heroContainer.setDepth(0);
 
-        // Check if enemy is still alive and pet is equipped for pet turn
-        if (enemy.hp > 0 && this.equippedPetDef && this.petContainer) {
-            // Pet gets its own turn
+        // Check if ANY enemy is alive (not just the target) and pet is equipped
+        const anyEnemyAlive = this.battleState.enemies.some(e => e.hp > 0);
+        if (anyEnemyAlive && this.equippedPetDef && this.petContainer) {
+            // Pet gets its own turn to attack any remaining enemy
             this.setPhase('pet_turn');
         } else {
             this.continueAfterAttack(idx, enemy, enemySprite, animPrefix);
@@ -1780,6 +1895,103 @@ export class BattleScene extends Phaser.Scene {
         player.hp = this.battleState.playerHp; // Persist HP loss
         ProgressionSystem.awardXp(player, xpReward);
 
+        // === ARENA CRYSTAL DROPS ===
+        const crystalDrops: Crystal[] = [];
+        let crystalOverflow = false;
+
+        if (this.fromArena) {
+            // Determine if this was a perfect wave (no wrong answers)
+            const isPerfect = this.waveWrongAnswerCount === 0;
+
+            // Initialize waveResults array if needed
+            if (!player.arena.waveResults) {
+                player.arena.waveResults = [];
+            }
+
+            // Get previous best result for this wave (if any)
+            const prevResult = player.arena.waveResults[this.arenaWave];
+            const wasCompletedBefore = prevResult?.completed || false;
+            const wasPerfectBefore = prevResult?.perfectWave || false;
+
+            // Calculate crystal reward based on IMPROVEMENT only:
+            // - First completion: +1 base crystal
+            // - First perfect: +1 bonus crystal
+            let crystalsToAward = 0;
+            if (!wasCompletedBefore) {
+                crystalsToAward += 1;  // Base crystal for first completion
+            }
+            if (isPerfect && !wasPerfectBefore) {
+                crystalsToAward += 1;  // Bonus crystal for achieving perfect
+            }
+
+            // Update wave result - store BEST result (perfectWave = true if ever achieved)
+            const newPerfectStatus = isPerfect || wasPerfectBefore;
+            const totalCrystalsEarned = (prevResult?.crystalsEarned || 0) + crystalsToAward;
+
+            player.arena.waveResults[this.arenaWave] = {
+                completed: true,
+                perfectWave: newPerfectStatus,
+                crystalsEarned: totalCrystalsEarned
+            };
+
+            // Debug: Log what we're saving
+            console.log('[BattleScene] Wave result:', {
+                wave: this.arenaWave,
+                isPerfect,
+                wasCompletedBefore,
+                wasPerfectBefore,
+                crystalsToAward,
+                totalCrystalsEarned,
+                waveResults: JSON.stringify(player.arena.waveResults)
+            });
+
+            // Wave crystal drop (after each wave except the last)
+            // Only award crystals if there's something new to give
+            if (this.arenaWave < 4 && crystalsToAward > 0) {
+                const waveCrystal = CrystalSystem.generateCrystal('shard', crystalsToAward);
+                const added = CrystalSystem.addToInventory(player, waveCrystal);
+                if (added) {
+                    crystalDrops.push(waveCrystal);
+                } else {
+                    CrystalSystem.addToGroundDrops(player, [waveCrystal]);
+                    crystalOverflow = true;
+                }
+            }
+
+            // Arena completion crystal (wave 5, index 4)
+            if (this.arenaWave >= 4) {
+                // Completion bonus crystal
+                const completionCrystal = CrystalSystem.generateCrystal('shard', Phaser.Math.Between(4, 6));
+                const added = CrystalSystem.addToInventory(player, completionCrystal);
+                if (added) {
+                    crystalDrops.push(completionCrystal);
+                } else {
+                    CrystalSystem.addToGroundDrops(player, [completionCrystal]);
+                    crystalOverflow = true;
+                }
+
+                // Arena 2 special: fragment with value 15
+                if (this.arenaLevel === 2) {
+                    const bodlinaCrystal = CrystalSystem.generateCrystal('fragment', 15);
+                    const addedFragment = CrystalSystem.addToInventory(player, bodlinaCrystal);
+                    if (addedFragment) {
+                        crystalDrops.push(bodlinaCrystal);
+                    } else {
+                        CrystalSystem.addToGroundDrops(player, [bodlinaCrystal]);
+                        crystalOverflow = true;
+                    }
+                }
+            }
+
+            // Store crystal drops for VictoryScene display
+            if (crystalDrops.length > 0) {
+                this.registry.set('crystalDrops', crystalDrops);
+            }
+            if (crystalOverflow) {
+                this.registry.set('crystalOverflow', true);
+            }
+        }
+
         // Check for pet unlocks from defeated enemies
         const petsData = this.cache.json.get('pets') as PetDefinition[];
         const newPetUnlocks: string[] = [];
@@ -1839,14 +2051,25 @@ export class BattleScene extends Phaser.Scene {
                         arenaCompleted: true,
                         arenaLevel: this.arenaLevel,
                         nextArenaLevel: this.arenaLevel + 1,
-                        playerHp: this.battleState.playerHp
+                        playerHp: this.battleState.playerHp,
+                        crystalDrops: crystalDrops,
+                        crystalOverflow: crystalOverflow
                     });
                 } else {
-                    // Return to arena for next wave
-                    this.scene.start('ArenaScene', {
-                        level: this.arenaLevel,
-                        wave: this.arenaWave + 1,
-                        playerHp: this.battleState.playerHp
+                    // Return to arena for next wave - show crystal drop notification
+                    this.showCrystalDropNotification(crystalDrops, crystalOverflow);
+
+                    this.time.delayedCall(1500, () => {
+                        console.log('[BattleScene] Transitioning to ArenaScene:', {
+                            arenaLevel: this.arenaLevel,
+                            nextWave: this.arenaWave + 1,
+                            waveResults: JSON.stringify(player.arena.waveResults)
+                        });
+                        this.scene.start('ArenaScene', {
+                            arenaLevel: this.arenaLevel,  // Fixed: was 'level'
+                            wave: this.arenaWave + 1,
+                            fromBattle: true
+                        });
                     });
                 }
             } else {
@@ -1854,6 +2077,55 @@ export class BattleScene extends Phaser.Scene {
                 this.scene.start('TownScene');
             }
         });
+    }
+
+    /**
+     * Show crystal drop notification after arena wave
+     */
+    private showCrystalDropNotification(crystals: Crystal[], overflow: boolean): void {
+        if (crystals.length === 0) return;
+
+        const displayStrings = crystals.map(c => CrystalSystem.getCrystalDisplay(c));
+        const text = `+${displayStrings.join(' ')}`;
+
+        const notification = this.add.text(640, 400, text, {
+            fontSize: '32px',
+            fontFamily: 'Arial, sans-serif',
+            color: '#88ccff',
+            fontStyle: 'bold',
+            stroke: '#000000',
+            strokeThickness: 4
+        }).setOrigin(0.5).setDepth(100);
+
+        this.tweens.add({
+            targets: notification,
+            y: 350,
+            alpha: 0,
+            duration: 1500,
+            delay: 500,
+            ease: 'Power2',
+            onComplete: () => notification.destroy()
+        });
+
+        // Show overflow warning if inventory was full
+        if (overflow) {
+            const warningText = this.add.text(640, 450, '⚠️ Inventář plný! Krystal zůstal na zemi.', {
+                fontSize: '18px',
+                fontFamily: 'Arial, sans-serif',
+                color: '#ffaa44',
+                fontStyle: 'bold',
+                stroke: '#000000',
+                strokeThickness: 2
+            }).setOrigin(0.5).setDepth(100);
+
+            this.tweens.add({
+                targets: warningText,
+                alpha: 0,
+                duration: 1000,
+                delay: 1500,
+                onComplete: () => warningText.destroy()
+            });
+        }
     }
 
     private onDefeat(): void {
