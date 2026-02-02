@@ -160,12 +160,15 @@ export class BattleScene extends Phaser.Scene {
                     atk?: number;
                     xp?: number;
                     goldMin?: number;
+                    goldMax?: number;
                     spriteKey: string;
                 }
                 const forestData = this.cache.json.get('forestEnemies') as { enemies: Record<string, ForestEnemy> };
                 const forestEnemy = forestData?.enemies?.[enemyId];
                 if (forestEnemy) {
                     // Convert forest enemy format to standard format
+                    const goldMin = forestEnemy.goldMin || 5;
+                    const goldMax = forestEnemy.goldMax || goldMin + 5;
                     enemy = {
                         id: forestEnemy.id,
                         name: forestEnemy.nameCs || forestEnemy.name,
@@ -173,7 +176,7 @@ export class BattleScene extends Phaser.Scene {
                         attack: forestEnemy.atk || 3,
                         defense: 0,
                         xp: forestEnemy.xp || 10,
-                        gold: forestEnemy.goldMin || 5,
+                        goldReward: [goldMin, goldMax],  // Must be array format
                         spriteKey: forestEnemy.spriteKey,
                         animPrefix: forestEnemy.spriteKey?.replace('-sheet', '') || 'slime'
                     } as unknown as EnemyDefinition;
