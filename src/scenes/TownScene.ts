@@ -351,27 +351,32 @@ export class TownScene extends Phaser.Scene {
                         const player = GameStateManager.getInstance().getPlayer();
                         const arenaLevel = player.arena.arenaLevel || 1;
 
-                        // Check if we have existing progress to preserve
-                        const hasExistingProgress = player.arena.waveResults && player.arena.waveResults.length > 0;
+                        // Check if arena level has changed - if so, reset waveResults
+                        const previousArenaLevel = player.arena.waveResultsArenaLevel;
+                        const arenaLevelChanged = previousArenaLevel !== undefined && previousArenaLevel !== arenaLevel;
 
                         console.log('[TownScene] Entering arena:', {
                             isActive: player.arena.isActive,
                             currentBattle: player.arena.currentBattle,
-                            waveResults: JSON.stringify(player.arena.waveResults),
-                            hasExistingProgress,
-                            willReset: !player.arena.isActive && !hasExistingProgress
+                            arenaLevel,
+                            previousArenaLevel,
+                            arenaLevelChanged,
+                            waveResults: JSON.stringify(player.arena.waveResults)
                         });
 
-                        // waveResults stores BEST historical results - never reset
-                        // Only initialize if missing
-                        if (!player.arena.waveResults) {
+                        // Reset waveResults when entering a DIFFERENT arena level
+                        // (waveResults are per-arena, not shared across arenas)
+                        if (arenaLevelChanged || !player.arena.waveResults) {
                             player.arena.waveResults = [];
+                            console.log('[TownScene] Reset waveResults for new arena level:', arenaLevel);
                         }
 
+                        // Track which arena level these waveResults belong to
+                        player.arena.waveResultsArenaLevel = arenaLevel;
+
                         // Always start from wave 0 (players must complete all waves each run)
-                        // But historical progress (for UI and crystal tracking) is preserved
                         const wave = 0;
-                        console.log('[TownScene] Starting arena from wave 0, historical progress preserved:', hasExistingProgress);
+                        console.log('[TownScene] Starting arena level', arenaLevel, 'from wave 0');
 
                         player.arena.isActive = true;
                         player.arena.playerHpAtStart = player.hp;

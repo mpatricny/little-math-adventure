@@ -96,6 +96,24 @@
       "rightWidth": 184,
       "topHeight": 128,
       "bottomHeight": 154
+    },
+    "db50c3dd-da70-45b2-8154-ebf2019455ac": {
+      "texture": "18cace10-b1a0-4a3a-a292-9980ceacd6d3",
+      "name": "Frame Grey 9 slice",
+      "path": "library:originals/dfab890d-2d460345.png",
+      "leftWidth": 113,
+      "rightWidth": 125,
+      "topHeight": 107,
+      "bottomHeight": 123
+    },
+    "c1e3867a-cc21-46dc-8cd4-a55c88e76543": {
+      "texture": "991bb46f-0417-4c22-8e3e-04cea0a3079a",
+      "name": "Frame Grey 9 slice-cropped",
+      "path": "library:originals/08c2b6a2-cbf7cbb9.png",
+      "leftWidth": 41,
+      "rightWidth": 57,
+      "topHeight": 45,
+      "bottomHeight": 50
     }
   }
 }

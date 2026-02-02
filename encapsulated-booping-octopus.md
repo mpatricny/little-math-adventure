@@ -1404,3 +1404,516 @@ export class ProgressionSystem {
 - [ ] Mobile touch works
 - [ ] No console errors
 - [ ] Loading time < 3 seconds
+
+---
+
+# GAME EXPANSION - Story, Regions & Systems
+
+## Story: The Starfall Scholar
+
+### Premise
+
+A brilliant alien mathematician named **Zyx** crash-landed in Mathoria when his ship's *Calculation Core* malfunctioned. The crash released **Numera Energy** - a strange mathematical force that transformed peaceful forest creatures into aggressive beasts driven by unsolved equations swirling in their minds.
+
+The player is a young adventurer who discovers they can calm these creatures by solving their equations. With help from Zyx and **Madame Pythia** (a crystal witch who found Zyx years ago), the player must:
+
+1. Free creatures from corruption by solving math problems
+2. Collect **Numera Crystals** (fragments of the crashed ship)
+3. Find the scattered **Ship Fragments** to help Zyx return home
+4. Train to become a **Master Mathematician Knight**
+
+### Story-Mechanic Integration
+
+| Game Mechanic | Story Explanation |
+|---------------|-------------------|
+| Math battles | Solving equations calms the Numera Energy in creatures |
+| Creatures become pets | Once freed from corruption, they're grateful and loyal |
+| Leveling up | Player becomes more attuned to Numera Energy |
+| Guild trials | Zyx tests your mathematical strength |
+| Crystals (diamonds) | Shards of the Calculation Core |
+| Regions unlock | Following scattered ship fragments |
+| Boss battles | Creatures that absorbed massive Numera Energy |
+| Final goal | Solve the Grand Equation to repair Zyx's ship |
+
+### Key Characters
+
+**Zyx** - The Alien Mathematician
+- Small floating geometric crystal creature with one large expressive eye
+- Wears tiny professor glasses
+- Friendly, slightly nerdy, leaves trail of sparkly math symbols
+- Runs the "Guild" (actually his damaged ship's training simulator)
+
+**Madame Pythia** - The Crystal Witch
+- Found Zyx years ago, learned to harness Numera Energy
+- Tall, elegant, grandmotherly witch in purple robes
+- Wild silver hair with crystals woven in
+- Runs the Workshop (pet binding + potions)
+
+---
+
+## Visual Storytelling for Kids
+
+### Design Principle: No Reading Required
+
+The game targets young children who can't read well. All story elements use:
+- **Comic panels** with pictures only (no text bubbles)
+- **Universal symbols** (✓, ✗, ❤️, 💎, 😊, 😢)
+- **Big expressions** on characters
+- **Clear cause → effect** shown visually
+
+### Intro Comic Sequence (6 Panels)
+
+**Panel 1: Happy Flight Through Space**
+```
+PROMPT: "Cute spaceship flying peacefully through colorful space.
+Friendly stars twinkle. Ship glows warmly. Peaceful journey feeling.
+Children's book illustration style."
+```
+
+**Panel 2: Ship in Trouble**
+```
+PROMPT: "Same cute spaceship now shaking and sparking. Warning lights.
+Ship tilting downward. Falling toward a planet below.
+Cartoon danger - not scary. Children's book style."
+```
+
+**Panel 3: The Crash**
+```
+PROMPT: "Aerial view of green meadow with crashed spaceship in center.
+Small colorful crystals scattered everywhere like confetti.
+Smoke puffs from ship. Forest animals peeking from edges curiously.
+Children's book style."
+```
+
+**Panel 4A: Happy Animals Before**
+```
+PROMPT: "Happy forest animals in sunny meadow. A slime, rabbit, fox,
+and hedgehog playing together. Bright cheerful colors.
+Peaceful storybook feeling. Children's illustration."
+```
+
+**Panel 4B: Confused Animals After**
+```
+PROMPT: "Same forest animals now confused and upset. Swirling numbers
+and symbols around their heads. Crystals nearby. They look frustrated
+like they can't solve a puzzle. Not scary - just bothered."
+```
+
+**Panel 5: Sad Zyx**
+```
+PROMPT: "Small crystal alien sitting sadly next to broken spaceship.
+One big tear. Thought bubble shows house with question mark.
+Sunset lighting. Lonely but hopeful feeling."
+```
+
+**Panel 6: Player Arrives - Hope!**
+```
+PROMPT: "Crystal alien looking up with hope at a child silhouette
+standing on hill with sunlight behind them. Magical moment of meeting.
+Dawn/sunrise colors. Beginning of adventure feeling."
+```
+
+### Universal Symbol Dictionary
+
+| Symbol | Meaning |
+|--------|---------|
+| 😊 | Happy, good, safe |
+| 😠 | Angry, danger |
+| 😢 | Sad, needs help |
+| 😵 | Confused, dizzy |
+| ✓ | Correct, yes |
+| ✗ | Wrong, no |
+| ❤️ | Friend, love |
+| 💎 | Crystal (small) |
+| 💠 | Crystal (medium) |
+| 🔮 | Crystal (large) |
+| ⭐ | Crystal (special) |
+| 🐾 | Pet |
+| 🔒 | Locked |
+| 🔓 | Unlocked |
+
+---
+
+## Game Regions Progression
+
+### Region Map
+
+```
+1. MATHORIA (Village)     - Levels 1-10   [IMPLEMENTED]
+         ↓
+2. VERDANT FOREST         - Levels 7-15
+         ↓
+3. SILVERPOND             - Levels 12-20
+         ↓
+4. IRON MOUNTAINS         - Levels 18-25
+         ↓
+5. DWARVEN CITY           - Levels 22-28
+         ↓
+6. CRYSTAL CAVES          - Levels 26-32
+         ↓
+7. LAST OUTPOST           - Levels 30-35
+         ↓
+8. ZYX'S SHIP (Final)     - Level 35+ Boss Challenge
+```
+
+### Region Details
+
+| Region | Theme | Crystal Required | Key Features |
+|--------|-------|------------------|--------------|
+| Mathoria | Medieval village | None | Tutorial, basic battles, shop |
+| Verdant Forest | Enchanted woods | 💠 Fragment | Journey mode, puzzles, first boss |
+| Silverpond | Underwater/lake | 🔮 Prism | Water enemies, multiplication |
+| Iron Mountains | Rocky highlands | 🔮 Prism | Division introduced |
+| Dwarven City | Underground city | ⭐ Core | Advanced shop, crafting |
+| Crystal Caves | Glowing caverns | ⭐ Core | Complex equations |
+| Last Outpost | Alien ruins | ⭐ Core ×2 | Final preparations |
+| Zyx's Ship | Repaired ship | Complete Core | Grand Equation boss |
+
+---
+
+## Numera Crystal System
+
+### Crystal Types & Progression
+
+| Crystal | Icon | Recipe | Power | Use |
+|---------|------|--------|-------|-----|
+| Shard | 💎 | Base drop | 1 | Currency, basic pets |
+| Fragment | 💠 | 5 Shards | 5 | Unlock Forest, medium pets |
+| Prism | 🔮 | 3 Fragments | 15 | Unlock Mountains, strong pets |
+| Core Piece | ⭐ | 3 Prisms | 45 | Unlock endgame, legendary pets |
+
+### Crystal Sources
+
+| Source | Drop | Chance |
+|--------|------|--------|
+| Regular battle win | 💎 Shard | 10% |
+| Arena completion | 💎 ×2-5 | 100% |
+| Boss defeat | 💠 Fragment | 100% |
+| Journey completion | 💎 ×3 + 💠 | 100% |
+| Hidden chest | 💎 ×1-3 | 100% |
+| First creature type defeat | 💎 ×1 | 100% |
+
+---
+
+## Town Buildings
+
+### 1. Pythia's Workshop (Witch Hut)
+
+**Functions:**
+- Pet Binding (use crystals to calm freed creatures)
+- Potion Subscription (one-time purchase, free refills)
+- Healing Potions
+
+**Background Prompt:**
+```
+PROMPT: "Cozy witch cottage interior, children's game background.
+Warm cluttered space with potions, hanging herbs, bubbling cauldron,
+soft candlelight. Shelves with colorful bottles. A friendly black cat
+sleeping somewhere. Mystical but homey - like a magical grandmother's
+kitchen. Purple and warm orange color scheme."
+```
+
+**Pythia Character Prompt:**
+```
+PROMPT: "Friendly elderly witch character, children's game style.
+Flowing purple robes with subtle sparkle. Wild silver hair with tiny
+crystals woven in. Large round glasses, kind eyes, warm smile.
+Pointed hat with crystal decoration. Grandmotherly and magical."
+```
+
+### 2. Crystal Forge
+
+**Functions:**
+- Crystal Combining (Shards → Fragments → Prisms → Cores)
+- Compass upgrades (detect hidden items)
+
+**Background Prompt:**
+```
+PROMPT: "Magical crystal workshop interior, children's game background.
+A glowing forge or furnace made of crystals dominates the space.
+Crystals of various sizes grow from walls and ceiling, providing
+colorful light. Think: inside a beautiful geode that someone made
+into a workshop. Sparkles and soft magical glow everywhere."
+```
+
+**Crystal Forge UI:**
+```
+┌─────────────────────────────────────────────────────────┐
+│  💎 CRYSTAL FORGE                                       │
+│  ═══════════════════════════════════════════════════    │
+│                                                         │
+│           COMBINE CRYSTALS                              │
+│                                                         │
+│     💎 + 💎 + 💎 + 💎 + 💎  →  💠                       │
+│                                                         │
+│  ┌─────────────────────────────────────────────────┐   │
+│  │  Your crystals:                                 │   │
+│  │                                                 │   │
+│  │  💎 Shards: 12     [ FORGE → 💠 ]              │   │
+│  │  💠 Fragments: 2   [ FORGE → 🔮 ]  🔒          │   │
+│  │  🔮 Prisms: 0      [ FORGE → ⭐ ]  🔒          │   │
+│  │  ⭐ Cores: 0                                    │   │
+│  │                                                 │   │
+│  └─────────────────────────────────────────────────┘   │
+│                                                         │
+│                    [ ← BACK ]                           │
+└─────────────────────────────────────────────────────────┘
+```
+
+---
+
+## Pet Binding System
+
+### Concept
+
+When you solve a creature's equations in battle, the Numera corruption fades - but the creature's mind is still chaotic. Pythia uses Numera Crystals to create "pendants" that provide steady calming energy, allowing creatures to become companions.
+
+### Pet Tiers
+
+| Tier | Crystal Cost | Examples |
+|------|--------------|----------|
+| Common | 💎 ×3 | Slime Buddy |
+| Uncommon | 💠 ×1 | Bodlina, Imp |
+| Rare | 🔮 ×1 | Forest Spirit, Water Drake |
+| Legendary | ⭐ ×1 | Phoenix, Mini-Guardian |
+
+### Pet Binding UI
+
+```
+┌─────────────────────────────────────────────────────────┐
+│  🐾 BIND PET                                    [ ✕ ]  │
+│  ═══════════════════════════════════════════════════   │
+│                                                         │
+│   WAITING TO BE BOUND (freed but confused)              │
+│                                                         │
+│    ╭─────╮    ╭─────╮    ╭─────╮    ╭─────╮           │
+│    │ 😵  │    │ 😵  │    │ 😵  │    │     │           │
+│    │slime│    │bodli│    │ imp │    │  ?  │           │
+│    ╰──┬──╯    ╰──┬──╯    ╰──┬──╯    ╰─────╯           │
+│       │          │          │        (empty)           │
+│    💎×3       💠×1       💠×1                          │
+│                                                         │
+│   YOUR COMPANIONS (bound - happy with pendant)          │
+│                                                         │
+│    ╭─────╮    ╭─────╮    ╭─────╮    ╭─────╮           │
+│    │ 😊  │    │     │    │     │    │     │           │
+│    │ 💎  │    │  🔒 │    │  🔒 │    │  🔒 │           │
+│    │buddy│    │     │    │     │    │     │           │
+│    ╰─────╯    ╰─────╯    ╰─────╯    ╰─────╯           │
+│    ACTIVE                                              │
+│                                                         │
+│        Your crystals:  💎×8   💠×2   🔮×0              │
+└─────────────────────────────────────────────────────────┘
+```
+
+### Circular Frame States
+
+| State | Visual | Description |
+|-------|--------|-------------|
+| Waiting | Gray border, 😵 | Can be bound |
+| Selected | Golden glow, pulsing | Tapped, showing cost |
+| Bound | Green border, 😊💎 | Already a companion |
+| Locked | Dark border, 🔒 | Empty slot |
+
+---
+
+## Math Problem Variability
+
+### Problem Format Types
+
+To keep the game engaging, problems vary in format, not just difficulty:
+
+| Format | Example | Introduced |
+|--------|---------|------------|
+| Standard | 5 + 3 = ? | Level 1 |
+| Missing Operand | 5 + ? = 8 | Level 3 |
+| Comparison | 5 + 3 ○ 7 (< = >) | Level 5 |
+| True/False | 5 + 3 = 9 (Yes/No) | Level 4 |
+| Word Problem | 3 apples + 2 apples = ? | Level 2 (visual) |
+
+### Problem Format Selection
+
+```typescript
+interface ProblemFormat {
+  type: 'standard' | 'missing_operand' | 'comparison' | 'true_false';
+  weight: number;  // Selection probability
+}
+
+// Format availability by level
+const FORMAT_BY_LEVEL: Record<number, ProblemFormat[]> = {
+  1: [{ type: 'standard', weight: 1.0 }],
+  2: [{ type: 'standard', weight: 0.9 }, { type: 'missing_operand', weight: 0.1 }],
+  3: [{ type: 'standard', weight: 0.7 }, { type: 'missing_operand', weight: 0.3 }],
+  4: [{ type: 'standard', weight: 0.5 }, { type: 'missing_operand', weight: 0.3 },
+      { type: 'true_false', weight: 0.2 }],
+  5: [{ type: 'standard', weight: 0.4 }, { type: 'missing_operand', weight: 0.25 },
+      { type: 'true_false', weight: 0.2 }, { type: 'comparison', weight: 0.15 }],
+};
+```
+
+### UI Layouts by Format
+
+**Missing Operand:**
+```
+┌─────────────────────────────────┐
+│       5  +  ?  =  8            │
+│           ▲ (pulsing)          │
+├─────────────────────────────────┤
+│  [2]    [3]    [5]    [6]      │
+└─────────────────────────────────┘
+```
+
+**Comparison:**
+```
+┌─────────────────────────────────┐
+│      5 + 3    ○    7           │
+│         (empty circle)          │
+├─────────────────────────────────┤
+│    [ < ]    [ = ]    [ > ]     │
+└─────────────────────────────────┘
+```
+
+**True/False:**
+```
+┌─────────────────────────────────┐
+│        5 + 3 = 9               │
+│        (statement)              │
+├─────────────────────────────────┤
+│      [YES ✓]    [NO ✗]         │
+│      (green)    (red)          │
+└─────────────────────────────────┘
+```
+
+---
+
+## Zyx Character Assets
+
+### Character Prompt
+```
+PROMPT: "Cute friendly alien character, children's game style.
+Small floating geometric crystal creature with one large expressive eye.
+Soft blue-purple glow. Tiny glasses perched above the eye.
+Small stubby arms for gesturing. Translucent crystalline body.
+Friendly and slightly nerdy - like a floating calculator that became
+alive and wants to be your friend. On transparent background."
+```
+
+### Expression Variants
+- `zyx_happy` - eye crinkled, arms up celebrating
+- `zyx_sad` - eye drooping, single tear
+- `zyx_excited` - eye sparkling, bouncing pose
+- `zyx_worried` - eye looking sideways nervously
+
+---
+
+## Forest Journey Design (First Expansion)
+
+### Entry Requirements
+
+| Requirement | Value |
+|-------------|-------|
+| Player Level | 7+ |
+| Arena 2 Complete | Yes |
+| Journey Supplies | 1 (50 coins) |
+| Crystal | 💠 Fragment |
+
+### Forest Enemies
+
+| Enemy | HP | ATK | XP | Gold |
+|-------|----|----|-----|------|
+| Forest Wolf | 10 | 3 | 25 | 8-18 |
+| Mushroom Giant | 12 | 2 | 35 | 15-25 |
+| Thorn Sprite | 8 | 4 | 30 | 12-22 |
+| Elder Treant | 15 | 2 | 50 | 25-40 |
+
+### Forest Boss: Verdant Guardian
+
+3-phase battle with healing between phases:
+
+| Phase | HP | ATK | After |
+|-------|----|----|-------|
+| 1: Awakening | 10 | 2 | Heal 8 HP |
+| 2: Fury | 10 | 3 | Heal 8 HP |
+| 3: Final Stand | 12 | 3 | Victory! |
+
+**Rewards:** 150 XP, 80-120 Gold, 5 💎, Silverpond unlock
+
+### Forest Puzzles
+
+1. **Number Bridge** - Complete sequence to cross river
+2. **Balance Scale** - Balance equation on scale
+3. **Path Choice** - Choose path with correct equation
+4. **Feeding Puzzle** - Sum items to exact target
+
+---
+
+## Asset Generation Prompts Summary
+
+### Characters
+| Asset | Prompt Keywords |
+|-------|-----------------|
+| Zyx | geometric crystal, one eye, glasses, floating, blue-purple glow |
+| Pythia | elderly witch, purple robes, silver hair, crystals, grandmotherly |
+
+### Environments
+| Asset | Prompt Keywords |
+|-------|-----------------|
+| Witch Hut Interior | cozy cottage, potions, cauldron, herbs, warm candlelight |
+| Crystal Forge Interior | crystal workshop, glowing forge, geode interior, magical |
+| Forest Battle BG | enchanted forest, mystical, green-purple, children's book |
+
+### Creatures (need 2 expressions each: 😵 confused, 😊 happy)
+| Creature | Prompt Keywords |
+|----------|-----------------|
+| Forest Wolf | gray-brown wolf, forest theme, not scary, cartoon |
+| Mushroom Giant | large mushroom creature, friendly but tough |
+| Thorn Sprite | small magical sprite, thorns, glowing |
+| Elder Treant | ancient tree creature, bark texture, wise |
+| Verdant Guardian | large tree spirit, boss, nature magic |
+
+### UI Elements
+| Asset | Description |
+|-------|-------------|
+| frame_waiting.png | Circular frame, gray, creature slot |
+| frame_selected.png | Golden glowing frame |
+| frame_bound.png | Green border with sparkle |
+| frame_locked.png | Dark frame with lock icon |
+| crystal_shard.png | Small diamond 💎 |
+| crystal_fragment.png | Larger cluster 💠 |
+| crystal_prism.png | Triangular, rainbow 🔮 |
+| crystal_core.png | Star-shaped, brilliant ⭐ |
+
+---
+
+## Implementation Priority (Expansion)
+
+### Phase 6: Story & Visuals
+1. [ ] Create intro comic panels (6 images)
+2. [ ] Create Zyx character expressions (4 variants)
+3. [ ] Create Pythia character expressions (4 variants)
+4. [ ] Implement comic viewer scene
+
+### Phase 7: Crystal System
+1. [ ] Add crystal types to player state
+2. [ ] Create Crystal Forge scene
+3. [ ] Implement crystal combining logic
+4. [ ] Add crystal drops to battles
+
+### Phase 8: Pet Binding
+1. [ ] Add "freed creatures" tracking
+2. [ ] Create Pythia's Workshop scene
+3. [ ] Implement pet binding UI
+4. [ ] Connect pets to battle bonuses
+
+### Phase 9: Problem Variability
+1. [ ] Add MissingOperandProblem generator
+2. [ ] Add ComparisonProblem generator
+3. [ ] Add TrueFalseProblem generator
+4. [ ] Update MathBoard for new formats
+
+### Phase 10: Verdant Forest
+1. [ ] Create forest backgrounds
+2. [ ] Create forest enemy sprites
+3. [ ] Implement Journey mode scene
+4. [ ] Create puzzle mini-games
+5. [ ] Implement multi-phase boss battle

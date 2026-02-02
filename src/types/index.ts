@@ -53,6 +53,7 @@ export interface ArenaState {
     playerHpAtStart: number;    // HP when arena started
     completedArenaLevels: number[];  // Tracks which arena levels have been completed
     waveResults?: ArenaWaveResult[]; // Index 0-4 for waves 1-5, tracks completion and perfect status
+    waveResultsArenaLevel?: number;  // Which arena level the waveResults belong to (reset when different)
 }
 
 // ===== PET SYSTEM =====
@@ -66,7 +67,12 @@ export interface PetDefinition {
     name: string;            // Display name
     unlockedByEnemy?: string; // Enemy ID that unlocks purchase option
     unlockedByArenaLevel?: number;  // Arena level that unlocks purchase option
-    cost: DiamondCost;       // Price in diamonds
+    unlockedByArenaLevels?: number[];  // Requires ALL listed arenas to be completed
+    requiredAmulet: {        // Crystal required to bind the pet
+        tier: CrystalTier;
+        value: number;
+    };
+    requiredSpecialCrystal?: string;  // Additional special crystal required (for compound cost pets)
     spriteKey: string;       // Monster sprite to use for idle
     animPrefix: string;      // Animation prefix (e.g., 'slime', 'pink', 'purple', 'leafy')
     // Pet math problem (bonus attack)
@@ -315,7 +321,7 @@ export interface SaveSlotData {
 }
 
 // ===== CRYSTAL SYSTEM =====
-export type CrystalTier = 'shard' | 'fragment' | 'prism' | 'core';
+export type CrystalTier = 'shard' | 'fragment' | 'prism' | 'core' | 'special_porcupine';
 
 export interface Crystal {
     id: string;

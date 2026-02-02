@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { BattleState, BattlePhase, BattleEnemy, EnemyDefinition, ItemDefinition, PetDefinition, MathProblem, Crystal } from '../types';
+import { BattleState, BattlePhase, BattleEnemy, EnemyDefinition, ItemDefinition, PetDefinition, MathProblem, Crystal, CrystalTier } from '../types';
 import { MathEngine } from '../systems/MathEngine';
 import { MathBoard } from '../ui/MathBoard';
 import { GameStateManager } from '../systems/GameStateManager';
@@ -1970,14 +1970,14 @@ export class BattleScene extends Phaser.Scene {
                     crystalOverflow = true;
                 }
 
-                // Arena 2 special: fragment with value 15
+                // Arena 2 special: only the special porcupine crystal for pet_porcupine2 binding
                 if (this.arenaLevel === 2) {
-                    const bodlinaCrystal = CrystalSystem.generateCrystal('fragment', 15);
-                    const addedFragment = CrystalSystem.addToInventory(player, bodlinaCrystal);
-                    if (addedFragment) {
-                        crystalDrops.push(bodlinaCrystal);
+                    const specialCrystal = CrystalSystem.generateCrystal('special_porcupine' as CrystalTier, 1);
+                    const addedSpecial = CrystalSystem.addToInventory(player, specialCrystal);
+                    if (addedSpecial) {
+                        crystalDrops.push(specialCrystal);
                     } else {
-                        CrystalSystem.addToGroundDrops(player, [bodlinaCrystal]);
+                        CrystalSystem.addToGroundDrops(player, [specialCrystal]);
                         crystalOverflow = true;
                     }
                 }
@@ -2026,14 +2026,28 @@ export class BattleScene extends Phaser.Scene {
                     if (!player.arena.completedArenaLevels.includes(this.arenaLevel)) {
                         player.arena.completedArenaLevels.push(this.arenaLevel);
 
-                        // Check for pet unlocks by arena level completion
+                        // Always add arena_level_X unlock key when completing arena X
+                        // This enables pets with unlockedByArenaLevel or unlockedByArenaLevels requirements
+                        const arenaUnlockKey = `arena_level_${this.arenaLevel}`;
+                        if (!player.unlockedPets.includes(arenaUnlockKey)) {
+                            player.unlockedPets.push(arenaUnlockKey);
+                        }
+
+                        // Check for pet unlocks by arena level completion (single level requirement)
                         petsData.forEach(pet => {
                             if (pet.unlockedByArenaLevel === this.arenaLevel) {
-                                // Add pet ID to unlocked pets (use pet.id as marker)
-                                const arenaUnlockKey = `arena_level_${this.arenaLevel}`;
-                                if (!player.unlockedPets.includes(arenaUnlockKey)) {
-                                    player.unlockedPets.push(arenaUnlockKey);
-                                    newPetUnlocks.push(pet.name);
+                                newPetUnlocks.push(pet.name);
+                            }
+                            // Also check for pets that require multiple arenas (all must be completed)
+                            if (pet.unlockedByArenaLevels) {
+                                const allLevelsCompleted = pet.unlockedByArenaLevels.every(
+                                    level => player.unlockedPets.includes(`arena_level_${level}`)
+                                );
+                                if (allLevelsCompleted) {
+                                    // Only notify once (check if we just unlocked the final required level)
+                                    if (pet.unlockedByArenaLevels.includes(this.arenaLevel)) {
+                                        newPetUnlocks.push(pet.name);
+                                    }
                                 }
                             }
                         });

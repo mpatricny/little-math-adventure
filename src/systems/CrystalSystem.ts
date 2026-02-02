@@ -19,6 +19,8 @@ const TIER_CONFIGS: CrystalTierConfig[] = [
     { tier: 'fragment', minValue: 10, maxValue: 50, emoji: '💠', color: '#ff88ff', name: 'Úlomek' },
     { tier: 'prism', minValue: 30, maxValue: 99, emoji: '🔮', color: '#ffff44', name: 'Prizma' },
     { tier: 'core', minValue: 100, maxValue: 100, emoji: '⭐', color: '#ff4444', name: 'Jádro' },
+    // Special arena crystal for pet binding
+    { tier: 'special_porcupine', minValue: 1, maxValue: 1, emoji: '🦔', color: '#ff8844', name: 'Bodlinčin střep' },
 ];
 
 /**

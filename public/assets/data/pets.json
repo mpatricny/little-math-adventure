@@ -5,13 +5,21 @@
         "spriteKey": "slime-sheet",
         "animPrefix": "slime",
         "unlockedByEnemy": "slime_green",
-        "cost": {
-            "common": 3,
-            "red": 0,
-            "green": 0
-        },
+        "requiredAmulet": { "tier": "shard", "value": 5 },
         "mathProblemType": "addition",
         "mathProblemMax": 3,
+        "damageMultiplier": 1,
+        "scale": 1.0
+    },
+    {
+        "id": "pet_demon",
+        "name": "Démonek",
+        "spriteKey": "purple-attack-sheet",
+        "animPrefix": "purple",
+        "unlockedByEnemy": "purple_demon",
+        "requiredAmulet": { "tier": "shard", "value": 7 },
+        "mathProblemType": "subtraction",
+        "mathProblemMax": 5,
         "damageMultiplier": 1,
         "scale": 1.0
     },
@@ -21,30 +29,10 @@
         "spriteKey": "pet-porcupine-sheet",
         "animPrefix": "porcupine",
         "unlockedByArenaLevel": 1,
-        "cost": {
-            "common": 1,
-            "red": 1,
-            "green": 1
-        },
+        "requiredAmulet": { "tier": "shard", "value": 9 },
         "mathProblemType": "addition",
         "mathProblemMax": 3,
         "damageMultiplier": 2,
-        "scale": 1.0
-    },
-    {
-        "id": "pet_demon",
-        "name": "Démonek",
-        "spriteKey": "purple-attack-sheet",
-        "animPrefix": "purple",
-        "unlockedByEnemy": "purple_demon",
-        "cost": {
-            "common": 2,
-            "red": 2,
-            "green": 0
-        },
-        "mathProblemType": "subtraction",
-        "mathProblemMax": 5,
-        "damageMultiplier": 1,
         "scale": 1.0
     },
     {
@@ -53,11 +41,7 @@
         "spriteKey": "pink-idle-sheet",
         "animPrefix": "pink",
         "unlockedByEnemy": "pink_beast",
-        "cost": {
-            "common": 0,
-            "red": 3,
-            "green": 1
-        },
+        "requiredAmulet": { "tier": "fragment", "value": 9 },
         "mathProblemType": "subtraction",
         "mathProblemMax": 8,
         "damageMultiplier": 2,
@@ -69,11 +53,7 @@
         "spriteKey": "leafy-idle-sheet",
         "animPrefix": "leafy",
         "unlockedByEnemy": "leafy",
-        "cost": {
-            "common": 0,
-            "red": 0,
-            "green": 3
-        },
+        "requiredAmulet": { "tier": "fragment", "value": 15 },
         "mathProblemType": "threeOperand",
         "mathProblemMax": 8,
         "damageMultiplier": 2,
@@ -84,12 +64,9 @@
         "name": "Bodlina",
         "spriteKey": "pet-porcupine-2",
         "animPrefix": "porcupine2",
-        "unlockedByArenaLevel": 2,
-        "cost": {
-            "common": 0,
-            "red": 0,
-            "green": 3
-        },
+        "unlockedByArenaLevels": [1, 2],
+        "requiredAmulet": { "tier": "fragment", "value": 12 },
+        "requiredSpecialCrystal": "special_porcupine",
         "mathProblemType": "multiplication",
         "mathProblemMax": 12,
         "damageMultiplier": 3,

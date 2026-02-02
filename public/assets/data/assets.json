@@ -1370,6 +1370,14 @@
                 0.5,
                 0.5
             ]
+        },
+        "pythiaworkshopbg": {
+            "type": "staticImage",
+            "texture": "PythiaWorkshopBG",
+            "origin": [
+                0.5,
+                0.5
+            ]
         }
     }
 }
