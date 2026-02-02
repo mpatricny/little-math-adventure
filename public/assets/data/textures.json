@@ -186,6 +186,8 @@
         "bg-forest-edge": "images/backgrounds/bg-forest-edge.png",
         "bg-deep-woods": "images/backgrounds/bg-deep-woods.png",
         "bg-ancient-grove": "images/backgrounds/bg-deep-woods.png",
-        "bg-guardian-lair": "images/backgrounds/bg-deep-woods.png"
+        "bg-guardian-lair": "images/backgrounds/bg-deep-woods.png",
+        "forest-wolf": "sprites/forest-wolf.png",
+        "forest-sprite": "sprites/forest-sprite.png"
     }
 }

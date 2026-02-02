@@ -10,7 +10,7 @@
       "goldMin": 8,
       "goldMax": 18,
       "difficulty": 5,
-      "spriteKey": "enemy-wolf",
+      "spriteKey": "forest-wolf",
       "region": "verdant_forest"
     },
     "mushroom_giant": {
@@ -36,7 +36,7 @@
       "goldMin": 12,
       "goldMax": 22,
       "difficulty": 6,
-      "spriteKey": "enemy-sprite",
+      "spriteKey": "forest-sprite",
       "region": "verdant_forest"
     },
     "elder_treant": {
