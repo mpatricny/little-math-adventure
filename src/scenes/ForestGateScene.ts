@@ -30,6 +30,10 @@ export class ForestGateScene extends Phaser.Scene {
         if (!this.cache.json.has('forestJourney')) {
             this.load.json('forestJourney', 'assets/data/forest-journey.json');
         }
+        // Load forest enemies
+        if (!this.cache.json.has('forestEnemies')) {
+            this.load.json('forestEnemies', 'assets/data/forest-enemies.json');
+        }
     }
 
     create(): void {

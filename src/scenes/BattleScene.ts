@@ -109,10 +109,30 @@ export class BattleScene extends Phaser.Scene {
     private blockPhaseResumeCallback?: () => void;
     private enemyAttackStartPosition: { x: number; y: number } = { x: 0, y: 0 };
 
-    init(data: { enemyId?: string; enemyDefs?: EnemyDefinition[]; fromArena?: boolean; arenaLevel?: number; wave?: number }): void {
+    // Journey mode data
+    private journeyMode: boolean = false;
+    private returnScene: string = 'TownScene';
+    private backgroundKey: string | null = null;
+
+    init(data: { 
+        enemyId?: string; 
+        enemyDefs?: EnemyDefinition[]; 
+        fromArena?: boolean; 
+        arenaLevel?: number; 
+        wave?: number;
+        mode?: string;
+        returnScene?: string;
+        backgroundKey?: string;
+        enemy?: string;
+    }): void {
         // Get global game state
         this.gameState = GameStateManager.getInstance();
         const player = this.gameState.getPlayer();
+
+        // Store journey mode data
+        this.journeyMode = data.mode === 'journey';
+        this.returnScene = data.returnScene || 'TownScene';
+        this.backgroundKey = data.backgroundKey || null;
 
         // Store arena data if coming from arena
         this.fromArena = data.fromArena || false;
@@ -124,9 +144,44 @@ export class BattleScene extends Phaser.Scene {
         if (data.enemyDefs && data.enemyDefs.length > 0) {
             this.enemyDefs = data.enemyDefs;
         } else {
+            const enemyId = data.enemyId || data.enemy || 'slime_green';
+            
+            // Try main enemies list first
             const enemies = this.cache.json.get('enemies') as EnemyDefinition[];
-            const enemyId = data.enemyId || 'slime_green';
-            this.enemyDefs = [enemies.find(e => e.id === enemyId) || enemies[0]];
+            let enemy = enemies?.find(e => e.id === enemyId);
+            
+            // If not found, try forest enemies
+            if (!enemy && this.cache.json.has('forestEnemies')) {
+                interface ForestEnemy {
+                    id: string;
+                    name: string;
+                    nameCs?: string;
+                    hp: number;
+                    atk?: number;
+                    xp?: number;
+                    goldMin?: number;
+                    spriteKey: string;
+                }
+                const forestData = this.cache.json.get('forestEnemies') as { enemies: Record<string, ForestEnemy> };
+                const forestEnemy = forestData?.enemies?.[enemyId];
+                if (forestEnemy) {
+                    // Convert forest enemy format to standard format
+                    enemy = {
+                        id: forestEnemy.id,
+                        name: forestEnemy.nameCs || forestEnemy.name,
+                        hp: forestEnemy.hp,
+                        attack: forestEnemy.atk || 3,
+                        defense: 0,
+                        xp: forestEnemy.xp || 10,
+                        gold: forestEnemy.goldMin || 5,
+                        spriteKey: forestEnemy.spriteKey,
+                        animPrefix: forestEnemy.spriteKey?.replace('-sheet', '') || 'slime'
+                    } as unknown as EnemyDefinition;
+                }
+            }
+            
+            // Fallback to first enemy if still not found
+            this.enemyDefs = [enemy || enemies?.[0]];
         }
 
         // Use animPrefix if available (new format), fallback to parsing spriteKey (legacy)
@@ -179,6 +234,13 @@ export class BattleScene extends Phaser.Scene {
         this.sceneBuilder.registerHandler('onAttack', () => this.onAttackClicked());
 
         this.sceneBuilder.buildScene();
+
+        // Add custom background for journey mode (on top of scene background)
+        if (this.backgroundKey && this.textures.exists(this.backgroundKey)) {
+            const bg = this.add.image(640, 360, this.backgroundKey);
+            bg.setDepth(-100); // Behind everything
+            bg.setDisplaySize(1280, 720);
+        }
 
         const player = this.gameState.getPlayer();
 
@@ -2087,8 +2149,9 @@ export class BattleScene extends Phaser.Scene {
                     });
                 }
             } else {
-                // Return to town
-                this.scene.start('TownScene');
+                // Return to calling scene (town or forest map)
+                // Pass battleWon flag for journey mode
+                this.scene.start(this.returnScene, { battleWon: true });
             }
         });
     }
@@ -2168,7 +2231,9 @@ export class BattleScene extends Phaser.Scene {
         this.gameState.save();
 
         this.time.delayedCall(3000, () => {
-            this.scene.start('TownScene');
+            // For journey mode, return to map (will handle fail state)
+            // Otherwise return to town
+            this.scene.start(this.journeyMode ? 'ForestMapScene' : 'TownScene');
         });
     }
 }

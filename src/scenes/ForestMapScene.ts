@@ -13,11 +13,29 @@ import { JourneySystem, Encounter } from '../systems/JourneySystem';
 export class ForestMapScene extends Phaser.Scene {
     private journeySystem = JourneySystem.getInstance();
 
+    private battleWon: boolean = false;
+
     constructor() {
         super({ key: 'ForestMapScene' });
     }
 
+    init(data?: { battleWon?: boolean }): void {
+        this.battleWon = data?.battleWon || false;
+    }
+
+    preload(): void {
+        // Load forest enemies if not already cached
+        if (!this.cache.json.has('forestEnemies')) {
+            this.load.json('forestEnemies', 'assets/data/forest-enemies.json');
+        }
+    }
+
     create(): void {
+        // If returning from a won battle, advance the encounter
+        if (this.battleWon) {
+            this.journeySystem.advanceEncounter();
+            this.battleWon = false; // Reset flag
+        }
         const state = this.journeySystem.getJourneyState();
         const config = this.journeySystem.getJourneyConfig();
 
@@ -282,9 +300,15 @@ export class ForestMapScene extends Phaser.Scene {
             case 'battle':
             case 'boss':
                 // Go to battle scene with forest enemy
+                // Get current stage for background
+                const currentStage = this.journeySystem.getCurrentStage();
+                const bgKey = currentStage?.background || 'bg-forest';
+                
                 this.scene.start('BattleScene', {
                     mode: 'journey',
-                    enemy: encounter.enemy,
+                    enemyId: encounter.enemy,
+                    returnScene: 'ForestMapScene',
+                    backgroundKey: bgKey,
                     isBoss: encounter.type === 'boss'
                 });
                 break;
