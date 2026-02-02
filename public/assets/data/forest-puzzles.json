@@ -1,0 +1,136 @@
+{
+  "puzzles": {
+    "number_bridge": {
+      "id": "number_bridge",
+      "name": "Number Bridge",
+      "nameCs": "Číselný most",
+      "type": "sequence",
+      "difficulty": "easy",
+      "timeLimit": 60,
+      "failDamage": 3,
+      "description": "Complete the sequence to cross the river",
+      "descriptionCs": "Doplň posloupnost a přejdi přes řeku",
+      "templates": [
+        {
+          "sequence": [2, null, 6, 8, null, 12],
+          "pattern": "+2",
+          "answers": [4, 10],
+          "options": [4, 10, 5, 9]
+        },
+        {
+          "sequence": [5, 10, null, 20, null],
+          "pattern": "+5",
+          "answers": [15, 25],
+          "options": [15, 25, 12, 18]
+        },
+        {
+          "sequence": [3, 6, null, 12, null, 18],
+          "pattern": "+3",
+          "answers": [9, 15],
+          "options": [9, 15, 10, 14]
+        }
+      ]
+    },
+    "balance_scale": {
+      "id": "balance_scale",
+      "name": "Balance Scale",
+      "nameCs": "Rovnováha",
+      "type": "equation",
+      "difficulty": "medium",
+      "timeLimit": 45,
+      "failDamage": 5,
+      "successBonus": { "gold": 10 },
+      "description": "Balance the magical scale to open the path",
+      "descriptionCs": "Vyrovnej magické váhy a otevři cestu",
+      "templates": [
+        {
+          "left": "7 + ?",
+          "right": "5 + 8",
+          "answer": 6,
+          "options": [5, 6, 7, 8]
+        },
+        {
+          "left": "? + 4",
+          "right": "3 + 9",
+          "answer": 8,
+          "options": [6, 7, 8, 9]
+        },
+        {
+          "left": "10 + ?",
+          "right": "6 + 7",
+          "answer": 3,
+          "options": [2, 3, 4, 5]
+        }
+      ]
+    },
+    "path_choice": {
+      "id": "path_choice",
+      "name": "Path Choice",
+      "nameCs": "Výběr cesty",
+      "type": "multiple_choice",
+      "difficulty": "medium",
+      "timeLimit": 30,
+      "failDamage": 5,
+      "failPenalty": { "extraBattle": "forest_wolf" },
+      "description": "Choose the path with the CORRECT equation",
+      "descriptionCs": "Vyber cestu se SPRÁVNOU rovnicí",
+      "templates": [
+        {
+          "paths": [
+            { "equation": "4 + 5 = 8", "correct": false },
+            { "equation": "3 × 3 = 9", "correct": true },
+            { "equation": "12 - 4 = 7", "correct": false }
+          ]
+        },
+        {
+          "paths": [
+            { "equation": "6 + 7 = 13", "correct": true },
+            { "equation": "8 - 3 = 4", "correct": false },
+            { "equation": "2 × 4 = 6", "correct": false }
+          ]
+        },
+        {
+          "paths": [
+            { "equation": "9 - 5 = 3", "correct": false },
+            { "equation": "5 + 6 = 12", "correct": false },
+            { "equation": "4 × 2 = 8", "correct": true }
+          ]
+        }
+      ]
+    },
+    "feeding_puzzle": {
+      "id": "feeding_puzzle",
+      "name": "Forest Spirit Offering",
+      "nameCs": "Obětina lesnímu duchu",
+      "type": "sum_to_target",
+      "difficulty": "hard",
+      "timeLimit": 90,
+      "optional": true,
+      "successBonus": { "bossAtkReduction": 1 },
+      "description": "Feed the forest spirit exactly the right amount",
+      "descriptionCs": "Nakrm lesního ducha přesně správným množstvím",
+      "templates": [
+        {
+          "target": 15,
+          "items": [
+            { "emoji": "🍎", "value": 2 },
+            { "emoji": "🍊", "value": 4 },
+            { "emoji": "🍋", "value": 6 },
+            { "emoji": "🍇", "value": 3 },
+            { "emoji": "🍓", "value": 5 }
+          ]
+        },
+        {
+          "target": 18,
+          "items": [
+            { "emoji": "🍎", "value": 3 },
+            { "emoji": "🍊", "value": 5 },
+            { "emoji": "🍋", "value": 7 },
+            { "emoji": "🍇", "value": 4 },
+            { "emoji": "🍓", "value": 6 }
+          ]
+        }
+      ]
+    }
+  }
+}

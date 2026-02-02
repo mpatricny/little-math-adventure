@@ -115,6 +115,12 @@ export class TownScene extends Phaser.Scene {
                 this.debugArrow.setVisible(this.isDebugMode);
             }
         });
+
+        // Debug: Forest Journey entrance (press F)
+        this.input.keyboard!.on('keydown-F', () => {
+            console.log('Debug: Starting Forest Journey');
+            this.scene.start('ForestGateScene', { debugMode: true });
+        });
     }
 
     private createDebugArrow(): void {

@@ -18,6 +18,9 @@ import { MathBoardDebugScene } from './scenes/MathBoardDebugScene';
 import { TestingTownScene } from './scenes/TestingTownScene';
 import { TestingWitchHutScene } from './scenes/TestingWitchHutScene';
 import { AssetFactoryTestScene } from './scenes/AssetFactoryTestScene';
+import { ForestGateScene } from './scenes/ForestGateScene';
+import { ForestMapScene } from './scenes/ForestMapScene';
+import { ForestPuzzleScene } from './scenes/ForestPuzzleScene';
 
 const config: Phaser.Types.Core.GameConfig = {
     type: Phaser.AUTO,
@@ -38,7 +41,7 @@ const config: Phaser.Types.Core.GameConfig = {
     dom: {
         createContainer: true
     },
-    scene: [BootScene, AssetLoaderScene, MenuScene, MenuNewScene, SaveSlotScene, CharacterSelectScene, CharacterSelectNewScene, TownScene, TestingTownScene, TestingWitchHutScene, BattleScene, ArenaScene, VictoryScene, WitchHutScene, ShopScene, GuildScene, TavernScene, CrystalForgeScene, MathBoardDebugScene, AssetFactoryTestScene],
+    scene: [BootScene, AssetLoaderScene, MenuScene, MenuNewScene, SaveSlotScene, CharacterSelectScene, CharacterSelectNewScene, TownScene, TestingTownScene, TestingWitchHutScene, BattleScene, ArenaScene, VictoryScene, WitchHutScene, ShopScene, GuildScene, TavernScene, CrystalForgeScene, MathBoardDebugScene, AssetFactoryTestScene, ForestGateScene, ForestMapScene, ForestPuzzleScene],
 };
 
 new Phaser.Game(config);

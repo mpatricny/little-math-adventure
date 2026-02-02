@@ -1,0 +1,70 @@
+{
+  "journey": {
+    "id": "verdant_forest",
+    "name": "Verdant Forest",
+    "nameCs": "Zelený les",
+    "requirements": {
+      "minLevel": 7,
+      "arenaLevel": 2,
+      "supplyCost": 50
+    },
+    "stages": [
+      {
+        "id": "forest_edge",
+        "name": "Forest Edge",
+        "nameCs": "Okraj lesa",
+        "background": "bg-forest-edge",
+        "encounters": [
+          { "type": "battle", "enemy": "forest_wolf" },
+          { "type": "rest", "healPercent": 40, "isSavePoint": true },
+          { "type": "puzzle", "puzzleId": "number_bridge" },
+          { "type": "battle", "enemy": "mushroom_giant" },
+          { "type": "rest", "healPercent": 30, "isSavePoint": true }
+        ]
+      },
+      {
+        "id": "deep_woods",
+        "name": "Deep Woods",
+        "nameCs": "Hluboký les",
+        "background": "bg-deep-woods",
+        "encounters": [
+          { "type": "battle", "enemy": "thorn_sprite" },
+          { "type": "chest", "gold": 25 },
+          { "type": "rest", "healPercent": 25, "isSavePoint": true, "name": "Campsite", "nameCs": "Tábořiště" },
+          { "type": "puzzle", "puzzleId": "balance_scale" },
+          { "type": "battle", "enemy": "forest_wolf" },
+          { "type": "rest", "healPercent": 20 },
+          { "type": "battle", "enemy": "forest_wolf" },
+          { "type": "rest", "healPercent": 40, "isSavePoint": true }
+        ]
+      },
+      {
+        "id": "ancient_grove",
+        "name": "Ancient Grove",
+        "nameCs": "Prastarý háj",
+        "background": "bg-ancient-grove",
+        "encounters": [
+          { "type": "puzzle", "puzzleId": "path_choice" },
+          { "type": "battle", "enemy": "elder_treant" },
+          { "type": "chest", "gold": 40, "potionRefill": true },
+          { "type": "rest", "healPercent": 100, "isSavePoint": true, "name": "Sacred Spring", "nameCs": "Posvátný pramen" }
+        ]
+      },
+      {
+        "id": "guardians_lair",
+        "name": "Guardian's Lair",
+        "nameCs": "Doupě strážce",
+        "background": "bg-guardian-lair",
+        "encounters": [
+          { "type": "puzzle", "puzzleId": "feeding_puzzle", "optional": true },
+          { "type": "boss", "enemy": "verdant_guardian" }
+        ]
+      }
+    ],
+    "rewards": {
+      "unlock": "silverpond",
+      "unlockMessage": "The path to Silverpond is now open!",
+      "unlockMessageCs": "Cesta k Stříbrnému jezeru je nyní otevřená!"
+    }
+  }
+}

@@ -1,0 +1,75 @@
+{
+  "enemies": {
+    "forest_wolf": {
+      "id": "forest_wolf",
+      "name": "Forest Wolf",
+      "nameCs": "Lesní vlk",
+      "hp": 10,
+      "atk": 3,
+      "xp": 25,
+      "goldMin": 8,
+      "goldMax": 18,
+      "difficulty": 5,
+      "spriteKey": "enemy-wolf",
+      "region": "verdant_forest"
+    },
+    "mushroom_giant": {
+      "id": "mushroom_giant",
+      "name": "Mushroom Giant",
+      "nameCs": "Houbový obr",
+      "hp": 12,
+      "atk": 2,
+      "xp": 35,
+      "goldMin": 15,
+      "goldMax": 25,
+      "difficulty": 5,
+      "spriteKey": "enemy-mushroom",
+      "region": "verdant_forest"
+    },
+    "thorn_sprite": {
+      "id": "thorn_sprite",
+      "name": "Thorn Sprite",
+      "nameCs": "Trnový skřítek",
+      "hp": 8,
+      "atk": 4,
+      "xp": 30,
+      "goldMin": 12,
+      "goldMax": 22,
+      "difficulty": 6,
+      "spriteKey": "enemy-sprite",
+      "region": "verdant_forest"
+    },
+    "elder_treant": {
+      "id": "elder_treant",
+      "name": "Elder Treant",
+      "nameCs": "Prastarý ent",
+      "hp": 15,
+      "atk": 2,
+      "xp": 50,
+      "goldMin": 25,
+      "goldMax": 40,
+      "difficulty": 7,
+      "spriteKey": "enemy-treant",
+      "region": "verdant_forest"
+    },
+    "verdant_guardian": {
+      "id": "verdant_guardian",
+      "name": "Verdant Guardian",
+      "nameCs": "Strážce lesa",
+      "isBoss": true,
+      "phases": [
+        { "hp": 10, "atk": 2, "name": "Awakening", "nameCs": "Probuzení" },
+        { "hp": 10, "atk": 3, "name": "Fury", "nameCs": "Zuřivost" },
+        { "hp": 12, "atk": 3, "name": "Final Stand", "nameCs": "Poslední vzdor" }
+      ],
+      "phaseHealPlayer": 8,
+      "xp": 150,
+      "goldMin": 80,
+      "goldMax": 120,
+      "diamonds": 5,
+      "difficulty": 8,
+      "spriteKey": "boss-guardian",
+      "region": "verdant_forest"
+    }
+  }
+}
