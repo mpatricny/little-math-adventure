@@ -56,7 +56,7 @@
         "nameCs": "Doupě strážce",
         "background": "bg-guardian-lair",
         "encounters": [
-          { "type": "puzzle", "puzzleId": "feeding_puzzle", "optional": true },
+          { "type": "puzzle", "puzzleId": "crystal_offering", "optional": true },
           { "type": "boss", "enemy": "verdant_guardian" }
         ]
       }

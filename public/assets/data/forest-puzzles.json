@@ -98,36 +98,46 @@
         }
       ]
     },
-    "feeding_puzzle": {
-      "id": "feeding_puzzle",
-      "name": "Forest Spirit Offering",
-      "nameCs": "Obětina lesnímu duchu",
+    "crystal_offering": {
+      "id": "crystal_offering",
+      "name": "Crystal Offering",
+      "nameCs": "Krystalová oběť",
       "type": "sum_to_target",
       "difficulty": "hard",
       "timeLimit": 90,
       "optional": true,
       "successBonus": { "bossAtkReduction": 1 },
-      "description": "Feed the forest spirit exactly the right amount",
-      "descriptionCs": "Nakrm lesního ducha přesně správným množstvím",
+      "description": "Place crystals to match the obelisk's target",
+      "descriptionCs": "Vlož krystaly aby jejich hodnota odpovídala cíli",
       "templates": [
         {
           "target": 15,
           "items": [
-            { "emoji": "🍎", "value": 2 },
-            { "emoji": "🍊", "value": 4 },
-            { "emoji": "🍋", "value": 6 },
-            { "emoji": "🍇", "value": 3 },
-            { "emoji": "🍓", "value": 5 }
+            { "emoji": "🔴", "value": 5 },
+            { "emoji": "💚", "value": 7 },
+            { "emoji": "💙", "value": 3 },
+            { "emoji": "💜", "value": 4 },
+            { "emoji": "💎", "value": 8 }
+          ]
+        },
+        {
+          "target": 20,
+          "items": [
+            { "emoji": "🔴", "value": 8 },
+            { "emoji": "💚", "value": 5 },
+            { "emoji": "💙", "value": 7 },
+            { "emoji": "💜", "value": 6 },
+            { "emoji": "💎", "value": 4 }
           ]
         },
         {
           "target": 18,
           "items": [
-            { "emoji": "🍎", "value": 3 },
-            { "emoji": "🍊", "value": 5 },
-            { "emoji": "🍋", "value": 7 },
-            { "emoji": "🍇", "value": 4 },
-            { "emoji": "🍓", "value": 6 }
+            { "emoji": "🔴", "value": 6 },
+            { "emoji": "💚", "value": 9 },
+            { "emoji": "💙", "value": 3 },
+            { "emoji": "💜", "value": 5 },
+            { "emoji": "💎", "value": 7 }
           ]
         }
       ]
