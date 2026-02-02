@@ -182,10 +182,10 @@
         "18cace10-b1a0-4a3a-a292-9980ceacd6d3": "library:originals/dfab890d-2d460345.png",
         "991bb46f-0417-4c22-8e3e-04cea0a3079a": "library:originals/08c2b6a2-cbf7cbb9.png",
         "PythiaWorkshopBG": "library:originals/468e5fe1-b2e89f57.png",
-        "bg-forest": "images/backgrounds/bg-forest.png",
-        "bg-forest-edge": "images/backgrounds/bg-forest.png",
-        "bg-deep-woods": "images/backgrounds/bg-forest.png",
-        "bg-ancient-grove": "images/backgrounds/bg-forest.png",
-        "bg-guardian-lair": "images/backgrounds/bg-forest.png"
+        "bg-forest": "images/backgrounds/bg-deep-woods.png",
+        "bg-forest-edge": "images/backgrounds/bg-forest-edge.png",
+        "bg-deep-woods": "images/backgrounds/bg-deep-woods.png",
+        "bg-ancient-grove": "images/backgrounds/bg-deep-woods.png",
+        "bg-guardian-lair": "images/backgrounds/bg-deep-woods.png"
     }
 }
