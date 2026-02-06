@@ -555,5 +555,18 @@
                 "repeat": 0
             }
         }
+    },
+    "npcs": {
+        "zyx": {
+            "zyx-idle": {
+                "texture": "spritesheet-zyx-transparent2-sheet",
+                "frames": {
+                    "start": 0,
+                    "end": 29
+                },
+                "frameRate": 8,
+                "repeat": -1
+            }
+        }
     }
 }

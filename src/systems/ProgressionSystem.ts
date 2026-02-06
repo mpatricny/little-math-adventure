@@ -1,6 +1,19 @@
-import { PlayerState, CoinCurrency, DiamondInventory, DiamondType, CharacterType, Crystal, CrystalInventory } from '../types';
+import { PlayerState, CoinCurrency, DiamondInventory, DiamondType, CharacterType, Crystal, CrystalInventory, TownProgress } from '../types';
 import { CrystalSystem } from './CrystalSystem';
 import { ManaSystem } from './ManaSystem';
+
+/**
+ * Create initial TownProgress for a new player.
+ * Arena is always unlocked from the start.
+ */
+export function createInitialTownProgress(): TownProgress {
+    return {
+        unlockedBuildings: ['arena-building'],
+        visitedBuildings: [],
+        totalWavesCompleted: 0,
+        wavesAfterForgeUnlock: 0
+    };
+}
 
 // XP needed per level transition (battles needed)
 const XP_PER_LEVEL: Record<number, number> = {
@@ -295,7 +308,9 @@ export class ProgressionSystem {
             crystals: CrystalSystem.createInitialInventory(),
             mana: ManaSystem.createInitialMana(),
             groundCrystals: [],
-            defeatedBosses: []
+            defeatedBosses: [],
+            // === TOWN PROGRESS ===
+            townProgress: createInitialTownProgress()
         };
     }
 
@@ -366,6 +381,41 @@ export class ProgressionSystem {
         // Migrate: Add waveResults to arena state if missing
         if (player.arena && !player.arena.waveResults) {
             player.arena.waveResults = [];
+        }
+
+        // Migrate: Add townProgress if missing (retroactive computation for existing saves)
+        if (!player.townProgress) {
+            player.townProgress = createInitialTownProgress();
+
+            // Retroactively compute totalWavesCompleted from existing arena data
+            let retroWaves = 0;
+            if (player.arena?.waveResults) {
+                retroWaves = player.arena.waveResults.filter(r => r?.completed).length;
+            }
+            // Also count completed arena levels (each = 5 waves)
+            if (player.arena?.completedArenaLevels) {
+                // Each completed arena level means at least 5 waves were completed
+                // But waveResults only tracks current level, so add 5 per completed level
+                // minus the waves already counted from current waveResults
+                const completedLevels = player.arena.completedArenaLevels.length;
+                if (completedLevels > 0) {
+                    retroWaves = Math.max(retroWaves, completedLevels * 5);
+                }
+            }
+            player.townProgress.totalWavesCompleted = retroWaves;
+
+            // Auto-unlock buildings based on retroactive progress
+            const hasPinkBeast = player.unlockedPets?.includes('pink_beast') ?? false;
+            const hasArena2 = player.arena?.completedArenaLevels?.includes(2) ?? false;
+
+            if (retroWaves >= 1) player.townProgress.unlockedBuildings.push('guild');
+            if (retroWaves >= 2) player.townProgress.unlockedBuildings.push('witch');
+            if (retroWaves >= 3) player.townProgress.unlockedBuildings.push('shop');
+            if (hasPinkBeast) player.townProgress.unlockedBuildings.push('Crystal Forge small');
+            if (hasArena2) player.townProgress.unlockedBuildings.push('forest-exit');
+
+            // Mark all retroactively unlocked buildings as visited (no NEW badges for existing players)
+            player.townProgress.visitedBuildings = [...player.townProgress.unlockedBuildings];
         }
 
         return player;

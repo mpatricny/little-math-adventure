@@ -122,6 +122,8 @@ export interface PlayerState {
     defeatedBosses?: string[];        // Track defeated boss IDs for progression
     // === STORY PROGRESS ===
     storyProgress?: StoryProgress;     // Track story milestones for visual storytelling
+    // === TOWN PROGRESS ===
+    townProgress?: TownProgress;       // Track building unlocks and progressive town growth
 }
 
 // ===== GUILD TRIAL SYSTEM =====
@@ -343,6 +345,15 @@ export interface CrystalInventory {
 // ===== MANA SYSTEM =====
 // Mana is just a count (like crystals), no max limit
 // Earned by solving math problems in Guild, spent in Crystal Forge
+
+// ===== TOWN PROGRESS SYSTEM =====
+// Tracks building unlocks and progressive town growth
+export interface TownProgress {
+    unlockedBuildings: string[];     // Building IDs that have been unlocked
+    visitedBuildings: string[];      // Building IDs player has entered (clears NEW badge)
+    totalWavesCompleted: number;     // Cumulative first-time arena wave completions
+    wavesAfterForgeUnlock: number;   // Waves completed after Crystal Forge unlocked (Shop trigger)
+}
 
 // ===== STORY PROGRESS SYSTEM =====
 // Tracks story milestones for visual storytelling (picture dialogs)

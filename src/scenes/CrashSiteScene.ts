@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import { GameStateManager } from '../systems/GameStateManager';
+import { CrystalSystem } from '../systems/CrystalSystem';
 import { StorySystem } from '../systems/StorySystem';
 import { getPlayerSpriteConfig } from '../utils/characterUtils';
 import { PictureDialog, DialogContentItem } from '../ui/PictureDialog';
@@ -58,7 +59,7 @@ export class CrashSiteScene extends Phaser.Scene {
 
     // Game objects
     private player!: Phaser.GameObjects.Sprite;
-    private zyx: Phaser.GameObjects.Image | null = null;
+    private zyx: Phaser.GameObjects.Sprite | null = null;
     private slime: Phaser.GameObjects.Sprite | null = null;
     private exitArrow: Phaser.GameObjects.Container | null = null;
 
@@ -132,6 +133,14 @@ export class CrashSiteScene extends Phaser.Scene {
             // Player spawns where slime was
             this.player.x = CrashSiteScene.SLIME_X;
             this.player.y = this.getPathY(CrashSiteScene.SLIME_X);
+
+            // Award first crystal for tutorial victory (only if player has no crystals yet)
+            const player = this.gameState.getPlayer();
+            if (!player.crystals?.crystals.length) {
+                const shard = CrystalSystem.generateCrystal('shard', 1);
+                CrystalSystem.addToInventory(player, shard);
+                this.gameState.save();
+            }
 
             // Zyx appears near exit
             this.createZyxAtExit();
@@ -216,7 +225,7 @@ export class CrashSiteScene extends Phaser.Scene {
     }
 
     /**
-     * Create Zyx character (placeholder: use guildmaster sprite)
+     * Create Zyx character using the Zyx1 library sprite
      */
     private createZyx(): void {
         if (this.phase >= TutorialPhase.BATTLE_WON) {
@@ -226,20 +235,16 @@ export class CrashSiteScene extends Phaser.Scene {
         const zyxX = this.phase >= TutorialPhase.DIALOG_1_SHOWN
             ? CrashSiteScene.ZYX_MOVED_X
             : CrashSiteScene.ZYX_INITIAL_X;
+        const zyxY = this.getPathY(zyxX) + 5;
 
-        // Use guildmaster as placeholder for Zyx
-        const textureKey = this.textures.exists('npc-guildmaster')
-            ? 'npc-guildmaster'
-            : null;
-
-        if (textureKey) {
-            this.zyx = this.add.image(zyxX, 480, textureKey)
-                .setScale(0.5)
+        if (this.textures.exists('spritesheet-zyx-sheet')) {
+            this.zyx = this.add.sprite(zyxX, zyxY, 'spritesheet-zyx-sheet')
+                .setScale(0.35)
                 .setDepth(8)
-                .setFlipX(true); // Face right (toward player spawn)
+                .play('zyx-idle');
         } else {
             // Fallback: simple alien shape
-            this.zyx = this.createPlaceholderZyx(zyxX, 500);
+            this.zyx = this.createPlaceholderZyx(zyxX, zyxY);
         }
     }
 
@@ -247,17 +252,15 @@ export class CrashSiteScene extends Phaser.Scene {
      * Create Zyx at exit position (after battle)
      */
     private createZyxAtExit(): void {
-        const textureKey = this.textures.exists('npc-guildmaster')
-            ? 'npc-guildmaster'
-            : null;
+        const zyxY = this.getPathY(CrashSiteScene.ZYX_EXIT_X) + 5;
 
-        if (textureKey) {
-            this.zyx = this.add.image(CrashSiteScene.ZYX_EXIT_X, 480, textureKey)
-                .setScale(0.5)
+        if (this.textures.exists('spritesheet-zyx-sheet')) {
+            this.zyx = this.add.sprite(CrashSiteScene.ZYX_EXIT_X, zyxY, 'spritesheet-zyx-sheet')
+                .setScale(0.35)
                 .setDepth(8)
-                .setFlipX(true);
+                .play('zyx-idle');
         } else {
-            this.zyx = this.createPlaceholderZyx(CrashSiteScene.ZYX_EXIT_X, 500);
+            this.zyx = this.createPlaceholderZyx(CrashSiteScene.ZYX_EXIT_X, zyxY);
         }
 
         // Entrance animation
@@ -277,7 +280,7 @@ export class CrashSiteScene extends Phaser.Scene {
     /**
      * Create placeholder Zyx sprite
      */
-    private createPlaceholderZyx(x: number, y: number): Phaser.GameObjects.Image {
+    private createPlaceholderZyx(x: number, y: number): Phaser.GameObjects.Sprite {
         // Create a simple alien shape using graphics
         const graphics = this.add.graphics();
         graphics.fillStyle(0x66cc99);
@@ -293,7 +296,7 @@ export class CrashSiteScene extends Phaser.Scene {
         graphics.generateTexture('zyx-placeholder', 80, 100);
         graphics.destroy();
 
-        return this.add.image(x, y, 'zyx-placeholder').setDepth(8);
+        return this.add.sprite(x, y, 'zyx-placeholder').setDepth(8);
     }
 
     /**
@@ -425,10 +428,20 @@ export class CrashSiteScene extends Phaser.Scene {
 
             // Check phase-specific movement restrictions
             if (this.phase === TutorialPhase.INITIAL) {
-                // Can't pass Zyx until dialog shown
-                if (targetX > CrashSiteScene.ZYX_INITIAL_X - 80) {
-                    targetX = CrashSiteScene.ZYX_INITIAL_X - 80;
+                // Can't pass Zyx until dialog shown — stop 150px before him
+                if (targetX > CrashSiteScene.ZYX_INITIAL_X - 150) {
+                    targetX = CrashSiteScene.ZYX_INITIAL_X - 150;
                     this.walkTo(targetX, () => this.onReachZyx());
+                    return;
+                }
+            }
+
+            // After battle: stop 150px before Zyx at exit
+            if (this.phase === TutorialPhase.BATTLE_WON) {
+                const stopX = CrashSiteScene.ZYX_EXIT_X - 150;
+                if (targetX > stopX) {
+                    targetX = stopX;
+                    this.walkTo(targetX, () => this.checkInteractions());
                     return;
                 }
             }
@@ -623,7 +636,7 @@ export class CrashSiteScene extends Phaser.Scene {
         // Check if near Zyx after battle
         if (this.phase === TutorialPhase.BATTLE_WON && this.zyx) {
             const dx = Math.abs(this.player.x - CrashSiteScene.ZYX_EXIT_X);
-            if (dx < 100) {
+            if (dx <= 150) {
                 this.showSecondDialog();
                 return;
             }

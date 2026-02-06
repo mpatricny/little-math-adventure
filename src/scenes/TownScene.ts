@@ -5,10 +5,23 @@ import { SceneDebugger } from '../systems/SceneDebugger';
 import { SceneBuilder } from '../systems/SceneBuilder';
 import { CrystalSystem } from '../systems/CrystalSystem';
 import { ManaSystem } from '../systems/ManaSystem';
-import { ProgressionSystem } from '../systems/ProgressionSystem';
+import { createInitialTownProgress } from '../systems/ProgressionSystem';
 import { uiTemplateLoader } from '../systems/UiTemplateLoader';
 import { getPlayerSpriteConfig } from '../utils/characterUtils';
-import { Crystal } from '../types';
+import { Crystal, PlayerState } from '../types';
+
+/** Building unlock order — condition checked against player state */
+const BUILDING_UNLOCK_CONFIG: {
+    buildingId: string;
+    labelId: string;
+    condition: (p: PlayerState) => boolean;
+}[] = [
+    { buildingId: 'arena-building', labelId: 'arena-label', condition: () => true },
+    { buildingId: 'guild', labelId: 'guild-label', condition: (p) => (p.townProgress?.totalWavesCompleted ?? 0) >= 1 },
+    { buildingId: 'witch', labelId: 'workshop-label', condition: (p) => (p.townProgress?.totalWavesCompleted ?? 0) >= 2 },
+    { buildingId: 'shop', labelId: 'shop-label', condition: (p) => (p.townProgress?.totalWavesCompleted ?? 0) >= 3 },
+    { buildingId: 'Crystal Forge small', labelId: 'forge-label', condition: (p) => p.unlockedPets?.includes('pink_beast') ?? false },
+];
 
 export class TownScene extends Phaser.Scene {
     private sceneBuilder!: SceneBuilder;
@@ -19,6 +32,8 @@ export class TownScene extends Phaser.Scene {
     private debugPanel?: Phaser.GameObjects.Container;
     private isDebugMode: boolean = false;
     private groundCrystalsContainer?: Phaser.GameObjects.Container;
+    private zyxGuides: Map<string, Phaser.GameObjects.Sprite> = new Map();
+    private newBadges: Map<string, Phaser.GameObjects.Container> = new Map();
 
     constructor() {
         super({ key: 'TownScene' });
@@ -50,6 +65,19 @@ export class TownScene extends Phaser.Scene {
         // Build the scene from JSON
         this.sceneBuilder.buildScene('TownScene');
 
+        // Clear scene re-entry state
+        this.zyxGuides = new Map();
+        this.newBadges = new Map();
+
+        // Ensure townProgress exists
+        if (!player.townProgress) {
+            player.townProgress = createInitialTownProgress();
+            gameState.save();
+        }
+
+        // Apply building visibility (hides locked buildings, detects new unlocks)
+        const newlyUnlocked = this.applyBuildingVisibility(player);
+
         // Spawn the player character with dynamic sprite based on selection
         const playerSpawn = this.sceneBuilder.getZone('playerSpawn');
         let playerX = playerSpawn?.x ?? 80;
@@ -79,15 +107,24 @@ export class TownScene extends Phaser.Scene {
         // Create UI Overlays
         this.characterUI = new CharacterUI(this);
 
-        // Show guild notification if player is ready to promote
+        // Show guild notification if player is ready to promote AND guild is unlocked
         const guildNotification = this.sceneBuilder.get<Phaser.GameObjects.Container>('guild-notification');
         if (guildNotification) {
-            const player = GameStateManager.getInstance().getPlayer();
-            guildNotification.setVisible(player.readyToPromote);
+            const isGuildUnlocked = player.townProgress!.unlockedBuildings.includes('guild');
+            guildNotification.setVisible(player.readyToPromote && isGuildUnlocked);
         }
 
-        // Arena is now a building in scenes.json, wired in setupBuildingTransitions()
-        // this.createArenaButton();  // Legacy floating arrow - no longer needed
+        // Show forest exit if Arena Level 2 is complete
+        this.createForestExit();
+
+        // Show Zyx guides + NEW badges for unlocked-but-not-visited buildings
+        this.showPersistentGuides(player);
+
+        // Play unlock animation for any newly unlocked buildings
+        if (newlyUnlocked.length > 0) {
+            gameState.save();
+            this.playUnlockSequence(newlyUnlocked);
+        }
 
         // Show ground crystals if any
         this.showGroundCrystals();
@@ -201,8 +238,8 @@ export class TownScene extends Phaser.Scene {
         this.debugPanel.setVisible(false);
         this.debugPanel.setDepth(1000);
 
-        // Background (expanded height for all boss toggles)
-        const bg = this.add.rectangle(0, 0, 180, 350, 0x000000, 0.8);
+        // Background (expanded height for all buttons)
+        const bg = this.add.rectangle(0, 0, 180, 380, 0x000000, 0.8);
         bg.setStrokeStyle(2, 0xffff00);
         this.debugPanel.add(bg);
 
@@ -339,8 +376,22 @@ export class TownScene extends Phaser.Scene {
         });
         this.debugPanel.add(bossIIIBtn);
 
+        // Unlock All Buildings button
+        const unlockBtn = createBtn(90, 'Unlock All', () => {
+            const p = gameState.getPlayer();
+            if (!p.townProgress) p.townProgress = createInitialTownProgress();
+            p.townProgress.totalWavesCompleted = 20;
+            p.townProgress.wavesAfterForgeUnlock = 5;
+            if (!p.unlockedPets.includes('pink_beast')) p.unlockedPets.push('pink_beast');
+            if (!p.arena.completedArenaLevels.includes(1)) p.arena.completedArenaLevels.push(1);
+            if (!p.arena.completedArenaLevels.includes(2)) p.arena.completedArenaLevels.push(2);
+            gameState.save();
+            this.scene.restart();
+        });
+        this.debugPanel.add(unlockBtn);
+
         // Reload UI button
-        const reloadBtn = createBtn(90, 'Reload UI (U)', async () => {
+        const reloadBtn = createBtn(115, 'Reload UI (U)', async () => {
             await uiTemplateLoader.reload();
             this.scene.restart();
         });
@@ -453,7 +504,11 @@ export class TownScene extends Phaser.Scene {
 
         // Save the building ID for return position
         const gameState = GameStateManager.getInstance();
-        gameState.getPlayer().lastBuildingId = buildingId;
+        const playerState = gameState.getPlayer();
+        playerState.lastBuildingId = buildingId;
+
+        // Mark building as visited (clears NEW badge / Zyx on next load)
+        this.markBuildingVisited(buildingId);
         gameState.save();
 
         const startX = this.player.x;
@@ -495,6 +550,9 @@ export class TownScene extends Phaser.Scene {
      */
     private walkToArena(targetX: number): void {
         this.input.enabled = false;
+
+        // Mark arena as visited
+        this.markBuildingVisited('arena-building');
 
         const startX = this.player.x;
         const distance = Math.abs(targetX - startX);
@@ -557,6 +615,296 @@ export class TownScene extends Phaser.Scene {
                         this.scene.start('ArenaScene', { arenaLevel, wave });
                     }
                 });
+            }
+        });
+    }
+
+    // ========== BUILDING UNLOCK SYSTEM ==========
+
+    /**
+     * Check each building's unlock condition and apply visibility.
+     * Returns list of building IDs that were newly unlocked this frame.
+     */
+    private applyBuildingVisibility(player: PlayerState): string[] {
+        const tp = player.townProgress!;
+        const newlyUnlocked: string[] = [];
+
+        for (const config of BUILDING_UNLOCK_CONFIG) {
+            const building = this.sceneBuilder.get<Phaser.GameObjects.Image>(config.buildingId);
+            const label = this.sceneBuilder.get<Phaser.GameObjects.GameObject>(config.labelId);
+            const conditionMet = config.condition(player);
+            const wasUnlocked = tp.unlockedBuildings.includes(config.buildingId);
+
+            if (!conditionMet) {
+                // Locked: hide building + label
+                if (building) {
+                    (building as any).setVisible(false);
+                    building.disableInteractive();
+                }
+                if (label) {
+                    (label as any).setVisible(false);
+                    if ((label as any).disableInteractive) (label as any).disableInteractive();
+                }
+            } else if (!wasUnlocked) {
+                // Newly unlocked: start hidden, will animate in
+                tp.unlockedBuildings.push(config.buildingId);
+                newlyUnlocked.push(config.buildingId);
+                if (building) {
+                    (building as any).setVisible(false);
+                    building.disableInteractive();
+                }
+                if (label) {
+                    (label as any).setVisible(false);
+                }
+            }
+            // Already unlocked: leave visible (SceneBuilder already created it)
+        }
+
+        return newlyUnlocked;
+    }
+
+    /**
+     * Show Zyx guide + NEW badge for buildings that are unlocked but not yet visited.
+     * Called once during create() for persistent guides (not animated unlocks).
+     */
+    private showPersistentGuides(player: PlayerState): void {
+        const tp = player.townProgress!;
+
+        for (const config of BUILDING_UNLOCK_CONFIG) {
+            if (config.buildingId === 'arena-building') continue; // Arena never gets guide
+            const isUnlocked = tp.unlockedBuildings.includes(config.buildingId);
+            const isVisited = tp.visitedBuildings.includes(config.buildingId);
+
+            if (isUnlocked && !isVisited) {
+                const building = this.sceneBuilder.get<Phaser.GameObjects.Image>(config.buildingId);
+                if (building) {
+                    this.showZyxAtBuilding(config.buildingId, building.x, building.y);
+                    this.showNewBadge(config.buildingId, building.x, building.y);
+                }
+            }
+        }
+
+        // Forest exit guide (arrow is on right side at x=1220)
+        if (tp.unlockedBuildings.includes('forest-exit') && !tp.visitedBuildings.includes('forest-exit')) {
+            this.showZyxAtBuilding('forest-exit', 1140, 559);
+            this.showNewBadge('forest-exit', 1220, 520);
+        }
+    }
+
+    /**
+     * Play staggered unlock animations for newly unlocked buildings.
+     */
+    private playUnlockSequence(buildingIds: string[]): void {
+        buildingIds.forEach((buildingId, index) => {
+            const delay = index * 1500;
+            const config = BUILDING_UNLOCK_CONFIG.find(c => c.buildingId === buildingId);
+            if (!config) return;
+
+            const building = this.sceneBuilder.get<Phaser.GameObjects.Image>(config.buildingId);
+            const label = this.sceneBuilder.get<Phaser.GameObjects.GameObject>(config.labelId);
+            if (!building) return;
+
+            // Save original scale
+            const origScaleX = building.scaleX;
+            const origScaleY = building.scaleY;
+
+            this.time.delayedCall(delay, () => {
+                // Make visible at scale 0
+                (building as any).setVisible(true);
+                building.setScale(0);
+
+                // Bounce in animation
+                this.tweens.add({
+                    targets: building,
+                    scaleX: origScaleX,
+                    scaleY: origScaleY,
+                    duration: 600,
+                    ease: 'Back.easeOut',
+                    onComplete: () => {
+                        // Re-enable interaction
+                        building.setInteractive({ useHandCursor: true });
+
+                        // Show label with fade
+                        if (label) {
+                            (label as any).setVisible(true);
+                            (label as any).setAlpha(0);
+                            this.tweens.add({
+                                targets: label,
+                                alpha: 1,
+                                duration: 300
+                            });
+                        }
+
+                        // Re-wire click handler (setupBuildingTransitions already ran but building was disabled)
+                        this.rewireClickHandler(config.buildingId);
+
+                        // Show Zyx + NEW badge
+                        this.showZyxAtBuilding(config.buildingId, building.x, building.y);
+                        this.showNewBadge(config.buildingId, building.x, building.y);
+                    }
+                });
+            });
+        });
+    }
+
+    /**
+     * Re-wire click handler for a specific building after unlock animation
+     */
+    private rewireClickHandler(buildingId: string): void {
+        const buildingScenes: Record<string, string> = {
+            'witch': 'PythiaWorkshopScene',
+            'guild': 'GuildScene',
+            'Crystal Forge small': 'CrystalForgeScene',
+            'shop': 'ShopScene'
+        };
+
+        const building = this.sceneBuilder.get<Phaser.GameObjects.Image>(buildingId);
+        if (!building) return;
+
+        if (buildingId === 'arena-building') {
+            building.removeAllListeners('pointerdown');
+            building.on('pointerdown', () => this.walkToArena(building.x));
+        } else if (buildingScenes[buildingId]) {
+            building.removeAllListeners('pointerdown');
+            building.on('pointerdown', () => this.walkToBuilding(building.x, buildingScenes[buildingId], buildingId));
+        }
+    }
+
+    /**
+     * Show Zyx guide sprite near a building
+     */
+    private showZyxAtBuilding(buildingId: string, buildingX: number, _buildingY: number): void {
+        if (this.zyxGuides.has(buildingId)) return;
+
+        // Place Zyx at ground level (player Y + 5px) and to the right of building
+        // so the player doesn't walk through him when entering
+        const groundY = (this.player?.y ?? 615) + 5;
+        const zyx = this.add.sprite(buildingX + 80, groundY, 'spritesheet-zyx-sheet')
+            .setScale(0.3)
+            .setDepth(50)
+            .play('zyx-idle');
+
+        // Gentle floating animation
+        this.tweens.add({
+            targets: zyx,
+            y: zyx.y - 8,
+            duration: 1200,
+            yoyo: true,
+            repeat: -1,
+            ease: 'Sine.easeInOut'
+        });
+
+        this.zyxGuides.set(buildingId, zyx);
+    }
+
+    /**
+     * Show NEW badge near a building
+     */
+    private showNewBadge(buildingId: string, buildingX: number, buildingY: number): void {
+        if (this.newBadges.has(buildingId)) return;
+
+        const badge = this.add.container(buildingX + 40, buildingY - 60);
+        badge.setDepth(55);
+
+        const circle = this.add.circle(0, 0, 18, 0xff2222);
+        const text = this.add.text(0, 0, 'NEW', {
+            fontSize: '11px',
+            fontFamily: 'Arial, sans-serif',
+            color: '#ffffff',
+            fontStyle: 'bold'
+        }).setOrigin(0.5);
+
+        badge.add([circle, text]);
+
+        // Pulsing animation
+        this.tweens.add({
+            targets: badge,
+            scaleX: 1.15,
+            scaleY: 1.15,
+            duration: 600,
+            yoyo: true,
+            repeat: -1,
+            ease: 'Sine.easeInOut'
+        });
+
+        this.newBadges.set(buildingId, badge);
+    }
+
+    /**
+     * Mark a building as visited — destroys Zyx guide + NEW badge
+     */
+    private markBuildingVisited(buildingId: string): void {
+        const player = GameStateManager.getInstance().getPlayer();
+        if (!player.townProgress) return;
+
+        if (!player.townProgress.visitedBuildings.includes(buildingId)) {
+            player.townProgress.visitedBuildings.push(buildingId);
+        }
+
+        // Destroy visual indicators
+        const zyx = this.zyxGuides.get(buildingId);
+        if (zyx) {
+            this.tweens.killTweensOf(zyx);
+            zyx.destroy();
+            this.zyxGuides.delete(buildingId);
+        }
+
+        const badge = this.newBadges.get(buildingId);
+        if (badge) {
+            this.tweens.killTweensOf(badge);
+            badge.destroy();
+            this.newBadges.delete(buildingId);
+        }
+    }
+
+    /**
+     * Show forest exit arrow if Arena Level 2 is complete.
+     * Uses the "arrow forest" template element from scenes.json.
+     */
+    private createForestExit(): void {
+        const player = GameStateManager.getInstance().getPlayer();
+        const hasArena2 = player.arena?.completedArenaLevels?.includes(2) ?? false;
+        if (!hasArena2) return;
+
+        // Ensure it's tracked as unlocked
+        if (!player.townProgress!.unlockedBuildings.includes('forest-exit')) {
+            player.townProgress!.unlockedBuildings.push('forest-exit');
+            GameStateManager.getInstance().save();
+        }
+
+        // The "arrow forest" element is created by SceneBuilder from scenes.json
+        const arrowElement = this.sceneBuilder.get('arrow forest');
+        if (!arrowElement) return;
+
+        arrowElement.setVisible(true);
+
+        this.sceneBuilder.bindClick('arrow forest', () => {
+            this.markBuildingVisited('forest-exit');
+            GameStateManager.getInstance().save();
+            this.walkToForest();
+        });
+    }
+
+    /**
+     * Walk player to right edge then transition to Forest
+     */
+    private walkToForest(): void {
+        this.input.enabled = false;
+
+        const spriteConfig = getPlayerSpriteConfig(
+            GameStateManager.getInstance().getPlayer().characterType
+        );
+        this.player.setFlipX(false);
+        this.player.play(spriteConfig.walkAnim);
+
+        const targetX = 1300;
+        this.tweens.add({
+            targets: this.player,
+            x: targetX,
+            duration: (Math.abs(targetX - this.player.x) / 350) * 1000,
+            ease: 'Linear',
+            onComplete: () => {
+                this.scene.start('ForestGateScene');
             }
         });
     }

@@ -1,0 +1,9 @@
+[
+    {
+        "id": "zyx",
+        "name": "ZYX",
+        "spriteKey": "spritesheet-zyx-transparent2-sheet",
+        "animPrefix": "zyx",
+        "scale": 0.9
+    }
+]

@@ -506,8 +506,7 @@
           "asset": "misc.arena-building",
           "x": 108,
           "y": 660,
-          "scale": 0.6,
-          "flipX": true
+          "scale": 0.6
         }
       ],
       "zones": [
@@ -583,6 +582,17 @@
             "click": "onQuitToMenu"
           },
           "visible": true
+        },
+        {
+          "id": "arrow forest",
+          "asset": "misc.arrow-forest",
+          "x": 1220,
+          "y": 559,
+          "scale": 0.3,
+          "visible": false,
+          "uiElement": {
+            "templateId": "1770409594571-821mfpxn2"
+          }
         }
       ]
     },
@@ -1788,6 +1798,16 @@
           "depth": -1,
           "uiElement": {
             "templateId": "1770069824042-mifp8yjpu"
+          }
+        },
+        {
+          "id": "money mana",
+          "asset": "misc.money-mana",
+          "x": 143,
+          "y": 66,
+          "scale": 1.1,
+          "uiElement": {
+            "templateId": "1770241522996-hufl4bbhq"
           }
         },
         {

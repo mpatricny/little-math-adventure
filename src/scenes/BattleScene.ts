@@ -3,7 +3,7 @@ import { BattleState, BattlePhase, BattleEnemy, EnemyDefinition, ItemDefinition,
 import { MathEngine } from '../systems/MathEngine';
 import { MathBoard } from '../ui/MathBoard';
 import { GameStateManager } from '../systems/GameStateManager';
-import { ProgressionSystem } from '../systems/ProgressionSystem';
+import { ProgressionSystem, createInitialTownProgress } from '../systems/ProgressionSystem';
 import { CrystalSystem } from '../systems/CrystalSystem';
 import { SceneDebugger } from '../systems/SceneDebugger';
 import { SceneBuilder } from '../systems/SceneBuilder';
@@ -2357,6 +2357,10 @@ export class BattleScene extends Phaser.Scene {
             let crystalsToAward = 0;
             if (!wasCompletedBefore) {
                 crystalsToAward += 1;  // Base crystal for first completion
+
+                // Track town progression - only on first-time wave completions
+                if (!player.townProgress) player.townProgress = createInitialTownProgress();
+                player.townProgress.totalWavesCompleted += 1;
             }
             if (isPerfect && !wasPerfectBefore) {
                 crystalsToAward += 1;  // Bonus crystal for achieving perfect

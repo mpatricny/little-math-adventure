@@ -51,7 +51,10 @@ export class PythiaWorkshopScene extends Phaser.Scene {
     // UI containers for dynamic content
     private bindingCrystalDisplay!: Phaser.GameObjects.Container;
     private bindingPetDisplay!: Phaser.GameObjects.Container;
-    private resourceDisplay!: Phaser.GameObjects.Container;
+    private manaText: Phaser.GameObjects.Text | null = null;
+    private coinsText: Phaser.GameObjects.Text | null = null;
+    private bindCostDisplay: Phaser.GameObjects.Container | null = null;
+    private bindWarningText: Phaser.GameObjects.Text | null = null;
 
     constructor() {
         super({ key: 'PythiaWorkshopScene' });
@@ -65,6 +68,10 @@ export class PythiaWorkshopScene extends Phaser.Scene {
         this.petScrollOffset = 0;
         this.crystalRows = [];
         this.petRows = [];
+        this.bindCostDisplay = null;
+        this.bindWarningText = null;
+        this.manaText = null;
+        this.coinsText = null;
 
         this.sceneBuilder = new SceneBuilder(this);
 
@@ -86,27 +93,50 @@ export class PythiaWorkshopScene extends Phaser.Scene {
 
     private createResourceDisplay(): void {
         const player = this.gameState.getPlayer();
+        const manaCount = ManaSystem.getMana(player);
+        const coinsCount = ProgressionSystem.getTotalCoinValue(player.coins);
 
-        // Position in top-left area
-        this.resourceDisplay = this.add.container(100, 30);
-        this.resourceDisplay.setDepth(50);
+        // Use the "money mana" UI template element (same as CrystalForgeScene)
+        const manaElement = this.sceneBuilder.get<Phaser.GameObjects.Container>('money mana');
+        if (manaElement) {
+            const textObjects = manaElement.getData('textObjects') as Map<string, { text: Phaser.GameObjects.Text }> | undefined;
+            if (textObjects) {
+                // Mana text ID (from money-mana template)
+                const manaTextEntry = textObjects.get('1770241846853-jfbnou0oe');
+                if (manaTextEntry) {
+                    this.manaText = manaTextEntry.text;
+                    this.manaText.setText(`${manaCount}`);
+                }
 
-        const mana = ManaSystem.getMana(player);
-        const coins = ProgressionSystem.getTotalCoinValue(player.coins);
+                // Coins text ID (from money-mana template)
+                const coinsTextEntry = textObjects.get('1770241864666-yyygo6t26');
+                if (coinsTextEntry) {
+                    this.coinsText = coinsTextEntry.text;
+                    this.coinsText.setText(`${coinsCount}`);
+                }
 
-        const manaText = this.add.text(0, 0, `Mana: ${mana}`, {
+                if (manaTextEntry) return; // Success — template-based display is active
+            }
+        }
+
+        // Fallback: programmatic text if template element not found
+        console.warn('[PythiaWorkshop] Could not find money mana UI element, using fallback');
+        this.manaText = this.add.text(100, 30, `Mana: ${manaCount}`, {
             fontSize: '16px',
             color: '#88ccff',
             fontStyle: 'bold'
-        }).setOrigin(0, 0.5);
-
-        const coinText = this.add.text(100, 0, `Mince: ${coins}`, {
+        }).setOrigin(0, 0.5).setDepth(50);
+        this.coinsText = this.add.text(200, 30, `Mince: ${coinsCount}`, {
             fontSize: '16px',
             color: '#ffd700',
             fontStyle: 'bold'
-        }).setOrigin(0, 0.5);
+        }).setOrigin(0, 0.5).setDepth(50);
+    }
 
-        this.resourceDisplay.add([manaText, coinText]);
+    private updateResourceDisplay(): void {
+        const player = this.gameState.getPlayer();
+        if (this.manaText) this.manaText.setText(`${ManaSystem.getMana(player)}`);
+        if (this.coinsText) this.coinsText.setText(`${ProgressionSystem.getTotalCoinValue(player.coins)}`);
     }
 
     // ========== POTION PANEL ==========
@@ -441,21 +471,38 @@ export class PythiaWorkshopScene extends Phaser.Scene {
 
         const hasSelection = this.selectedPet && this.selectedCrystal;
         const canBind = this.canPerformBinding();
+        const player = this.gameState.getPlayer();
 
         // Hide button until both pet and crystal are selected
         bindButton.setVisible(!!hasSelection);
+
+        // Clean up cost display and warning
+        if (this.bindCostDisplay) {
+            this.bindCostDisplay.destroy();
+            this.bindCostDisplay = null;
+        }
+        if (this.bindWarningText) {
+            this.bindWarningText.destroy();
+            this.bindWarningText = null;
+        }
 
         if (!hasSelection) {
             bindButton.disableInteractive();
             return;
         }
 
-        // Remove any existing click handler
-        bindButton.off('pointerdown');
-
         const layerObjects = bindButton.getData('layerObjects') as Map<string, Phaser.GameObjects.Image> | undefined;
         const textObjects = bindButton.getData('textObjects') as Map<string, { text: Phaser.GameObjects.Text }> | undefined;
         const btnTextInfo = textObjects?.get('1768922299962-lij5d6x4j');
+
+        // Clear ALL existing click handlers on container and its interactive layers
+        bindButton.off('pointerdown');
+        layerObjects?.forEach(layer => layer.off('pointerdown'));
+
+        // Show cost display below button (mana icons + coin cost)
+        const btnX = (bindButton as any).x ?? 630;
+        const btnY = (bindButton as any).y ?? 497;
+        this.createBindCostDisplay(btnX, btnY + 35, player);
 
         if (canBind) {
             layerObjects?.forEach(layer => layer.clearTint());
@@ -468,9 +515,74 @@ export class PythiaWorkshopScene extends Phaser.Scene {
             // Show greyed out if selection doesn't match
             layerObjects?.forEach(layer => layer.setTint(0x666666));
             btnTextInfo?.text.setColor('#888888');
-            // Remove click handler when disabled
-            this.sceneBuilder.bindClick('Green_button_1', () => {});
+
+            // Show specific warning for insufficient resources
+            const hasMana = ManaSystem.canAfford(player, this.MANA_COST);
+            const hasCoins = ProgressionSystem.getTotalCoinValue(player.coins) >= this.COIN_COST;
+            const crystalMatches = this.selectedCrystal!.tier === this.selectedPet!.requiredAmulet.tier &&
+                                   this.selectedCrystal!.value === this.selectedPet!.requiredAmulet.value;
+
+            if (crystalMatches && !hasMana) {
+                this.showBindWarning('Nedostatek many!', btnX, btnY + 60);
+            } else if (crystalMatches && !hasCoins) {
+                this.showBindWarning('Nedostatek mincí!', btnX, btnY + 60);
+            }
         }
+    }
+
+    /**
+     * Show mana and coin cost below the bind button
+     */
+    private createBindCostDisplay(x: number, y: number, player: PlayerState): void {
+        this.bindCostDisplay = this.add.container(x, y).setDepth(20);
+
+        const hasMana = ManaSystem.canAfford(player, this.MANA_COST);
+        const hasCoins = ProgressionSystem.getTotalCoinValue(player.coins) >= this.COIN_COST;
+
+        // Mana cost: larger icons, closer together, shifted left
+        const manaSpacing = 16;
+        for (let i = 0; i < this.MANA_COST; i++) {
+            if (this.textures.exists('mana-icon')) {
+                const icon = this.add.image(-35 + i * manaSpacing, 0, 'mana-icon').setScale(0.3);
+                if (!hasMana) icon.setTint(0xff4444);
+                this.bindCostDisplay.add(icon);
+            }
+        }
+
+        // Coin cost: half-size gold coins, shifted right
+        const coinSpacing = 14;
+        const coinStartX = 15;
+        for (let i = 0; i < this.COIN_COST; i++) {
+            if (this.textures.exists('shop-coins-sheet')) {
+                const coin = this.add.image(coinStartX + i * coinSpacing, 0, 'shop-coins-sheet', 6).setScale(0.2);
+                if (!hasCoins) coin.setTint(0xff4444);
+                this.bindCostDisplay.add(coin);
+            }
+        }
+    }
+
+    /**
+     * Show a warning message below the bind button that pulses red
+     */
+    private showBindWarning(message: string, x: number, y: number): void {
+        this.bindWarningText = this.add.text(x, y, message, {
+            fontSize: '18px',
+            fontFamily: 'Arial, sans-serif',
+            color: '#ff4444',
+            fontStyle: 'bold',
+            stroke: '#000000',
+            strokeThickness: 3
+        }).setOrigin(0.5).setDepth(20);
+
+        // Pulsing animation
+        this.tweens.add({
+            targets: this.bindWarningText,
+            alpha: 0.4,
+            duration: 600,
+            yoyo: true,
+            repeat: -1,
+            ease: 'Sine.easeInOut'
+        });
     }
 
     private canPerformBinding(): boolean {
@@ -484,14 +596,29 @@ export class PythiaWorkshopScene extends Phaser.Scene {
         const crystalMatches = this.selectedCrystal.tier === this.selectedPet.requiredAmulet.tier &&
                                this.selectedCrystal.value === this.selectedPet.requiredAmulet.value;
 
-        if (!crystalMatches) return false;
-
         // Check mana cost
         const hasMana = ManaSystem.canAfford(player, this.MANA_COST);
-        if (!hasMana) return false;
 
         // Check coin cost
         const hasCoins = ProgressionSystem.getTotalCoinValue(player.coins) >= this.COIN_COST;
+
+        console.log('[PythiaWorkshop] canPerformBinding:', {
+            pet: this.selectedPet.id,
+            crystalTier: this.selectedCrystal.tier,
+            crystalValue: this.selectedCrystal.value,
+            requiredTier: this.selectedPet.requiredAmulet.tier,
+            requiredValue: this.selectedPet.requiredAmulet.value,
+            crystalMatches,
+            mana: ManaSystem.getMana(player),
+            manaCost: this.MANA_COST,
+            hasMana,
+            coins: ProgressionSystem.getTotalCoinValue(player.coins),
+            coinCost: this.COIN_COST,
+            hasCoins
+        });
+
+        if (!crystalMatches) return false;
+        if (!hasMana) return false;
         if (!hasCoins) return false;
 
         // Check special crystal requirement (for compound cost pets)
