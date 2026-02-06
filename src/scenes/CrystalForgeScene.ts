@@ -63,8 +63,8 @@ export class CrystalForgeScene extends Phaser.Scene {
     private splitFragmentValue1Text!: Phaser.GameObjects.Text;
     private splitFragmentValue2Text!: Phaser.GameObjects.Text;
     private operationButton!: Phaser.GameObjects.Container;
-    private operationButtonBg!: Phaser.GameObjects.Rectangle;
     private operationButtonText!: Phaser.GameObjects.Text;
+    private manaIcons: Phaser.GameObjects.Image[] = [];  // 1-3 icons based on cost
 
     // Crystal holders using templates (replaces programmatic slots)
     private crystalHolders: { container: Phaser.GameObjects.Container; crystal: Crystal | null }[] = [];
@@ -100,6 +100,7 @@ export class CrystalForgeScene extends Phaser.Scene {
         this.answerButtons = [];
         this.operationPanelButtons.clear();
         this.crystalHolders = [];
+        this.manaIcons = [];
         this.crystalPage = 0;
         this.slotPositions = [];
         this.slotCircles = [];
@@ -194,6 +195,17 @@ export class CrystalForgeScene extends Phaser.Scene {
         const player = this.gameState.getPlayer();
         const manaCount = ManaSystem.getMana(player);
         this.manaText.setText(`${manaCount}`);
+    }
+
+    /**
+     * Updates the mana icon display on the operation button.
+     * Shows 1, 2, or 3 icons based on the operation cost.
+     */
+    private updateManaIconsDisplay(cost: number): void {
+        // Show icons based on cost (1, 2, or 3)
+        this.manaIcons.forEach((icon, index) => {
+            icon.setVisible(index < cost);
+        });
     }
 
     private createInventoryGrid(): void {
@@ -649,30 +661,76 @@ export class CrystalForgeScene extends Phaser.Scene {
     }
 
     private createOperationButton(): void {
-        // Position operation button below the pedestal (relative to pedestal position)
-        const buttonX = this.pedestalPosition.x;
-        const buttonY = this.pedestalPosition.y + 20;  // Slightly below pedestal
-        this.operationButton = this.add.container(buttonX, buttonY);
-        this.operationButton.setDepth(50);
+        // Get Green_button from SceneBuilder (positioned outside view at 219, -89 in scenes.json)
+        const greenButton = this.sceneBuilder.get<Phaser.GameObjects.Container>('Green_button');
 
-        this.operationButtonBg = this.add.rectangle(0, 0, 160, 50, 0x446688)
-            .setStrokeStyle(2, 0x6688aa);
+        if (greenButton) {
+            this.operationButton = greenButton;
+            // Move button to correct position (below pedestal, 15px higher than before)
+            this.operationButton.setPosition(this.pedestalPosition.x, this.pedestalPosition.y + 35);
+            this.operationButton.setDepth(50);
 
-        this.operationButtonText = this.add.text(0, 0, '⚡1 SPOJIT', {
-            fontSize: '20px',
-            fontFamily: 'Arial, sans-serif',
-            color: '#ffffff',
-            fontStyle: 'bold'
-        }).setOrigin(0.5);
+            // Get text object from template (text area ID: 1768922299962-lij5d6x4j)
+            const textObjects = this.operationButton.getData('textObjects') as Map<string, { text: Phaser.GameObjects.Text }>;
+            const textInfo = textObjects?.get('1768922299962-lij5d6x4j');
+            if (textInfo) {
+                this.operationButtonText = textInfo.text;
+                this.operationButtonText.setText('SPOJIT');
+            }
 
-        this.operationButton.add([this.operationButtonBg, this.operationButtonText]);
-        this.operationButton.setSize(160, 50);
-        this.operationButton.setVisible(false); // Hidden until slots are filled
+            // Create mana icons (up to 3) - will be shown/hidden based on cost
+            this.manaIcons = [];
+            const iconSpacing = 22;  // Spacing between icons
+            for (let i = 0; i < 3; i++) {
+                const icon = this.add.image(-40 + i * iconSpacing, -18, 'mana-icon');
+                icon.setScale(0.3);
+                icon.setVisible(false);  // Will be controlled by updateManaIconsDisplay
+                this.operationButton.add(icon);
+                this.manaIcons.push(icon);
+            }
+            // Show 1 icon initially (merge costs 1)
+            this.updateManaIconsDisplay(1);
 
-        this.operationButtonBg.setInteractive({ useHandCursor: true })
-            .on('pointerover', () => this.operationButtonBg.setFillStyle(0x5588aa))
-            .on('pointerout', () => this.operationButtonBg.setFillStyle(0x446688))
-            .on('pointerdown', () => this.startOperation());
+            // Bind click handler using sceneBuilder (NOT direct container.on)
+            this.sceneBuilder.bindClick('Green_button', () => this.startOperation());
+
+            this.operationButton.setVisible(false);  // Hidden until slots are filled
+        } else {
+            console.warn('[CrystalForge] Green_button template not found, using fallback');
+            // Fallback: create programmatic button
+            const buttonX = this.pedestalPosition.x;
+            const buttonY = this.pedestalPosition.y + 35;
+            this.operationButton = this.add.container(buttonX, buttonY);
+            this.operationButton.setDepth(50);
+
+            const bg = this.add.rectangle(0, 0, 160, 50, 0x446688)
+                .setStrokeStyle(2, 0x6688aa);
+
+            this.operationButtonText = this.add.text(0, 0, 'SPOJIT', {
+                fontSize: '20px',
+                fontFamily: 'Arial, sans-serif',
+                color: '#ffffff',
+                fontStyle: 'bold'
+            }).setOrigin(0.5);
+
+            // Create mana icons (up to 3) for fallback
+            this.manaIcons = [];
+            const iconSpacing = 22;
+            for (let i = 0; i < 3; i++) {
+                const icon = this.add.image(-40 + i * iconSpacing, -15, 'mana-icon');
+                icon.setScale(0.3);
+                icon.setVisible(false);
+                this.manaIcons.push(icon);
+            }
+
+            this.operationButton.add([bg, this.operationButtonText, ...this.manaIcons]);
+            this.operationButton.setSize(160, 50);
+            this.operationButton.setVisible(false);
+            this.updateManaIconsDisplay(1);
+
+            bg.setInteractive({ useHandCursor: true })
+                .on('pointerdown', () => this.startOperation());
+        }
     }
 
     private updateOperationButtonVisibility(): void {
@@ -815,18 +873,24 @@ export class CrystalForgeScene extends Phaser.Scene {
             // Create crystal sprite using gemstone-icons spritesheet (larger than inventory)
             // Frame mapping: shard=1, fragment=3, prism=5
             const tierFrames: { [key: string]: number } = { shard: 1, fragment: 3, prism: 5 };
-            const crystalSprite = this.add.image(0, -5, 'gemstone-icons', tierFrames[crystal.tier]);
+            const crystalSprite = this.add.image(0, -25, 'gemstone-icons', tierFrames[crystal.tier]);
             crystalSprite.setScale(0.8);  // Pedestal scale (larger than inventory's 0.5)
 
-            // Value text below crystal
-            const config = CrystalSystem.getTierConfig(crystal.tier);
-            const valueText = this.add.text(0, 35, String(crystal.value), {
-                fontSize: '20px',
-                fontFamily: 'Arial, sans-serif',
-                color: config.color,
-                fontStyle: 'bold',
-                stroke: '#000000',
-                strokeThickness: 2
+            // Value text CENTERED on crystal (same Y position as sprite)
+            // Template uses: Georgia font, golden fill #e6e944, stroke #1a1b08, shadow
+            const valueText = this.add.text(0, -25, String(crystal.value), {
+                fontSize: '32px',
+                fontFamily: 'Georgia, serif',
+                color: '#e6e944',
+                stroke: '#1a1b08',
+                strokeThickness: 1,
+                shadow: {
+                    offsetX: 0,
+                    offsetY: 0,
+                    color: '#050505',
+                    blur: 8,
+                    fill: true
+                }
             }).setOrigin(0.5);
 
             slot.add([crystalSprite, valueText]);
@@ -1255,7 +1319,6 @@ export class CrystalForgeScene extends Phaser.Scene {
 
         // Create display for each crystal using sprites (not emoji)
         crystalArray.forEach((crystal, index) => {
-            const config = CrystalSystem.getTierConfig(crystal.tier);
             const x = startX + index * spacing;
 
             // Frame mapping for gemstone-icons: shard=1, fragment=3, prism=5
@@ -1270,16 +1333,21 @@ export class CrystalForgeScene extends Phaser.Scene {
             const spriteScale = crystalArray.length === 1 ? 1.5 : 1.0;  // Largest for single result
             crystalSprite.setScale(spriteScale);
 
-            // Value text below crystal
-            const valueFontSize = crystalArray.length === 1 ? '32px' : '24px';
-            const valueY = crystalArray.length === 1 ? 55 : 40;
-            const valueText = this.add.text(x, valueY, String(crystal.value), {
+            // Value text CENTERED on crystal with golden Georgia style (matches inventory template)
+            const valueFontSize = crystalArray.length === 1 ? '48px' : '36px';
+            const valueText = this.add.text(x, -10, String(crystal.value), {
                 fontSize: valueFontSize,
-                fontFamily: 'Arial, sans-serif',
-                color: config.color,
-                fontStyle: 'bold',
-                stroke: '#000000',
-                strokeThickness: 3
+                fontFamily: 'Georgia, serif',
+                color: '#e6e944',
+                stroke: '#1a1b08',
+                strokeThickness: 2,
+                shadow: {
+                    offsetX: 0,
+                    offsetY: 0,
+                    color: '#050505',
+                    blur: 10,
+                    fill: true
+                }
             }).setOrigin(0.5);
 
             resultsContainer.add([glow, crystalSprite, valueText]);
@@ -1522,16 +1590,18 @@ export class CrystalForgeScene extends Phaser.Scene {
         this.splitValue = 0;
         this.splitValue2 = 0;
 
-        // Update operation button text based on operation
-        const buttonLabels: Record<ForgeOperation, string> = {
-            'merge': '⚡1 SPOJIT',
-            'split': '⚡1 ROZDĚLIT',
-            'createFragment': '⚡2 VYTVOŘIT',
-            'splitFragment': '⚡2 ROZDĚLIT',
-            'refine': '⚡2 ODSEKAT',
-            'createPrism': '⚡3 VYTVOŘIT'
+        // Update operation button text and mana cost icons
+        const buttonLabels: Record<ForgeOperation, { text: string; cost: number }> = {
+            'merge': { text: 'SPOJIT', cost: 1 },
+            'split': { text: 'ROZDĚLIT', cost: 1 },
+            'createFragment': { text: 'VYTVOŘIT', cost: 2 },
+            'splitFragment': { text: 'ROZDĚLIT', cost: 2 },
+            'refine': { text: 'ODSEKAT', cost: 2 },
+            'createPrism': { text: 'VYTVOŘIT', cost: 3 }
         };
-        this.operationButtonText.setText(buttonLabels[op]);
+        const label = buttonLabels[op];
+        this.operationButtonText?.setText(label.text);
+        this.updateManaIconsDisplay(label.cost);
 
         this.renderInventoryCrystals();
         this.updateForgeDisplay();

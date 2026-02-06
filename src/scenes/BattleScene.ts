@@ -112,7 +112,28 @@ export class BattleScene extends Phaser.Scene {
     // Journey mode data
     private journeyMode: boolean = false;
     private returnScene: string = 'TownScene';
+    private returnData: Record<string, unknown> = {};
     private backgroundKey: string | null = null;
+
+    // Boss battle data
+    private isBoss: boolean = false;
+    private bossPhases: {
+        hp: number;
+        atk: number;
+        name: string;
+        nameCs: string;
+        mathType?: string;
+        mathDifficulty?: number;
+        ability?: string | null;
+        healPercent?: number;
+    }[] = [];
+    private currentBossPhase: number = 0;
+    private bossPhaseHealPlayer: number = 0;
+
+    // Boss ability tracking
+    private currentPhaseAbility: string | null = null;
+    private lastAnswerCorrect: boolean = true;
+    private lastStandTriggered: boolean = false;
 
     init(data: { 
         enemyId?: string; 
@@ -122,6 +143,7 @@ export class BattleScene extends Phaser.Scene {
         wave?: number;
         mode?: string;
         returnScene?: string;
+        returnData?: Record<string, unknown>;
         backgroundKey?: string;
         enemy?: string;
     }): void {
@@ -132,6 +154,7 @@ export class BattleScene extends Phaser.Scene {
         // Store journey mode data
         this.journeyMode = data.mode === 'journey';
         this.returnScene = data.returnScene || 'TownScene';
+        this.returnData = data.returnData || {};
         this.backgroundKey = data.backgroundKey || null;
 
         // Store arena data if coming from arena
@@ -139,6 +162,12 @@ export class BattleScene extends Phaser.Scene {
         this.arenaLevel = data.arenaLevel || 1;
         this.arenaWave = data.wave || 0;
         this.waveWrongAnswerCount = 0;
+
+        // Reset boss state (in case previous battle was a boss)
+        this.isBoss = false;
+        this.bossPhases = [];
+        this.currentBossPhase = 0;
+        this.bossPhaseHealPlayer = 0;
 
         // Get enemy data - either from arena or single enemy
         if (data.enemyDefs && data.enemyDefs.length > 0) {
@@ -162,24 +191,67 @@ export class BattleScene extends Phaser.Scene {
                     goldMin?: number;
                     goldMax?: number;
                     spriteKey: string;
+                    // Boss properties
+                    isBoss?: boolean;
+                    phases?: {
+                        hp: number;
+                        atk: number;
+                        name: string;
+                        nameCs: string;
+                        mathType?: string;
+                        mathDifficulty?: number;
+                        ability?: string | null;
+                        healPercent?: number;
+                    }[];
+                    phaseHealPlayer?: number;
                 }
                 const forestData = this.cache.json.get('forestEnemies') as { enemies: Record<string, ForestEnemy> };
                 const forestEnemy = forestData?.enemies?.[enemyId];
                 if (forestEnemy) {
-                    // Convert forest enemy format to standard format
-                    const goldMin = forestEnemy.goldMin || 5;
-                    const goldMax = forestEnemy.goldMax || goldMin + 5;
-                    enemy = {
-                        id: forestEnemy.id,
-                        name: forestEnemy.nameCs || forestEnemy.name,
-                        hp: forestEnemy.hp,
-                        attack: forestEnemy.atk || 3,
-                        defense: 0,
-                        xp: forestEnemy.xp || 10,
-                        goldReward: [goldMin, goldMax],  // Must be array format
-                        spriteKey: forestEnemy.spriteKey,
-                        animPrefix: forestEnemy.spriteKey?.replace('-sheet', '') || 'slime'
-                    } as unknown as EnemyDefinition;
+                    // Check if this is a boss with phases
+                    if (forestEnemy.isBoss && forestEnemy.phases && forestEnemy.phases.length > 0) {
+                        this.isBoss = true;
+                        this.bossPhases = forestEnemy.phases;
+                        this.currentBossPhase = 0;
+                        this.bossPhaseHealPlayer = forestEnemy.phaseHealPlayer || 0;
+
+                        // Initialize boss ability tracking for first phase
+                        const phase1 = forestEnemy.phases[0];
+                        this.currentPhaseAbility = phase1.ability || null;
+                        this.lastAnswerCorrect = true;
+                        this.lastStandTriggered = false;
+
+                        console.log(`[BattleScene] Boss battle! ${forestEnemy.phases.length} phases. Starting phase: ${phase1.nameCs}, ability: ${this.currentPhaseAbility}`);
+
+                        const goldMin = forestEnemy.goldMin || 5;
+                        const goldMax = forestEnemy.goldMax || goldMin + 5;
+                        enemy = {
+                            id: forestEnemy.id,
+                            name: `${forestEnemy.nameCs || forestEnemy.name} - ${phase1.nameCs}`,
+                            hp: phase1.hp,
+                            attack: phase1.atk,
+                            defense: 0,
+                            xp: forestEnemy.xp || 10,
+                            goldReward: [goldMin, goldMax],
+                            spriteKey: forestEnemy.spriteKey,
+                            animPrefix: forestEnemy.spriteKey?.replace('-sheet', '') || 'slime'
+                        } as unknown as EnemyDefinition;
+                    } else {
+                        // Regular forest enemy
+                        const goldMin = forestEnemy.goldMin || 5;
+                        const goldMax = forestEnemy.goldMax || goldMin + 5;
+                        enemy = {
+                            id: forestEnemy.id,
+                            name: forestEnemy.nameCs || forestEnemy.name,
+                            hp: forestEnemy.hp,
+                            attack: forestEnemy.atk || 3,
+                            defense: 0,
+                            xp: forestEnemy.xp || 10,
+                            goldReward: [goldMin, goldMax],
+                            spriteKey: forestEnemy.spriteKey,
+                            animPrefix: forestEnemy.spriteKey?.replace('-sheet', '') || 'slime'
+                        } as unknown as EnemyDefinition;
+                    }
                 }
             }
             
@@ -238,11 +310,14 @@ export class BattleScene extends Phaser.Scene {
 
         this.sceneBuilder.buildScene();
 
-        // Add custom background for journey mode (on top of scene background)
+        // Add custom background for journey mode (covers the default battle background)
         if (this.backgroundKey && this.textures.exists(this.backgroundKey)) {
             const bg = this.add.image(640, 360, this.backgroundKey);
-            bg.setDepth(-100); // Behind everything
+            bg.setDepth(-5); // Above default background (-10) but behind characters
             bg.setDisplaySize(1280, 720);
+            console.log(`[BattleScene] Using custom background: ${this.backgroundKey}`);
+        } else if (this.backgroundKey) {
+            console.warn(`[BattleScene] Background texture not found: ${this.backgroundKey}`);
         }
 
         const player = this.gameState.getPlayer();
@@ -321,14 +396,22 @@ export class BattleScene extends Phaser.Scene {
             this.cachedSpawnPoints!.enemies.push({ x, y });
 
             const def = this.enemyDefs[index];
-            const animPrefix = this.enemyAnimPrefixes[index];
+            let animPrefix = this.enemyAnimPrefixes[index];
+
+            // Ensure animations exist for this enemy (creates fallbacks for static sprites)
+            // This may also substitute the texture/animPrefix if the original is missing
+            animPrefix = this.ensureEnemyAnimations(def.spriteKey, animPrefix);
+            this.enemyAnimPrefixes[index] = animPrefix; // Update stored prefix
 
             // Get enemy scale from definition
             const ENEMY_BASE_SCALE = 1.0;
             const enemyScale = (def.scale ?? 1.0) * ENEMY_BASE_SCALE;
 
+            // Use the texture that actually exists (might be fallback)
+            const actualSpriteKey = this.textures.exists(def.spriteKey) ? def.spriteKey : 'slime-sheet';
+
             const container = this.add.container(x, y);
-            const sprite = this.add.sprite(0, 0, def.spriteKey).setScale(enemyScale).play(`${animPrefix}-idle`);
+            const sprite = this.add.sprite(0, 0, actualSpriteKey).setScale(enemyScale).play(`${animPrefix}-idle`);
             const hpBar = this.createHpBar(0, -80, enemy.hp, enemy.maxHp, '#cc4444');
             container.add([sprite, hpBar.container]);
 
@@ -401,6 +484,36 @@ export class BattleScene extends Phaser.Scene {
 
         // Start battle
         this.time.delayedCall(500, () => this.setPhase('player_turn'));
+    }
+
+    /**
+     * Ensure enemy animations exist, creating fallback single-frame animations for static sprites
+     * Also handles missing textures by substituting with slime
+     */
+    private ensureEnemyAnimations(spriteKey: string, animPrefix: string): string {
+        // If texture doesn't exist, use slime as fallback
+        if (!this.textures.exists(spriteKey)) {
+            console.warn(`[BattleScene] Texture not found: ${spriteKey}, using slime-sheet fallback`);
+            spriteKey = 'slime-sheet';
+            animPrefix = 'slime';
+        }
+
+        const animations = [`${animPrefix}-idle`, `${animPrefix}-hurt`, `${animPrefix}-death`, `${animPrefix}-attack`];
+
+        for (const animKey of animations) {
+            if (!this.anims.exists(animKey)) {
+                // Create a fallback single-frame animation using the static sprite
+                this.anims.create({
+                    key: animKey,
+                    frames: [{ key: spriteKey, frame: 0 }],
+                    frameRate: 1,
+                    repeat: 0
+                });
+                console.log(`[BattleScene] Created fallback animation: ${animKey}`);
+            }
+        }
+
+        return animPrefix; // Return potentially modified animPrefix
     }
 
     private createHpBar(x: number, y: number, hp: number, maxHp: number, color: string): HpBar {
@@ -783,6 +896,15 @@ export class BattleScene extends Phaser.Scene {
         const animPrefix = this.enemyAnimPrefixes[targetIdx];
 
         enemy.hp -= damage;
+
+        // Check for Last Stand ability (boss survives with 1 HP once)
+        if (this.isBoss && enemy.hp <= 0 &&
+            this.currentPhaseAbility === 'last_stand' && !this.lastStandTriggered) {
+            enemy.hp = 1;
+            this.lastStandTriggered = true;
+            this.showAbilityText('🛡️ Last Stand! Survived with 1 HP!');
+        }
+
         this.updateHpBar(this.enemyHpBars[targetIdx], enemy.hp, enemy.maxHp);
 
         // Show damage number
@@ -1305,6 +1427,38 @@ export class BattleScene extends Phaser.Scene {
             equippedSword = itemsData.find(i => i.id === player.equippedWeapon && i.type === 'weapon') || null;
         }
 
+        // Check if we're in a boss fight with phase-specific math
+        if (this.isBoss && this.bossPhases[this.currentBossPhase]) {
+            const phase = this.bossPhases[this.currentBossPhase];
+            if (phase.mathType) {
+                // Generate boss phase-specific problems
+                const problemCount = this.mathEngine.getTotalProblemsForLevel(player.level);
+                const problems: MathProblem[] = [];
+                for (let i = 0; i < problemCount; i++) {
+                    problems.push(this.mathEngine.generateBossPhaseProblem(
+                        phase.mathType,
+                        phase.mathDifficulty || 5
+                    ));
+                }
+
+                // Add sword bonus problem if equipped (sword keeps its own math type for consistency)
+                if (equippedSword && equippedSword.mathProblemType) {
+                    // Use sword's configured math type (typically addition) - not the boss phase type
+                    const swordProblem = this.mathEngine.generateBossPhaseProblem(
+                        equippedSword.mathProblemType,
+                        equippedSword.mathProblemMax || 5
+                    );
+                    swordProblem.damageMultiplier = equippedSword.damageMultiplier || 1;
+                    swordProblem.source = 'sword';
+                    problems.push(swordProblem); // Sword is always last
+                }
+
+                this.battleState.currentProblems = problems;
+                this.mathBoard.show(problems);
+                return;
+            }
+        }
+
         // Generate problems WITHOUT pet (pet has its own turn now)
         const problems = this.mathEngine.generateAttackProblems(player.level, null, equippedSword);
         this.battleState.currentProblems = problems;
@@ -1358,6 +1512,11 @@ export class BattleScene extends Phaser.Scene {
         });
 
         this.battleState.damageDealt = totalDamage;
+
+        // Track if last answer was correct for Vengeful Strike ability
+        // Consider it "wrong" if any answer in the batch was wrong, or if total damage is 0
+        const anyWrong = results.some(r => !r);
+        this.lastAnswerCorrect = !anyWrong && totalDamage > 0;
 
         if (totalDamage > 0) {
             this.setPhase('player_attack');
@@ -1416,6 +1575,15 @@ export class BattleScene extends Phaser.Scene {
         // Generate ALL block problems at once and show them together
         const problems = this.mathEngine.generateBlockProblems(this.blockMaxAttempts, shield);
         this.battleState.currentProblems = problems;
+
+        // DEBUG: Log block phase setup
+        console.log('[BattleScene] Block phase started:', {
+            shieldId: shield?.id,
+            blockAttempts: this.blockMaxAttempts,
+            mathProblemTypes: shield?.mathProblemTypes,
+            problems: problems.map(p => ({ answer: p.answer, choices: p.choices }))
+        });
+
         this.mathBoard.show(problems);
     }
 
@@ -1520,13 +1688,165 @@ export class BattleScene extends Phaser.Scene {
         const allDead = this.battleState.enemies.every(e => e.hp <= 0);
         if (allDead) {
             this.targetIndicator.setVisible(false);
-            this.setPhase('victory');
+
+            // Check if this is a boss with more phases
+            if (this.isBoss && this.currentBossPhase < this.bossPhases.length - 1) {
+                this.triggerBossPhaseTransition();
+            } else {
+                this.setPhase('victory');
+            }
         } else {
             // Select next alive enemy and update indicator
             this.getCurrentEnemyIndex();
             this.updateTargetIndicator();
             this.setPhase('enemy_turn');
         }
+    }
+
+    /**
+     * Trigger boss phase transition
+     */
+    private triggerBossPhaseTransition(): void {
+        // Get the current (just defeated) phase's healPercent before advancing
+        const currentPhase = this.bossPhases[this.currentBossPhase];
+        const healPercent = currentPhase?.healPercent ?? 0;
+        const player = this.gameState.getPlayer();
+        const healAmount = healPercent > 0 ? Math.floor(player.maxHp * (healPercent / 100)) : 0;
+
+        // Advance to next phase
+        this.currentBossPhase++;
+        const nextPhase = this.bossPhases[this.currentBossPhase];
+
+        // Setup ability tracking for the new phase
+        this.currentPhaseAbility = nextPhase.ability || null;
+        this.lastStandTriggered = false; // Reset for new phase
+
+        console.log(`[BattleScene] Boss phase transition! Phase ${this.currentBossPhase + 1}: ${nextPhase.nameCs}, ability: ${this.currentPhaseAbility}, heal: ${healAmount} (${healPercent}%)`);
+
+        // Show phase transition overlay
+        const overlay = this.add.rectangle(640, 360, 1280, 720, 0x000000, 0.7).setDepth(100);
+
+        // Phase transition text
+        const phaseText = this.add.text(640, 280, `⚔️ ${nextPhase.nameCs} ⚔️`, {
+            fontSize: '48px',
+            fontFamily: 'Arial, sans-serif',
+            color: '#ff6644',
+            fontStyle: 'bold',
+            stroke: '#000000',
+            strokeThickness: 6
+        }).setOrigin(0.5).setDepth(101).setAlpha(0);
+
+        // Heal player text (percentage-based)
+        let healText: Phaser.GameObjects.Text | null = null;
+        if (healAmount > 0) {
+            healText = this.add.text(640, 350, `💚 +${healAmount} HP (${healPercent}%)`, {
+                fontSize: '32px',
+                fontFamily: 'Arial, sans-serif',
+                color: '#44ff44',
+                fontStyle: 'bold',
+                stroke: '#000000',
+                strokeThickness: 4
+            }).setOrigin(0.5).setDepth(101).setAlpha(0);
+        }
+
+        // Ability preview text
+        let abilityText: Phaser.GameObjects.Text | null = null;
+        if (nextPhase.ability) {
+            const abilityNames: Record<string, string> = {
+                'vengeful_strike': '💢 Watch out for Vengeful Strike!',
+                'last_stand': '🛡️ Beware of Last Stand!'
+            };
+            const abilityHint = abilityNames[nextPhase.ability] || '';
+            if (abilityHint) {
+                abilityText = this.add.text(640, 420, abilityHint, {
+                    fontSize: '24px',
+                    fontFamily: 'Arial, sans-serif',
+                    color: '#ffaa44',
+                    fontStyle: 'italic',
+                    stroke: '#000000',
+                    strokeThickness: 3
+                }).setOrigin(0.5).setDepth(101).setAlpha(0);
+            }
+        }
+
+        // Animate phase text in
+        this.tweens.add({
+            targets: phaseText,
+            alpha: 1,
+            scale: { from: 0.5, to: 1 },
+            duration: 500,
+            ease: 'Back.out'
+        });
+
+        if (healText) {
+            this.tweens.add({
+                targets: healText,
+                alpha: 1,
+                duration: 500,
+                delay: 300
+            });
+        }
+
+        if (abilityText) {
+            this.tweens.add({
+                targets: abilityText,
+                alpha: 1,
+                duration: 500,
+                delay: 500
+            });
+        }
+
+        // After delay, apply phase changes and continue battle
+        this.time.delayedCall(2500, () => {
+            // Heal player (percentage-based)
+            if (healAmount > 0) {
+                this.battleState.playerHp = Math.min(
+                    this.battleState.playerHp + healAmount,
+                    player.maxHp
+                );
+                this.updatePlayerHpBar();
+            }
+
+            // Reset boss HP and attack for new phase
+            const boss = this.battleState.enemies[0];
+            boss.hp = nextPhase.hp;
+            boss.maxHp = nextPhase.hp;
+            boss.attack = nextPhase.atk;
+            boss.name = `${this.enemyDefs[0].name.split(' - ')[0]} - ${nextPhase.nameCs}`;
+
+            // Update HP bar
+            this.updateHpBar(this.enemyHpBars[0], boss.hp, boss.maxHp);
+
+            // Make sure boss is visible (might have been fading)
+            this.enemyContainers[0].setAlpha(1);
+            this.enemies[0].setAlpha(1);
+
+            // Fade out overlay
+            this.tweens.add({
+                targets: [overlay, phaseText, healText, abilityText].filter(Boolean),
+                alpha: 0,
+                duration: 500,
+                onComplete: () => {
+                    overlay.destroy();
+                    phaseText.destroy();
+                    healText?.destroy();
+                    abilityText?.destroy();
+
+                    // Continue battle - enemy turn (boss attacks first in new phase)
+                    this.targetIndicator.setVisible(true);
+                    this.updateTargetIndicator();
+                    this.setPhase('enemy_turn');
+                }
+            });
+        });
+    }
+
+    /**
+     * Update player HP bar display
+     */
+    private updatePlayerHpBar(): void {
+        const player = this.gameState.getPlayer();
+        this.updateHpBar(this.heroHpBar, this.battleState.playerHp, player.maxHp);
     }
 
     private finishEnemyAttack(): void {
@@ -1635,6 +1955,15 @@ export class BattleScene extends Phaser.Scene {
             const damage = this.battleState.damageDealt;
             const enemy = this.battleState.enemies[idx];
             enemy.hp -= damage;
+
+            // Check for Last Stand ability (boss survives with 1 HP once)
+            if (this.isBoss && enemy.hp <= 0 &&
+                this.currentPhaseAbility === 'last_stand' && !this.lastStandTriggered) {
+                enemy.hp = 1;
+                this.lastStandTriggered = true;
+                this.showAbilityText('🛡️ Last Stand! Survived with 1 HP!');
+            }
+
             this.updateHpBar(enemyHpBar, enemy.hp, enemy.maxHp);
 
             // Show damage number (use container position for world coords)
@@ -1874,8 +2203,52 @@ export class BattleScene extends Phaser.Scene {
                 });
             };
 
+            // Calculate enemy damage with Vengeful Strike ability
+            let damage = enemyDef.attack;
+            if (this.currentPhaseAbility === 'vengeful_strike' && !this.lastAnswerCorrect) {
+                damage += 1;
+                this.showAbilityText('💢 Vengeful Strike! +1 damage');
+            }
+
             // Start block phase
-            this.startBlockPhase(enemyDef.attack);
+            this.startBlockPhase(damage);
+        });
+    }
+
+    /**
+     * Show ability text announcement
+     */
+    private showAbilityText(text: string): void {
+        const abilityText = this.add.text(640, 200, text, {
+            fontSize: '28px',
+            fontFamily: 'Arial, sans-serif',
+            color: '#ff6644',
+            fontStyle: 'bold',
+            stroke: '#000000',
+            strokeThickness: 4
+        }).setOrigin(0.5).setDepth(100);
+
+        // Animate in
+        abilityText.setAlpha(0);
+        abilityText.setScale(0.5);
+        this.tweens.add({
+            targets: abilityText,
+            alpha: 1,
+            scale: 1,
+            duration: 300,
+            ease: 'Back.out',
+            onComplete: () => {
+                // Hold then fade out
+                this.time.delayedCall(1000, () => {
+                    this.tweens.add({
+                        targets: abilityText,
+                        alpha: 0,
+                        y: abilityText.y - 30,
+                        duration: 400,
+                        onComplete: () => abilityText.destroy()
+                    });
+                });
+            }
         });
     }
 
@@ -2081,6 +2454,13 @@ export class BattleScene extends Phaser.Scene {
         this.gameState.save();
 
         this.time.delayedCall(2000, () => {
+            console.log('[BattleScene] Victory transition:', {
+                fromArena: this.fromArena,
+                journeyMode: this.journeyMode,
+                returnScene: this.returnScene,
+                arenaLevel: this.arenaLevel,
+                arenaWave: this.arenaWave
+            });
             if (this.fromArena) {
                 // Check if this was the last wave (wave 5, index 4)
                 if (this.arenaWave >= 4) {
@@ -2153,8 +2533,11 @@ export class BattleScene extends Phaser.Scene {
                 }
             } else {
                 // Return to calling scene (town or forest map)
-                // Pass battleWon flag for journey mode
-                this.scene.start(this.returnScene, { battleWon: true });
+                // Pass battleWon flag for journey mode and any custom return data
+                this.scene.start(this.returnScene, {
+                    battleWon: true,
+                    ...this.returnData
+                });
             }
         });
     }

@@ -1,7 +1,7 @@
 # Little Math Adventure - Game Design Document
 
-**Version:** 1.3
-**Status:** Full Game Design - Arena Wave System Implemented, Crystal & Pet Systems Complete
+**Version:** 1.4
+**Status:** Full Game Design - Arena Wave System, Crystal & Pet Systems, Forest Journey Room-Based Exploration
 
 ---
 
@@ -46,7 +46,11 @@ Battle → Earn Crystals/Coins → Upgrade Gear → Bind Pets → Explore New Re
 - Math battles (addition, subtraction, multiplication)
 - Pet companions that help in battle
 - Crystal collecting and combining
+- **Room-based exploration** - walk within scenes, click objects to interact, exit points to next area
 - Journey/adventure mode with puzzles
+- Treasure chests with letter-lock puzzles
+- Waypoint system for fast travel
+- Multi-phase boss battles
 - Wordless comic storytelling
 
 ---
@@ -728,19 +732,166 @@ Each arena level contains 5 waves with unique enemy compositions:
 - 3 phases (10 HP / 10 HP / 12 HP)
 - 8 HP heal between phases
 - Total: 32 HP
-- Rewards: 150 XP, 80-120 gold, 5 💎, Silverpond unlock
+- Rewards: 150 XP, 80-120 gold, 5 💎, Special Treant Crystal, Silverpond unlock
 
-**Journey Structure:**
-- Stage 1: Forest Edge (2 battles, 1 puzzle, 2 rests)
-- Stage 2: Deep Woods (3 battles, 1 puzzle, 1 chest, 3 rests)
-- Stage 3: Ancient Grove (1 battle, 1 puzzle, 1 chest, full heal)
-- Stage 4: Guardian's Lair (boss fight)
+---
 
-**Puzzles:**
-1. Number Bridge (sequence completion)
-2. Balance Scale (equation balancing)
-3. Path Choice (correct equation)
-4. Feeding Puzzle (sum to target)
+### Forest Journey - Room-Based Exploration System
+
+**Core Concept:** The Forest Journey uses a **room-based exploration** mechanic. Each area is a self-contained full-screen scene (1280×720) where the player can walk around and interact with objects. Clicking exit points transitions to the next area.
+
+**Interaction Model:**
+- Each "room" is one full-screen background with interactive objects
+- Player character visible in the scene, can walk within the room
+- **Click on object** → Character walks to it → Interaction triggers
+- **Click on exit point** (path, arrow, bridge) → Transition to next room
+- Fade/slide transitions between rooms
+
+---
+
+### Forest Journey Structure (Detailed)
+
+---
+
+## **PART 1: Forest Edge & Deep Forest**
+
+#### **Scene 1: Forest Edge** (`forest_edge`) ✅
+
+*Background: `forest-edge-bg` - Bright forest entrance with pond, sunlight filtering through*
+
+1. **Wolf Encounter** ✅
+   - Forest Wolf blocks the path ahead (x: 850, y: 540)
+   - **Aggro system**: Battle triggers when player walks within 150px
+   - Battle Scene uses `forest-edge-battleground`
+   - Victory → Player spawns at wolf's position, path is clear
+   - Exit → Riddle Bridge
+
+#### **Scene 2: Riddle Bridge** (`forest_riddle`) ✅
+
+*Background: `misc.forest-riddle` - River with stepping stones, mystical atmosphere*
+
+1. **Number Bridge Puzzle** (`ForestRiddleScene`) ✅
+   - Standalone explorable room with player movement
+   - Stepping stones showing sequence: 2, _, 6, 8, 10, _, 14
+   - Floating magical stones with numbers (4, 12 correct + distractors)
+   - **Drag-and-drop** stones into gaps to complete sequence
+   - Wrong answer → Screen shake, stones reset
+   - Correct answer → Blue particles, bridge unlocks
+   - Player walks across bridge with elevation change (path-based Y movement)
+   - **One-way progression**: Cannot backtrack after crossing
+
+2. **Mushroom Giant Battle**
+   - After solving puzzle, Mushroom Giant appears on far side of bridge
+   - Blocks path forward with **aggro radius** (150px)
+   - Battle Scene uses `deep-forest-battleground`
+   - Victory → Path to Deep Forest opens
+
+#### **Scene 3: Deep Forest** (`deep_forest`) ✅
+
+*Background: `forest-deep-path` - Dense, darker forest with filtered light*
+
+1. **Thorn Sprite Battle**
+   - Thorn Sprite blocks the path (x: 450, y: 620, aggro radius 150px)
+   - Quick enemy, high ATK but low HP
+   - Battle Scene uses `forest-deep-battleground`
+   - Victory → Path to Forest Camp opens
+
+2. **Treasure Chest** (Letter-Lock) - Visible from start
+   - Ornate chest visible behind the Thorn Sprite (x: 700, y: 620)
+   - **Spin-lock mechanism** with 4-letter answer
+   - Riddle: "Má čtyři nohy, ale nechodí. Co to je?" (Answer: STUL)
+   - Letter wheels rotate through alphabet
+   - Success → Opens → Gold + 💎 reward
+   - Fail → Lock resets, can retry
+
+#### **Scene 4: Forest Camp** (`forest_camp`) - Waypoint
+
+*Background: Cozy forest clearing with warm lighting*
+
+1. **Treasure Chest** (Regular)
+   - Simple wooden chest, no puzzle required
+   - Click → Opens → Gold reward (25-40)
+
+2. **Campfire** 🔥
+   - Visual centerpiece, ambient crackling
+   - Decorative element
+
+3. **Rest Mat** 🛏️
+   - Click mat → Rest animation → **Full HP heal**
+   - Save point created
+   - **Waypoint unlocked** - can fast-travel here from town
+
+**END OF PART 1**
+
+---
+
+## **PART 2: Ancient Grove** (Future Implementation)
+
+#### **Scene 5: Ancient Grove Path**
+
+*Background: Mystical ancient trees, magical atmosphere, glowing moss*
+
+- Elder Treant Battle
+- Crystal Offering Puzzle
+- Sacred Well (healing)
+- Path Finding Puzzle
+
+#### **Scene 6: Guardian's Lair**
+
+*Background: Dramatic stone ruins, ancient forest shrine*
+
+- **Verdant Guardian Boss Battle**
+  - Multi-phase boss (3 phases)
+  - Epic battle with phase transitions
+  - Victory → Part 2 Complete!
+
+---
+
+### Journey Victory & Rewards
+
+**On Completion:**
+- 🏆 Victory Screen: "Zelený les dokončena!"
+- Unlock message: "Cesta k Stříbrnému jezeru je nyní otevřená!"
+- Rewards distributed:
+  - Total XP accumulated
+  - Total Gold accumulated
+  - 💎 Forest Treant Crystal (for Treant pet binding)
+  - 💠 Fragments earned from puzzles
+  - Silverpond region unlocked
+
+---
+
+### Puzzle Details
+
+**1. Number Bridge**
+- Type: `sequence`
+- Complete arithmetic sequences
+- Example: 2, ?, 6, 8, ?, 12 (answer: 4, 10)
+- Time limit: 60 seconds
+
+**2. Balance Scale** (Enhanced)
+- Type: `equation`
+- Physical scale visualization
+- Player clicks stones to validate
+- Scale animates based on answer
+- Correct → Scale balances, bridge appears
+
+**3. Letter-Lock Puzzle** (NEW)
+- Type: `word_lock`
+- Riddle-based answer (always 3 letters)
+- Rotating letter wheels (A-E, F-J, etc.)
+- Example: "Rainbow outside color" → RED
+
+**4. Crystal Offering**
+- Type: `sum_to_target`
+- Select colored crystals to match target
+- Multiple valid solutions possible
+- Optional puzzle (skip with penalty)
+
+**5. Path Choice**
+- Type: `multiple_choice`
+- Choose path with correct equation
+- Wrong choice adds extra battle
 
 ---
 
@@ -910,29 +1061,102 @@ The game uses **wordless comics** to tell the story. Kids who can't read underst
 - Undo button always visible (return last crystal to inventory)
 - Hint system suggests combinations from current inventory
 
-### Journey Map UI
+### Journey Exploration UI (Room-Based System)
+
+**Overview:** The journey uses **room-based exploration** where each area is a full-screen scene (1280×720). The player walks within the room and clicks exit points to move to the next area.
 
 ```
+┌─────────────────────────────────────────────────────────────────┐
+│  🌲 FOREST EDGE - Wolf Encounter            HP: ████░░ 14/20   │
+│  ═══════════════════════════════════════════════════════════   │
+│                                                                  │
+│                              🐺                                  │
+│                            Wolf                                  │
+│                          (clickable)                             │
+│                                                                  │
+│        🧍                                           →           │
+│      Player                                    (exit to         │
+│                                                next area)       │
+│  ══════════════════════════════════════════════════════════    │
+│      🌿      🪨    🌳      🌲🌲      🍄      🌿               │
+│  ────────────────────────────────────────────────────────────  │
+│                                                                  │
+│   Click: 🐺 Enemy → Battle  |  → Exit → Next Area              │
+│                                                                  │
+│  Area: 1/12   Stage: Forest Edge              [🚪 Abandon]     │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+**Room-Based Interaction Flow:**
+1. Full-screen background shows current area
+2. Player character visible in scene (can walk within room)
+3. Interactive objects placed in scene (enemies, puzzles, chests)
+4. **Click object** → Character walks to it → Interaction triggers
+5. **Click exit point** → Fade/slide transition → Next room loads
+6. After battle/puzzle → Return to same room (object removed/changed)
+
+**Object Visual Indicators:**
+| Object | Visual | Interaction |
+|--------|--------|-------------|
+| Enemy | Animated creature sprite | Battle scene transition |
+| Puzzle | Glowing object/structure | Puzzle UI overlay |
+| Chest | Wooden/ornate chest | Opens with reward |
+| Rest Point | Campfire/mat/clearing | Heal + save menu |
+| Waypoint | Stone marker + glow | Fast travel option |
+
+**Forest Camp Waypoint UI:**
+```
+┌─────────────────────────────────────────┐
+│         🏕️ FOREST CAMP                  │
+│                                          │
+│           🔥                             │
+│        (campfire)                        │
+│                                          │
+│      🛏️ Rest Mat                        │
+│                                          │
+│   ┌──────────┐ ┌──────────┐ ┌────────┐ │
+│   │ 💤 Rest  │ │ 🏠 Town  │ │ ▶ Go   │ │
+│   │  (+50%)  │ │ (return) │ │(cont.) │ │
+│   └──────────┘ └──────────┘ └────────┘ │
+│                                          │
+│   ✓ Waypoint unlocked - can return here │
+└─────────────────────────────────────────┘
+```
+
+**Treasure Scene UI (Two Chests):**
+```
 ┌─────────────────────────────────────────────────────────┐
-│  VERDANT FOREST                           [← BACK]     │
-│                                                         │
-│     [1]════[2]════[3]════[👑]                          │
-│      ✓      ●      ○      ○                            │
-│   Forest  Deep   Ancient  Boss                         │
-│    Edge   Woods   Grove   Lair                         │
-│                                                         │
-│   ┌─────────────────────────────────────┐              │
-│   │  STAGE 2: Deep Woods                │              │
-│   │  ⚔️ Thorn Sprite                    │              │
-│   │  💰 Treasure Chest                  │              │
-│   │  🏕️ Campsite Rest                   │              │
-│   │  🧩 Balance Scale Puzzle            │              │
-│   │  ⚔️ Forest Wolf ×2                  │              │
-│   └─────────────────────────────────────┘              │
-│                                                         │
-│   HP: ████░░░ 14/20    🎒 Supplies: ✓                 │
-│                                                         │
-│              [ CONTINUE JOURNEY ]                       │
+│  💰 TREASURE CLEARING                                    │
+│                                                          │
+│        ┌─────────┐              ┌─────────┐             │
+│        │ 📦      │              │ 🔒📦    │             │
+│        │ Regular │              │ Locked  │             │
+│        │  Chest  │              │  Chest  │             │
+│        └────┬────┘              └────┬────┘             │
+│             │                        │                   │
+│         [Open]                   [Solve]                │
+│                                                          │
+│  Regular: Contains gold                                  │
+│  Locked: Requires letter-lock puzzle                     │
+└─────────────────────────────────────────────────────────┘
+```
+
+**Letter-Lock Puzzle UI:**
+```
+┌─────────────────────────────────────────────────────────┐
+│  🔒 PUZZLE LOCK                                          │
+│                                                          │
+│   "Which color of the rainbow is on the outside?"       │
+│                                                          │
+│              ┌───┐ ┌───┐ ┌───┐                          │
+│              │ R │ │ E │ │ D │  ← Answer wheels         │
+│              │ ▲ │ │ ▲ │ │ ▲ │                          │
+│              │ ▼ │ │ ▼ │ │ ▼ │                          │
+│              └───┘ └───┘ └───┘                          │
+│                                                          │
+│   Letters per wheel: Q R S T U (rotates)                │
+│                                                          │
+│                   [ UNLOCK ]                             │
 └─────────────────────────────────────────────────────────┘
 ```
 
@@ -1096,13 +1320,30 @@ The game uses **wordless comics** to tell the story. Kids who can't read underst
 6. "Goal" system linking Forge ↔ Pythia's Hut
 7. Hint system for amulet crafting
 
-### Phase 6: Verdant Forest
-1. Forest enemies (4 types + boss)
-2. Forest backgrounds (4 stages)
-3. Journey map UI
-4. Puzzle scenes (4 types)
-5. Multi-phase boss battle
-6. Boss rewards (Fragment drop, operation unlocks)
+### Phase 6: Verdant Forest - Room-Based Exploration
+1. **Room-Based Exploration System**
+   - Each area is a full-screen scene (1280×720)
+   - Player character walks within room
+   - Click-to-walk interaction model
+   - Exit points trigger room transitions (fade/slide)
+2. Forest enemies (4 types + boss)
+3. Forest backgrounds (4 stages + treasure clearing + camp)
+4. **Interactive Objects**
+   - Enemy sprites on path (clickable → battle)
+   - Chest objects (regular + puzzle-locked)
+   - Rest points (campfire, mats)
+   - Waypoint markers
+5. **Puzzle Scenes** (5 types)
+   - Number Bridge (sequence)
+   - Balance Scale (walk to scale, click stones)
+   - Letter-Lock (3-wheel rotating letters)
+   - Crystal Offering (sum to target)
+   - Path Choice (correct equation)
+6. **Forest Camp Waypoint**
+   - Unlockable fast-travel point
+   - Rest/Town/Continue options
+7. Multi-phase boss battle ✅ (implemented)
+8. Boss rewards (Treant Crystal, Fragments, operation unlocks)
 
 ### Phase 7: Polish
 1. Sound effects (forge spells, binding ceremony)

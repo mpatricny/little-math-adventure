@@ -602,7 +602,10 @@ export class MathEngine {
             problems.push(petProblem);
         }
 
-        // Add sword bonus problem if sword is equipped
+        // Shuffle base problems (before adding sword)
+        const shuffledProblems = this.shuffle(problems);
+
+        // Add sword bonus problem LAST if sword is equipped (always at the end for consistency)
         if (equippedSword && equippedSword.mathProblemType) {
             const swordProblem = this.generateEquipmentProblem(
                 equippedSword.mathProblemType,
@@ -610,10 +613,10 @@ export class MathEngine {
                 equippedSword.damageMultiplier || 1,
                 'sword'
             );
-            problems.push(swordProblem);
+            shuffledProblems.push(swordProblem);
         }
 
-        return this.shuffle(problems);
+        return shuffledProblems;
     }
 
     /**
@@ -746,6 +749,12 @@ export class MathEngine {
         const id = `${operator === '+' ? 'add' : 'sub'}_${operand1}_${operand2}`;
         const choices = this.generateChoices(answer, maxResult);
 
+        // DEBUG: Log block problem generation
+        console.log('[MathEngine] generateSpecificProblem:', {
+            operator, operand1, operand2, answer, choices,
+            correctInChoices: choices.includes(answer)
+        });
+
         // Set current problem ID for stats tracking
         this.currentProblemId = id;
 
@@ -822,6 +831,126 @@ export class MathEngine {
             showVisualHint: showHint,
             hintType: showHint ? 'apples' : 'none',
         };
+    }
+
+    /**
+     * Generate a missing operand problem (e.g., "5 + ? = 8")
+     * @param maxResult - maximum value for the answer
+     */
+    generateMissingOperandProblem(maxResult: number): MathProblem {
+        const operator: '+' | '-' = Math.random() > 0.5 ? '+' : '-';
+        let operand1: number, operand2: number, result: number;
+
+        if (operator === '+') {
+            // a + ? = result where result <= maxResult
+            result = this.randomInt(2, maxResult);
+            operand1 = this.randomInt(0, result);
+            operand2 = result - operand1; // This is the missing operand (answer)
+        } else {
+            // a - ? = result where result >= 0
+            operand1 = this.randomInt(1, maxResult);
+            result = this.randomInt(0, operand1);
+            operand2 = operand1 - result; // This is the missing operand (answer)
+        }
+
+        const id = `missing_${operator === '+' ? 'add' : 'sub'}_${operand1}_${operand2}`;
+        const choices = this.generateChoices(operand2, maxResult);
+
+        this.currentProblemId = id;
+
+        return {
+            id,
+            operand1,
+            operand2: result, // Store result as operand2 for display
+            operator,
+            answer: operand2, // The missing operand is the answer
+            choices,
+            showVisualHint: false,
+            hintType: 'none',
+            source: 'player',
+            problemType: 'missing_operand' as const,
+        };
+    }
+
+    /**
+     * Generate a comparison problem (e.g., "7 + 2 ○ 10" where player picks <, =, or >)
+     * @param maxResult - maximum value for operands
+     */
+    generateComparisonProblem(maxResult: number): MathProblem {
+        // Generate left side: a + b or a - b
+        const operator: '+' | '-' = Math.random() > 0.5 ? '+' : '-';
+        let operand1: number, operand2: number, leftSide: number;
+
+        if (operator === '+') {
+            operand1 = this.randomInt(1, Math.floor(maxResult / 2));
+            operand2 = this.randomInt(1, maxResult - operand1);
+            leftSide = operand1 + operand2;
+        } else {
+            operand1 = this.randomInt(2, maxResult);
+            operand2 = this.randomInt(0, operand1);
+            leftSide = operand1 - operand2;
+        }
+
+        // Generate right side (the comparison value)
+        // Make it sometimes equal, sometimes different
+        const comparisonType = Math.floor(Math.random() * 3); // 0=less, 1=equal, 2=greater
+        let rightSide: number;
+        let answer: number; // 0 = <, 1 = =, 2 = >
+
+        if (comparisonType === 0) {
+            // Left < Right
+            rightSide = this.randomInt(leftSide + 1, maxResult + 3);
+            answer = 0;
+        } else if (comparisonType === 1) {
+            // Left = Right
+            rightSide = leftSide;
+            answer = 1;
+        } else {
+            // Left > Right
+            rightSide = this.randomInt(Math.max(0, leftSide - 5), leftSide - 1);
+            if (rightSide < 0) rightSide = 0;
+            if (rightSide >= leftSide) rightSide = leftSide - 1;
+            answer = 2;
+        }
+
+        const id = `compare_${operand1}_${operator === '+' ? 'add' : 'sub'}_${operand2}_${rightSide}`;
+
+        this.currentProblemId = id;
+
+        // Choices are: 0 = "<", 1 = "=", 2 = ">"
+        return {
+            id,
+            operand1,
+            operand2,
+            operand3: rightSide,
+            operator,
+            answer,
+            choices: [0, 1, 2], // Always show all three comparison options
+            showVisualHint: false,
+            hintType: 'none',
+            source: 'player',
+            problemType: 'comparison' as const,
+        };
+    }
+
+    /**
+     * Generate a boss phase problem based on math type
+     * @param mathType - 'addition', 'missing_operand', 'comparison', or 'standard'
+     * @param difficulty - problem difficulty (affects max values)
+     */
+    generateBossPhaseProblem(mathType: string, difficulty: number): MathProblem {
+        const maxResult = Math.min(difficulty + 4, 12); // Scale max result with difficulty
+
+        switch (mathType) {
+            case 'addition':
+                return this.generateSpecificProblem('+', maxResult);
+            case 'missing_operand':
+                return this.generateMissingOperandProblem(maxResult);
+            case 'comparison':
+                return this.generateComparisonProblem(maxResult);
+            default:
+                return this.generateSpecificProblem('+', maxResult);
+        }
     }
 
     /**

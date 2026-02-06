@@ -114,6 +114,51 @@
       "rightWidth": 57,
       "topHeight": 45,
       "bottomHeight": 50
+    },
+    "74b9975a-e501-4d59-b115-0e7e175ebfc1": {
+      "texture": "301427c3-4d83-42de-9657-a98dd8ea53cf",
+      "name": "Frame_black_empty-cropped",
+      "path": "library:originals/2800a55a-494eaa6c.png",
+      "leftWidth": 137,
+      "rightWidth": 137,
+      "topHeight": 137,
+      "bottomHeight": 137
+    },
+    "f9495c08-f4ac-4eaf-b5c7-5e19d5726c1a": {
+      "texture": "6778dd1c-872a-4fb6-8fb4-2fd5494ae74a",
+      "name": "Frame_black9-cropped",
+      "path": "library:originals/39fc4967-2cf3fbba.png",
+      "leftWidth": 57,
+      "rightWidth": 58,
+      "topHeight": 53,
+      "bottomHeight": 60
+    },
+    "9c6a146e-76e1-4a44-8f40-cc1d486f0b9e": {
+      "texture": "edf34076-d801-4e64-8bf4-26f19ffc1e0f",
+      "name": "Frame_black9-small",
+      "path": "library:originals/1037efed-990f2caf.png",
+      "leftWidth": 40,
+      "rightWidth": 40,
+      "topHeight": 40,
+      "bottomHeight": 42
+    },
+    "31d2b40f-ad67-4c24-a704-f20b27c33232": {
+      "texture": "61f96603-b691-4fb6-824b-4722f1f4b5d9",
+      "name": "banner-small",
+      "path": "library:originals/e45df543-41d59616.png",
+      "leftWidth": 24,
+      "rightWidth": 23,
+      "topHeight": 18,
+      "bottomHeight": 17
+    },
+    "ce7ab050-59c7-493b-94e1-885cfb515fc9": {
+      "texture": "725a75ec-1e3a-4ec5-925c-838ab3d6302e",
+      "name": "name banner-cropped",
+      "path": "library:originals/10b4ba94-ca253133.png",
+      "leftWidth": 76,
+      "rightWidth": 76,
+      "topHeight": 70,
+      "bottomHeight": 85
     }
   }
 }

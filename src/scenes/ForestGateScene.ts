@@ -34,6 +34,10 @@ export class ForestGateScene extends Phaser.Scene {
         if (!this.cache.json.has('forestEnemies')) {
             this.load.json('forestEnemies', 'assets/data/forest-enemies.json');
         }
+        // Load room data for room-based exploration
+        if (!this.cache.json.has('forestRooms')) {
+            this.load.json('forestRooms', 'assets/data/forest-rooms.json');
+        }
     }
 
     create(): void {
@@ -247,13 +251,68 @@ export class ForestGateScene extends Phaser.Scene {
     private startJourney(): void {
         if (!this.journeyConfig) return;
 
-        const success = this.journeySystem.startJourney(this.journeyConfig, this.debugMode);
+        // Check if we should use room-based exploration
+        const roomsData = this.cache.json.get('forestRooms');
 
-        if (success) {
-            // Go to forest map scene
-            this.scene.start('ForestMapScene');
+        if (roomsData && roomsData.startRoom) {
+            // Use new room-based exploration system
+            const success = this.journeySystem.startRoomJourney(
+                this.journeyConfig.id,
+                roomsData.startRoom,
+                this.debugMode
+            );
+
+            if (success) {
+                // Deduct supply cost (unless in debug mode)
+                if (!this.debugMode) {
+                    this.deductSupplyCost();
+                }
+                // Go to room exploration scene
+                this.scene.start('ForestRoomScene', { roomId: roomsData.startRoom });
+            } else {
+                console.error('Failed to start room journey');
+            }
         } else {
-            console.error('Failed to start journey');
+            // Fallback to old stage-based system
+            const success = this.journeySystem.startJourney(this.journeyConfig, this.debugMode);
+
+            if (success) {
+                this.scene.start('ForestMapScene');
+            } else {
+                console.error('Failed to start journey');
+            }
         }
+    }
+
+    /**
+     * Deduct supply cost from player coins (prefer small denominations)
+     */
+    private deductSupplyCost(): void {
+        const player = this.gameState.getPlayer();
+        const cost = this.journeyConfig!.requirements.supplyCost;
+        let remaining = cost;
+
+        if (player.coins) {
+            // Take from small copper first
+            const fromSmall = Math.min(player.coins.smallCopper ?? 0, remaining);
+            player.coins.smallCopper = (player.coins.smallCopper ?? 0) - fromSmall;
+            remaining -= fromSmall;
+
+            // Then large copper (worth 2)
+            const fromLarge = Math.min(player.coins.largeCopper ?? 0, Math.floor(remaining / 2));
+            player.coins.largeCopper = (player.coins.largeCopper ?? 0) - fromLarge;
+            remaining -= fromLarge * 2;
+
+            // Then silver (worth 5)
+            const fromSilver = Math.min(player.coins.silver ?? 0, Math.floor(remaining / 5));
+            player.coins.silver = (player.coins.silver ?? 0) - fromSilver;
+            remaining -= fromSilver * 5;
+
+            // Then gold (worth 10)
+            const fromGold = Math.min(player.coins.gold ?? 0, Math.ceil(remaining / 10));
+            player.coins.gold = (player.coins.gold ?? 0) - fromGold;
+        }
+
+        this.gameState.save();
     }
 }

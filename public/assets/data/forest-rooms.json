@@ -1,0 +1,309 @@
+{
+  "startRoom": "forest_edge",
+  "waypoints": ["forest_camp"],
+  "rooms": {
+    "forest_edge": {
+      "id": "forest_edge",
+      "name": "Forest Edge",
+      "nameCs": "Okraj lesa",
+      "background": "forest-edge-bg",
+      "battleBackground": "forest-edge-battleground",
+      "objects": [
+        {
+          "id": "wolf_1",
+          "type": "enemy",
+          "enemyId": "forest_wolf",
+          "x": 850,
+          "y": 540,
+          "sprite": "forest-wolf",
+          "aggroRadius": 150
+        }
+      ],
+      "exits": [
+        {
+          "id": "to_town",
+          "x": 0,
+          "y": 360,
+          "width": 80,
+          "height": 360,
+          "targetRoom": "forest_gate",
+          "direction": "left"
+        },
+        {
+          "id": "to_forest_riddle",
+          "x": 1200,
+          "y": 360,
+          "width": 80,
+          "height": 360,
+          "targetRoom": "forest_riddle",
+          "direction": "right",
+          "requiresDefeated": ["wolf_1"]
+        }
+      ],
+      "playerSpawn": { "x": 150, "y": 520 },
+      "spawnFromDirection": {
+        "left": { "x": 150, "y": 520 },
+        "right": { "x": 1100, "y": 520 }
+      }
+    },
+    "forest_riddle": {
+      "id": "forest_riddle",
+      "name": "Riddle Bridge",
+      "nameCs": "Most s hádankou",
+      "background": "misc.forest-riddle",
+      "battleBackground": "forest-deep-battleground",
+      "sceneClass": "ForestRiddleScene",
+      "objects": [
+        {
+          "id": "mushroom_1",
+          "type": "enemy",
+          "enemyId": "forest_wolf",
+          "x": 1050,
+          "y": 610,
+          "sprite": "forest-wolf",
+          "aggroRadius": 150,
+          "hidden": true,
+          "appearsAfter": {
+            "puzzleSolved": "bridge_riddle"
+          }
+        }
+      ],
+      "exits": [
+        {
+          "id": "to_forest_edge",
+          "x": 0,
+          "y": 400,
+          "width": 80,
+          "height": 300,
+          "targetRoom": "forest_edge",
+          "direction": "left"
+        },
+        {
+          "id": "to_deep_forest",
+          "x": 1200,
+          "y": 400,
+          "width": 80,
+          "height": 300,
+          "targetRoom": "deep_forest",
+          "direction": "right",
+          "requiresPuzzle": "bridge_riddle",
+          "requiresDefeated": ["mushroom_1"]
+        }
+      ],
+      "playerSpawn": { "x": 80, "y": 590 },
+      "spawnFromDirection": {
+        "left": { "x": 80, "y": 590 },
+        "right": { "x": 1100, "y": 610 }
+      }
+    },
+    "deep_forest": {
+      "id": "deep_forest",
+      "name": "Deep Forest",
+      "nameCs": "Hluboký les",
+      "background": "forest-deep-path",
+      "battleBackground": "forest-deep-battleground",
+      "objects": [
+        {
+          "id": "sprite_1",
+          "type": "enemy",
+          "enemyId": "thorn_sprite",
+          "x": 450,
+          "y": 620,
+          "sprite": "forest-sprite",
+          "aggroRadius": 150
+        },
+        {
+          "id": "chest_locked",
+          "type": "letter_lock_chest",
+          "x": 700,
+          "y": 620,
+          "sprite": "chest-locked",
+          "riddle": "Má čtyři nohy, ale nechodí. Co to je?",
+          "riddleEn": "Has four legs but doesn't walk. What is it?",
+          "answer": "STUL",
+          "reward": { "gold": 35, "diamonds": 1 }
+        }
+      ],
+      "exits": [
+        {
+          "id": "to_forest_riddle",
+          "x": 0,
+          "y": 360,
+          "width": 80,
+          "height": 360,
+          "targetRoom": "forest_riddle",
+          "direction": "left"
+        },
+        {
+          "id": "to_forest_camp",
+          "x": 1200,
+          "y": 400,
+          "width": 80,
+          "height": 360,
+          "targetRoom": "forest_camp",
+          "direction": "right",
+          "requiresDefeated": ["sprite_1"]
+        }
+      ],
+      "playerSpawn": { "x": 150, "y": 620 },
+      "spawnFromDirection": {
+        "left": { "x": 150, "y": 620 },
+        "right": { "x": 1100, "y": 620 }
+      }
+    },
+    "forest_camp": {
+      "id": "forest_camp",
+      "name": "Forest Camp",
+      "nameCs": "Lesní tábor",
+      "background": "bg-forest-camp",
+      "isWaypoint": true,
+      "objects": [
+        {
+          "id": "chest_simple",
+          "type": "chest",
+          "x": 450,
+          "y": 500,
+          "sprite": "chest",
+          "reward": { "gold": 40 }
+        },
+        {
+          "id": "campfire",
+          "type": "rest",
+          "x": 640,
+          "y": 480,
+          "sprite": "campfire",
+          "healPercent": 100,
+          "isSavePoint": true
+        }
+      ],
+      "exits": [
+        {
+          "id": "to_deep_forest",
+          "x": 0,
+          "y": 360,
+          "width": 80,
+          "height": 360,
+          "targetRoom": "deep_forest",
+          "direction": "left"
+        },
+        {
+          "id": "to_ancient_grove",
+          "x": 1200,
+          "y": 360,
+          "width": 80,
+          "height": 360,
+          "targetRoom": "ancient_grove",
+          "direction": "right",
+          "locked": true,
+          "lockedMessage": "Cesta do Prastarého háje je zatím uzavřena... (Část 2)"
+        }
+      ],
+      "playerSpawn": { "x": 640, "y": 520 },
+      "spawnFromDirection": {
+        "left": { "x": 150, "y": 520 },
+        "right": { "x": 1100, "y": 520 }
+      }
+    },
+    "ancient_grove": {
+      "id": "ancient_grove",
+      "name": "Ancient Grove",
+      "nameCs": "Prastarý háj",
+      "background": "bg-ancient-grove",
+      "battleBackground": "bg-battle-ancient-grove",
+      "objects": [
+        {
+          "id": "treant_1",
+          "type": "enemy",
+          "enemyId": "elder_treant",
+          "x": 750,
+          "y": 450,
+          "sprite": "forest-treant"
+        },
+        {
+          "id": "puzzle_scales",
+          "type": "puzzle",
+          "puzzleId": "balance_scale",
+          "x": 500,
+          "y": 480,
+          "sprite": "balance-scales",
+          "hidden": true,
+          "appearsAfter": {
+            "objectDefeated": "treant_1"
+          }
+        }
+      ],
+      "exits": [
+        {
+          "id": "to_camp",
+          "x": 0,
+          "y": 360,
+          "width": 80,
+          "height": 360,
+          "targetRoom": "forest_camp",
+          "direction": "left"
+        },
+        {
+          "id": "to_guardian",
+          "x": 1200,
+          "y": 360,
+          "width": 80,
+          "height": 360,
+          "targetRoom": "guardian_lair",
+          "direction": "right",
+          "requiresDefeated": ["treant_1"],
+          "requiresPuzzle": "puzzle_scales"
+        }
+      ],
+      "playerSpawn": { "x": 150, "y": 500 },
+      "spawnFromDirection": {
+        "left": { "x": 150, "y": 500 },
+        "right": { "x": 1100, "y": 500 }
+      }
+    },
+    "guardian_lair": {
+      "id": "guardian_lair",
+      "name": "Guardian's Lair",
+      "nameCs": "Doupě strážce",
+      "background": "bg-guardian-lair",
+      "battleBackground": "bg-battle-guardian-lair",
+      "objects": [
+        {
+          "id": "puzzle_offering",
+          "type": "puzzle",
+          "puzzleId": "crystal_offering",
+          "x": 450,
+          "y": 450,
+          "sprite": "crystal-altar"
+        },
+        {
+          "id": "boss_guardian",
+          "type": "boss",
+          "enemyId": "verdant_guardian",
+          "x": 900,
+          "y": 420,
+          "sprite": "verdant-guardian",
+          "hidden": true,
+          "appearsAfter": {
+            "puzzleInteracted": "puzzle_offering"
+          }
+        }
+      ],
+      "exits": [
+        {
+          "id": "to_ancient",
+          "x": 0,
+          "y": 360,
+          "width": 80,
+          "height": 360,
+          "targetRoom": "ancient_grove",
+          "direction": "left"
+        }
+      ],
+      "playerSpawn": { "x": 150, "y": 500 },
+      "spawnFromDirection": {
+        "left": { "x": 150, "y": 500 },
+        "right": { "x": 1100, "y": 500 }
+      }
+    }
+  }
+}

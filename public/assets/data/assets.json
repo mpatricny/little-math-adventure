@@ -257,7 +257,7 @@
                     "scaleMultiplier": 1.05,
                     "tint": "#ffffcc"
                 },
-                "action": "enterScene:WitchHutScene"
+                "action": "enterScene:PythiaWorkshopScene"
             },
             "guild": {
                 "type": "interactiveImage",
@@ -1183,6 +1183,60 @@
                     0.5
                 ],
                 "scale": 1
+            },
+            "gemstone_icons": {
+                "type": "tileSprite",
+                "texture": "gemstone-icons",
+                "origin": [
+                    0.5,
+                    0.5
+                ],
+                "scale": 1
+            },
+            "gemstone_icons_cropped_cropped": {
+                "type": "staticImage",
+                "texture": "gemstone-icons-cropped-cropped",
+                "origin": [
+                    0.5,
+                    0.5
+                ],
+                "scale": 1
+            },
+            "forest_edge_bg": {
+                "type": "staticImage",
+                "texture": "forest-edge-bg",
+                "origin": [
+                    0.5,
+                    0.5
+                ],
+                "scale": 1
+            },
+            "forest_edge_battleground": {
+                "type": "staticImage",
+                "texture": "forest-edge-battleground",
+                "origin": [
+                    0.5,
+                    0.5
+                ],
+                "scale": 1
+            },
+            "forest_deep_path": {
+                "type": "staticImage",
+                "texture": "forest-deep-path",
+                "origin": [
+                    0.5,
+                    0.5
+                ],
+                "scale": 1
+            },
+            "forest_deep_battleground": {
+                "type": "staticImage",
+                "texture": "forest-deep-battleground",
+                "origin": [
+                    0.5,
+                    0.5
+                ],
+                "scale": 1
             }
         }
     },
@@ -1378,6 +1432,440 @@
                 0.5,
                 0.5
             ]
+        },
+        "potion-frame-cropped": {
+            "type": "staticImage",
+            "texture": "potion_frame-cropped",
+            "origin": [
+                0.5,
+                0.5
+            ],
+            "scale": 0.7037333838637418
+        },
+        "workshop-cropped-saved": {
+            "type": "staticImage",
+            "texture": "workshop-cropped-saved",
+            "origin": [
+                0.5,
+                0.5
+            ],
+            "scale": 0.7
+        },
+        "frame-black-empty-cropped": {
+            "type": "staticImage",
+            "texture": "Frame_black_empty-cropped",
+            "origin": [
+                0.5,
+                0.5
+            ],
+            "scale": 0.5606211324848841
+        },
+        "frame-black-empty-cropped-1": {
+            "type": "staticImage",
+            "texture": "Frame_black_empty-cropped",
+            "origin": [
+                0.5,
+                0.5
+            ],
+            "scale": 0.2370821334503375
+        },
+        "frame-metalic": {
+            "type": "staticImage",
+            "texture": "Frame metalic",
+            "origin": [
+                0.5,
+                0.5
+            ],
+            "scale": 0.17972100652650072
+        },
+        "isolate-2026-01-30t15-27-16": {
+            "type": "staticImage",
+            "texture": "isolate-2026-01-30T15-27-16",
+            "origin": [
+                0.5,
+                0.5
+            ],
+            "scale": 0.18868040804680905
+        },
+        "ui-circular-shape": {
+            "type": "staticImage",
+            "texture": "UI_circular shape",
+            "origin": [
+                0.5,
+                0.5
+            ],
+            "scale": 0.1759803005122558
+        },
+        "black-frmae-pets": {
+            "type": "staticImage",
+            "texture": "Black-frmae-pets",
+            "origin": [
+                0.5,
+                0.5
+            ],
+            "scale": 0.8
+        },
+        "black-frmae-diamonds": {
+            "type": "staticImage",
+            "texture": "Black-frmae-Diamonds",
+            "origin": [
+                0.5,
+                0.5
+            ],
+            "scale": 0.9
+        },
+        "ui-circular-shape-darkgreen-cropped": {
+            "type": "staticImage",
+            "texture": "UI_circular shape_darkgreen-cropped",
+            "origin": [
+                0.5,
+                0.5
+            ],
+            "scale": 0.4
+        },
+        "small-wooden-frame-cropped": {
+            "type": "staticImage",
+            "texture": "small_wooden_frame-cropped",
+            "origin": [
+                0.5,
+                0.5
+            ],
+            "scale": 0.45
+        },
+        "small-wooden-frame-cropped-1": {
+            "type": "staticImage",
+            "texture": "small_wooden_frame-cropped",
+            "origin": [
+                0.5,
+                0.5
+            ],
+            "scale": 0.45
+        },
+        "small-wooden-frame-cropped-2": {
+            "type": "staticImage",
+            "texture": "small_wooden_frame-cropped",
+            "origin": [
+                0.5,
+                0.5
+            ],
+            "scale": 0.45
+        },
+        "forest-riddle": {
+            "type": "staticImage",
+            "texture": "Forest Riddle",
+            "origin": [
+                0.5,
+                0.5
+            ]
+        },
+        "rock-with-number": {
+            "type": "staticImage",
+            "texture": "rock with number",
+            "origin": [
+                0.5,
+                0.5
+            ],
+            "scale": 0.7
+        },
+        "rock-with-number-1": {
+            "type": "staticImage",
+            "texture": "rock with number",
+            "origin": [
+                0.5,
+                0.5
+            ],
+            "scale": 0.7
+        },
+        "rock-with-number-2": {
+            "type": "staticImage",
+            "texture": "rock with number",
+            "origin": [
+                0.5,
+                0.5
+            ],
+            "scale": 0.7
+        },
+        "rock-with-number-3": {
+            "type": "staticImage",
+            "texture": "rock with number",
+            "origin": [
+                0.5,
+                0.5
+            ],
+            "scale": 0.7
+        },
+        "rock-with-number-4": {
+            "type": "staticImage",
+            "texture": "rock with number",
+            "origin": [
+                0.5,
+                0.5
+            ],
+            "scale": 0.7
+        },
+        "crystal-holder": {
+            "type": "staticImage",
+            "texture": "crystal holder",
+            "origin": [
+                0.5,
+                0.5
+            ],
+            "scale": 0.6
+        },
+        "pet-frame": {
+            "type": "staticImage",
+            "texture": "pet frame",
+            "origin": [
+                0.5,
+                0.5
+            ],
+            "scale": 0.9
+        },
+        "crystal-forge-background": {
+            "type": "staticImage",
+            "texture": "crystal-forge-background",
+            "origin": [
+                0.5,
+                0.5
+            ]
+        },
+        "crystalframe": {
+            "type": "staticImage",
+            "texture": "CrystalFrame",
+            "origin": [
+                0.5,
+                0.5
+            ],
+            "scale": 0.8
+        },
+        "pedestal": {
+            "type": "staticImage",
+            "texture": "Pedestal",
+            "origin": [
+                0.5,
+                0.5
+            ],
+            "scale": 1.3
+        },
+        "circle-activated": {
+            "type": "staticImage",
+            "texture": "circle-activated",
+            "origin": [
+                0.5,
+                0.5
+            ],
+            "scale": 0.5
+        },
+        "circle-active": {
+            "type": "staticImage",
+            "texture": "circle-active",
+            "origin": [
+                0.5,
+                0.5
+            ],
+            "scale": 0.5
+        },
+        "circle-locked": {
+            "type": "staticImage",
+            "texture": "circle-locked",
+            "origin": [
+                0.5,
+                0.5
+            ],
+            "scale": 0.5
+        },
+        "board-buttons": {
+            "type": "staticImage",
+            "texture": "Board buttons",
+            "origin": [
+                0.5,
+                0.5
+            ],
+            "scale": 0.85
+        },
+        "green-button-forge": {
+            "type": "staticImage",
+            "texture": "green button forge",
+            "origin": [
+                0.5,
+                0.5
+            ],
+            "scale": 0.7
+        },
+        "green-button-forge-1": {
+            "type": "staticImage",
+            "texture": "green button forge",
+            "origin": [
+                0.5,
+                0.5
+            ],
+            "scale": 0.7
+        },
+        "green-button-forge-copy": {
+            "type": "staticImage",
+            "texture": "green button forge",
+            "origin": [
+                0.5,
+                0.5
+            ],
+            "scale": 0.7
+        },
+        "green-button-forge-copy-copy": {
+            "type": "staticImage",
+            "texture": "green button forge",
+            "origin": [
+                0.5,
+                0.5
+            ],
+            "scale": 0.7
+        },
+        "green-button-forge-copy-copy-copy": {
+            "type": "staticImage",
+            "texture": "green button forge",
+            "origin": [
+                0.5,
+                0.5
+            ],
+            "scale": 0.7
+        },
+        "green-button-forge-copy-copy-copy-copy": {
+            "type": "staticImage",
+            "texture": "green button forge",
+            "origin": [
+                0.5,
+                0.5
+            ],
+            "scale": 0.7
+        },
+        "mana-icon": {
+            "type": "staticImage",
+            "texture": "mana-icon",
+            "origin": [
+                0.5,
+                0.5
+            ],
+            "scale": 0.3
+        },
+        "mana-icon-copy": {
+            "type": "staticImage",
+            "texture": "mana-icon",
+            "origin": [
+                0.5,
+                0.5
+            ],
+            "scale": 0.3
+        },
+        "mana-icon-copy-copy": {
+            "type": "staticImage",
+            "texture": "mana-icon",
+            "origin": [
+                0.5,
+                0.5
+            ],
+            "scale": 0.3
+        },
+        "mana-icon-copy-copy-copy": {
+            "type": "staticImage",
+            "texture": "mana-icon",
+            "origin": [
+                0.5,
+                0.5
+            ],
+            "scale": 0.3
+        },
+        "mana-icon-copy-copy-copy-copy": {
+            "type": "staticImage",
+            "texture": "mana-icon",
+            "origin": [
+                0.5,
+                0.5
+            ],
+            "scale": 0.3
+        },
+        "mana-icon-copy-copy-copy-copy-copy": {
+            "type": "staticImage",
+            "texture": "mana-icon",
+            "origin": [
+                0.5,
+                0.5
+            ],
+            "scale": 0.3
+        },
+        "money-mana": {
+            "type": "staticImage",
+            "texture": "money mana",
+            "origin": [
+                0.5,
+                0.5
+            ],
+            "scale": 1.1
+        },
+        "crystal-forge-small": {
+            "type": "interactiveImage",
+            "category": "building",
+            "texture": "Crystal Forge small",
+            "origin": [
+                0.5,
+                1
+            ],
+            "scale": {
+                "default": 0.5
+            },
+            "depth": 0,
+            "interactive": {
+                "useHandCursor": true
+            },
+            "hoverEffect": {
+                "scaleMultiplier": 1.05,
+                "tint": "#ffffcc"
+            }
+        },
+        "arena-building": {
+            "type": "interactiveImage",
+            "category": "building",
+            "texture": "arena-building",
+            "origin": [
+                0.5,
+                1
+            ],
+            "scale": {
+                "default": 0.6
+            },
+            "depth": 0,
+            "interactive": {
+                "useHandCursor": true
+            },
+            "hoverEffect": {
+                "scaleMultiplier": 1.05,
+                "tint": "#ffffcc"
+            }
+        },
+        "circle-activated-cropped": {
+            "type": "staticImage",
+            "texture": "circle-activated-cropped",
+            "origin": [
+                0.5,
+                0.5
+            ],
+            "scale": 0.5
+        },
+        "circle-active-cropped": {
+            "type": "staticImage",
+            "texture": "circle-active-cropped",
+            "origin": [
+                0.5,
+                0.5
+            ],
+            "scale": 0.5
+        },
+        "circle-inactive-cropped": {
+            "type": "staticImage",
+            "texture": "circle-inactive-cropped",
+            "origin": [
+                0.5,
+                0.5
+            ],
+            "scale": 0.5
         }
     }
 }

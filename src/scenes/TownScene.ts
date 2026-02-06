@@ -4,6 +4,9 @@ import { GameStateManager } from '../systems/GameStateManager';
 import { SceneDebugger } from '../systems/SceneDebugger';
 import { SceneBuilder } from '../systems/SceneBuilder';
 import { CrystalSystem } from '../systems/CrystalSystem';
+import { ManaSystem } from '../systems/ManaSystem';
+import { ProgressionSystem } from '../systems/ProgressionSystem';
+import { uiTemplateLoader } from '../systems/UiTemplateLoader';
 import { getPlayerSpriteConfig } from '../utils/characterUtils';
 import { Crystal } from '../types';
 
@@ -13,6 +16,7 @@ export class TownScene extends Phaser.Scene {
     private debugger!: SceneDebugger;
     private player!: Phaser.GameObjects.Sprite;
     private debugArrow?: Phaser.GameObjects.Container;
+    private debugPanel?: Phaser.GameObjects.Container;
     private isDebugMode: boolean = false;
     private groundCrystalsContainer?: Phaser.GameObjects.Container;
 
@@ -82,8 +86,8 @@ export class TownScene extends Phaser.Scene {
             guildNotification.setVisible(player.readyToPromote);
         }
 
-        // Create arena button (dynamic element)
-        this.createArenaButton();
+        // Arena is now a building in scenes.json, wired in setupBuildingTransitions()
+        // this.createArenaButton();  // Legacy floating arrow - no longer needed
 
         // Show ground crystals if any
         this.showGroundCrystals();
@@ -95,7 +99,7 @@ export class TownScene extends Phaser.Scene {
         const bg = this.sceneBuilder.get('bg');
         if (bg) this.debugger.register('bg', bg);
 
-        ['witch', 'guild', 'tavern', 'shop'].forEach(id => {
+        ['witch', 'guild', 'Crystal Forge small', 'shop', 'arena-building'].forEach(id => {
             const el = this.sceneBuilder.get(id);
             if (el) this.debugger.register(id, el);
         });
@@ -107,13 +111,13 @@ export class TownScene extends Phaser.Scene {
 
         // Create debug arrow for Testing scene (hidden by default)
         this.createDebugArrow();
+        this.createDebugPanel();
 
-        // Toggle debug arrow visibility when D is pressed (same as debug mode toggle)
+        // Toggle debug visibility when D is pressed
         this.input.keyboard!.on('keydown-D', () => {
             this.isDebugMode = !this.isDebugMode;
-            if (this.debugArrow) {
-                this.debugArrow.setVisible(this.isDebugMode);
-            }
+            this.debugArrow?.setVisible(this.isDebugMode);
+            this.debugPanel?.setVisible(this.isDebugMode);
         });
 
         // Debug: Forest Journey entrance (press F)
@@ -186,6 +190,161 @@ export class TownScene extends Phaser.Scene {
             repeat: -1,
             ease: 'Sine.easeInOut'
         });
+    }
+
+    private createDebugPanel(): void {
+        const gameState = GameStateManager.getInstance();
+        const panelX = 120;
+        const panelY = 400;
+
+        this.debugPanel = this.add.container(panelX, panelY);
+        this.debugPanel.setVisible(false);
+        this.debugPanel.setDepth(1000);
+
+        // Background (expanded height for all boss toggles)
+        const bg = this.add.rectangle(0, 0, 180, 350, 0x000000, 0.8);
+        bg.setStrokeStyle(2, 0xffff00);
+        this.debugPanel.add(bg);
+
+        // Title
+        const title = this.add.text(0, -155, 'DEBUG', {
+            fontSize: '14px',
+            color: '#ffff00',
+            fontStyle: 'bold'
+        }).setOrigin(0.5);
+        this.debugPanel.add(title);
+
+        // Button helper
+        const createBtn = (y: number, label: string, onClick: () => void) => {
+            const btn = this.add.text(0, y, label, {
+                fontSize: '12px',
+                color: '#ffffff',
+                backgroundColor: '#444444',
+                padding: { x: 8, y: 4 }
+            }).setOrigin(0.5).setInteractive({ useHandCursor: true });
+            btn.on('pointerover', () => btn.setBackgroundColor('#666666'));
+            btn.on('pointerout', () => btn.setBackgroundColor('#444444'));
+            btn.on('pointerdown', onClick);
+            return btn;
+        };
+
+        // +50 Gold button
+        const goldBtn = createBtn(-130, '+50 Gold', () => {
+            const player = gameState.getPlayer();
+            player.coins.gold += 50;
+            gameState.save();
+            this.scene.restart();
+        });
+        this.debugPanel.add(goldBtn);
+
+        // +50 Mana button
+        const manaBtn = createBtn(-105, '+50 Mana', () => {
+            const player = gameState.getPlayer();
+            ManaSystem.add(player, 50);
+            gameState.save();
+            this.scene.restart();
+        });
+        this.debugPanel.add(manaBtn);
+
+        // +10 Shards button
+        const shardBtn = createBtn(-80, '+10 Shards (value 12)', () => {
+            const player = gameState.getPlayer();
+            for (let i = 0; i < 10; i++) {
+                const crystal = CrystalSystem.generateCrystal('shard', 12);
+                CrystalSystem.addToInventory(player, crystal);
+            }
+            gameState.save();
+            this.scene.restart();
+        });
+        this.debugPanel.add(shardBtn);
+
+        // +3 Fragments button (for testing splitFragment)
+        const fragmentBtn = createBtn(-55, '+3 Fragments (value 15)', () => {
+            const player = gameState.getPlayer();
+            for (let i = 0; i < 3; i++) {
+                const crystal = CrystalSystem.generateCrystal('fragment', 15);
+                CrystalSystem.addToInventory(player, crystal);
+            }
+            gameState.save();
+            this.scene.restart();
+        });
+        this.debugPanel.add(fragmentBtn);
+
+        // +3 Prisms button (for testing refine and prism operations)
+        const prismBtn = createBtn(-30, '+3 Prisms (value 30)', () => {
+            const player = gameState.getPlayer();
+            for (let i = 0; i < 3; i++) {
+                const crystal = CrystalSystem.generateCrystal('prism', 30);
+                CrystalSystem.addToInventory(player, crystal);
+            }
+            gameState.save();
+            this.scene.restart();
+        });
+        this.debugPanel.add(prismBtn);
+
+        // Toggle Boss I defeat (unlocks forge advanced operations)
+        const player = gameState.getPlayer();
+        const hasBossI = player.defeatedBosses?.includes('slime_king') ?? false;
+        const bossILabel = hasBossI ? '✓ Boss I (Slime)' : '✗ Boss I (Slime)';
+        const bossIBtn = createBtn(5, bossILabel, () => {
+            const p = gameState.getPlayer();
+            if (!p.defeatedBosses) {
+                p.defeatedBosses = [];
+            }
+            if (p.defeatedBosses.includes('slime_king')) {
+                // Remove boss defeat
+                p.defeatedBosses = p.defeatedBosses.filter(id => id !== 'slime_king');
+            } else {
+                // Add boss defeat
+                p.defeatedBosses.push('slime_king');
+            }
+            gameState.save();
+            this.scene.restart();
+        });
+        this.debugPanel.add(bossIBtn);
+
+        // Toggle Boss II defeat (unlocks refine operation)
+        const hasBossII = player.defeatedBosses?.includes('verdant_guardian') ?? false;
+        const bossIILabel = hasBossII ? '✓ Boss II (Guardian)' : '✗ Boss II (Guardian)';
+        const bossIIBtn = createBtn(30, bossIILabel, () => {
+            const p = gameState.getPlayer();
+            if (!p.defeatedBosses) {
+                p.defeatedBosses = [];
+            }
+            if (p.defeatedBosses.includes('verdant_guardian')) {
+                p.defeatedBosses = p.defeatedBosses.filter(id => id !== 'verdant_guardian');
+            } else {
+                p.defeatedBosses.push('verdant_guardian');
+            }
+            gameState.save();
+            this.scene.restart();
+        });
+        this.debugPanel.add(bossIIBtn);
+
+        // Toggle Boss III defeat (unlocks createPrism operation)
+        const hasBossIII = player.defeatedBosses?.includes('crystal_serpent') ?? false;
+        const bossIIILabel = hasBossIII ? '✓ Boss III (Serpent)' : '✗ Boss III (Serpent)';
+        const bossIIIBtn = createBtn(55, bossIIILabel, () => {
+            const p = gameState.getPlayer();
+            if (!p.defeatedBosses) {
+                p.defeatedBosses = [];
+            }
+            if (p.defeatedBosses.includes('crystal_serpent')) {
+                p.defeatedBosses = p.defeatedBosses.filter(id => id !== 'crystal_serpent');
+            } else {
+                p.defeatedBosses.push('crystal_serpent');
+            }
+            gameState.save();
+            this.scene.restart();
+        });
+        this.debugPanel.add(bossIIIBtn);
+
+        // Reload UI button
+        const reloadBtn = createBtn(90, 'Reload UI (U)', async () => {
+            await uiTemplateLoader.reload();
+            this.scene.restart();
+        });
+        this.debugPanel.add(reloadBtn);
     }
 
     private createArenaButton(): void {
@@ -264,9 +423,9 @@ export class TownScene extends Phaser.Scene {
      */
     private setupBuildingTransitions(): void {
         const buildings = [
-            { id: 'witch', scene: 'WitchHutScene' },
+            { id: 'witch', scene: 'PythiaWorkshopScene' },
             { id: 'guild', scene: 'GuildScene' },
-            { id: 'tavern', scene: 'CrystalForgeScene' },  // Crystal Forge replaces Tavern
+            { id: 'Crystal Forge small', scene: 'CrystalForgeScene' },
             { id: 'shop', scene: 'ShopScene' }
         ];
 
@@ -277,6 +436,13 @@ export class TownScene extends Phaser.Scene {
                 building.on('pointerdown', () => this.walkToBuilding(building.x, scene, id));
             }
         });
+
+        // Arena building has special handling (different from regular scene transitions)
+        const arenaBuilding = this.sceneBuilder.get<Phaser.GameObjects.Image>('arena-building');
+        if (arenaBuilding) {
+            arenaBuilding.removeAllListeners('pointerdown');
+            arenaBuilding.on('pointerdown', () => this.walkToArena(arenaBuilding.x));
+        }
     }
 
     /**

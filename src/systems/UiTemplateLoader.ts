@@ -103,6 +103,17 @@ export class UiTemplateLoader {
   isLoaded(): boolean {
     return this.loaded;
   }
+
+  /**
+   * Reload templates from disk (useful for hot-reload during development)
+   * Clears the cache and re-fetches the JSON file
+   */
+  async reload(): Promise<void> {
+    this.templates.clear();
+    this.loaded = false;
+    await this.load();
+    console.log('[UiTemplateLoader] Templates reloaded');
+  }
 }
 
 // Singleton instance

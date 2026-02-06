@@ -13,7 +13,7 @@ export class MenuNewScene extends Phaser.Scene {
     private sceneBuilder!: SceneBuilder;
     private currentSlotIndex: number = 0;
     private slotsMeta: SaveSlotMeta[] = [];
-    private filledSlotIndices: number[] = []; // Only non-empty slots
+    private totalSlots: number = 8; // Show all 8 slots for navigation
 
     // Dynamic character sprite
     private characterSprite: Phaser.GameObjects.Sprite | null = null;
@@ -35,14 +35,13 @@ export class MenuNewScene extends Phaser.Scene {
         // Build the scene from JSON
         this.sceneBuilder.buildScene('MenuNewScene');
 
-        // Load slot data
+        // Load slot data - show all 8 slots
         this.slotsMeta = SaveSystem.getSlotsMeta();
-        this.filledSlotIndices = this.slotsMeta
-            .filter(slot => !slot.isEmpty)
-            .map(slot => slot.slotIndex);
+        this.totalSlots = this.slotsMeta.length;
 
-        // Start on first filled slot (or 0 if none)
-        this.currentSlotIndex = this.filledSlotIndices.length > 0 ? this.filledSlotIndices[0] : 0;
+        // Start on first empty slot (for new game) or slot 0
+        const firstEmptyIndex = this.slotsMeta.findIndex(slot => slot.isEmpty);
+        this.currentSlotIndex = firstEmptyIndex >= 0 ? firstEmptyIndex : 0;
 
         // Create character sprite (initially hidden)
         this.createCharacterSprite();
@@ -72,16 +71,9 @@ export class MenuNewScene extends Phaser.Scene {
     }
 
     private navigateSlot(direction: number): void {
-        // Only navigate if there are filled slots
-        if (this.filledSlotIndices.length === 0) return;
-
-        // Find current position in filled slots array
-        const currentPos = this.filledSlotIndices.indexOf(this.currentSlotIndex);
-        const len = this.filledSlotIndices.length;
-
-        // Navigate within filled slots only
-        const newPos = (currentPos + direction + len) % len;
-        this.currentSlotIndex = this.filledSlotIndices[newPos];
+        // Navigate through ALL slots (0-7), not just filled ones
+        const newIndex = (this.currentSlotIndex + direction + this.totalSlots) % this.totalSlots;
+        this.currentSlotIndex = newIndex;
 
         this.updateSlotDisplay();
     }
@@ -89,10 +81,8 @@ export class MenuNewScene extends Phaser.Scene {
     private updateSlotDisplay(): void {
         const slot = this.slotsMeta[this.currentSlotIndex];
 
-        // Update slot counter text (show position in filled slots)
-        const filledCount = this.filledSlotIndices.length;
-        const currentPos = this.filledSlotIndices.indexOf(this.currentSlotIndex) + 1;
-        this.updateSlotText(filledCount > 0 ? `Slot ${currentPos}/${filledCount}` : 'Zadne ulozene hry');
+        // Update slot counter text (show current slot / total slots)
+        this.updateSlotText(`Slot ${this.currentSlotIndex + 1}/${this.totalSlots}`);
 
         // Get LoadGame container to access text children
         const loadGameContainer = this.sceneBuilder.get<Phaser.GameObjects.Container>('LoadGame');
@@ -144,7 +134,7 @@ export class MenuNewScene extends Phaser.Scene {
     }
 
     private updateLoadGameTexts(
-        container: Phaser.GameObjects.Container | null,
+        container: Phaser.GameObjects.Container | null | undefined,
         name: string,
         level: string,
         problems: string
@@ -191,20 +181,8 @@ export class MenuNewScene extends Phaser.Scene {
         // Delete slot and refresh data
         SaveSystem.deleteSlot(this.currentSlotIndex);
         this.slotsMeta = SaveSystem.getSlotsMeta();
-        this.filledSlotIndices = this.slotsMeta
-            .filter(s => !s.isEmpty)
-            .map(s => s.slotIndex);
 
-        // Navigate to next available slot or show empty state
-        if (this.filledSlotIndices.length > 0) {
-            // Stay on same position or go to last if we were at the end
-            const newPos = Math.min(
-                this.filledSlotIndices.indexOf(this.currentSlotIndex),
-                this.filledSlotIndices.length - 1
-            );
-            this.currentSlotIndex = this.filledSlotIndices[Math.max(0, newPos)];
-        }
-
+        // Stay on the same slot index (it's now empty)
         this.updateSlotDisplay();
     }
 

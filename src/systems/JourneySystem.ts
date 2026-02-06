@@ -43,16 +43,34 @@ export interface JourneyConfig {
     };
 }
 
+/**
+ * State for a single interactive object in a room
+ */
+export interface ObjectState {
+    interacted: boolean;      // Has been clicked/approached
+    defeated?: boolean;       // For enemies: was defeated in battle
+    looted?: boolean;         // For chests: has been opened
+    completed?: boolean;      // For puzzles: was solved
+}
+
+/**
+ * Room states track which objects have been interacted with
+ */
+export interface RoomStates {
+    [roomId: string]: {
+        [objectId: string]: ObjectState;
+    };
+}
+
 export interface JourneyState {
     journeyId: string;
     currentStage: number;
     currentEncounter: number;
-    journeyHp: number;
-    journeyMaxHp: number;
     lastSavePoint: {
         stage: number;
         encounter: number;
-        hp: number;
+        hp: number;  // Player HP at save point
+        room?: string;  // Room ID at save point (for room-based journeys)
     } | null;
     completed: boolean;
     failed: boolean;
@@ -60,15 +78,20 @@ export interface JourneyState {
     totalXp: number;
     totalGold: number;
     totalDiamonds: number;
+
+    // Room-based exploration fields
+    currentRoom?: string;              // Current room ID (for room-based journeys)
+    roomStates?: RoomStates;           // Object states per room
+    unlockedWaypoints?: string[];      // IDs of unlocked rest waypoints
 }
 
 /**
  * JourneySystem - Manages journey progress through multi-stage adventures
- * 
+ *
  * Features:
  * - Track progress through stages and encounters
- * - Save points at rest locations
- * - HP tracking separate from main player HP during journey
+ * - Save points at rest locations (saves player HP at that moment)
+ * - Uses player's real HP (no separate journey HP)
  * - Resume from last save point if failed
  */
 export class JourneySystem {
@@ -170,8 +193,6 @@ export class JourneySystem {
             journeyId: config.id,
             currentStage: 0,
             currentEncounter: 0,
-            journeyHp: player.hp,
-            journeyMaxHp: player.maxHp,
             lastSavePoint: null,
             completed: false,
             failed: false,
@@ -181,7 +202,7 @@ export class JourneySystem {
             totalDiamonds: 0
         };
 
-        // Save initial state as first save point
+        // Save initial state as first save point (stores current player HP)
         this.createSavePoint();
 
         console.log(`Started journey: ${config.name}`);
@@ -255,13 +276,14 @@ export class JourneySystem {
     createSavePoint(): void {
         if (!this.currentJourney) return;
 
+        const player = this.gameState.getPlayer();
         this.currentJourney.lastSavePoint = {
             stage: this.currentJourney.currentStage,
             encounter: this.currentJourney.currentEncounter,
-            hp: this.currentJourney.journeyHp
+            hp: player.hp  // Save current player HP
         };
 
-        console.log(`Save point created at stage ${this.currentJourney.currentStage}, encounter ${this.currentJourney.currentEncounter}`);
+        console.log(`Save point created at stage ${this.currentJourney.currentStage}, encounter ${this.currentJourney.currentEncounter}, HP: ${player.hp}`);
     }
 
     /**
@@ -272,7 +294,9 @@ export class JourneySystem {
         if (!this.currentJourney || !this.journeyConfig) return false;
 
         const currentStage = this.journeyConfig.stages[this.currentJourney.currentStage];
-        
+        const prevStageIdx = this.currentJourney.currentStage;
+        const prevEncounterIdx = this.currentJourney.currentEncounter;
+
         // Move to next encounter
         this.currentJourney.currentEncounter++;
 
@@ -282,40 +306,47 @@ export class JourneySystem {
             this.currentJourney.currentStage++;
             this.currentJourney.currentEncounter = 0;
 
+            console.log(`[JourneySystem] Stage ${prevStageIdx} complete! Moving to stage ${this.currentJourney.currentStage}`);
+
             // Check if journey is complete
             if (this.currentJourney.currentStage >= this.journeyConfig.stages.length) {
+                console.log(`[JourneySystem] All ${this.journeyConfig.stages.length} stages complete! Journey finished.`);
                 this.completeJourney();
                 return false;
             }
+        } else {
+            console.log(`[JourneySystem] Advanced: Stage ${this.currentJourney.currentStage}, Encounter ${prevEncounterIdx} → ${this.currentJourney.currentEncounter}`);
         }
 
         return true;
     }
 
     /**
-     * Apply damage to journey HP
+     * Apply damage to player HP (used during journey)
      */
     applyDamage(amount: number): void {
         if (!this.currentJourney) return;
 
-        this.currentJourney.journeyHp = Math.max(0, this.currentJourney.journeyHp - amount);
+        const player = this.gameState.getPlayer();
+        player.hp = Math.max(0, player.hp - amount);
 
-        if (this.currentJourney.journeyHp <= 0) {
+        if (player.hp <= 0) {
             this.failJourney();
         }
     }
 
     /**
-     * Apply healing (percentage of max HP)
+     * Apply healing (percentage of max HP) directly to player
      */
     applyHeal(percent: number): void {
         if (!this.currentJourney) return;
 
-        const healAmount = Math.floor(this.currentJourney.journeyMaxHp * (percent / 100));
-        this.currentJourney.journeyHp = Math.min(
-            this.currentJourney.journeyMaxHp,
-            this.currentJourney.journeyHp + healAmount
-        );
+        const player = this.gameState.getPlayer();
+        const healAmount = Math.floor(player.maxHp * (percent / 100));
+        player.hp = Math.min(player.maxHp, player.hp + healAmount);
+
+        // Save game to persist the healing
+        this.gameState.save();
     }
 
     /**
@@ -330,17 +361,19 @@ export class JourneySystem {
     }
 
     /**
-     * Get current journey HP
+     * Get current HP (player's actual HP)
      */
     getJourneyHp(): number {
-        return this.currentJourney?.journeyHp ?? 0;
+        if (!this.currentJourney) return 0;
+        return this.gameState.getPlayer().hp;
     }
 
     /**
-     * Get journey max HP
+     * Get max HP (player's actual max HP)
      */
     getJourneyMaxHp(): number {
-        return this.currentJourney?.journeyMaxHp ?? 0;
+        if (!this.currentJourney) return 0;
+        return this.gameState.getPlayer().maxHp;
     }
 
     /**
@@ -392,10 +425,14 @@ export class JourneySystem {
         const savePoint = this.currentJourney.lastSavePoint;
         this.currentJourney.currentStage = savePoint.stage;
         this.currentJourney.currentEncounter = savePoint.encounter;
-        this.currentJourney.journeyHp = savePoint.hp;
         this.currentJourney.failed = false;
 
-        console.log(`Resumed from save point at stage ${savePoint.stage}, encounter ${savePoint.encounter}`);
+        // Restore player HP to what it was at the save point
+        const player = this.gameState.getPlayer();
+        player.hp = savePoint.hp;
+        this.gameState.save();
+
+        console.log(`Resumed from save point at stage ${savePoint.stage}, encounter ${savePoint.encounter}, HP restored to ${savePoint.hp}`);
         return true;
     }
 
@@ -428,8 +465,8 @@ export class JourneySystem {
             // TODO: Store unlocked regions in GameStateManager or separate registry
         }
 
-        // Restore player HP to journey HP (survived amount)
-        player.hp = this.currentJourney.journeyHp;
+        // Player HP is already at current value (no sync needed - we use player HP directly)
+        this.gameState.save();
 
         console.log(`Journey completed! XP: ${this.currentJourney.totalXp}, Gold: ${this.currentJourney.totalGold}`);
     }
@@ -466,14 +503,220 @@ export class JourneySystem {
         const stage = this.getCurrentStage();
         if (!stage || !this.currentJourney) return null;
 
+        const player = this.gameState.getPlayer();
         return {
             stageName: stage.name,
             stageNameCs: stage.nameCs,
             encounterIndex: this.currentJourney.currentEncounter + 1,
             totalEncounters: stage.encounters.length,
-            hp: this.currentJourney.journeyHp,
-            maxHp: this.currentJourney.journeyMaxHp,
+            hp: player.hp,
+            maxHp: player.maxHp,
             progress: this.getProgress()
         };
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════════
+    // ROOM-BASED EXPLORATION METHODS
+    // ═══════════════════════════════════════════════════════════════════════════
+
+    /**
+     * Start a room-based journey (no stages/encounters, uses rooms instead)
+     */
+    startRoomJourney(journeyId: string, startRoom: string, debugMode = false): boolean {
+        // For room-based journeys, we don't need JourneyConfig with stages
+        // Just initialize the state with room tracking
+        this.currentJourney = {
+            journeyId,
+            currentStage: 0,
+            currentEncounter: 0,
+            lastSavePoint: null,
+            completed: false,
+            failed: false,
+            startedAt: Date.now(),
+            totalXp: 0,
+            totalGold: 0,
+            totalDiamonds: 0,
+            // Room-based fields
+            currentRoom: startRoom,
+            roomStates: {},
+            unlockedWaypoints: []
+        };
+
+        // Create initial save point
+        this.createRoomSavePoint();
+
+        console.log(`Started room-based journey: ${journeyId}, starting room: ${startRoom}`);
+        return true;
+    }
+
+    /**
+     * Set current room ID
+     */
+    setCurrentRoom(roomId: string): void {
+        if (!this.currentJourney) return;
+        this.currentJourney.currentRoom = roomId;
+        console.log(`[JourneySystem] Moved to room: ${roomId}`);
+    }
+
+    /**
+     * Get current room ID
+     */
+    getCurrentRoom(): string | undefined {
+        return this.currentJourney?.currentRoom;
+    }
+
+    /**
+     * Get state of an object in a room
+     */
+    getObjectState(roomId: string, objectId: string): ObjectState | undefined {
+        if (!this.currentJourney?.roomStates) return undefined;
+        return this.currentJourney.roomStates[roomId]?.[objectId];
+    }
+
+    /**
+     * Set state of an object in a room
+     */
+    setObjectState(roomId: string, objectId: string, state: Partial<ObjectState>): void {
+        if (!this.currentJourney) return;
+
+        // Initialize room states if needed
+        if (!this.currentJourney.roomStates) {
+            this.currentJourney.roomStates = {};
+        }
+        if (!this.currentJourney.roomStates[roomId]) {
+            this.currentJourney.roomStates[roomId] = {};
+        }
+
+        // Merge state
+        const existing = this.currentJourney.roomStates[roomId][objectId] || { interacted: false };
+        this.currentJourney.roomStates[roomId][objectId] = { ...existing, ...state };
+
+        console.log(`[JourneySystem] Object state updated: ${roomId}/${objectId}`, this.currentJourney.roomStates[roomId][objectId]);
+    }
+
+    /**
+     * Check if an enemy has been defeated
+     */
+    isObjectDefeated(roomId: string, objectId: string): boolean {
+        const state = this.getObjectState(roomId, objectId);
+        return state?.defeated === true;
+    }
+
+    /**
+     * Check if a chest/puzzle has been looted/completed
+     */
+    isObjectLooted(roomId: string, objectId: string): boolean {
+        const state = this.getObjectState(roomId, objectId);
+        return state?.looted === true || state?.completed === true;
+    }
+
+    /**
+     * Unlock a waypoint for fast travel
+     */
+    unlockWaypoint(waypointId: string): void {
+        if (!this.currentJourney) return;
+
+        if (!this.currentJourney.unlockedWaypoints) {
+            this.currentJourney.unlockedWaypoints = [];
+        }
+
+        if (!this.currentJourney.unlockedWaypoints.includes(waypointId)) {
+            this.currentJourney.unlockedWaypoints.push(waypointId);
+            console.log(`[JourneySystem] Waypoint unlocked: ${waypointId}`);
+        }
+    }
+
+    /**
+     * Check if a waypoint is unlocked
+     */
+    isWaypointUnlocked(waypointId: string): boolean {
+        return this.currentJourney?.unlockedWaypoints?.includes(waypointId) ?? false;
+    }
+
+    /**
+     * Get all unlocked waypoints
+     */
+    getUnlockedWaypoints(): string[] {
+        return this.currentJourney?.unlockedWaypoints ?? [];
+    }
+
+    /**
+     * Check if all enemies in a room are defeated
+     */
+    isRoomCleared(roomId: string, roomObjects: Array<{ id: string; type: string }>): boolean {
+        const enemies = roomObjects.filter(obj => obj.type === 'enemy' || obj.type === 'boss');
+        return enemies.every(enemy => this.isObjectDefeated(roomId, enemy.id));
+    }
+
+    /**
+     * Create a save point for room-based journeys (saves room + HP)
+     */
+    createRoomSavePoint(): void {
+        if (!this.currentJourney) return;
+
+        const player = this.gameState.getPlayer();
+        this.currentJourney.lastSavePoint = {
+            stage: this.currentJourney.currentStage,
+            encounter: this.currentJourney.currentEncounter,
+            hp: player.hp,
+            room: this.currentJourney.currentRoom
+        };
+
+        console.log(`[JourneySystem] Room save point created at ${this.currentJourney.currentRoom}, HP: ${player.hp}`);
+    }
+
+    /**
+     * Resume from room save point
+     */
+    resumeFromRoomSavePoint(): boolean {
+        if (!this.currentJourney || !this.currentJourney.lastSavePoint) {
+            return false;
+        }
+
+        const savePoint = this.currentJourney.lastSavePoint;
+
+        // Restore room position
+        if (savePoint.room) {
+            this.currentJourney.currentRoom = savePoint.room;
+        }
+
+        // Restore HP
+        const player = this.gameState.getPlayer();
+        player.hp = savePoint.hp;
+        this.gameState.save();
+
+        // Clear failed state
+        this.currentJourney.failed = false;
+
+        console.log(`[JourneySystem] Resumed from room save point at ${savePoint.room}, HP restored to ${savePoint.hp}`);
+        return true;
+    }
+
+    /**
+     * Mark room-based journey as complete (called when boss is defeated)
+     */
+    completeRoomJourney(): void {
+        if (!this.currentJourney) return;
+
+        this.currentJourney.completed = true;
+
+        // Apply accumulated rewards
+        const player = this.gameState.getPlayer();
+        player.xp += this.currentJourney.totalXp;
+
+        if (player.coins) {
+            player.coins.smallCopper = (player.coins.smallCopper ?? 0) + this.currentJourney.totalGold;
+        }
+
+        this.gameState.save();
+
+        console.log(`[JourneySystem] Room journey completed! XP: ${this.currentJourney.totalXp}, Gold: ${this.currentJourney.totalGold}`);
+    }
+
+    /**
+     * Get room states for persistence/debugging
+     */
+    getRoomStates(): RoomStates | undefined {
+        return this.currentJourney?.roomStates;
     }
 }

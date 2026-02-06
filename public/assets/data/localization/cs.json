@@ -60,9 +60,9 @@
         }
     },
     "buildings": {
-        "BLD_001": "ČARODĚJNICE",
+        "BLD_001": "PYTHYINA DÍLNA",
         "BLD_002": "CECH",
-        "BLD_003": "HOSPODA",
+        "BLD_003": "KRYSTALOVÁ KOVÁRNA",
         "BLD_004": "OBCHOD"
     },
     "items": {

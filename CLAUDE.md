@@ -298,6 +298,113 @@ All arena levels share the same:
 - Wrong answer tracking
 - Historical progress preservation
 
+## ForestRiddleScene Architecture
+
+The riddle bridge scene (`ForestRiddleScene.ts`) is a standalone puzzle room with player movement. It demonstrates several reusable patterns.
+
+### Movement System
+
+For detailed movement/walking implementation patterns, see **`docs/MOVEMENT_SYSTEM.md`**.
+
+Quick reference:
+- Tween only X, update Y via `onUpdate` callback using path function
+- Use `getPathY(x)` to define terrain curves
+- Filter interactive objects in click-to-move handlers
+
+### Path-Based Movement
+
+Player Y position is constrained by X position using `getPathY(x)`:
+
+```typescript
+private getPathY(x: number): number {
+    if (x < bridgeStartX) return 620;           // Before bridge
+    else if (x < bridgePeakX) return 620 - rise; // Ascending
+    else if (x < bridgeEndX) return 580 + fall;  // Descending
+    else return 630;                             // After bridge
+}
+```
+
+This creates a 2.5D effect where the player walks "over" the bridge.
+
+### Drag-and-Drop Puzzle Structure
+
+The puzzle has three distinct layers:
+
+| Layer | Source | Purpose |
+|-------|--------|---------|
+| **Fixed stones** | Template text areas | Display sequence numbers (2, 6, 8, 10, 14) |
+| **Drop zones** | Created programmatically | Gaps between stones where rocks can be placed |
+| **Floating rocks** | Scene editor elements | Draggable answer options |
+
+**Important**: Drop zones are positioned BETWEEN the template text areas, not on them.
+
+### One-Way Progression (No Backtracking)
+
+Once the player crosses the bridge, they cannot go back:
+
+1. `hasCrossedBridge` flag set when player X > 900 after solving
+2. Click-to-move blocks movement left of bridge after crossing
+3. Left exit check disabled after crossing
+4. `init()` redirects to next room if `fromDirection === 'right'`
+5. `forest-rooms.json` has no left exit from `deep_forest_1`
+
+### Click-to-Move with Interactive Object Filtering
+
+To prevent character movement when clicking draggable objects:
+
+```typescript
+// In setupClickToMove()
+const hitObjects = this.input.hitTestPointer(pointer);
+if (hitObjects.length > 0) return; // Don't move if clicking interactive object
+```
+
+### Drag State Management
+
+When picking up a placed rock, clear its slot in `dragstart`:
+
+```typescript
+this.input.on('dragstart', (pointer, gameObject) => {
+    this.tweens.killTweensOf(gameObject);
+
+    // Clear slot if rock was placed
+    const rock = this.floatingRocks[gameObject.getData('rockIndex')];
+    if (rock.placedInSlot !== null) {
+        const stone = this.steppingStones[rock.placedInSlot];
+        stone.currentValue = null;
+        rock.placedInSlot = null;
+        // Restore "?" text...
+    }
+});
+```
+
+This prevents animation conflicts and state desync.
+
+### State Management & Battle Return
+
+**CRITICAL**: SceneBuilder creates ALL elements from scenes.json BEFORE any conditional logic runs. This includes floating rocks. See **`docs/FOREST_RIDDLE_STATE.md`** for full details.
+
+Key points:
+1. `init()` sets state flags BEFORE `create()` runs
+2. `sceneBuilder.buildScene()` creates floating rock containers unconditionally
+3. When puzzle is solved, reposition correct answer rocks and destroy distractors
+4. When returning from battle, infer puzzle state from battle context (mushroom battle = puzzle was solved)
+
+```typescript
+// In create() - handle SceneBuilder-created rocks based on puzzle state
+if (!this.puzzleSolved) {
+    this.setupFloatingRocks();
+    this.setupDragEvents();
+} else {
+    // Reposition correct answers (indices 0,1), destroy distractors (indices 2,3,4)
+    this.placeCorrectRocksInSolvedState();
+}
+```
+
+The `placeCorrectRocksInSolvedState()` method:
+- Keeps rocks with values 4 and 12 (correct answers)
+- Positions them in drop zones, scales to 0.7
+- Destroys distractor rocks (values 3, 7, 5)
+
 ## Known Recurring Bugs
 
 ### Hit Area Offset Bug (UI Elements)
@@ -325,6 +432,30 @@ container.setInteractive({ useHandCursor: true });
 - Commit `2a7ce65` - Fixed in UiElementBuilder.ts
 
 **Prevention**: When making containers interactive, ALWAYS use `setInteractive({ useHandCursor: true })` and let Phaser calculate the hit area automatically based on container size. Never use custom Rectangle offsets.
+
+### UiElementBuilder Click Handler Bug
+
+**Symptom**: Button visually responds to clicks (animation plays, hover effects work), but the click handler function is never called.
+
+**Root Cause**: When you create a UI element using `UiElementBuilder.buildFromTemplate()`, the returned object is a `Phaser.GameObjects.Container` containing multiple child objects (layers, text areas). Attaching a `pointerdown` event directly to the container doesn't work because child layers inside the container receive the click events, not the container itself.
+
+**Wrong (handler never fires)**:
+```typescript
+const button = builder.buildFromTemplate(templateId, x, y);
+button.setInteractive({ useHandCursor: true });
+button.on('pointerdown', () => doSomething());  // ❌ DOESN'T WORK!
+```
+
+**Correct (use sceneBuilder.bindClick)**:
+```typescript
+this.sceneBuilder.bindClick('Green_button_1', () => {
+    this.doSomething();
+});
+```
+
+**Why bindClick works**: `SceneBuilder.bindClick()` properly sets up click handling by finding all interactive layers within the container and attaching the click handler to each layer.
+
+**Full documentation**: See `docs/UIELEMENT_CLICK_HANDLING.md` for complete patterns including dynamic handlers.
 
 ## Design Documents
 
@@ -360,6 +491,28 @@ Detailed balance data for Verdant Forest journey including:
 Location: `docs/BALANCE_REPORT.md`
 
 Simulation results for game economy and progression balance.
+
+### SLIDE_ANIMATION.md
+
+Location: `docs/SLIDE_ANIMATION.md`
+
+Slide-out/slide-in animation pattern for carousel-style pagination:
+- How Phaser tweens work (FROM current TO target)
+- Two-phase animation: slide-out then slide-in
+- **Critical**: Kill previous tweens before repositioning
+- Direction logic (opposite side entry for carousel effect)
+- Visual masking to hide content outside bounds
+
+### FOREST_RIDDLE_STATE.md
+
+Location: `docs/FOREST_RIDDLE_STATE.md`
+
+ForestRiddleScene state management and battle transition handling:
+- Scene lifecycle (init vs create order)
+- **SceneBuilder problem**: Creates elements BEFORE game logic runs
+- Battle return flow and state inference
+- Why floating rocks must be DESTROYED when puzzle is solved
+- Common bugs and solutions
 
 ## File Locations
 

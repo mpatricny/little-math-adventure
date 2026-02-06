@@ -97,7 +97,11 @@ export class AssetLoaderScene extends Phaser.Scene {
         // Load all spritesheets
         for (const [key, config] of Object.entries(textures.spritesheets)) {
             if (config.frameWidth && config.frameHeight) {
-                this.load.spritesheet(key, `assets/${config.path}`, {
+                // Handle library: prefix for Asset Library files
+                const actualPath = config.path.startsWith('library:')
+                    ? `assets/library/${config.path.slice(8)}`
+                    : `assets/${config.path}`;
+                this.load.spritesheet(key, actualPath, {
                     frameWidth: config.frameWidth,
                     frameHeight: config.frameHeight,
                 });

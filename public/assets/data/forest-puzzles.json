@@ -106,7 +106,11 @@
       "difficulty": "hard",
       "timeLimit": 90,
       "optional": true,
-      "successBonus": { "bossAtkReduction": 1 },
+      "successBonus": {
+        "bossAtkReduction": 1,
+        "healPercent": 20,
+        "potionRefill": true
+      },
       "description": "Place crystals to match the obelisk's target",
       "descriptionCs": "Vlož krystaly aby jejich hodnota odpovídala cíli",
       "templates": [

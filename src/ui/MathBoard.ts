@@ -47,7 +47,7 @@ export interface MathBoardLayout {
 interface ProblemRow {
     container: Phaser.GameObjects.Container;
     problemText: Phaser.GameObjects.Text;
-    sourceLabel: Phaser.GameObjects.Text | null;
+    sourceLabel: Phaser.GameObjects.Container | null;  // Container for icon + text
     buttons: Phaser.GameObjects.Container[];
     statusIcon: Phaser.GameObjects.Text;
     problem: MathProblem;
@@ -64,6 +64,7 @@ export class MathBoard {
     private onComplete: (damageDealt: number, results: boolean[]) => void;
     private originalOnComplete: (damageDealt: number, results: boolean[]) => void; // Store original callback
     private hintTimer: Phaser.Time.TimerEvent | null = null;
+    private completionTimer: Phaser.Time.TimerEvent | null = null; // Track pending onComplete callback
 
     // Multi-problem state
     private problems: MathProblem[] = [];
@@ -238,12 +239,24 @@ export class MathBoard {
         // Problem text (left side) - smaller for two-column mode
         // Display × for multiplication operator
         const displayOperator = problem.operator === '*' ? '×' : problem.operator;
-        let problemString = `${problem.operand1} ${displayOperator} ${problem.operand2}`;
-        if (problem.operand3 !== undefined && problem.operator2) {
-            const displayOperator2 = problem.operator2 === '*' ? '×' : problem.operator2;
-            problemString += ` ${displayOperator2} ${problem.operand3}`;
+
+        // Format problem string based on problem type
+        let problemString: string;
+        if (problem.problemType === 'missing_operand') {
+            // Missing operand: "5 + ? = 8" (operand2 stores the result)
+            problemString = `${problem.operand1} ${displayOperator} ? = ${problem.operand2}`;
+        } else if (problem.problemType === 'comparison') {
+            // Comparison: "7 + 2 ○ 10" (operand3 stores the right side)
+            problemString = `${problem.operand1} ${displayOperator} ${problem.operand2} ○ ${problem.operand3}`;
+        } else {
+            // Standard: "5 + 3 = ?"
+            problemString = `${problem.operand1} ${displayOperator} ${problem.operand2}`;
+            if (problem.operand3 !== undefined && problem.operator2) {
+                const displayOperator2 = problem.operator2 === '*' ? '×' : problem.operator2;
+                problemString += ` ${displayOperator2} ${problem.operand3}`;
+            }
+            problemString += ' = ?';
         }
-        problemString += ' = ?';
 
         const fontSize = useTwoColumns ? '22px' : '32px';
         const textX = useTwoColumns ? this.layout.problemTextXTwoCol : this.layout.problemTextX;
@@ -260,19 +273,42 @@ export class MathBoard {
         rowContainer.add(problemText);
 
         // Source label (pet or sword indicator)
-        let sourceLabel: Phaser.GameObjects.Text | null = null;
+        let sourceLabel: Phaser.GameObjects.Container | null = null;
         if (problem.source === 'pet' || problem.source === 'sword') {
-            const labelText = this.getSourceLabelText(problem);
             const labelColor = this.getSourceLabelColor(problem.source);
             const labelFontSize = useTwoColumns ? '12px' : '14px';
             const labelY = useTwoColumns ? -22 : -28;
+            const iconScale = useTwoColumns ? 0.08 : 0.1;
 
-            sourceLabel = this.scene.add.text(textX, labelY, labelText, {
-                fontSize: labelFontSize,
-                fontFamily: 'Arial, sans-serif',
-                color: labelColor,
-                fontStyle: 'bold',
-            }).setOrigin(0, 0.5);
+            sourceLabel = this.scene.add.container(textX, labelY);
+
+            if (problem.source === 'sword') {
+                // Sword: use actual sword icon from shop-swords-sheet (frame 1 = iron sword)
+                const swordIcon = this.scene.add.image(0, 0, 'shop-swords-sheet', 1)
+                    .setScale(iconScale)
+                    .setOrigin(0, 0.5);
+                sourceLabel.add(swordIcon);
+
+                const multiplier = problem.damageMultiplier || 1;
+                const labelText = this.scene.add.text(18, 0, `Meč (×${multiplier})`, {
+                    fontSize: labelFontSize,
+                    fontFamily: 'Arial, sans-serif',
+                    color: labelColor,
+                    fontStyle: 'bold',
+                }).setOrigin(0, 0.5);
+                sourceLabel.add(labelText);
+            } else {
+                // Pet: use emoji + text
+                const multiplier = problem.damageMultiplier || 1;
+                const labelText = this.scene.add.text(0, 0, `🐾 Mazlíček (×${multiplier})`, {
+                    fontSize: labelFontSize,
+                    fontFamily: 'Arial, sans-serif',
+                    color: labelColor,
+                    fontStyle: 'bold',
+                }).setOrigin(0, 0.5);
+                sourceLabel.add(labelText);
+            }
+
             rowContainer.add(sourceLabel);
         }
 
@@ -283,6 +319,15 @@ export class MathBoard {
         const buttonScale = useTwoColumns ? this.layout.buttonScaleTwoCol : this.layout.buttonScale;
 
         for (let i = 0; i < 3; i++) {
+            // For comparison problems, display symbols instead of numbers
+            let displayValue: string;
+            if (problem.problemType === 'comparison') {
+                const comparisonSymbols = ['<', '=', '>'];
+                displayValue = comparisonSymbols[problem.choices[i]];
+            } else {
+                displayValue = problem.choices[i].toString();
+            }
+
             const btn = this.createAnswerButton(
                 buttonStartX + i * buttonSpacing,
                 0,
@@ -290,7 +335,8 @@ export class MathBoard {
                 index,
                 problem.choices[i],
                 problem.choices[i] === problem.answer,
-                buttonScale
+                buttonScale,
+                displayValue
             );
             buttons.push(btn);
             rowContainer.add(btn);
@@ -326,19 +372,6 @@ export class MathBoard {
     }
 
     /**
-     * Get label text for source (pet or sword)
-     */
-    private getSourceLabelText(problem: MathProblem): string {
-        const multiplier = problem.damageMultiplier || 1;
-        if (problem.source === 'pet') {
-            return `🐾 Mazlíček (×${multiplier})`;
-        } else if (problem.source === 'sword') {
-            return `⚔️ Meč (×${multiplier})`;
-        }
-        return '';
-    }
-
-    /**
      * Get color for source label
      */
     private getSourceLabelColor(source?: 'player' | 'pet' | 'sword'): string {
@@ -369,7 +402,8 @@ export class MathBoard {
         rowIndex: number,
         value: number,
         isCorrect: boolean,
-        scale: number = 0.28
+        scale: number = 0.28,
+        displayValue?: string
     ): Phaser.GameObjects.Container {
         // Use smaller button for multi-problem layout
         const bg = this.scene.add.image(0, 0, 'ui-button')
@@ -377,7 +411,7 @@ export class MathBoard {
             .setInteractive({ useHandCursor: true });
 
         const fontSize = scale < 0.25 ? '18px' : '22px';
-        const text = this.scene.add.text(0, -2, value.toString(), {
+        const text = this.scene.add.text(0, -2, displayValue ?? value.toString(), {
             fontSize: fontSize,
             fontFamily: 'Arial, sans-serif',
             color: '#5a3825',
@@ -421,6 +455,14 @@ export class MathBoard {
     }
 
     show(problems: MathProblem[]): void {
+        // DEBUG: Log problems being shown
+        console.log('[MathBoard] Showing problems:', problems.map(p => ({
+            problem: `${p.operand1} ${p.operator} ${p.operand2}${p.operand3 !== undefined ? ` ${p.operator2} ${p.operand3}` : ''} = ?`,
+            answer: p.answer,
+            choices: p.choices,
+            correctInChoices: p.choices.includes(p.answer)
+        })));
+
         // Apply layout preset based on problem count
         this.applyLayoutForProblemCount(problems.length);
 
@@ -664,8 +706,9 @@ export class MathBoard {
                     yoyo: true,
                 });
             } else {
-                // All problems answered - complete
-                this.scene.time.delayedCall(300, () => {
+                // All problems answered - complete (track the timer so it can be cancelled)
+                this.completionTimer = this.scene.time.delayedCall(300, () => {
+                    this.completionTimer = null;
                     this.onComplete(this.damageDealt, this.results);
                 });
             }
@@ -677,6 +720,12 @@ export class MathBoard {
         if (this.hintTimer) {
             this.hintTimer.destroy();
             this.hintTimer = null;
+        }
+
+        // Cancel pending completion callback (prevents race condition with block phase timer)
+        if (this.completionTimer) {
+            this.completionTimer.destroy();
+            this.completionTimer = null;
         }
 
         // Restore original callback (in case showSingle was interrupted)

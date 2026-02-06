@@ -33,11 +33,19 @@ export class ForestMapScene extends Phaser.Scene {
     create(): void {
         // If returning from a won battle, advance the encounter
         if (this.battleWon) {
+            console.log('[ForestMapScene] Returning from battle victory, advancing encounter...');
             this.journeySystem.advanceEncounter();
             this.battleWon = false; // Reset flag
         }
         const state = this.journeySystem.getJourneyState();
         const config = this.journeySystem.getJourneyConfig();
+
+        // Debug: Log current journey state
+        if (state && config) {
+            const stage = config.stages[state.currentStage];
+            const encounter = stage?.encounters[state.currentEncounter];
+            console.log(`[ForestMapScene] Current: Stage ${state.currentStage} (${stage?.nameCs}), Encounter ${state.currentEncounter} (${encounter?.type})`);
+        }
 
         if (!state || !config) {
             console.error('No active journey');
@@ -47,7 +55,7 @@ export class ForestMapScene extends Phaser.Scene {
 
         // Check if journey is complete
         if (state.completed) {
-            this.scene.start('ForestVictoryScene');
+            this.showVictoryScreen();
             return;
         }
 
@@ -399,6 +407,65 @@ export class ForestMapScene extends Phaser.Scene {
         backBtn.setSize(250, 50);
         backBtn.setInteractive({ useHandCursor: true });
         backBtn.on('pointerdown', () => {
+            this.journeySystem.abandonJourney();
+            this.scene.start('TownScene');
+        });
+    }
+
+    private showVictoryScreen(): void {
+        const config = this.journeySystem.getJourneyConfig();
+
+        // Victory background
+        this.add.rectangle(640, 360, 1280, 720, 0x1a4a2a);
+
+        // Title
+        this.add.text(640, 180, '🏆 VÍTĚZSTVÍ! 🏆', {
+            fontSize: '56px',
+            fontFamily: 'Arial, sans-serif',
+            color: '#ffd700',
+            fontStyle: 'bold',
+            stroke: '#000000',
+            strokeThickness: 6
+        }).setOrigin(0.5);
+
+        // Journey name
+        this.add.text(640, 260, `${config?.nameCs || config?.name || 'Cesta'} dokončena!`, {
+            fontSize: '32px',
+            fontFamily: 'Arial, sans-serif',
+            color: '#ffffff'
+        }).setOrigin(0.5);
+
+        // Rewards
+        const rewards = config?.rewards;
+        if (rewards) {
+            this.add.text(640, 340, rewards.unlockMessageCs || rewards.unlockMessage || '', {
+                fontSize: '24px',
+                fontFamily: 'Arial, sans-serif',
+                color: '#88ff88',
+                fontStyle: 'italic'
+            }).setOrigin(0.5);
+        }
+
+        // Return button
+        const btn = this.add.container(640, 500);
+        const bg = this.add.rectangle(0, 0, 300, 70, 0x4a9a4a)
+            .setStrokeStyle(4, 0x6aca6a);
+        const text = this.add.text(0, 0, '🏠 Zpět do vesnice', {
+            fontSize: '26px',
+            fontFamily: 'Arial, sans-serif',
+            color: '#ffffff',
+            fontStyle: 'bold'
+        }).setOrigin(0.5);
+
+        btn.add([bg, text]);
+        btn.setSize(300, 70);
+        btn.setInteractive({ useHandCursor: true });
+
+        btn.on('pointerover', () => bg.setFillStyle(0x5aba5a));
+        btn.on('pointerout', () => bg.setFillStyle(0x4a9a4a));
+        btn.on('pointerdown', () => {
+            // Journey rewards already applied when advanceEncounter() marked it complete
+            // Just clean up the journey state
             this.journeySystem.abandonJourney();
             this.scene.start('TownScene');
         });

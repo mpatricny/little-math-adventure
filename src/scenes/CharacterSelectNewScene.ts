@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import { SceneBuilder } from '../systems/SceneBuilder';
 import { GameStateManager } from '../systems/GameStateManager';
+import { StorySystem } from '../systems/StorySystem';
 import { CharacterType } from '../types';
 import { getPlayerSpriteConfig } from '../utils/characterUtils';
 
@@ -170,7 +171,16 @@ export class CharacterSelectNewScene extends Phaser.Scene {
         gameState.setActiveSlotIndex(this.targetSlotIndex);
         gameState.reset(this.selectedCharacter, finalName, this.targetSlotIndex);
 
-        this.scene.start('TownScene');
+        // Check if player has completed the intro story
+        const storySystem = StorySystem.getInstance();
+
+        if (storySystem.hasCompletedIntro()) {
+            // Returning player - skip intro, go directly to town
+            this.scene.start('TownScene');
+        } else {
+            // New player - show intro comic first
+            this.scene.start('ComicScene');
+        }
     }
 
     shutdown(): void {

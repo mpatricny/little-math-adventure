@@ -60,9 +60,9 @@
         }
     },
     "buildings": {
-        "BLD_001": "WITCH",
+        "BLD_001": "PYTHIA'S WORKSHOP",
         "BLD_002": "GUILD",
-        "BLD_003": "TAVERN",
+        "BLD_003": "CRYSTAL FORGE",
         "BLD_004": "SHOP"
     },
     "items": {

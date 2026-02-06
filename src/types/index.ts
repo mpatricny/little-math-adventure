@@ -120,6 +120,8 @@ export interface PlayerState {
     mana?: number;                    // Mana count for Crystal Forge operations (no max limit)
     groundCrystals?: Crystal[];       // Overflow crystals dropped on ground
     defeatedBosses?: string[];        // Track defeated boss IDs for progression
+    // === STORY PROGRESS ===
+    storyProgress?: StoryProgress;     // Track story milestones for visual storytelling
 }
 
 // ===== GUILD TRIAL SYSTEM =====
@@ -179,7 +181,7 @@ export interface MathProblem {
     id: string;               // Problem ID for tracking (e.g., "add_3_5")
     operand1: number;
     operand2: number;
-    operand3?: number;        // Optional 3rd operand
+    operand3?: number;        // Optional 3rd operand (or right side of comparison)
     operator: MathOperator;
     operator2?: MathOperator; // Optional 2nd operator
     answer: number;
@@ -189,6 +191,8 @@ export interface MathProblem {
     // Equipment bonus metadata
     damageMultiplier?: number;  // Damage multiplier (1 = normal, 2 = double, etc.)
     source?: 'player' | 'pet' | 'sword';  // Source of the problem for UI/tracking
+    // Boss phase problem type
+    problemType?: 'standard' | 'missing_operand' | 'comparison';
 }
 
 export interface DifficultyConfig {
@@ -339,3 +343,16 @@ export interface CrystalInventory {
 // ===== MANA SYSTEM =====
 // Mana is just a count (like crystals), no max limit
 // Earned by solving math problems in Guild, spent in Crystal Forge
+
+// ===== STORY PROGRESS SYSTEM =====
+// Tracks story milestones for visual storytelling (picture dialogs)
+export interface StoryProgress {
+    hasCompletedIntro: boolean;        // Comic + Crash Site tutorial done
+    hasSeenArenaExplanation: boolean;  // Post-arena hints
+    hasSeenPetUnlockHint: boolean;     // First pet freed
+    hasSeenShopHint: boolean;          // Equipment hint
+    hasSeenForgeIntro: boolean;        // Crystal Forge first visit
+    hasSeenPythiaIntro: boolean;       // Pythia's Workshop first visit
+    hasSeenPostArena1: boolean;        // After Arena 1 complete
+    hasSeenPostArena2: boolean;        // After Arena 2 complete
+}

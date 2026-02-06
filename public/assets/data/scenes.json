@@ -462,32 +462,24 @@
         {
           "id": "witch",
           "asset": "environments.buildings.witch-hut",
-          "x": 220,
-          "y": 670,
+          "x": 382,
+          "y": 665,
           "scale": 0.224,
           "visible": true
         },
         {
           "id": "guild",
           "asset": "environments.buildings.guild",
-          "x": 455,
-          "y": 700,
-          "scale": 0.224,
-          "visible": true
-        },
-        {
-          "id": "tavern",
-          "asset": "environments.buildings.tavern",
-          "x": 655,
-          "y": 665,
+          "x": 612,
+          "y": 696,
           "scale": 0.224,
           "visible": true
         },
         {
           "id": "shop",
           "asset": "environments.buildings.shop",
-          "x": 880,
-          "y": 670,
+          "x": 815,
+          "y": 674,
           "scale": 0.184,
           "visible": true
         },
@@ -500,6 +492,22 @@
           "scaleY": 0.7155963302752293,
           "depth": 5,
           "visible": true
+        },
+        {
+          "id": "Crystal Forge small",
+          "asset": "misc.crystal-forge-small",
+          "x": 1039,
+          "y": 657,
+          "scaleX": 0.49999999999999645,
+          "scaleY": 0.49999999999999906
+        },
+        {
+          "id": "arena-building",
+          "asset": "misc.arena-building",
+          "x": 108,
+          "y": 660,
+          "scale": 0.6,
+          "flipX": true
         }
       ],
       "zones": [
@@ -512,10 +520,10 @@
       ],
       "ui": [
         {
-          "id": "witch-label",
+          "id": "workshop-label",
           "asset": "ui.labels.building-label",
-          "x": 220,
-          "y": 430,
+          "x": 382,
+          "y": 425,
           "depth": 10,
           "text": "$buildings.BLD_001",
           "visible": true
@@ -523,17 +531,17 @@
         {
           "id": "guild-label",
           "asset": "ui.labels.building-label",
-          "x": 454,
-          "y": 446,
+          "x": 612,
+          "y": 435,
           "depth": 10,
           "text": "$buildings.BLD_002",
           "visible": true
         },
         {
-          "id": "tavern-label",
+          "id": "forge-label",
           "asset": "ui.labels.building-label",
-          "x": 655,
-          "y": 420,
+          "x": 1039,
+          "y": 425,
           "depth": 10,
           "text": "$buildings.BLD_003",
           "visible": true
@@ -541,8 +549,8 @@
         {
           "id": "shop-label",
           "asset": "ui.labels.building-label",
-          "x": 882,
-          "y": 442,
+          "x": 817,
+          "y": 446,
           "depth": 10,
           "text": "$buildings.BLD_004",
           "visible": true
@@ -550,8 +558,8 @@
         {
           "id": "arena-label",
           "asset": "ui.labels.building-label",
-          "x": 1220,
-          "y": 410,
+          "x": 108,
+          "y": 380,
           "depth": 10,
           "text": "$ui.titles.TTL_001",
           "visible": true
@@ -559,8 +567,8 @@
         {
           "id": "guild-notification",
           "asset": "ui.indicators.notification-badge",
-          "x": 455,
-          "y": 380,
+          "x": 613,
+          "y": 369,
           "depth": 80,
           "visible": false
         },
@@ -1532,7 +1540,7 @@
           "x": 638,
           "y": 378,
           "uiElement": {
-            "templateId": "1769720515460-vya4ftfra",
+            "templateId": "1770300000000-characternew",
             "textOverrides": {
               "1769721204793-3lcofhw3r": "$ui.screens.character_select.girl_label",
               "1769721234568-by2j6mb6u": "$ui.screens.character_select.boy_label",
@@ -1661,10 +1669,464 @@
           "id": "PythiaWorkshopBG",
           "asset": "misc.pythiaworkshopbg",
           "x": 640,
-          "y": 360
+          "y": 360,
+          "depth": -5
+        },
+        {
+          "id": "potion_frame-cropped",
+          "asset": "misc.potion-frame-cropped",
+          "x": 188,
+          "y": 220,
+          "scaleX": 0.7037333838637418,
+          "scaleY": 0.7037333838637421
+        },
+        {
+          "id": "workshop-cropped-saved",
+          "asset": "misc.workshop-cropped-saved",
+          "x": 630,
+          "y": 73,
+          "scale": 0.7
+        },
+        {
+          "id": "Frame metalic",
+          "asset": "misc.frame-metalic",
+          "x": 468,
+          "y": 342,
+          "scaleX": 0.17972100652650072,
+          "scaleY": 0.17972100652650075
+        },
+        {
+          "id": "isolate-2026-01-30T15-27-16",
+          "asset": "misc.isolate-2026-01-30t15-27-16",
+          "x": 804,
+          "y": 339,
+          "scaleX": 0.18868040804680905,
+          "scaleY": 0.18868040804680886
         }
       ],
-      "ui": [],
+      "ui": [
+        {
+          "id": "Green_button",
+          "asset": "Green_button",
+          "x": 248,
+          "y": 244,
+          "scale": 0.6,
+          "uiElement": {
+            "templateId": "1768922130266-28htorb5x"
+          }
+        },
+        {
+          "id": "NewArrow",
+          "asset": "NewArrow",
+          "x": 425,
+          "y": 613,
+          "flipX": true,
+          "scaleX": 0.3712468963621629,
+          "scaleY": 0.3712468963621643,
+          "uiElement": {
+            "templateId": "1769722721277-p7d9kn6kj"
+          }
+        },
+        {
+          "id": "NewArrow_1",
+          "asset": "NewArrow",
+          "x": 423,
+          "y": 533,
+          "scaleX": 0.3958152383631717,
+          "scaleY": 0.3958152383631737,
+          "uiElement": {
+            "templateId": "1769722721277-p7d9kn6kj"
+          }
+        },
+        {
+          "id": "NewArrow_2",
+          "asset": "NewArrow",
+          "x": 1059,
+          "y": 542,
+          "scaleX": 0.5095328870772227,
+          "scaleY": 0.509532887077223,
+          "uiElement": {
+            "templateId": "1769722721277-p7d9kn6kj"
+          }
+        },
+        {
+          "id": "NewArrow_3",
+          "asset": "NewArrow",
+          "x": 1060,
+          "y": 629,
+          "scaleX": 0.5913143452427271,
+          "scaleY": 0.5913143452427309,
+          "uiElement": {
+            "templateId": "1769722721277-p7d9kn6kj"
+          }
+        },
+        {
+          "id": "Green_button_1",
+          "asset": "Green_button",
+          "x": 630,
+          "y": 497,
+          "uiElement": {
+            "templateId": "1768922130266-28htorb5x"
+          }
+        },
+        {
+          "id": "Black-frmae-pets",
+          "asset": "misc.black-frmae-pets",
+          "x": 1184,
+          "y": 369,
+          "depth": -1,
+          "uiElement": {
+            "templateId": "1770069088514-i3desahbs"
+          }
+        },
+        {
+          "id": "Black-frmae-Diamonds",
+          "asset": "misc.black-frmae-diamonds",
+          "x": 215,
+          "y": 583,
+          "scale": 0.9,
+          "depth": -1,
+          "uiElement": {
+            "templateId": "1770069824042-mifp8yjpu"
+          }
+        },
+        {
+          "id": "Back button",
+          "asset": "Back button",
+          "x": 630,
+          "y": 655,
+          "uiElement": {
+            "templateId": "1768730825297-e6lnuaoyj"
+          },
+          "events": {
+            "click": "onBack"
+          }
+        }
+      ],
+      "zones": []
+    },
+    "ForestRiddleScene": {
+      "viewport": {
+        "width": 1280,
+        "height": 720
+      },
+      "elements": [],
+      "ui": [
+        {
+          "id": "Forest Riddle",
+          "asset": "misc.forest-riddle",
+          "x": 640,
+          "y": 360,
+          "depth": -1,
+          "uiElement": {
+            "templateId": "1770149182333-dcod79elf"
+          }
+        },
+        {
+          "id": "rock with number",
+          "asset": "misc.rock-with-number",
+          "x": 364,
+          "y": 391,
+          "scale": 0.7,
+          "uiElement": {
+            "templateId": "1770148975856-yjwesk53a"
+          }
+        },
+        {
+          "id": "rock with number_1",
+          "asset": "misc.rock-with-number-1",
+          "x": 500,
+          "y": 328,
+          "scale": 0.7,
+          "uiElement": {
+            "templateId": "1770148975856-yjwesk53a"
+          }
+        },
+        {
+          "id": "rock with number_2",
+          "asset": "misc.rock-with-number-2",
+          "x": 648,
+          "y": 312,
+          "scale": 0.7,
+          "uiElement": {
+            "templateId": "1770148975856-yjwesk53a"
+          }
+        },
+        {
+          "id": "rock with number_3",
+          "asset": "misc.rock-with-number-3",
+          "x": 797,
+          "y": 324,
+          "scale": 0.7,
+          "uiElement": {
+            "templateId": "1770148975856-yjwesk53a"
+          }
+        },
+        {
+          "id": "rock with number_4",
+          "asset": "misc.rock-with-number-4",
+          "x": 942,
+          "y": 381,
+          "scale": 0.7,
+          "uiElement": {
+            "templateId": "1770148975856-yjwesk53a"
+          }
+        }
+      ],
+      "zones": [
+        {
+          "id": "playerSpawn",
+          "zone": "zones.spawns.player-spawn",
+          "x": 80,
+          "y": 600
+        }
+      ]
+    },
+    "CrystalForgeScene": {
+      "viewport": {
+        "width": 1280,
+        "height": 720
+      },
+      "elements": [
+        {
+          "id": "crystal-forge-background",
+          "asset": "misc.crystal-forge-background",
+          "x": 640,
+          "y": 360,
+          "depth": -7
+        },
+        {
+          "id": "mana-icon",
+          "asset": "misc.mana-icon",
+          "x": 251,
+          "y": 155,
+          "scale": 0.3,
+          "depth": 1
+        },
+        {
+          "id": "mana-icon_copy",
+          "asset": "misc.mana-icon-copy",
+          "x": 380,
+          "y": 154,
+          "scale": 0.3,
+          "depth": 1
+        },
+        {
+          "id": "mana-icon_copy_copy",
+          "asset": "misc.mana-icon-copy-copy",
+          "x": 402,
+          "y": 155,
+          "scale": 0.3,
+          "depth": 1
+        },
+        {
+          "id": "mana-icon_copy_copy_copy",
+          "asset": "misc.mana-icon-copy-copy-copy",
+          "x": 544,
+          "y": 161,
+          "scale": 0.3,
+          "depth": 2
+        },
+        {
+          "id": "mana-icon_copy_copy_copy_copy",
+          "asset": "misc.mana-icon-copy-copy-copy-copy",
+          "x": 530,
+          "y": 155,
+          "scale": 0.3,
+          "depth": 1
+        },
+        {
+          "id": "mana-icon_copy_copy_copy_copy_copy",
+          "asset": "misc.mana-icon-copy-copy-copy-copy-copy",
+          "x": 557,
+          "y": 154,
+          "scale": 0.3,
+          "depth": 1
+        },
+        {
+          "id": "circle-activated-cropped",
+          "asset": "circle-activated-cropped",
+          "x": 326,
+          "y": 429,
+          "scale": 0.5
+        },
+        {
+          "id": "circle-active-cropped",
+          "asset": "circle-active-cropped",
+          "x": 439,
+          "y": 425,
+          "scale": 0.5
+        },
+        {
+          "id": "circle-inactive-cropped",
+          "asset": "circle-inactive-cropped",
+          "x": 546,
+          "y": 434,
+          "scale": 0.5
+        }
+      ],
+      "ui": [
+        {
+          "id": "CrystalFrame",
+          "asset": "misc.crystalframe",
+          "x": 1066,
+          "y": 413,
+          "scale": 0.8,
+          "uiElement": {
+            "templateId": "1769720515460-vya4ftfra"
+          }
+        },
+        {
+          "id": "Pedestal",
+          "asset": "misc.pedestal",
+          "x": 435,
+          "y": 559,
+          "scale": 1.3,
+          "depth": -1,
+          "uiElement": {
+            "templateId": "1770237977368-dra96zvfh"
+          }
+        },
+        {
+          "id": "Board buttons",
+          "asset": "misc.board-buttons",
+          "x": 417,
+          "y": 233,
+          "scaleX": 1.3406307359477314,
+          "scaleY": 0.33918931961802534,
+          "uiElement": {
+            "templateId": "1770239733689-ylvlzaz2s"
+          }
+        },
+        {
+          "id": "green button forge",
+          "asset": "misc.green-button-forge",
+          "x": 253,
+          "y": 202,
+          "scale": 0.7,
+          "uiElement": {
+            "templateId": "1770239187950-jk0f8ezue"
+          }
+        },
+        {
+          "id": "green button forge_1",
+          "asset": "misc.green-button-forge-1",
+          "x": 256,
+          "y": 263,
+          "scale": 0.7,
+          "uiElement": {
+            "templateId": "1770239187950-jk0f8ezue"
+          }
+        },
+        {
+          "id": "green button forge_copy",
+          "asset": "misc.green-button-forge-copy",
+          "x": 548,
+          "y": 263,
+          "scale": 0.7,
+          "uiElement": {
+            "templateId": "1770239187950-jk0f8ezue"
+          }
+        },
+        {
+          "id": "green button forge_copy_copy",
+          "asset": "misc.green-button-forge-copy-copy",
+          "x": 401,
+          "y": 262,
+          "scale": 0.7,
+          "uiElement": {
+            "templateId": "1770239187950-jk0f8ezue"
+          }
+        },
+        {
+          "id": "green button forge_copy_copy_copy",
+          "asset": "misc.green-button-forge-copy-copy-copy",
+          "x": 398,
+          "y": 203,
+          "scale": 0.7,
+          "uiElement": {
+            "templateId": "1770239187950-jk0f8ezue"
+          }
+        },
+        {
+          "id": "green button forge_copy_copy_copy_copy",
+          "asset": "misc.green-button-forge-copy-copy-copy-copy",
+          "x": 546,
+          "y": 205,
+          "scale": 0.7,
+          "uiElement": {
+            "templateId": "1770239187950-jk0f8ezue"
+          }
+        },
+        {
+          "id": "Black-frmae-Diamonds",
+          "asset": "Black-frmae-Diamonds",
+          "x": 269,
+          "y": -168,
+          "uiElement": {
+            "templateId": "1770069824042-mifp8yjpu"
+          }
+        },
+        {
+          "id": "Green_button",
+          "asset": "Green_button",
+          "x": 219,
+          "y": -89,
+          "scaleY": 1.0000000000000004,
+          "uiElement": {
+            "templateId": "1768922130266-28htorb5x"
+          }
+        },
+        {
+          "id": "Load game",
+          "asset": "Load game",
+          "x": 645,
+          "y": 73,
+          "uiElement": {
+            "templateId": "1769727002078-pz315evpc"
+          }
+        },
+        {
+          "id": "money mana",
+          "asset": "misc.money-mana",
+          "x": 143,
+          "y": 66,
+          "scale": 1.1,
+          "uiElement": {
+            "templateId": "1770241522996-hufl4bbhq"
+          }
+        },
+        {
+          "id": "Back button",
+          "asset": "Back button",
+          "x": 96,
+          "y": 635,
+          "uiElement": {
+            "templateId": "1768730825297-e6lnuaoyj"
+          }
+        },
+        {
+          "id": "NewArrow",
+          "asset": "NewArrow",
+          "x": 1125,
+          "y": 664,
+          "flipX": true,
+          "scale": 0.7,
+          "uiElement": {
+            "templateId": "1769722721277-p7d9kn6kj"
+          }
+        },
+        {
+          "id": "NewArrow_copy",
+          "asset": "NewArrow",
+          "x": 1005,
+          "y": 665,
+          "scale": 0.7,
+          "uiElement": {
+            "templateId": "1769722721277-p7d9kn6kj"
+          }
+        }
+      ],
       "zones": []
     }
   }

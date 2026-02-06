@@ -23,8 +23,9 @@
       "goldMin": 15,
       "goldMax": 25,
       "difficulty": 5,
-      "spriteKey": "enemy-mushroom",
-      "region": "verdant_forest"
+      "spriteKey": "forest-sprite",
+      "region": "verdant_forest",
+      "_note": "TODO: Replace with enemy-mushroom when art is ready"
     },
     "thorn_sprite": {
       "id": "thorn_sprite",
@@ -49,8 +50,9 @@
       "goldMin": 25,
       "goldMax": 40,
       "difficulty": 7,
-      "spriteKey": "enemy-treant",
-      "region": "verdant_forest"
+      "spriteKey": "forest-wolf",
+      "region": "verdant_forest",
+      "_note": "TODO: Replace with enemy-treant when art is ready"
     },
     "verdant_guardian": {
       "id": "verdant_guardian",
@@ -58,18 +60,46 @@
       "nameCs": "Strážce lesa",
       "isBoss": true,
       "phases": [
-        { "hp": 10, "atk": 2, "name": "Awakening", "nameCs": "Probuzení" },
-        { "hp": 10, "atk": 3, "name": "Fury", "nameCs": "Zuřivost" },
-        { "hp": 12, "atk": 3, "name": "Final Stand", "nameCs": "Poslední vzdor" }
+        {
+          "hp": 10,
+          "atk": 2,
+          "name": "Awakening",
+          "nameCs": "Probuzení",
+          "mathType": "addition",
+          "mathDifficulty": 4,
+          "ability": null,
+          "healPercent": 30
+        },
+        {
+          "hp": 10,
+          "atk": 3,
+          "name": "Fury",
+          "nameCs": "Zuřivost",
+          "mathType": "missing_operand",
+          "mathDifficulty": 5,
+          "ability": "vengeful_strike",
+          "healPercent": 15
+        },
+        {
+          "hp": 12,
+          "atk": 3,
+          "name": "Final Stand",
+          "nameCs": "Poslední vzdor",
+          "mathType": "comparison",
+          "mathDifficulty": 6,
+          "ability": "last_stand",
+          "healPercent": 0
+        }
       ],
-      "phaseHealPlayer": 8,
+      "phaseHealPlayer": 0,
       "xp": 150,
       "goldMin": 80,
       "goldMax": 120,
       "diamonds": 5,
       "difficulty": 8,
-      "spriteKey": "boss-guardian",
-      "region": "verdant_forest"
+      "spriteKey": "forest-wolf",
+      "region": "verdant_forest",
+      "_note": "TODO: Replace with boss-guardian when art is ready"
     }
   }
 }

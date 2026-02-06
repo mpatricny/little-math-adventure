@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import { SceneLayoutLoader } from './SceneLayoutLoader';
 import { SceneLayoutsFile, ElementDef } from '../types/layout';
+import { uiTemplateLoader } from './UiTemplateLoader';
 
 /**
  * Configuration for a debug element's position and scale
@@ -151,6 +152,7 @@ export class SceneDebugger {
             TAB: keyboard.addKey('TAB'),
             S: keyboard.addKey('S'),
             C: keyboard.addKey('C'),  // Export to clipboard
+            U: keyboard.addKey('U'),  // Reload UI templates
             P: keyboard.addKey('P'),
             L: keyboard.addKey('L'),
             W: keyboard.addKey('W'),
@@ -199,6 +201,16 @@ export class SceneDebugger {
         keyboard.on('keydown-H', () => {
             if (this.isActive && this.onHeal) {
                 this.onHeal();
+            }
+        });
+
+        // Reload UI templates
+        keyboard.on('keydown-U', () => {
+            if (this.isActive) {
+                this.showSaveConfirmation('Reloading UI templates...');
+                uiTemplateLoader.reload().then(() => {
+                    this.scene.scene.restart();
+                });
             }
         });
     }
@@ -360,6 +372,7 @@ export class SceneDebugger {
 
         lines.push(`  Z/X: Depth`);
         lines.push(`  S: Save   C: Clipboard`);
+        lines.push(`  U: Reload UI`);
 
         if (this.isBattleScene) {
             lines.push(`  W: Win   H: Heal`);
@@ -636,11 +649,12 @@ export class SceneDebugger {
             keyboard.off('keydown-TAB');
             keyboard.off('keydown-S');
             keyboard.off('keydown-C');
+            keyboard.off('keydown-U');
             keyboard.off('keydown-W');
             keyboard.off('keydown-H');
 
             // Remove key captures (added via addKey)
-            keyboard.removeCapture(['D', 'TAB', 'S', 'C', 'P', 'L', 'W', 'Q', 'E', 'R', 'Z', 'X', 'H']);
+            keyboard.removeCapture(['D', 'TAB', 'S', 'C', 'U', 'P', 'L', 'W', 'Q', 'E', 'R', 'Z', 'X', 'H']);
         }
 
         this.scene.events.off('update', this.update, this);

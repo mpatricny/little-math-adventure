@@ -1,5 +1,19 @@
 import Phaser from 'phaser';
 import { JourneySystem } from '../systems/JourneySystem';
+import { GameStateManager } from '../systems/GameStateManager';
+
+/**
+ * Scene initialization data
+ */
+interface SceneData {
+    puzzleId: string;
+    objectId?: string;
+    returnScene?: string;
+    returnData?: {
+        roomId?: string;
+        solvedObjectId?: string;
+    };
+}
 
 /**
  * Puzzle template interfaces
@@ -35,7 +49,12 @@ interface PuzzleConfig {
     difficulty: string;
     timeLimit: number;
     failDamage?: number;
-    successBonus?: { gold?: number; bossAtkReduction?: number };
+    successBonus?: {
+        gold?: number;
+        bossAtkReduction?: number;
+        healPercent?: number;
+        potionRefill?: boolean;
+    };
     failPenalty?: { extraBattle?: string };
     optional?: boolean;
     templates: (NumberBridgeTemplate | BalanceScaleTemplate | PathChoiceTemplate | FeedingTemplate)[];
@@ -52,21 +71,25 @@ interface PuzzleConfig {
  */
 export class ForestPuzzleScene extends Phaser.Scene {
     private journeySystem = JourneySystem.getInstance();
+    private gameState = GameStateManager.getInstance();
     private puzzleId: string = '';
+    private _objectId: string = '';  // Stored for potential future use
+    private returnScene: string = 'ForestMapScene';
+    private returnData: SceneData['returnData'] = {};
     private puzzleConfig: PuzzleConfig | null = null;
     private currentTemplate: unknown = null;
-    
+
     // UI elements
     private timerText!: Phaser.GameObjects.Text;
     private timerEvent!: Phaser.Time.TimerEvent;
     private timeRemaining: number = 60;
-    
+
     // Puzzle state
     private selectedAnswers: number[] = [];
     private requiredAnswers: number[] = [];
     private answerSlots: Phaser.GameObjects.Container[] = [];
     private optionButtons: Phaser.GameObjects.Container[] = [];
-    
+
     // Feeding puzzle state
     private feedingTargetSum: number = 0;
     private feedingCurrentSum: number = 0;
@@ -76,8 +99,11 @@ export class ForestPuzzleScene extends Phaser.Scene {
         super({ key: 'ForestPuzzleScene' });
     }
 
-    init(data: { puzzleId: string }) {
+    init(data: SceneData) {
         this.puzzleId = data.puzzleId;
+        this._objectId = data.objectId || '';
+        this.returnScene = data.returnScene || 'ForestMapScene';
+        this.returnData = data.returnData || {};
         this.selectedAnswers = [];
         this.requiredAnswers = [];
     }
@@ -620,14 +646,56 @@ export class ForestPuzzleScene extends Phaser.Scene {
             ease: 'Back.easeOut',
             onComplete: () => {
                 // Apply bonus rewards
-                if (this.puzzleConfig?.successBonus?.gold) {
-                    this.journeySystem.addRewards(0, this.puzzleConfig.successBonus.gold);
+                const bonus = this.puzzleConfig?.successBonus;
+                if (bonus) {
+                    // Gold reward
+                    if (bonus.gold) {
+                        this.journeySystem.addRewards(0, bonus.gold);
+                    }
+
+                    // Heal percentage reward
+                    if (bonus.healPercent) {
+                        this.journeySystem.applyHeal(bonus.healPercent);
+                        this.showBonusText(`+${bonus.healPercent}% HP`, '#44ff44', 640, 420);
+                    }
+
+                    // Potion refill reward (player can have max 1 potion)
+                    if (bonus.potionRefill) {
+                        const player = this.gameState.getPlayer();
+                        if (player.potions === 0) {
+                            player.potions = 1;
+                            this.gameState.save();
+                            this.showBonusText('+1 🧪 Lektvar', '#88aaff', 640, 460);
+                        }
+                    }
                 }
 
-                this.time.delayedCall(1000, () => {
-                    this.returnToMap(true);
+                this.time.delayedCall(1500, () => {
+                    this.returnToRoom(true);
                 });
             }
+        });
+    }
+
+    /**
+     * Show bonus text animation
+     */
+    private showBonusText(text: string, color: string, x: number, y: number): void {
+        const bonusText = this.add.text(x, y, text, {
+            fontSize: '24px',
+            fontFamily: 'Arial, sans-serif',
+            color: color,
+            fontStyle: 'bold',
+            stroke: '#000000',
+            strokeThickness: 3
+        }).setOrigin(0.5);
+
+        this.tweens.add({
+            targets: bonusText,
+            y: y - 30,
+            alpha: 0,
+            duration: 1500,
+            delay: 500
         });
     }
 
@@ -660,7 +728,7 @@ export class ForestPuzzleScene extends Phaser.Scene {
                 }
 
                 this.time.delayedCall(1000, () => {
-                    this.returnToMap(true); // Still advance, but took damage
+                    this.returnToRoom(false); // Don't mark as solved, but return
                 });
             }
         });
@@ -696,12 +764,29 @@ export class ForestPuzzleScene extends Phaser.Scene {
     }
 
     /**
-     * Return to forest map
+     * Return to the appropriate scene (ForestRoomScene for room-based, ForestMapScene for stage-based)
+     */
+    private returnToRoom(solved: boolean): void {
+        // For room-based journeys, return to ForestRoomScene with puzzle result
+        if (this.returnScene === 'ForestRoomScene') {
+            this.scene.start('ForestRoomScene', {
+                roomId: this.returnData?.roomId,
+                puzzleSolved: solved,
+                solvedObjectId: solved ? this.returnData?.solvedObjectId : undefined
+            });
+        } else {
+            // Legacy: stage-based journey flow
+            if (solved) {
+                this.journeySystem.advanceEncounter();
+            }
+            this.scene.start('ForestMapScene');
+        }
+    }
+
+    /**
+     * Return to forest map (legacy compatibility)
      */
     private returnToMap(advance: boolean): void {
-        if (advance) {
-            this.journeySystem.advanceEncounter();
-        }
-        this.scene.start('ForestMapScene');
+        this.returnToRoom(advance);
     }
 }
