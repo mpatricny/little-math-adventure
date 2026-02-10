@@ -1237,6 +1237,24 @@
                     0.5
                 ],
                 "scale": 1
+            },
+            "ancient_forest_battle_bg": {
+                "type": "staticImage",
+                "texture": "ancient-forest-battle-bg",
+                "origin": [
+                    0.5,
+                    0.5
+                ],
+                "scale": 1
+            },
+            "guardian_lair": {
+                "type": "staticImage",
+                "texture": "guardian-lair",
+                "origin": [
+                    0.5,
+                    0.5
+                ],
+                "scale": 1
             }
         }
     },
@@ -1683,59 +1701,53 @@
             ],
             "scale": 0.85
         },
-        "green-button-forge": {
+        "forge-btn-merge": {
             "type": "staticImage",
-            "texture": "green button forge",
+            "texture": "forge-btn-merge",
             "origin": [
                 0.5,
                 0.5
-            ],
-            "scale": 0.7
+            ]
         },
-        "green-button-forge-1": {
+        "forge-btn-split": {
             "type": "staticImage",
-            "texture": "green button forge",
+            "texture": "forge-btn-split",
             "origin": [
                 0.5,
                 0.5
-            ],
-            "scale": 0.7
+            ]
         },
-        "green-button-forge-copy": {
+        "forge-btn-create-fragment": {
             "type": "staticImage",
-            "texture": "green button forge",
+            "texture": "forge-btn-create-fragment",
             "origin": [
                 0.5,
                 0.5
-            ],
-            "scale": 0.7
+            ]
         },
-        "green-button-forge-copy-copy": {
+        "forge-btn-split-fragment": {
             "type": "staticImage",
-            "texture": "green button forge",
+            "texture": "forge-btn-split-fragment",
             "origin": [
                 0.5,
                 0.5
-            ],
-            "scale": 0.7
+            ]
         },
-        "green-button-forge-copy-copy-copy": {
+        "forge-btn-refine": {
             "type": "staticImage",
-            "texture": "green button forge",
+            "texture": "forge-btn-refine",
             "origin": [
                 0.5,
                 0.5
-            ],
-            "scale": 0.7
+            ]
         },
-        "green-button-forge-copy-copy-copy-copy": {
+        "forge-btn-create-prism": {
             "type": "staticImage",
-            "texture": "green button forge",
+            "texture": "forge-btn-create-prism",
             "origin": [
                 0.5,
                 0.5
-            ],
-            "scale": 0.7
+            ]
         },
         "mana-icon": {
             "type": "staticImage",
@@ -1869,12 +1881,148 @@
         },
         "arrow-forest": {
             "type": "staticImage",
-            "texture": "arrow forest",
+            "texture": "Arrow-forest",
             "origin": [
                 0.5,
                 0.5
             ],
             "scale": 0.3
+        },
+        "character-select-frame": {
+            "type": "staticImage",
+            "texture": "Character select frame",
+            "origin": [
+                0.5,
+                0.5
+            ]
+        },
+        "black-frmae-diamonds-forge": {
+            "type": "staticImage",
+            "texture": "Black-frmae-Diamonds-forge",
+            "origin": [
+                0.5,
+                0.5
+            ]
+        },
+        "black-frmae-forest": {
+            "type": "staticImage",
+            "texture": "Black-frmae-Forest",
+            "origin": [
+                0.5,
+                0.5
+            ]
+        },
+        "chatgpt-image-feb-4-2026-09-20-28-pm": {
+            "type": "staticImage",
+            "texture": "ChatGPT Image Feb 4, 2026, 09_20_28 PM",
+            "origin": [
+                0.5,
+                0.5
+            ],
+            "scale": 0.25
+        },
+        "scroll-title-copy-": {
+            "type": "staticImage",
+            "texture": "Scroll title (Copy)",
+            "origin": [
+                0.5,
+                0.5
+            ]
+        },
+        "lock-sign": {
+            "type": "staticImage",
+            "texture": "lock-sign",
+            "origin": [
+                0.5,
+                0.5
+            ]
+        },
+        "results-frame-cropped": {
+            "type": "staticImage",
+            "texture": "Select_hero_frame-cropped",
+            "origin": [
+                0.5,
+                0.5
+            ],
+            "scale": 0.2
+        },
+        "crystal-banner": {
+            "type": "staticImage",
+            "texture": "crystal-banner",
+            "origin": [
+                0.5,
+                0.5
+            ],
+            "scale": 0.8
+        },
+        "new-shop-bg": {
+            "type": "staticImage",
+            "texture": "new-shop-bg",
+            "origin": [
+                0.5,
+                0.5
+            ]
+        },
+        "coin-pouch": {
+            "type": "staticImage",
+            "texture": "coin-pouch",
+            "origin": [
+                0.5,
+                0.5
+            ],
+            "scale": 0.4999999999999994
+        },
+        "shop-label": {
+            "type": "staticImage",
+            "texture": "shop-label",
+            "origin": [
+                0.5,
+                0.5
+            ],
+            "scale": 0.7
+        },
+        "shop-label-1": {
+            "type": "staticImage",
+            "texture": "shop-label",
+            "origin": [
+                0.5,
+                0.5
+            ],
+            "scale": 0.7
+        },
+        "item-container": {
+            "type": "staticImage",
+            "texture": "item-container",
+            "origin": [
+                0.5,
+                0.5
+            ],
+            "scale": 0.7
+        },
+        "forest-camp": {
+            "type": "staticImage",
+            "texture": "forest-camp",
+            "origin": [
+                0.5,
+                0.5
+            ]
+        },
+        "chest-forest": {
+            "type": "staticImage",
+            "texture": "chest-forest",
+            "origin": [
+                0.5,
+                0.5
+            ],
+            "scale": 0.6
+        },
+        "ancient-forst-bg": {
+            "type": "staticImage",
+            "texture": "Ancient-forst-bg",
+            "origin": [
+                0.5,
+                0.5
+            ]
         }
     }
 }

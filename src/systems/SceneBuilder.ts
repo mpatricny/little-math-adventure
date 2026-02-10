@@ -237,6 +237,18 @@ export class SceneBuilder {
     }
 
     /**
+     * Get a marker by name from the current scene definition.
+     * Markers are rectangular regions defined in the scene editor for layout guidance.
+     */
+    getMarker(name: string): { x: number; y: number; width: number; height: number } | undefined {
+        const sceneDef = this.currentSceneDef as any;
+        if (!sceneDef?.markers) return undefined;
+        const marker = sceneDef.markers.find((m: any) => m.name === name);
+        if (!marker) return undefined;
+        return { x: marker.x, y: marker.y, width: marker.width, height: marker.height };
+    }
+
+    /**
      * Bind a click handler to an element after buildScene().
      * This properly handles finding the interactive target for containers (buttons).
      * Use this when you need to attach a handler that wasn't defined in scenes.json.

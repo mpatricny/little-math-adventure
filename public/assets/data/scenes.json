@@ -593,6 +593,15 @@
           "uiElement": {
             "templateId": "1770409594571-821mfpxn2"
           }
+        },
+        {
+          "id": "money mana",
+          "asset": "misc.money-mana",
+          "x": 1145,
+          "y": 52,
+          "uiElement": {
+            "templateId": "1770241522996-hufl4bbhq"
+          }
         }
       ]
     },
@@ -669,161 +678,114 @@
       },
       "elements": [
         {
-          "id": "interior",
-          "asset": "environments.interiors.shop-interior",
-          "x": 640,
-          "y": 360,
-          "width": 1280,
-          "height": 720,
-          "depth": -10,
-          "scale": 1,
-          "visible": true
-        },
-        {
-          "id": "tablePouch",
-          "asset": "environments.props.shop-table-pouch",
-          "x": 938,
-          "y": 632,
-          "scaleX": 0.851,
-          "scaleY": 0.716,
-          "depth": 5,
-          "visible": true
-        },
-        {
-          "id": "tableTop",
-          "asset": "environments.props.shop-table-top",
-          "x": 244,
-          "y": 629,
-          "scaleX": 0.767,
-          "scaleY": 0.729,
-          "depth": 5,
-          "visible": true
-        },
-        {
           "id": "coinTray",
           "asset": "environments.props.shop-coin-tray",
           "x": 493,
           "y": 589,
-          "scale": 0.368,
           "depth": 5,
           "visible": true
         },
         {
-          "id": "closeButton",
-          "asset": "closeButton",
-          "x": 1137,
-          "y": 697,
-          "depth": 100,
-          "scale": 1,
-          "visible": true
+          "id": "new-shop-bg",
+          "asset": "misc.new-shop-bg",
+          "x": 640,
+          "y": 360,
+          "depth": -10
+        },
+        {
+          "id": "coin-pouch",
+          "asset": "misc.coin-pouch",
+          "x": 1181,
+          "y": 515,
+          "scaleX": 0.4999999999999994,
+          "scaleY": 0.5000000000000004
+        },
+        {
+          "id": "shop-label",
+          "asset": "misc.shop-label",
+          "x": 158,
+          "y": 62,
+          "scaleX": 0.7,
+          "scaleY": 0.6
+        },
+        {
+          "id": "shop-label_1",
+          "asset": "misc.shop-label-1",
+          "x": 425,
+          "y": 62,
+          "scaleX": 0.7,
+          "scaleY": 0.6
+        },
+        {
+          "id": "item-container",
+          "asset": "misc.item-container",
+          "x": 89,
+          "y": 170,
+          "scaleX": 0.7,
+          "scaleY": 0.65
+        },
+        {
+          "id": "item-container-1",
+          "asset": "misc.item-container",
+          "x": 217,
+          "y": 170,
+          "scaleX": 0.7,
+          "scaleY": 0.65
+        },
+        {
+          "id": "item-container-2",
+          "asset": "misc.item-container",
+          "x": 369,
+          "y": 170,
+          "scaleX": 0.7,
+          "scaleY": 0.65
+        },
+        {
+          "id": "item-container-3",
+          "asset": "misc.item-container",
+          "x": 499,
+          "y": 170,
+          "scaleX": 0.7,
+          "scaleY": 0.65
         }
       ],
       "ui": [
-        {
-          "id": "backButton",
-          "asset": "ui.buttons.back-button",
-          "x": 100,
-          "y": 670,
-          "events": {
-            "click": "enterScene:TownScene"
-          }
-        },
-        {
-          "id": "tabWeapons",
-          "asset": "ui.buttons.shop-tab",
-          "x": 120,
-          "y": 50,
-          "text": "MEČE",
-          "depth": 20,
-          "scale": 1,
-          "visible": true
-        },
-        {
-          "id": "tabShields",
-          "asset": "ui.buttons.shop-tab",
-          "x": 220,
-          "y": 50,
-          "text": "ŠTÍTY",
-          "depth": 20,
-          "scale": 1,
-          "visible": true
-        },
-        {
-          "id": "itemSlot0",
-          "asset": "ui.buttons.shop-item-slot",
-          "x": 80,
-          "y": 120,
-          "depth": 20,
-          "scale": 1,
-          "visible": true
-        },
-        {
-          "id": "itemSlot1",
-          "asset": "ui.buttons.shop-item-slot",
-          "x": 160,
-          "y": 120,
-          "depth": 20,
-          "scale": 1,
-          "visible": true
-        },
-        {
-          "id": "itemSlot2",
-          "asset": "ui.buttons.shop-item-slot",
-          "x": 240,
-          "y": 120,
-          "depth": 20,
-          "scale": 1,
-          "visible": true
-        },
-        {
-          "id": "itemSlot3",
-          "asset": "ui.buttons.shop-item-slot",
-          "x": 320,
-          "y": 120,
-          "depth": 20,
-          "scale": 1,
-          "visible": true
-        },
         {
           "id": "purchasePanel",
           "asset": "ui.panels.shop-purchase-panel",
           "x": 174,
           "y": 520,
+          "depth": 25,
           "width": 280,
           "height": 80,
-          "visible": false,
-          "depth": 25,
-          "scale": 1
+          "visible": false
         },
         {
           "id": "purchaseName",
           "asset": "ui.labels.gold-label",
           "x": 175,
           "y": 502,
-          "text": "",
-          "visible": false,
           "depth": 26,
-          "scale": 1
+          "text": "",
+          "visible": false
         },
         {
           "id": "purchasePrice",
           "asset": "ui.labels.gold-label",
           "x": 175,
           "y": 550,
-          "text": "",
-          "color": "#ffaa00",
-          "visible": false,
           "depth": 26,
-          "scale": 1
+          "text": "",
+          "visible": false,
+          "color": "#ffaa00"
         },
         {
           "id": "labelPlayerCoins",
           "asset": "ui.labels.gold-label",
-          "x": 912,
-          "y": 502,
-          "text": "TVOJE PENÍZE",
+          "x": 935,
+          "y": 487,
           "depth": 10,
-          "scale": 1,
+          "text": "TVOJE PENÍZE",
           "visible": true
         },
         {
@@ -831,9 +793,8 @@
           "asset": "ui.labels.gold-label",
           "x": 505,
           "y": 468,
-          "text": "PLATBA",
           "depth": 10,
-          "scale": 1,
+          "text": "PLATBA",
           "visible": true
         },
         {
@@ -841,50 +802,79 @@
           "asset": "ui.labels.gold-label",
           "x": 449,
           "y": 669,
-          "text": "CELKEM: 0 měďáků",
-          "color": "#ffffff",
           "depth": 10,
-          "scale": 1,
-          "visible": true
+          "text": "CELKEM: 0 měďáků",
+          "visible": true,
+          "color": "#ffffff"
         },
         {
           "id": "buyButton",
           "asset": "ui.buttons.buy-button",
           "x": 599,
           "y": 667,
+          "depth": 20,
           "events": {
             "click": "onBuy"
           },
-          "depth": 20,
-          "scale": 1,
           "visible": true
         },
         {
-          "id": "strike0",
-          "asset": "strike0",
-          "x": 1150,
-          "y": 70,
-          "depth": 30,
-          "scale": 1,
-          "visible": true
+          "id": "money mana",
+          "asset": "money mana",
+          "x": 1145,
+          "y": 52,
+          "scale": 1.1,
+          "uiElement": {
+            "templateId": "1770241522996-hufl4bbhq"
+          }
         },
         {
-          "id": "strike1",
-          "asset": "strike1",
-          "x": 1175,
-          "y": 70,
-          "depth": 30,
-          "scale": 1,
-          "visible": true
+          "id": "Black-frmae-Forest",
+          "asset": "Black-frmae-Forest",
+          "x": 1140,
+          "y": 246,
+          "scale": 0.4,
+          "uiElement": {
+            "templateId": "1770645244366-9dcdse47n"
+          }
         },
         {
-          "id": "strike2",
-          "asset": "strike2",
-          "x": 1200,
-          "y": 70,
-          "depth": 30,
-          "scale": 1,
-          "visible": true
+          "id": "Back button",
+          "asset": "Back button",
+          "x": 74,
+          "y": 639,
+          "uiElement": {
+            "templateId": "1768730825297-e6lnuaoyj"
+          },
+          "events": {
+            "click": "onBack"
+          }
+        }
+      ],
+      "markers": [
+        {
+          "id": "tINYwL3EHIaz3F0MQ7joW",
+          "name": "marker-2",
+          "x": 288,
+          "y": 458,
+          "width": 422,
+          "height": 260
+        },
+        {
+          "id": "8O2En88JqZWtrQnGJrKWe",
+          "name": "marker-1",
+          "x": 1039,
+          "y": 159,
+          "width": 203,
+          "height": 165
+        },
+        {
+          "id": "p2Q6xkC3EJPGF3zJ1bgIP",
+          "name": "marker-3",
+          "x": 771,
+          "y": 531,
+          "width": 331,
+          "height": 180
         }
       ]
     },
@@ -1918,48 +1908,48 @@
         {
           "id": "mana-icon",
           "asset": "misc.mana-icon",
-          "x": 251,
-          "y": 155,
+          "x": 257,
+          "y": 165,
           "scale": 0.3,
           "depth": 1
         },
         {
           "id": "mana-icon_copy",
           "asset": "misc.mana-icon-copy",
-          "x": 380,
-          "y": 154,
+          "x": 424,
+          "y": 164,
           "scale": 0.3,
           "depth": 1
         },
         {
           "id": "mana-icon_copy_copy",
           "asset": "misc.mana-icon-copy-copy",
-          "x": 402,
-          "y": 155,
+          "x": 438,
+          "y": 165,
           "scale": 0.3,
           "depth": 1
         },
         {
           "id": "mana-icon_copy_copy_copy",
           "asset": "misc.mana-icon-copy-copy-copy",
-          "x": 544,
-          "y": 161,
+          "x": 614,
+          "y": 171,
           "scale": 0.3,
           "depth": 2
         },
         {
           "id": "mana-icon_copy_copy_copy_copy",
           "asset": "misc.mana-icon-copy-copy-copy-copy",
-          "x": 530,
-          "y": 155,
+          "x": 601,
+          "y": 165,
           "scale": 0.3,
           "depth": 1
         },
         {
           "id": "mana-icon_copy_copy_copy_copy_copy",
           "asset": "misc.mana-icon-copy-copy-copy-copy-copy",
-          "x": 557,
-          "y": 154,
+          "x": 627,
+          "y": 164,
           "scale": 0.3,
           "depth": 1
         },
@@ -1983,6 +1973,19 @@
           "x": 546,
           "y": 434,
           "scale": 0.5
+        },
+        {
+          "id": "lock-sign",
+          "asset": "misc.lock-sign",
+          "x": 395,
+          "y": -164
+        },
+        {
+          "id": "results_frame-cropped",
+          "asset": "misc.results-frame-cropped",
+          "x": 656,
+          "y": 497,
+          "scale": 0.2
         }
       ],
       "ui": [
@@ -2008,81 +2011,56 @@
           }
         },
         {
-          "id": "Board buttons",
-          "asset": "misc.board-buttons",
-          "x": 417,
-          "y": 233,
-          "scaleX": 1.3406307359477314,
-          "scaleY": 0.33918931961802534,
-          "uiElement": {
-            "templateId": "1770239733689-ylvlzaz2s"
-          }
+          "id": "forge-btn-merge",
+          "asset": "misc.forge-btn-merge",
+          "x": 259,
+          "y": 212,
+          "scale": 0.5
         },
         {
-          "id": "green button forge",
-          "asset": "misc.green-button-forge",
-          "x": 253,
-          "y": 202,
-          "scale": 0.7,
-          "uiElement": {
-            "templateId": "1770239187950-jk0f8ezue"
-          }
+          "id": "forge-btn-split",
+          "asset": "misc.forge-btn-split",
+          "x": 258,
+          "y": 273,
+          "scale": 0.5
         },
         {
-          "id": "green button forge_1",
-          "asset": "misc.green-button-forge-1",
-          "x": 256,
-          "y": 263,
-          "scale": 0.7,
-          "uiElement": {
-            "templateId": "1770239187950-jk0f8ezue"
-          }
+          "id": "forge-btn-create-fragment",
+          "asset": "misc.forge-btn-create-fragment",
+          "x": 439,
+          "y": 272,
+          "scaleX": 0.5,
+          "scaleY": 0.54
         },
         {
-          "id": "green button forge_copy",
-          "asset": "misc.green-button-forge-copy",
-          "x": 548,
-          "y": 263,
-          "scale": 0.7,
-          "uiElement": {
-            "templateId": "1770239187950-jk0f8ezue"
-          }
+          "id": "forge-btn-split-fragment",
+          "asset": "misc.forge-btn-split-fragment",
+          "x": 438,
+          "y": 211,
+          "scale": 0.5
         },
         {
-          "id": "green button forge_copy_copy",
-          "asset": "misc.green-button-forge-copy-copy",
-          "x": 401,
-          "y": 262,
-          "scale": 0.7,
-          "uiElement": {
-            "templateId": "1770239187950-jk0f8ezue"
-          }
+          "id": "forge-btn-refine",
+          "asset": "misc.forge-btn-refine",
+          "x": 620,
+          "y": 211,
+          "scaleX": 0.5,
+          "scaleY": 0.48
         },
         {
-          "id": "green button forge_copy_copy_copy",
-          "asset": "misc.green-button-forge-copy-copy-copy",
-          "x": 398,
-          "y": 203,
-          "scale": 0.7,
-          "uiElement": {
-            "templateId": "1770239187950-jk0f8ezue"
-          }
-        },
-        {
-          "id": "green button forge_copy_copy_copy_copy",
-          "asset": "misc.green-button-forge-copy-copy-copy-copy",
-          "x": 546,
-          "y": 205,
-          "scale": 0.7,
-          "uiElement": {
-            "templateId": "1770239187950-jk0f8ezue"
-          }
+          "id": "forge-btn-create-prism",
+          "asset": "misc.forge-btn-create-prism",
+          "x": 620,
+          "y": 273,
+          "scaleX": 0.5,
+          "scaleY": 0.47
         },
         {
           "id": "Black-frmae-Diamonds",
           "asset": "Black-frmae-Diamonds",
           "x": 269,
           "y": -168,
+          "scale": 0.9,
           "uiElement": {
             "templateId": "1770069824042-mifp8yjpu"
           }
@@ -2130,7 +2108,6 @@
           "asset": "NewArrow",
           "x": 1125,
           "y": 664,
-          "flipX": true,
           "scale": 0.7,
           "uiElement": {
             "templateId": "1769722721277-p7d9kn6kj"
@@ -2145,8 +2122,158 @@
           "uiElement": {
             "templateId": "1769722721277-p7d9kn6kj"
           }
+        },
+        {
+          "id": "Black-frmae-Diamonds-forge",
+          "asset": "misc.black-frmae-diamonds-forge",
+          "x": 441,
+          "y": 253,
+          "depth": -1,
+          "uiElement": {
+            "templateId": "1770643635111-b1vcr4rq3"
+          }
         }
       ],
+      "zones": [],
+      "markers": [
+        {
+          "id": "Emogkjq4J1Bg69Xz_2DC_",
+          "name": "marker-1",
+          "x": 656,
+          "y": 497,
+          "width": 208,
+          "height": 178
+        }
+      ]
+    },
+    "ForestAdventureStartScene": {
+      "viewport": {
+        "width": 1280,
+        "height": 720
+      },
+      "elements": [
+        {
+          "id": "forest-deep-path",
+          "asset": "library.image.forest_deep_path",
+          "x": 640,
+          "y": 360
+        },
+        {
+          "id": "Arrow-forest",
+          "asset": "misc.arrow-forest",
+          "x": 1019,
+          "y": 464,
+          "scale": 0.7,
+          "uiElement": {
+            "templateId": "1770409594571-821mfpxn2"
+          }
+        },
+        {
+          "id": "crystal-banner",
+          "asset": "misc.crystal-banner",
+          "x": 1019,
+          "y": 244,
+          "scaleX": 0.8,
+          "scaleY": 0.9
+        }
+      ],
+      "ui": [
+        {
+          "id": "Back button",
+          "asset": "Back button",
+          "x": 97,
+          "y": 629,
+          "uiElement": {
+            "templateId": "1768730825297-e6lnuaoyj"
+          }
+        },
+        {
+          "id": "Black-frmae-Forest",
+          "asset": "misc.black-frmae-forest",
+          "x": 485,
+          "y": 411,
+          "uiElement": {
+            "templateId": "1770645244366-9dcdse47n"
+          }
+        },
+        {
+          "id": "Scroll title (Copy)",
+          "asset": "misc.scroll-title-copy-",
+          "x": 640,
+          "y": 80,
+          "uiElement": {
+            "templateId": "1770646079036-7hkcmw2n4"
+          }
+        }
+      ],
+      "zones": []
+    },
+    "ForestCampScene": {
+      "viewport": {
+        "width": 1280,
+        "height": 720
+      },
+      "elements": [
+        {
+          "id": "forest-camp",
+          "asset": "misc.forest-camp",
+          "x": 640,
+          "y": 360
+        },
+        {
+          "id": "chest-forest",
+          "asset": "misc.chest-forest",
+          "x": 1084,
+          "y": 455,
+          "flipX": true,
+          "scale": 0.6
+        }
+      ],
+      "ui": [
+        {
+          "id": "Black-frmae-Diamonds",
+          "asset": "Black-frmae-Diamonds",
+          "x": 1007,
+          "y": 197,
+          "uiElement": {
+            "templateId": "1770069824042-mifp8yjpu"
+          }
+        }
+      ],
+      "zones": [],
+      "markers": [
+        {
+          "id": "hF9OOO1Z9AAFmGgjfplIa",
+          "name": "marker-1",
+          "x": 278,
+          "y": 290,
+          "width": 338,
+          "height": 221
+        },
+        {
+          "id": "AX-h2IYbnmqc1irckiyvS",
+          "name": "marker-2",
+          "x": 594,
+          "y": 368,
+          "width": 348,
+          "height": 195
+        }
+      ]
+    },
+    "AncientForestScene": {
+      "viewport": {
+        "width": 1280,
+        "height": 720
+      },
+      "elements": [
+        {
+          "id": "Ancient-forst-bg",
+          "asset": "misc.ancient-forst-bg",
+          "x": 640,
+          "y": 360
+        }
+      ],
+      "ui": [],
       "zones": []
     }
   }

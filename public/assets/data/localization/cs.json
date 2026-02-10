@@ -80,6 +80,10 @@
             "CUR_001": "měďák",
             "CUR_002": "stříbrňák",
             "CUR_003": "zlaťák"
+        },
+        "categories": {
+            "CAT_001": "MEČE",
+            "CAT_002": "ŠTÍTY"
         }
     },
     "characters": {
@@ -110,5 +114,21 @@
         "FMT_003": "VLNA {0}",
         "FMT_004": "CELKEM: {0} měďáků",
         "FMT_005": "ÚROVEŇ: {0}   |   CYKLUS: {1}   |   {2}%"
+    },
+    "forest_gate": {
+        "forest_name": "LES VERDANT",
+        "title": "🌲 VSTUP DO LESA 🌲",
+        "requirements_title": "Požadavky:",
+        "req_arena_level": "Aréna úroveň {0}+",
+        "req_supply_cost": "{0} zlatých na zásoby",
+        "req_current": "(máš {0})",
+        "stats_line": "❤️ HP: {0}/{1}  |  ⚔️ ATK: {2}  |  🪙 Zlato: {3}",
+        "start_button": "🌲 VYRAZIT NA CESTU 🌲",
+        "back_button": "← Zpět",
+        "blocked_reason": "⚠️ {0}",
+        "blocked_come_back": "Vrať se, až budeš připraven!",
+        "debug_mode": "🔧 LADĚNÍ - Požadavky obejity",
+        "warning_low_level": "⚠️ Tvá úroveň je nízká (úr. {0}). Boje budou obtížné!",
+        "ready_message": "✅ Jsi připraven na výpravu!"
     }
 }

@@ -36,60 +36,62 @@ export class ProgressionSystem {
      * Get total coin value
      */
     static getTotalCoinValue(coins: CoinCurrency): number {
-        return coins.smallCopper + (coins.largeCopper * 2) + (coins.silver * 5) + (coins.gold * 10);
+        return coins.copper + (coins.silver * 5) + (coins.gold * 10) + ((coins.pouch ?? 0) * 100);
     }
 
     /**
-     * Award small copper coins (battle reward)
+     * Auto-normalize coin denominations for cleaner display.
+     * Keeps min 4 copper and min 1 silver (when total >= 9), rest as gold.
+     */
+    static normalizeCoins(player: PlayerState): void {
+        const total = this.getTotalCoinValue(player.coins);
+        if (total < 9) {
+            player.coins = { copper: total, silver: 0, gold: 0, pouch: 0 };
+            return;
+        }
+        // Reserve minimum denominations: 4 copper (4) + 1 silver (5) = 9
+        const remaining = total - 4 - 5;
+        const gold = Math.floor(remaining / 10);
+        const afterGold = remaining - gold * 10;
+        const extraSilver = Math.floor(afterGold / 5);
+        const extraCopper = afterGold - extraSilver * 5;
+
+        // Keep at least 9 gold; only convert excess (in blocks of 10) into pouches
+        let pouches = 0;
+        let finalGold = gold;
+        if (gold > 9) {
+            const excessGold = gold - 9;
+            pouches = Math.floor(excessGold / 10);
+            finalGold = 9 + (excessGold - pouches * 10);
+        }
+
+        player.coins = {
+            copper: 4 + extraCopper,
+            silver: 1 + extraSilver,
+            gold: finalGold,
+            pouch: pouches
+        };
+    }
+
+    /**
+     * Award coins (battle reward) and auto-normalize
      * @param player - Player state
-     * @param count - Number of coins to award (default 1)
+     * @param count - Number of copper-equivalent coins to award (default 1)
      */
     static awardBattleCoin(player: PlayerState, count: number = 1): void {
-        player.coins.smallCopper += count;
+        player.coins.copper += count;
+        this.normalizeCoins(player);
     }
 
     /**
-     * Spend coins (returns true if successful)
+     * Spend coins (returns true if successful). Flattens to copper, deducts, re-normalizes.
      */
     static spendCoins(player: PlayerState, amount: number): boolean {
         const total = this.getTotalCoinValue(player.coins);
         if (total < amount) return false;
-
-        // Simple deduction - prioritize small coins first
-        let remaining = amount;
-
-        // Deduct from small copper first
-        const smallToSpend = Math.min(player.coins.smallCopper, remaining);
-        player.coins.smallCopper -= smallToSpend;
-        remaining -= smallToSpend;
-
-        // Then large copper (worth 2)
-        if (remaining > 0) {
-            const largeToSpend = Math.min(player.coins.largeCopper, Math.ceil(remaining / 2));
-            const largeValue = largeToSpend * 2;
-            player.coins.largeCopper -= largeToSpend;
-            remaining -= largeValue;
-        }
-
-        // Then silver (worth 5)
-        if (remaining > 0) {
-            const silverToSpend = Math.min(player.coins.silver, Math.ceil(remaining / 5));
-            const silverValue = silverToSpend * 5;
-            player.coins.silver -= silverToSpend;
-            remaining -= silverValue;
-        }
-
-        // Then gold (worth 10)
-        if (remaining > 0) {
-            const goldToSpend = Math.min(player.coins.gold, Math.ceil(remaining / 10));
-            player.coins.gold -= goldToSpend;
-        }
-
-        // Give change back as small copper if we overpaid
-        if (remaining < 0) {
-            player.coins.smallCopper += Math.abs(remaining);
-        }
-
+        // Flatten to copper, deduct, re-normalize
+        player.coins = { copper: total - amount, silver: 0, gold: 0, pouch: 0 };
+        this.normalizeCoins(player);
         return true;
     }
 
@@ -273,10 +275,10 @@ export class ProgressionSystem {
             hp: 10,
             maxHp: 10,
             coins: {
-                smallCopper: 0,  // Start with 0 coins
-                largeCopper: 0,
+                copper: 0,
                 silver: 0,
-                gold: 0
+                gold: 0,
+                pouch: 0
             },
             diamonds: {           // Multi-tier diamond inventory (legacy, migrated to crystals)
                 common: 0,
@@ -378,6 +380,21 @@ export class ProgressionSystem {
             player.defeatedBosses = [];
         }
 
+        // Migrate: Add pouch field if missing (pre-pouch saves) and re-normalize
+        if ((player.coins as any).pouch === undefined) {
+            (player.coins as any).pouch = 0;
+            this.normalizeCoins(player);
+        }
+
+        // Migrate: Convert old coin format (smallCopper/largeCopper) to new (copper)
+        if ('smallCopper' in (player.coins as any)) {
+            const old = player.coins as any;
+            const total = (old.smallCopper ?? 0) + (old.largeCopper ?? 0) * 2
+                        + (old.silver ?? 0) * 5 + (old.gold ?? 0) * 10;
+            player.coins = { copper: total, silver: 0, gold: 0, pouch: 0 };
+            this.normalizeCoins(player);
+        }
+
         // Migrate: Add waveResults to arena state if missing
         if (player.arena && !player.arena.waveResults) {
             player.arena.waveResults = [];
@@ -405,13 +422,13 @@ export class ProgressionSystem {
             player.townProgress.totalWavesCompleted = retroWaves;
 
             // Auto-unlock buildings based on retroactive progress
-            const hasPinkBeast = player.unlockedPets?.includes('pink_beast') ?? false;
+            const hasArena1 = player.arena?.completedArenaLevels?.includes(1) ?? false;
             const hasArena2 = player.arena?.completedArenaLevels?.includes(2) ?? false;
 
             if (retroWaves >= 1) player.townProgress.unlockedBuildings.push('guild');
             if (retroWaves >= 2) player.townProgress.unlockedBuildings.push('witch');
             if (retroWaves >= 3) player.townProgress.unlockedBuildings.push('shop');
-            if (hasPinkBeast) player.townProgress.unlockedBuildings.push('Crystal Forge small');
+            if (hasArena1) player.townProgress.unlockedBuildings.push('Crystal Forge small');
             if (hasArena2) player.townProgress.unlockedBuildings.push('forest-exit');
 
             // Mark all retroactively unlocked buildings as visited (no NEW badges for existing players)

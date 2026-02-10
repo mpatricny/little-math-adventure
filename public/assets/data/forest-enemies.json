@@ -55,7 +55,7 @@
       "difficulty": 7,
       "spriteKey": "spritesheet--37--sheet",
       "animPrefix": "treant",
-      "scale": 0.5,
+      "scale": 1.5,
       "region": "verdant_forest"
     },
     "verdant_guardian": {

@@ -55,6 +55,7 @@ export class CrystalForgeScene extends Phaser.Scene {
     private pedestalPosition: { x: number; y: number } = { x: 435, y: 529 }; // Position from SceneBuilder
     private equationText!: Phaser.GameObjects.Text;
     private answerButtons: Phaser.GameObjects.Container[] = [];
+    private answerFrame: Phaser.GameObjects.Image | null = null;
     private manaText!: Phaser.GameObjects.Text;
     private messageText!: Phaser.GameObjects.Text;
     private splitSlider!: Phaser.GameObjects.Container;
@@ -98,6 +99,7 @@ export class CrystalForgeScene extends Phaser.Scene {
 
         // CRITICAL: Clear arrays that accumulate on scene re-entry
         this.answerButtons = [];
+        this.answerFrame = null;
         this.operationPanelButtons.clear();
         this.crystalHolders = [];
         this.manaIcons = [];
@@ -909,39 +911,58 @@ export class CrystalForgeScene extends Phaser.Scene {
     }
 
     private createAnswerButtons(): void {
-        // Position answer buttons below the pedestal, centered around pedestal x
-        // 4 buttons, 95px apart, centered on pedestal
-        const buttonSpacing = 95;
-        const totalWidth = buttonSpacing * 3;  // 3 gaps between 4 buttons
-        const startX = this.pedestalPosition.x - totalWidth / 2;
-        const y = this.pedestalPosition.y + 55;  // Below pedestal
+        // Get the decorative frame from scene (positioned via scene editor)
+        this.answerFrame = this.sceneBuilder.get<Phaser.GameObjects.Image>('results_frame-cropped') ?? null;
+        if (this.answerFrame) {
+            this.answerFrame.setVisible(false);
+            this.answerFrame.setDepth(200);
+        }
+
+        const frameX = this.answerFrame?.x ?? 656;
+        const frameY = this.answerFrame?.y ?? 497;
+
+        // 2x2 grid layout centered on frame
+        const colOffset = 45;
+        const rowOffset = 25;
+        const positions = [
+            { x: frameX - colOffset, y: frameY - rowOffset },
+            { x: frameX + colOffset, y: frameY - rowOffset },
+            { x: frameX - colOffset, y: frameY + rowOffset },
+            { x: frameX + colOffset, y: frameY + rowOffset },
+        ];
+
+        const btnScale = 0.25;
+        const hoverScale = btnScale * 1.07;
 
         for (let i = 0; i < 4; i++) {
-            const btn = this.add.container(startX + i * 95, y);
+            const { x, y } = positions[i];
+            const bg = this.add.image(0, 0, 'ui-button')
+                .setScale(btnScale)
+                .setInteractive({ useHandCursor: true });
 
-            const bg = this.add.rectangle(0, 0, 85, 60, 0x446688)
-                .setStrokeStyle(2, 0x6688aa);
-
-            const text = this.add.text(0, 0, '', {
-                fontSize: '26px',
+            const text = this.add.text(0, -2, '', {
+                fontSize: '22px',
                 fontFamily: 'Arial, sans-serif',
-                color: '#ffffff',
+                color: '#5a3825',
                 fontStyle: 'bold'
             }).setOrigin(0.5);
 
-            btn.add([bg, text]);
-            btn.setSize(85, 60);
+            const btn = this.add.container(x, y, [bg, text]);
             btn.setVisible(false);
-            // Set very high depth so buttons appear above everything
-            btn.setDepth(200);
-            // Store text reference for safer access in showAnswerChoices
+            btn.setDepth(201);
             btn.setData('textObject', text);
+            btn.setData('bg', bg);
 
             const buttonIndex = i;
-            bg.setInteractive({ useHandCursor: true })
-                .on('pointerover', () => bg.setFillStyle(0x5588aa))
-                .on('pointerout', () => bg.setFillStyle(0x446688))
-                .on('pointerdown', () => this.submitAnswer(buttonIndex));
+            bg.on('pointerover', () => bg.setScale(hoverScale));
+            bg.on('pointerout', () => {
+                bg.setScale(btnScale);
+                bg.setTexture('ui-button');
+            });
+            bg.on('pointerdown', () => {
+                bg.setTexture('ui-button-pressed');
+                this.submitAnswer(buttonIndex);
+            });
 
             this.answerButtons.push(btn);
         }
@@ -1142,6 +1163,8 @@ export class CrystalForgeScene extends Phaser.Scene {
     }
 
     private showAnswerChoices(correctAnswer: number): void {
+        if (this.answerFrame) this.answerFrame.setVisible(true);
+
         const choices = this.generateChoices(correctAnswer);
 
         choices.forEach((choice, index) => {
@@ -1162,6 +1185,7 @@ export class CrystalForgeScene extends Phaser.Scene {
 
     private hideAnswerButtons(): void {
         this.answerButtons.forEach(btn => btn.setVisible(false));
+        if (this.answerFrame) this.answerFrame.setVisible(false);
     }
 
     private generateChoices(correct: number): number[] {
@@ -1511,59 +1535,110 @@ export class CrystalForgeScene extends Phaser.Scene {
     }
 
     private createOperationPanel(): void {
-        // Operation panel is now created by SceneBuilder using "Board buttons" background
-        // and 6 "green button forge" UI elements
-        // Button mapping:
-        // - "green button forge" (169, 204) -> merge (top-left)
-        // - "green button forge_1" (310, 203) -> split (top-right)
-        // - "green button forge_copy_copy" (168, 281) -> createFragment (middle-left)
-        // - "green button forge_copy_copy_copy" (309, 280) -> splitFragment (middle-right)
-        // - "green button forge_copy_copy_copy_copy" (168, 359) -> refine (bottom-left)
-        // - "green button forge_copy" (309, 360) -> createPrism (bottom-right)
-
+        // Operation panel uses unique image buttons (one per forge operation)
+        // Each button has its own artwork illustrating the operation visually
         const buttonMappings: { id: string; operation: ForgeOperation; locked: boolean }[] = [
-            { id: 'green button forge', operation: 'merge', locked: false },
-            { id: 'green button forge_1', operation: 'split', locked: false },
-            { id: 'green button forge_copy_copy', operation: 'createFragment', locked: !this.fragmentOperationsUnlocked },
-            { id: 'green button forge_copy_copy_copy', operation: 'splitFragment', locked: !this.fragmentOperationsUnlocked },
-            { id: 'green button forge_copy_copy_copy_copy', operation: 'refine', locked: !this.refineUnlocked },
-            { id: 'green button forge_copy', operation: 'createPrism', locked: !this.prismOperationsUnlocked },
+            { id: 'forge-btn-merge', operation: 'merge', locked: false },
+            { id: 'forge-btn-split', operation: 'split', locked: false },
+            { id: 'forge-btn-create-fragment', operation: 'createFragment', locked: !this.fragmentOperationsUnlocked },
+            { id: 'forge-btn-split-fragment', operation: 'splitFragment', locked: !this.fragmentOperationsUnlocked },
+            { id: 'forge-btn-refine', operation: 'refine', locked: !this.refineUnlocked },
+            { id: 'forge-btn-create-prism', operation: 'createPrism', locked: !this.prismOperationsUnlocked },
         ];
 
         buttonMappings.forEach(mapping => {
-            const btn = this.sceneBuilder.get<Phaser.GameObjects.Container>(mapping.id);
+            const btn = this.sceneBuilder.get<Phaser.GameObjects.Image>(mapping.id);
             if (!btn) return;
+
+            // Store base scale for highlight system (before any modifications)
+            btn.setData('baseScaleX', btn.scaleX);
+            btn.setData('baseScaleY', btn.scaleY);
 
             // Store reference for highlighting
             this.operationPanelButtons.set(mapping.operation, { btn, locked: mapping.locked });
 
-            // Handle locked state visually
+            // Locked buttons get heavy dark tint + lock icon overlay
             if (mapping.locked) {
-                btn.setAlpha(0.4);
+                btn.setTint(0x333333);
+
+                // Place lock icon centered on the button
+                const lockSign = this.sceneBuilder.get<Phaser.GameObjects.Image>('lock-sign');
+                if (lockSign) {
+                    const lockIcon = this.add.image(btn.x, btn.y, 'lock-sign');
+                    lockIcon.setDepth(btn.depth + 1);
+                    lockIcon.setScale(btn.scaleX, btn.scaleY);
+                }
+                return;
             }
 
             // Bind click handler for unlocked buttons
-            if (!mapping.locked) {
-                this.sceneBuilder.bindClick(mapping.id, () => {
-                    this.setOperation(mapping.operation);
+            this.sceneBuilder.bindClick(mapping.id, () => {
+                this.setOperation(mapping.operation);
+            });
+
+            // Scale-based hover/pressed effects
+            const baseScaleX = btn.scaleX;
+            const baseScaleY = btn.scaleY;
+            let isPressed = false;
+
+            btn.on('pointerover', () => {
+                if (!isPressed) {
+                    this.tweens.killTweensOf(btn);
+                    btn.setScale(baseScaleX * 1.05, baseScaleY * 1.05);
+                    btn.clearTint();
+                }
+            });
+            btn.on('pointerout', () => {
+                isPressed = false;
+                this.tweens.killTweensOf(btn);
+                this.updateOperationPanelHighlights();
+            });
+            btn.on('pointerdown', () => {
+                isPressed = true;
+                this.tweens.killTweensOf(btn);
+                this.tweens.add({
+                    targets: btn,
+                    scaleX: baseScaleX * 1.08,
+                    scaleY: baseScaleY * 1.08,
+                    duration: 150,
+                    ease: 'Power2.easeOut'
                 });
-            }
+            });
+            btn.on('pointerup', () => {
+                isPressed = false;
+                this.tweens.killTweensOf(btn);
+                this.tweens.add({
+                    targets: btn,
+                    scaleX: baseScaleX * 1.05,
+                    scaleY: baseScaleY * 1.05,
+                    duration: 150,
+                    ease: 'Power2.easeOut'
+                });
+                btn.clearTint();
+            });
         });
 
         // Initial highlight for merge (pre-selected)
         this.updateOperationPanelHighlights();
     }
 
-    private operationPanelButtons: Map<string, { btn: Phaser.GameObjects.Container; locked: boolean }> = new Map();
+    private operationPanelButtons: Map<string, { btn: Phaser.GameObjects.Image; locked: boolean }> = new Map();
 
     private updateOperationPanelHighlights(): void {
-        // Highlight the selected operation button (from SceneBuilder UI elements)
+        // Highlight uses tint + scale: active button stays enlarged, inactive are dimmed
         this.operationPanelButtons.forEach((data, op) => {
+            const baseX = data.btn.getData('baseScaleX') as number;
+            const baseY = data.btn.getData('baseScaleY') as number;
+
             if (data.locked) {
-                data.btn.setAlpha(0.4);
+                data.btn.setTint(0x333333);
+                data.btn.setScale(baseX, baseY);
+            } else if (this.currentOperation === op) {
+                data.btn.clearTint();
+                data.btn.setScale(baseX * 1.05, baseY * 1.05);
             } else {
-                // Active operation gets full opacity, others are slightly dimmed
-                data.btn.setAlpha(this.currentOperation === op ? 1.0 : 0.7);
+                data.btn.setTint(0x808080); // 50% black overlay for inactive (testing visibility)
+                data.btn.setScale(baseX, baseY);
             }
         });
     }

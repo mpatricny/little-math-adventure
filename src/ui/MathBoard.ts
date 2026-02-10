@@ -65,6 +65,7 @@ export class MathBoard {
     private originalOnComplete: (damageDealt: number, results: boolean[]) => void; // Store original callback
     private hintTimer: Phaser.Time.TimerEvent | null = null;
     private completionTimer: Phaser.Time.TimerEvent | null = null; // Track pending onComplete callback
+    private advanceTimer: Phaser.Time.TimerEvent | null = null; // Track 400ms delay between problems
 
     // Multi-problem state
     private problems: MathProblem[] = [];
@@ -683,7 +684,8 @@ export class MathBoard {
         }
 
         // Move to next problem or complete
-        this.scene.time.delayedCall(400, () => {
+        this.advanceTimer = this.scene.time.delayedCall(400, () => {
+            this.advanceTimer = null;
             this.currentProblemIndex++;
 
             if (this.currentProblemIndex < this.problems.length) {
@@ -720,6 +722,12 @@ export class MathBoard {
         if (this.hintTimer) {
             this.hintTimer.destroy();
             this.hintTimer = null;
+        }
+
+        // Cancel pending advance delay (prevents completionTimer from being created after hide)
+        if (this.advanceTimer) {
+            this.advanceTimer.destroy();
+            this.advanceTimer = null;
         }
 
         // Cancel pending completion callback (prevents race condition with block phase timer)

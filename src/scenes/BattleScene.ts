@@ -55,6 +55,7 @@ export class BattleScene extends Phaser.Scene {
     private blockTimeRemaining: number = 0;
     private blockTimerEvent: Phaser.Time.TimerEvent | null = null;
     private pendingDamage: number = 0;
+    private mathBoardContext: 'attack' | 'block' | null = null;
 
     // Multi-enemy attack tracking
     private currentAttackingEnemyIndex: number = 0;
@@ -191,6 +192,8 @@ export class BattleScene extends Phaser.Scene {
                     goldMin?: number;
                     goldMax?: number;
                     spriteKey: string;
+                    animPrefix?: string;
+                    scale?: number;
                     // Boss properties
                     isBoss?: boolean;
                     phases?: {
@@ -234,7 +237,8 @@ export class BattleScene extends Phaser.Scene {
                             xp: forestEnemy.xp || 10,
                             goldReward: [goldMin, goldMax],
                             spriteKey: forestEnemy.spriteKey,
-                            animPrefix: forestEnemy.spriteKey?.replace('-sheet', '') || 'slime'
+                            animPrefix: forestEnemy.animPrefix || forestEnemy.spriteKey?.replace('-sheet', '') || 'slime',
+                            scale: forestEnemy.scale
                         } as unknown as EnemyDefinition;
                     } else {
                         // Regular forest enemy
@@ -249,7 +253,8 @@ export class BattleScene extends Phaser.Scene {
                             xp: forestEnemy.xp || 10,
                             goldReward: [goldMin, goldMax],
                             spriteKey: forestEnemy.spriteKey,
-                            animPrefix: forestEnemy.spriteKey?.replace('-sheet', '') || 'slime'
+                            animPrefix: forestEnemy.animPrefix || forestEnemy.spriteKey?.replace('-sheet', '') || 'slime',
+                            scale: forestEnemy.scale
                         } as unknown as EnemyDefinition;
                     }
                 }
@@ -1454,6 +1459,7 @@ export class BattleScene extends Phaser.Scene {
                 }
 
                 this.battleState.currentProblems = problems;
+                this.mathBoardContext = 'attack';
                 this.mathBoard.show(problems);
                 return;
             }
@@ -1462,12 +1468,28 @@ export class BattleScene extends Phaser.Scene {
         // Generate problems WITHOUT pet (pet has its own turn now)
         const problems = this.mathEngine.generateAttackProblems(player.level, null, equippedSword);
         this.battleState.currentProblems = problems;
+        this.mathBoardContext = 'attack';
         this.mathBoard.show(problems);
     }
 
     private onMathComplete(damageDealt: number, results: boolean[]): void {
-        // Handle block phase completion
-        if (this.isBlockPhase) {
+        const context = this.mathBoardContext;
+        this.mathBoardContext = null;
+
+        // LAYER 1: No context = stale callback from an already-ended phase. Ignore.
+        if (context === null) {
+            console.warn('[BattleScene] Stale onMathComplete callback ignored');
+            return;
+        }
+
+        // ---- BLOCK PHASE ----
+        if (context === 'block') {
+            // LAYER 2: Timer may have already ended the block phase
+            if (!this.isBlockPhase) {
+                console.warn('[BattleScene] Block callback arrived after timer expiry, ignoring');
+                return;
+            }
+
             // Count correct answers for blocking
             let correctCount = 0;
             results.forEach((isCorrect, index) => {
@@ -1489,6 +1511,7 @@ export class BattleScene extends Phaser.Scene {
             return;
         }
 
+        // ---- ATTACK PHASE ---- (context === 'attack')
         this.mathBoard.hide();
 
         // Calculate total damage with multipliers
@@ -1566,7 +1589,17 @@ export class BattleScene extends Phaser.Scene {
                 this.blockTimerText.setText(`ČAS: ${this.blockTimeRemaining}S`);
 
                 if (this.blockTimeRemaining <= 0) {
-                    this.endBlockPhase(); // endBlockPhase handles mathBoard.hide()
+                    // Grace period: wait 500ms for any in-flight answer to resolve
+                    // before ending the block phase. If the player clicked at the
+                    // last second, MathBoard needs up to 700ms (400ms advance + 300ms
+                    // completion) to fire onMathComplete, which calls endBlockPhase
+                    // itself. The grace period lets that natural path complete.
+                    this.time.delayedCall(500, () => {
+                        // Only end if onMathComplete hasn't already ended it
+                        if (this.isBlockPhase) {
+                            this.endBlockPhase();
+                        }
+                    });
                 }
             },
             repeat: this.blockTimeRemaining - 1,
@@ -1584,6 +1617,7 @@ export class BattleScene extends Phaser.Scene {
             problems: problems.map(p => ({ answer: p.answer, choices: p.choices }))
         });
 
+        this.mathBoardContext = 'block';
         this.mathBoard.show(problems);
     }
 
@@ -1592,6 +1626,7 @@ export class BattleScene extends Phaser.Scene {
         if (!this.isBlockPhase) return;
 
         this.isBlockPhase = false;
+        this.mathBoardContext = null;
         this.blockUI.setVisible(false);
         this.mathBoard.hide(); // Always hide math board when block phase ends
 
@@ -2046,11 +2081,29 @@ export class BattleScene extends Phaser.Scene {
         // Check if ANY enemy is alive (not just the target) and pet is equipped
         const anyEnemyAlive = this.battleState.enemies.some(e => e.hp > 0);
         if (anyEnemyAlive && this.equippedPetDef && this.petContainer) {
-            // Pet gets its own turn to attack any remaining enemy
-            this.setPhase('pet_turn');
+            // If the targeted enemy died, play its death animation before pet turn
+            if (enemy.hp <= 0) {
+                this.playEnemyDeathAndFade(idx, enemySprite, animPrefix, () => {
+                    this.setPhase('pet_turn');
+                });
+            } else {
+                this.setPhase('pet_turn');
+            }
         } else {
             this.continueAfterAttack(idx, enemy, enemySprite, animPrefix);
         }
+    }
+
+    private playEnemyDeathAndFade(idx: number, enemySprite: Phaser.GameObjects.Sprite, animPrefix: string, onComplete: () => void): void {
+        enemySprite.play(`${animPrefix}-death`);
+        enemySprite.once('animationcomplete', () => {
+            this.tweens.add({
+                targets: this.enemyContainers[idx],
+                alpha: 0,
+                duration: 500,
+                onComplete: () => onComplete(),
+            });
+        });
     }
 
     private continueAfterAttack(idx: number, enemy: BattleEnemy, enemySprite: Phaser.GameObjects.Sprite, animPrefix: string): void {
@@ -2474,6 +2527,11 @@ export class BattleScene extends Phaser.Scene {
                     }
                     if (!player.arena.completedArenaLevels.includes(this.arenaLevel)) {
                         player.arena.completedArenaLevels.push(this.arenaLevel);
+
+                        // Award arena completion coin bonus
+                        const arenaBonus: Record<number, number> = { 1: 15, 2: 30, 3: 45 };
+                        const bonus = arenaBonus[this.arenaLevel] ?? 15;
+                        ProgressionSystem.awardBattleCoin(player, bonus);
 
                         // Always add arena_level_X unlock key when completing arena X
                         // This enables pets with unlockedByArenaLevel or unlockedByArenaLevels requirements

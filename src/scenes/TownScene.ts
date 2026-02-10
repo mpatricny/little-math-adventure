@@ -5,7 +5,7 @@ import { SceneDebugger } from '../systems/SceneDebugger';
 import { SceneBuilder } from '../systems/SceneBuilder';
 import { CrystalSystem } from '../systems/CrystalSystem';
 import { ManaSystem } from '../systems/ManaSystem';
-import { createInitialTownProgress } from '../systems/ProgressionSystem';
+import { ProgressionSystem, createInitialTownProgress } from '../systems/ProgressionSystem';
 import { uiTemplateLoader } from '../systems/UiTemplateLoader';
 import { getPlayerSpriteConfig } from '../utils/characterUtils';
 import { Crystal, PlayerState } from '../types';
@@ -20,7 +20,7 @@ const BUILDING_UNLOCK_CONFIG: {
     { buildingId: 'guild', labelId: 'guild-label', condition: (p) => (p.townProgress?.totalWavesCompleted ?? 0) >= 1 },
     { buildingId: 'witch', labelId: 'workshop-label', condition: (p) => (p.townProgress?.totalWavesCompleted ?? 0) >= 2 },
     { buildingId: 'shop', labelId: 'shop-label', condition: (p) => (p.townProgress?.totalWavesCompleted ?? 0) >= 3 },
-    { buildingId: 'Crystal Forge small', labelId: 'forge-label', condition: (p) => p.unlockedPets?.includes('pink_beast') ?? false },
+    { buildingId: 'Crystal Forge small', labelId: 'forge-label', condition: (p) => p.arena?.completedArenaLevels?.includes(1) ?? false },
 ];
 
 export class TownScene extends Phaser.Scene {
@@ -64,6 +64,9 @@ export class TownScene extends Phaser.Scene {
 
         // Build the scene from JSON
         this.sceneBuilder.buildScene('TownScene');
+
+        // Wire up "money mana" resource display
+        this.setupResourceDisplay(player);
 
         // Clear scene re-entry state
         this.zyxGuides = new Map();
@@ -160,7 +163,7 @@ export class TownScene extends Phaser.Scene {
         // Debug: Forest Journey entrance (press F)
         this.input.keyboard!.on('keydown-F', () => {
             console.log('Debug: Starting Forest Journey');
-            this.scene.start('ForestGateScene', { debugMode: true });
+            this.scene.start('ForestAdventureStartScene', { debugMode: true });
         });
     }
 
@@ -904,7 +907,7 @@ export class TownScene extends Phaser.Scene {
             duration: (Math.abs(targetX - this.player.x) / 350) * 1000,
             ease: 'Linear',
             onComplete: () => {
-                this.scene.start('ForestGateScene');
+                this.scene.start('ForestAdventureStartScene');
             }
         });
     }
@@ -1043,6 +1046,26 @@ export class TownScene extends Phaser.Scene {
             delay: 1000,
             onComplete: () => toast.destroy()
         });
+    }
+
+    private setupResourceDisplay(player: PlayerState): void {
+        const manaCount = ManaSystem.getMana(player);
+        const coinsCount = ProgressionSystem.getTotalCoinValue(player.coins);
+
+        const manaElement = this.sceneBuilder.get<Phaser.GameObjects.Container>('money mana');
+        if (manaElement) {
+            const textObjects = manaElement.getData('textObjects') as Map<string, { text: Phaser.GameObjects.Text }> | undefined;
+            if (textObjects) {
+                const manaTextEntry = textObjects.get('1770241846853-jfbnou0oe');
+                if (manaTextEntry) {
+                    manaTextEntry.text.setText(`${manaCount}`);
+                }
+                const coinsTextEntry = textObjects.get('1770241864666-yyygo6t26');
+                if (coinsTextEntry) {
+                    coinsTextEntry.text.setText(`${coinsCount}`);
+                }
+            }
+        }
     }
 
     private quitToMenu(): void {

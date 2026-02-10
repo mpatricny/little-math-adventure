@@ -13,10 +13,10 @@ export interface GameSettings {
 
 // ===== CURRENCY SYSTEM =====
 export interface CoinCurrency {
-    smallCopper: number;  // Value: 1
-    largeCopper: number;  // Value: 2
-    silver: number;       // Value: 5
-    gold: number;         // Value: 10
+    copper: number;   // Value: 1
+    silver: number;   // Value: 5
+    gold: number;     // Value: 10
+    pouch: number;    // Value: 100
 }
 
 // ===== DIAMOND SYSTEM =====

@@ -8,9 +8,12 @@
         "attack": 1,
         "defense": 0,
         "xpReward": 20,
-        "goldReward": [1, 1],
+        "goldReward": [
+            1,
+            1
+        ],
         "difficulty": 1,
-        "scale": 1.0
+        "scale": 1
     },
     {
         "id": "purple_demon",
@@ -21,9 +24,12 @@
         "attack": 2,
         "defense": 0,
         "xpReward": 40,
-        "goldReward": [1, 1],
+        "goldReward": [
+            2,
+            2
+        ],
         "difficulty": 2,
-        "scale": 1.0
+        "scale": 1
     },
     {
         "id": "pink_beast",
@@ -34,9 +40,12 @@
         "attack": 2,
         "defense": 0,
         "xpReward": 70,
-        "goldReward": [2, 2],
+        "goldReward": [
+            3,
+            3
+        ],
         "difficulty": 3,
-        "scale": 1.0
+        "scale": 1
     },
     {
         "id": "leafy",
@@ -47,8 +56,59 @@
         "attack": 3,
         "defense": 0,
         "xpReward": 100,
-        "goldReward": [3, 3],
+        "goldReward": [
+            5,
+            5
+        ],
         "difficulty": 4,
-        "scale": 1.0
+        "scale": 1
+    },
+    {
+        "id": "forest_wolf",
+        "name": "Wolf",
+        "spriteKey": "wolves-only-transparent-sheet",
+        "animPrefix": "wolf",
+        "hp": 15,
+        "attack": 3,
+        "defense": 0,
+        "xpReward": 30,
+        "goldReward": [
+            7,
+            7
+        ],
+        "difficulty": 3,
+        "scale": 0.5
+    },
+    {
+        "id": "giant_mushroom",
+        "name": "Mushroom Giant",
+        "spriteKey": "spritesheet--36--sheet",
+        "animPrefix": "mushroom",
+        "hp": 20,
+        "attack": 2,
+        "defense": 2,
+        "xpReward": 40,
+        "goldReward": [
+            8,
+            8
+        ],
+        "difficulty": 3,
+        "scale": 1
+    },
+    {
+        "id": "ancient_treant",
+        "name": "Ancient Treant",
+        "spriteKey": "spritesheet--37--sheet",
+        "animPrefix": "treant",
+        "hp": 5,
+        "attack": 1,
+        "defense": 0,
+        "xpReward": 20,
+        "goldReward": [
+            5,
+            15
+        ],
+        "difficulty": 1,
+        "scale": 1.5
     }
 ]

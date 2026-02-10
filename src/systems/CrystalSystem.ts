@@ -247,10 +247,10 @@ export class CrystalSystem {
     }
 
     /**
-     * Check if Boss I (Slime King) is defeated - unlocks fragment operations
+     * Check if Arena 2 is completed - unlocks fragment operations
      */
     static hasFragmentOperationsUnlocked(player: PlayerState): boolean {
-        return this.hasBossDefeated(player, 'slime_king');
+        return player.arena?.completedArenaLevels?.includes(2) ?? false;
     }
 
     /**

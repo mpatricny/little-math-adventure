@@ -336,13 +336,10 @@ export class PythiaWorkshopScene extends Phaser.Scene {
                 crystalLayer.setTexture('gemstone-icons', tierFrames[crystal.tier] ?? 1);
             }
 
-            // Apply selection/matching tint
+            // Apply selection tint
             const isSelected = this.selectedCrystal?.id === crystal.id;
-            const isMatching = this.doesCrystalMatch(crystal);
             if (isSelected) {
                 crystalLayer?.setTint(0x88aaff);
-            } else if (isMatching) {
-                crystalLayer?.setTint(0x88ff88);
             } else {
                 crystalLayer?.clearTint();
             }
@@ -363,12 +360,6 @@ export class PythiaWorkshopScene extends Phaser.Scene {
     private onCrystalClick(crystal: Crystal): void {
         this.selectedCrystal = (this.selectedCrystal?.id === crystal.id) ? null : crystal;
         this.refreshUI();
-    }
-
-    private doesCrystalMatch(crystal: Crystal): boolean {
-        if (!this.selectedPet) return false;
-        return crystal.tier === this.selectedPet.requiredAmulet.tier &&
-               crystal.value === this.selectedPet.requiredAmulet.value;
     }
 
     // ========== BINDING AREA ==========
@@ -910,7 +901,6 @@ export class PythiaWorkshopScene extends Phaser.Scene {
         } else {
             // Unowned pets: select for binding
             this.selectedPet = (this.selectedPet?.id === pet.id) ? null : pet;
-            this.selectedCrystal = null; // Reset crystal selection
             this.refreshUI();
         }
     }

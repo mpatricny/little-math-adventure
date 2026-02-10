@@ -1,24 +1,26 @@
 import Phaser from 'phaser';
 import { ItemDefinition, ItemType } from '../types';
 import { GameStateManager } from '../systems/GameStateManager';
+import { ProgressionSystem } from '../systems/ProgressionSystem';
+import { ManaSystem } from '../systems/ManaSystem';
 import { SceneDebugger } from '../systems/SceneDebugger';
 import { SceneBuilder } from '../systems/SceneBuilder';
-
-type ShopCategory = 'weapon' | 'shield';
+import { LocalizationService } from '../systems/LocalizationService';
 
 // Coin type definitions
 interface CoinType {
-    key: 'smallCopper' | 'largeCopper' | 'silver' | 'gold';
+    key: 'copper' | 'silver' | 'gold' | 'pouch';
     value: number;
-    frame: number;  // Frame in spritesheet
+    frame: number;  // Frame in coins.png spritesheet: 0=gold, 1=copper, 2=silver; -1=standalone image
     name: string;
 }
 
+// Frame mapping from coins.png spritesheet: 0=gold, 1=copper, 2=silver; -1=standalone coin-pouch
 const COIN_TYPES: CoinType[] = [
-    { key: 'smallCopper', value: 1, frame: 0, name: 'Měďák' },
-    { key: 'largeCopper', value: 2, frame: 2, name: 'Velký měďák' },
-    { key: 'silver', value: 5, frame: 4, name: 'Stříbrňák' },
-    { key: 'gold', value: 50, frame: 6, name: 'Zlaťák' },
+    { key: 'copper', value: 1, frame: 1, name: 'Měďák' },
+    { key: 'silver', value: 5, frame: 2, name: 'Stříbrňák' },
+    { key: 'gold', value: 10, frame: 0, name: 'Zlaťák' },
+    { key: 'pouch', value: 100, frame: -1, name: 'Váček' },
 ];
 
 // Draggable coin sprite
@@ -32,12 +34,11 @@ interface DraggableCoin extends Phaser.GameObjects.Image {
 export class ShopScene extends Phaser.Scene {
     private gameState!: GameStateManager;
     private allItems!: ItemDefinition[];
-    private currentCategory: ShopCategory = 'weapon';
+    private localization = LocalizationService.getInstance();
     private selectedItem: ItemDefinition | null = null;
 
     // UI Elements
-    private categoryTabs: Map<ShopCategory, Phaser.GameObjects.Container> = new Map();
-    private itemSlots: Phaser.GameObjects.Container[] = [];
+    private itemSlots: Phaser.GameObjects.Image[] = [];
     private purchasePanel!: Phaser.GameObjects.Container;
     private tableContainer!: Phaser.GameObjects.Container;
     private paymentTray!: Phaser.GameObjects.Container;
@@ -48,6 +49,9 @@ export class ShopScene extends Phaser.Scene {
     private playerCoins: DraggableCoin[] = [];
     private paymentCoins: DraggableCoin[] = [];
     private draggedCoin: DraggableCoin | null = null;
+
+    // Item slot tracking (icon per container, for removal after purchase)
+    private itemIcons: Map<string, Phaser.GameObjects.Image> = new Map();
 
 
     // Universal debugger
@@ -65,20 +69,27 @@ export class ShopScene extends Phaser.Scene {
         this.allItems = this.cache.json.get('items') as ItemDefinition[];
 
         // Reset arrays (important for scene re-entry)
-        this.categoryTabs.clear();
         this.itemSlots = [];
+        this.itemIcons = new Map();
         this.playerCoins = [];
         this.paymentCoins = [];
         this.draggedCoin = null;
         this.selectedItem = null;
+
+        // Ensure coins are normalized with current algorithm (handles pre-pouch saves)
+        ProgressionSystem.normalizeCoins(this.gameState.getPlayer());
 
         // Initialize SceneBuilder
         this.sceneBuilder = new SceneBuilder(this);
 
         // Register handlers before building
         this.sceneBuilder.registerHandler('onBuy', () => this.attemptPurchase());
+        this.sceneBuilder.registerHandler('onBack', () => this.scene.start('TownScene'));
 
         this.sceneBuilder.buildScene();
+
+        // Wire up "money mana" resource display
+        this.setupResourceDisplay();
 
         // Get purchase panel from SceneBuilder and set up references
         this.setupPurchasePanel();
@@ -91,12 +102,11 @@ export class ShopScene extends Phaser.Scene {
         // Setup areas based on positions
         this.setupAreas(tablePouch, tableTop, coinTray);
 
-        // Category tabs and item grid - use SceneBuilder elements
-        this.setupCategoryTabs();
-        this.setupItemSlots();
+        // Fixed item display - labels and containers
+        this.setupItemDisplay();
 
-        // Show initial category
-        this.showCategory('weapon');
+        // Create coin value legend
+        this.createCoinLegend();
 
         // Setup drag handling
         this.setupDragHandling();
@@ -121,30 +131,103 @@ export class ShopScene extends Phaser.Scene {
             this.tableContainer = this.add.container(600, 600);
         }
 
-        // Payment area - covers the entire coin tray
-        if (coinTray) {
+        // Payment area — use marker-2 from scene editor if available
+        const dropZone = this.sceneBuilder.getMarker('marker-2');
+        if (dropZone) {
+            const centerX = dropZone.x + dropZone.width / 2;
+            const centerY = dropZone.y + dropZone.height / 2;
+            this.paymentTray = this.add.container(centerX, centerY);
+            this.paymentArea = this.add.rectangle(centerX, centerY, dropZone.width, dropZone.height, 0x000000, 0);
+        } else if (coinTray) {
+            // Fallback to coinTray-based positioning
             this.paymentTray = this.add.container(coinTray.x, coinTray.y);
             const trayWidth = 280 * coinTray.scale;
             const trayHeight = 200 * coinTray.scale;
             this.paymentArea = this.add.rectangle(coinTray.x, coinTray.y, trayWidth, trayHeight, 0x000000, 0);
-
-            // Link total text
-            const totalText = this.sceneBuilder.get('labelTotal') as Phaser.GameObjects.Text;
-            if (totalText) {
-                this.paymentTray.setData('totalText', totalText);
-            }
         } else {
             this.paymentTray = this.add.container(300, 600);
             this.paymentArea = this.add.rectangle(300, 600, 200, 150, 0x000000, 0);
+        }
+
+        // Link total text to payment tray
+        const totalText = this.sceneBuilder.get('labelTotal') as Phaser.GameObjects.Text;
+        if (totalText) {
+            this.paymentTray.setData('totalText', totalText);
         }
 
         // Spawn coins
         this.spawnPlayerCoins();
     }
 
+    private createCoinLegend(): void {
+        const marker = this.sceneBuilder.getMarker('marker-1');
+        if (!marker) return;
+
+        const centerX = marker.x + marker.width / 2;
+        const startY = marker.y + marker.height / 2;
+        const rowHeight = 50;
+        const coins: { frame: number; texture?: string; text: string; color: string }[] = [
+            { frame: 1, text: '= 1', color: '#cd7f32' },    // copper
+            { frame: 2, text: '= 5', color: '#c0c0c0' },    // silver
+            { frame: 0, text: '= 10', color: '#ffd700' },    // gold
+            { frame: -1, texture: 'coin-pouch', text: '= 100', color: '#8b6914' },  // pouch
+        ];
+
+        coins.forEach((coin, i) => {
+            const y = startY + (i - 1.5) * rowHeight;
+            if (coin.frame === -1 && coin.texture) {
+                this.add.image(centerX - 40, y, coin.texture)
+                    .setDisplaySize(70, 70).setDepth(30);
+            } else {
+                this.add.image(centerX - 40, y, 'shop-coins-sheet', coin.frame)
+                    .setDisplaySize(70, 70).setDepth(30);
+            }
+            this.add.text(centerX + 15, y, coin.text, {
+                fontSize: '22px',
+                fontFamily: 'Arial, sans-serif',
+                color: coin.color,
+                fontStyle: 'bold',
+            }).setOrigin(0, 0.5).setDepth(30);
+        });
+    }
+
     private setupDebugger(): void {
         this.debugger = new SceneDebugger(this, 'ShopScene');
-        // Register elements if needed
+    }
+
+    private setupResourceDisplay(): void {
+        const player = this.gameState.getPlayer();
+        const manaCount = ManaSystem.getMana(player);
+        const coinsCount = ProgressionSystem.getTotalCoinValue(player.coins);
+
+        const manaElement = this.sceneBuilder.get<Phaser.GameObjects.Container>('money mana');
+        if (manaElement) {
+            const textObjects = manaElement.getData('textObjects') as Map<string, { text: Phaser.GameObjects.Text }> | undefined;
+            if (textObjects) {
+                const manaTextEntry = textObjects.get('1770241846853-jfbnou0oe');
+                if (manaTextEntry) {
+                    manaTextEntry.text.setText(`${manaCount}`);
+                }
+                const coinsTextEntry = textObjects.get('1770241864666-yyygo6t26');
+                if (coinsTextEntry) {
+                    coinsTextEntry.text.setText(`${coinsCount}`);
+                }
+            }
+        }
+    }
+
+    private updateResourceDisplay(): void {
+        const player = this.gameState.getPlayer();
+        const manaElement = this.sceneBuilder.get<Phaser.GameObjects.Container>('money mana');
+        if (manaElement) {
+            const textObjects = manaElement.getData('textObjects') as Map<string, { text: Phaser.GameObjects.Text }> | undefined;
+            if (textObjects) {
+                const manaTextEntry = textObjects.get('1770241846853-jfbnou0oe');
+                manaTextEntry?.text.setText(`${ManaSystem.getMana(player)}`);
+                const coinsTextEntry = textObjects.get('1770241864666-yyygo6t26');
+                coinsTextEntry?.text.setText(`${ProgressionSystem.getTotalCoinValue(player.coins)}`);
+            }
+        }
     }
 
     private setupPurchasePanel(): void {
@@ -192,68 +275,65 @@ export class ShopScene extends Phaser.Scene {
         this.purchasePanel.setData('itemIcon', itemIcon);
     }
 
-    private setupCategoryTabs(): void {
-        const categories: { key: ShopCategory; elementId: string }[] = [
-            { key: 'weapon', elementId: 'tabWeapons' },
-            { key: 'shield', elementId: 'tabShields' },
+    private setupItemDisplay(): void {
+        this.localization.init(this);
+
+        // Wire localized text onto label background images
+        const labelSwords = this.sceneBuilder.get('shop-label') as Phaser.GameObjects.Image;
+        const labelShields = this.sceneBuilder.get('shop-label_1') as Phaser.GameObjects.Image;
+
+        if (labelSwords) {
+            this.add.text(labelSwords.x, labelSwords.y, this.localization.t('items.categories.CAT_001'), {
+                fontSize: '20px',
+                fontFamily: 'Arial, sans-serif',
+                color: '#ffffff',
+                fontStyle: 'bold',
+            }).setOrigin(0.5).setDepth((labelSwords.depth ?? 0) + 1);
+        }
+        if (labelShields) {
+            this.add.text(labelShields.x, labelShields.y, this.localization.t('items.categories.CAT_002'), {
+                fontSize: '20px',
+                fontFamily: 'Arial, sans-serif',
+                color: '#ffffff',
+                fontStyle: 'bold',
+            }).setOrigin(0.5).setDepth((labelShields.depth ?? 0) + 1);
+        }
+
+        // Define the 4 items to show: 2 swords + 2 shields
+        const weapons = this.allItems.filter(item => item.type === 'weapon');
+        const shields = this.allItems.filter(item => item.type === 'shield');
+
+        const displayItems: { containerId: string; item: ItemDefinition | undefined; type: ItemType }[] = [
+            { containerId: 'item-container', item: weapons[0], type: 'weapon' },
+            { containerId: 'item-container-1', item: weapons[1], type: 'weapon' },
+            { containerId: 'item-container-2', item: shields[0], type: 'shield' },
+            { containerId: 'item-container-3', item: shields[1], type: 'shield' },
         ];
 
-        categories.forEach((cat) => {
-            // Get tab from SceneBuilder (created as button Container)
-            const tabElement = this.sceneBuilder.get(cat.elementId) as Phaser.GameObjects.Container;
+        for (const entry of displayItems) {
+            const container = this.sceneBuilder.get(entry.containerId) as Phaser.GameObjects.Image;
+            if (!container || !entry.item) continue;
 
-            if (tabElement) {
-                // Tab created by SceneBuilder, set up interactions
-                const bg = (tabElement.list as Phaser.GameObjects.GameObject[])[0] as Phaser.GameObjects.Rectangle;
-                tabElement.setData('bg', bg);
+            const item = entry.item;
 
-                if (bg) {
-                    bg.on('pointerdown', () => {
-                        this.showCategory(cat.key);
-                    });
-                    bg.on('pointerover', () => {
-                        if (this.currentCategory !== cat.key) bg.setFillStyle(0x7a6a5a);
-                    });
-                    bg.on('pointerout', () => {
-                        if (this.currentCategory !== cat.key) bg.setFillStyle(0x5a4a3a);
-                    });
-                }
+            // Skip items the player already owns or has surpassed
+            if (this.isItemObsolete(item)) continue;
 
-                this.categoryTabs.set(cat.key, tabElement);
+            // Create item icon centered on the container image
+            if (item.spriteKey) {
+                const iconW = entry.type === 'weapon' ? 45 : 55;
+                const iconH = entry.type === 'weapon' ? 60 : 55;
+                const icon = this.add.image(container.x, container.y, item.spriteKey, item.iconFrame)
+                    .setDisplaySize(iconW, iconH)
+                    .setDepth((container.depth ?? 0) + 1);
+                this.itemIcons.set(item.id, icon);
             }
-        });
-    }
 
-    private setupItemSlots(): void {
-        const slotSize = 70;
+            // Make container interactive
+            container.setInteractive({ useHandCursor: true });
+            container.on('pointerdown', () => this.onItemClicked(item));
 
-        for (let i = 0; i < 4; i++) {
-            const slotId = `itemSlot${i}`;
-            const slotElement = this.sceneBuilder.get(slotId) as Phaser.GameObjects.Container;
-
-            if (slotElement) {
-                // Slot created by SceneBuilder, add icon and set up interactions
-                const bg = (slotElement.list as Phaser.GameObjects.GameObject[])[0] as Phaser.GameObjects.Rectangle;
-
-                const icon = this.add.image(0, 0, 'shop-swords-sheet', 0)
-                    .setDisplaySize(slotSize - 10, slotSize - 10)
-                    .setVisible(false);
-                slotElement.add(icon);
-
-                slotElement.setData('bg', bg);
-                slotElement.setData('icon', icon);
-                slotElement.setData('index', i);
-
-                if (bg) {
-                    bg.on('pointerdown', () => {
-                        this.onSlotClicked(i);
-                    });
-                    bg.on('pointerover', () => bg.setStrokeStyle(3, 0xffd700));
-                    bg.on('pointerout', () => bg.setStrokeStyle(2, 0x6a6a5a));
-                }
-
-                this.itemSlots.push(slotElement);
-            }
+            this.itemSlots.push(container);
         }
     }
 
@@ -264,9 +344,15 @@ export class ShopScene extends Phaser.Scene {
 
         const player = this.gameState.getPlayer();
 
-        // Fallback to relative positioning from table
-        const spawnX = this.tableContainer ? this.tableContainer.x - 100 : 838;
-        const spawnY = this.tableContainer ? this.tableContainer.y - 50 : 582;
+        // Use marker-3 as the coin spawn area, fallback to table position
+        const coinSpawnMarker = this.sceneBuilder.getMarker('marker-3');
+        const spawnX = coinSpawnMarker ? coinSpawnMarker.x : (this.tableContainer ? this.tableContainer.x - 100 : 838);
+        const spawnY = coinSpawnMarker ? coinSpawnMarker.y : (this.tableContainer ? this.tableContainer.y - 50 : 582);
+        const spawnWidth = coinSpawnMarker ? coinSpawnMarker.width : 210;
+
+        // Calculate grid columns based on spawn area width
+        const coinSpacing = 40;
+        const maxCols = Math.max(1, Math.floor(spawnWidth / coinSpacing));
 
         // Spawn coins for each type within the spawn area
         let coinIndex = 0;
@@ -274,10 +360,10 @@ export class ShopScene extends Phaser.Scene {
             const count = player.coins[coinType.key];
             for (let i = 0; i < count; i++) {
                 // Arrange coins in a grid pattern within spawn area
-                const col = coinIndex % 6;
-                const row = Math.floor(coinIndex / 6);
-                const x = spawnX + col * 35 + Phaser.Math.Between(-5, 5);
-                const y = spawnY + row * 35 + Phaser.Math.Between(-5, 5);
+                const col = coinIndex % maxCols;
+                const row = Math.floor(coinIndex / maxCols);
+                const x = spawnX + col * coinSpacing + Phaser.Math.Between(-3, 3);
+                const y = spawnY + row * coinSpacing + Phaser.Math.Between(-3, 3);
 
                 const coin = this.createDraggableCoin(x, y, coinType);
                 this.playerCoins.push(coin);
@@ -287,8 +373,13 @@ export class ShopScene extends Phaser.Scene {
     }
 
     private createDraggableCoin(x: number, y: number, coinType: CoinType): DraggableCoin {
-        const coin = this.add.image(x, y, 'shop-coins-sheet', coinType.frame) as DraggableCoin;
-        coin.setDisplaySize(40, 40);
+        // Pouch uses standalone image; other coins use spritesheet
+        const coin = (coinType.frame === -1
+            ? this.add.image(x, y, 'coin-pouch')
+            : this.add.image(x, y, 'shop-coins-sheet', coinType.frame)
+        ) as DraggableCoin;
+        const size = coinType.frame === -1 ? 50 : 40;
+        coin.setDisplaySize(size, size);
         coin.setInteractive({ useHandCursor: true });
         this.input.setDraggable(coin);  // Call separately for reliable drag behavior
         coin.coinType = coinType;
@@ -378,49 +469,7 @@ export class ShopScene extends Phaser.Scene {
         return total;
     }
 
-    private showCategory(category: ShopCategory): void {
-        this.currentCategory = category;
-        this.selectedItem = null;
-        this.purchasePanel.setVisible(false);
-
-        // Update tab visuals
-        this.categoryTabs.forEach((container, key) => {
-            const bg = container.getData('bg') as Phaser.GameObjects.Rectangle;
-            bg.setFillStyle(key === category ? 0x8a7a6a : 0x5a4a3a);
-        });
-
-        // Get items for this category
-        const itemType: ItemType = category;
-        const items = this.allItems.filter(item => item.type === itemType);
-
-        // Update item slots
-        this.itemSlots.forEach((slot, index) => {
-            const icon = slot.getData('icon') as Phaser.GameObjects.Image | undefined;
-            const item = items[index];
-
-            if (!icon) {
-                console.warn(`[ShopScene] No icon found for slot ${index}`);
-                return;
-            }
-
-            if (item && item.spriteKey) {
-                icon.setTexture(item.spriteKey, item.iconFrame);
-                icon.setVisible(true);
-                icon.setDisplaySize(category === 'weapon' ? 45 : 55, category === 'weapon' ? 60 : 55);
-                slot.setData('item', item);
-            } else {
-                icon.setVisible(false);
-                slot.setData('item', null);
-            }
-        });
-    }
-
-    private onSlotClicked(index: number): void {
-        const slot = this.itemSlots[index];
-        const item = slot.getData('item') as ItemDefinition | null;
-
-        if (!item) return;
-
+    private onItemClicked(item: ItemDefinition): void {
         // Check if already owned
         if (this.isItemOwned(item)) {
             this.showMessage('JIŽ VLASTNÍŠ!', '#aaaaaa');
@@ -430,7 +479,6 @@ export class ShopScene extends Phaser.Scene {
         this.selectedItem = item;
         this.updatePurchasePanel();
         this.purchasePanel.setVisible(true);
-        // Don't reset coins when selecting items - let player keep their payment
     }
 
     private updatePurchasePanel(): void {
@@ -456,6 +504,22 @@ export class ShopScene extends Phaser.Scene {
             case 'shield': return player.equippedShield === item.id;
             default: return false;
         }
+    }
+
+    /**
+     * Check if item is obsolete (player owns an equal or better item of the same type).
+     * Weaker items disappear once the player buys a stronger one.
+     */
+    private isItemObsolete(item: ItemDefinition): boolean {
+        const player = this.gameState.getPlayer();
+        const equippedId = item.type === 'weapon' ? player.equippedWeapon
+                         : item.type === 'shield' ? player.equippedShield
+                         : null;
+        if (!equippedId) return false;
+        if (equippedId === item.id) return true;  // Owned
+        // Compare price as proxy for power — if equipped item costs >= this one, it's obsolete
+        const equippedItem = this.allItems.find(i => i.id === equippedId);
+        return equippedItem ? equippedItem.price >= item.price : false;
     }
 
     private attemptPurchase(): void {
@@ -486,11 +550,27 @@ export class ShopScene extends Phaser.Scene {
         });
         this.paymentCoins = [];
 
+        // Normalize coins after spending
+        ProgressionSystem.normalizeCoins(player);
+
         // Equip item
-        this.equipItem(this.selectedItem);
+        const purchasedItem = this.selectedItem;
+        this.equipItem(purchasedItem);
 
         // Save
         this.gameState.save();
+
+        // Remove icons for the purchased item and any now-obsolete items of the same type
+        const sameTypeItems = this.allItems.filter(i => i.type === purchasedItem.type);
+        for (const item of sameTypeItems) {
+            if (this.isItemObsolete(item)) {
+                const icon = this.itemIcons.get(item.id);
+                if (icon) {
+                    icon.destroy();
+                    this.itemIcons.delete(item.id);
+                }
+            }
+        }
 
         // Show success
         this.showMessage('KOUPENO!', '#aaffaa');
@@ -500,7 +580,7 @@ export class ShopScene extends Phaser.Scene {
         this.purchasePanel.setVisible(false);
         this.spawnPlayerCoins();
         this.updatePaymentTotal();
-        this.showCategory(this.currentCategory);
+        this.updateResourceDisplay();
     }
 
     private returnAllCoins(): void {

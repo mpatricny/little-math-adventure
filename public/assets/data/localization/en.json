@@ -80,6 +80,10 @@
             "CUR_001": "copper",
             "CUR_002": "silver",
             "CUR_003": "gold"
+        },
+        "categories": {
+            "CAT_001": "SWORDS",
+            "CAT_002": "SHIELDS"
         }
     },
     "characters": {
@@ -110,5 +114,21 @@
         "FMT_003": "WAVE {0}",
         "FMT_004": "TOTAL: {0} copper",
         "FMT_005": "LEVEL: {0}   |   CYCLE: {1}   |   {2}%"
+    },
+    "forest_gate": {
+        "forest_name": "VERDANT FOREST",
+        "title": "🌲 FOREST ENTRANCE 🌲",
+        "requirements_title": "Requirements:",
+        "req_arena_level": "Arena level {0}+",
+        "req_supply_cost": "{0} gold for supplies",
+        "req_current": "(you have {0})",
+        "stats_line": "❤️ HP: {0}/{1}  |  ⚔️ ATK: {2}  |  🪙 Gold: {3}",
+        "start_button": "🌲 SET OUT ON THE JOURNEY 🌲",
+        "back_button": "← Back",
+        "blocked_reason": "⚠️ {0}",
+        "blocked_come_back": "Come back when you are ready!",
+        "debug_mode": "🔧 DEBUG MODE - Requirements bypassed",
+        "warning_low_level": "⚠️ Your level is low (lvl {0}). Fights will be difficult!",
+        "ready_message": "✅ You are ready for the journey!"
     }
 }

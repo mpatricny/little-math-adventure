@@ -1,4 +1,5 @@
 import { GameStateManager } from './GameStateManager';
+import { ProgressionSystem } from './ProgressionSystem';
 
 /**
  * Journey encounter types
@@ -112,11 +113,10 @@ export class JourneySystem {
     /**
      * Calculate total gold from coin currency
      */
-    private getTotalGold(player: { coins?: { gold?: number; silver?: number; largeCopper?: number; smallCopper?: number } }): number {
-        return (player.coins?.gold ?? 0) * 10 + 
-               (player.coins?.silver ?? 0) * 5 + 
-               (player.coins?.largeCopper ?? 0) * 2 + 
-               (player.coins?.smallCopper ?? 0);
+    private getTotalGold(player: { coins?: { gold?: number; silver?: number; copper?: number } }): number {
+        return (player.coins?.gold ?? 0) * 10 +
+               (player.coins?.silver ?? 0) * 5 +
+               (player.coins?.copper ?? 0);
     }
 
     /**
@@ -125,25 +125,18 @@ export class JourneySystem {
     canStartJourney(config: JourneyConfig): { canStart: boolean; reason?: string } {
         const player = this.gameState.getPlayer();
         const totalGold = this.getTotalGold(player);
-        
-        if (player.level < config.requirements.minLevel) {
-            return { 
-                canStart: false, 
-                reason: `Level ${config.requirements.minLevel} required (you are level ${player.level})` 
-            };
-        }
 
         if ((player.arena?.arenaLevel ?? 0) < config.requirements.arenaLevel) {
-            return { 
-                canStart: false, 
-                reason: `Arena level ${config.requirements.arenaLevel} required` 
+            return {
+                canStart: false,
+                reason: `Arena level ${config.requirements.arenaLevel} required`
             };
         }
 
         if (totalGold < config.requirements.supplyCost) {
-            return { 
-                canStart: false, 
-                reason: `${config.requirements.supplyCost} gold required for supplies` 
+            return {
+                canStart: false,
+                reason: `${config.requirements.supplyCost} gold required for supplies`
             };
         }
 
@@ -164,28 +157,8 @@ export class JourneySystem {
                 return false;
             }
 
-            // Deduct supply cost from coins (prefer small denominations)
-            let remaining = config.requirements.supplyCost;
-            if (player.coins) {
-                // Take from small copper first
-                const fromSmall = Math.min(player.coins.smallCopper ?? 0, remaining);
-                player.coins.smallCopper = (player.coins.smallCopper ?? 0) - fromSmall;
-                remaining -= fromSmall;
-
-                // Then large copper (worth 2)
-                const fromLarge = Math.min(player.coins.largeCopper ?? 0, Math.floor(remaining / 2));
-                player.coins.largeCopper = (player.coins.largeCopper ?? 0) - fromLarge;
-                remaining -= fromLarge * 2;
-
-                // Then silver (worth 5)
-                const fromSilver = Math.min(player.coins.silver ?? 0, Math.floor(remaining / 5));
-                player.coins.silver = (player.coins.silver ?? 0) - fromSilver;
-                remaining -= fromSilver * 5;
-
-                // Then gold (worth 10)
-                const fromGold = Math.min(player.coins.gold ?? 0, Math.ceil(remaining / 10));
-                player.coins.gold = (player.coins.gold ?? 0) - fromGold;
-            }
+            // Deduct supply cost from coins using ProgressionSystem
+            ProgressionSystem.spendCoins(player, config.requirements.supplyCost);
         }
 
         this.journeyConfig = config;
@@ -447,12 +420,12 @@ export class JourneySystem {
         // Apply accumulated rewards to player
         const player = this.gameState.getPlayer();
         player.xp += this.currentJourney.totalXp;
-        
-        // Add gold to coins (as small copper for now)
-        if (player.coins) {
-            player.coins.smallCopper = (player.coins.smallCopper ?? 0) + this.currentJourney.totalGold;
+
+        // Add gold to coins
+        if (this.currentJourney.totalGold > 0) {
+            ProgressionSystem.awardBattleCoin(player, this.currentJourney.totalGold);
         }
-        
+
         // Add diamonds to crystal inventory
         if (this.currentJourney.totalDiamonds > 0) {
             // TODO: Add crystals via CrystalSystem
@@ -704,8 +677,8 @@ export class JourneySystem {
         const player = this.gameState.getPlayer();
         player.xp += this.currentJourney.totalXp;
 
-        if (player.coins) {
-            player.coins.smallCopper = (player.coins.smallCopper ?? 0) + this.currentJourney.totalGold;
+        if (this.currentJourney.totalGold > 0) {
+            ProgressionSystem.awardBattleCoin(player, this.currentJourney.totalGold);
         }
 
         this.gameState.save();
