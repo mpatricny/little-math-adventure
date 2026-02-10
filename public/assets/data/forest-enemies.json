@@ -10,7 +10,8 @@
       "goldMin": 8,
       "goldMax": 18,
       "difficulty": 5,
-      "spriteKey": "forest-wolf",
+      "spriteKey": "wolves-only-transparent-sheet",
+      "animPrefix": "wolf",
       "region": "verdant_forest"
     },
     "mushroom_giant": {
@@ -23,9 +24,10 @@
       "goldMin": 15,
       "goldMax": 25,
       "difficulty": 5,
-      "spriteKey": "forest-sprite",
-      "region": "verdant_forest",
-      "_note": "TODO: Replace with enemy-mushroom when art is ready"
+      "spriteKey": "spritesheet--36--sheet",
+      "animPrefix": "mushroom",
+      "scale": 0.5,
+      "region": "verdant_forest"
     },
     "thorn_sprite": {
       "id": "thorn_sprite",
@@ -44,15 +46,17 @@
       "id": "elder_treant",
       "name": "Elder Treant",
       "nameCs": "Prastarý ent",
-      "hp": 15,
+      "hp": 20,
       "atk": 2,
+      "defense": 1,
       "xp": 50,
       "goldMin": 25,
       "goldMax": 40,
       "difficulty": 7,
-      "spriteKey": "forest-wolf",
-      "region": "verdant_forest",
-      "_note": "TODO: Replace with enemy-treant when art is ready"
+      "spriteKey": "spritesheet--37--sheet",
+      "animPrefix": "treant",
+      "scale": 0.5,
+      "region": "verdant_forest"
     },
     "verdant_guardian": {
       "id": "verdant_guardian",

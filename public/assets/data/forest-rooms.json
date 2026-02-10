@@ -15,7 +15,7 @@
           "enemyId": "forest_wolf",
           "x": 850,
           "y": 540,
-          "sprite": "forest-wolf",
+          "sprite": "wolves-only-transparent-sheet",
           "aggroRadius": 150
         }
       ],
@@ -57,10 +57,10 @@
         {
           "id": "mushroom_1",
           "type": "enemy",
-          "enemyId": "forest_wolf",
-          "x": 1050,
-          "y": 610,
-          "sprite": "forest-wolf",
+          "enemyId": "mushroom_giant",
+          "x": 925,
+          "y": 495,
+          "sprite": "spritesheet--36--sheet",
           "aggroRadius": 150,
           "hidden": true,
           "appearsAfter": {
@@ -104,20 +104,23 @@
       "battleBackground": "forest-deep-battleground",
       "objects": [
         {
-          "id": "sprite_1",
+          "id": "mushroom_2",
           "type": "enemy",
-          "enemyId": "thorn_sprite",
+          "enemyId": "mushroom_giant",
+          "companions": ["forest_wolf"],
           "x": 450,
-          "y": 620,
-          "sprite": "forest-sprite",
+          "y": 590,
+          "sprite": "spritesheet--36--sheet",
           "aggroRadius": 150
         },
         {
           "id": "chest_locked",
           "type": "letter_lock_chest",
-          "x": 700,
-          "y": 620,
-          "sprite": "chest-locked",
+          "x": 1000,
+          "y": 580,
+          "sprite": "chest-forest-spin",
+          "flipX": true,
+          "scale": 0.5,
           "riddle": "Má čtyři nohy, ale nechodí. Co to je?",
           "riddleEn": "Has four legs but doesn't walk. What is it?",
           "answer": "STUL",
@@ -142,7 +145,7 @@
           "height": 360,
           "targetRoom": "forest_camp",
           "direction": "right",
-          "requiresDefeated": ["sprite_1"]
+          "requiresDefeated": ["mushroom_2"]
         }
       ],
       "playerSpawn": { "x": 150, "y": 620 },
@@ -156,21 +159,22 @@
       "name": "Forest Camp",
       "nameCs": "Lesní tábor",
       "background": "bg-forest-camp",
+      "sceneClass": "ForestCampScene",
       "isWaypoint": true,
       "objects": [
         {
           "id": "chest_simple",
           "type": "chest",
-          "x": 450,
-          "y": 500,
+          "x": 1084,
+          "y": 455,
           "sprite": "chest",
           "reward": { "gold": 40 }
         },
         {
-          "id": "campfire",
+          "id": "tent_rest",
           "type": "rest",
-          "x": 640,
-          "y": 480,
+          "x": 447,
+          "y": 400,
           "sprite": "campfire",
           "healPercent": 100,
           "isSavePoint": true
@@ -193,9 +197,7 @@
           "width": 80,
           "height": 360,
           "targetRoom": "ancient_grove",
-          "direction": "right",
-          "locked": true,
-          "lockedMessage": "Cesta do Prastarého háje je zatím uzavřena... (Část 2)"
+          "direction": "right"
         }
       ],
       "playerSpawn": { "x": 640, "y": 520 },
@@ -209,7 +211,7 @@
       "name": "Ancient Grove",
       "nameCs": "Prastarý háj",
       "background": "bg-ancient-grove",
-      "battleBackground": "bg-battle-ancient-grove",
+      "battleBackground": "ancient-forest-battle-bg",
       "objects": [
         {
           "id": "treant_1",
@@ -217,19 +219,8 @@
           "enemyId": "elder_treant",
           "x": 750,
           "y": 450,
-          "sprite": "forest-treant"
-        },
-        {
-          "id": "puzzle_scales",
-          "type": "puzzle",
-          "puzzleId": "balance_scale",
-          "x": 500,
-          "y": 480,
-          "sprite": "balance-scales",
-          "hidden": true,
-          "appearsAfter": {
-            "objectDefeated": "treant_1"
-          }
+          "sprite": "spritesheet--37--sheet",
+          "aggroRadius": 150
         }
       ],
       "exits": [
@@ -243,15 +234,14 @@
           "direction": "left"
         },
         {
-          "id": "to_guardian",
+          "id": "to_ancient_bridge",
           "x": 1200,
           "y": 360,
           "width": 80,
           "height": 360,
-          "targetRoom": "guardian_lair",
+          "targetRoom": "ancient_bridge",
           "direction": "right",
-          "requiresDefeated": ["treant_1"],
-          "requiresPuzzle": "puzzle_scales"
+          "requiresDefeated": ["treant_1"]
         }
       ],
       "playerSpawn": { "x": 150, "y": 500 },
@@ -260,12 +250,47 @@
         "right": { "x": 1100, "y": 500 }
       }
     },
+    "ancient_bridge": {
+      "id": "ancient_bridge",
+      "name": "Ancient Bridge",
+      "nameCs": "Prastarý most",
+      "background": "misc.forest-riddle",
+      "battleBackground": "ancient-forest-battle-bg",
+      "sceneClass": "ForestRiddleScene",
+      "objects": [],
+      "exits": [
+        {
+          "id": "to_ancient_grove",
+          "x": 0,
+          "y": 400,
+          "width": 80,
+          "height": 300,
+          "targetRoom": "ancient_grove",
+          "direction": "left"
+        },
+        {
+          "id": "to_guardian_lair",
+          "x": 1200,
+          "y": 400,
+          "width": 80,
+          "height": 300,
+          "targetRoom": "guardian_lair",
+          "direction": "right",
+          "requiresPuzzle": "bridge_riddle"
+        }
+      ],
+      "playerSpawn": { "x": 80, "y": 590 },
+      "spawnFromDirection": {
+        "left": { "x": 80, "y": 590 },
+        "right": { "x": 1100, "y": 610 }
+      }
+    },
     "guardian_lair": {
       "id": "guardian_lair",
       "name": "Guardian's Lair",
       "nameCs": "Doupě strážce",
-      "background": "bg-guardian-lair",
-      "battleBackground": "bg-battle-guardian-lair",
+      "background": "guardian-lair",
+      "battleBackground": "guardian-lair",
       "objects": [
         {
           "id": "puzzle_offering",

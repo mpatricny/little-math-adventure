@@ -93,43 +93,69 @@ export class ForestRiddleScene extends Phaser.Scene {
     private journeySystem = JourneySystem.getInstance();
     private gameState = GameStateManager.getInstance();
 
+    // Puzzle configs keyed by roomId — allows reuse of this scene for multiple bridge riddles
+    private static PUZZLE_CONFIGS: Record<string, {
+        sequence: number[];
+        fixedIndices: number[];
+        distractors: number[];
+        stoneDisplayValues: number[];
+        dropZoneConfig: { expectedValue: number; sequenceIndex: number }[];
+        floatingRockValues: number[];
+    }> = {
+        'forest_riddle': {
+            sequence: [2, 4, 6, 8, 10, 12, 14],
+            fixedIndices: [0, 2, 3, 4, 6],
+            distractors: [3, 5, 7],
+            stoneDisplayValues: [2, 6, 8, 10, 14],
+            dropZoneConfig: [
+                { expectedValue: 4, sequenceIndex: 1 },
+                { expectedValue: 12, sequenceIndex: 5 }
+            ],
+            floatingRockValues: [4, 12, 3, 7, 5]
+        },
+        'ancient_bridge': {
+            sequence: [3, 6, 9, 12, 15, 18, 21],
+            fixedIndices: [0, 2, 3, 4, 6],
+            distractors: [5, 10, 14],
+            stoneDisplayValues: [3, 9, 12, 15, 21],
+            dropZoneConfig: [
+                { expectedValue: 6, sequenceIndex: 1 },
+                { expectedValue: 18, sequenceIndex: 5 }
+            ],
+            floatingRockValues: [5, 18, 14, 6, 10]
+        }
+    };
+
     // Scene data
     private roomId = 'forest_riddle';
     private fromDirection?: 'left' | 'right';
 
-    // Puzzle configuration
-    // The sequence is: 2, [?], 6, 8, 10, [?], 14
-    // - 5 stepping stones show fixed numbers: 2, 6, 8, 10, 14
-    // - 2 drop zones (gaps between stones) expect: 4 and 12
+    // Puzzle configuration (selected from PUZZLE_CONFIGS in init())
     private config: RiddleConfig = {
         sequence: [2, 4, 6, 8, 10, 12, 14],
-        fixedIndices: [0, 2, 3, 4, 6],  // Positions showing 2, 6, 8, 10, 14
-        distractors: [3, 5, 7],         // Wrong answers in addition to correct 4, 12
+        fixedIndices: [0, 2, 3, 4, 6],
+        distractors: [3, 5, 7],
         manaReward: 3,
         wrongAnswerDamage: 1
     };
 
-    // The 5 stepping stones show these values (displayed on stream rocks)
+    // Values driven by selected puzzle config
     private stoneDisplayValues = [2, 6, 8, 10, 14];
 
-    // Drop zones are BETWEEN the stepping stones
-    // Drop zone 0: between stones 0 and 1 (expects 4)
-    // Drop zone 1: between stones 3 and 4 (expects 12)
     private dropZoneConfig = [
-        { expectedValue: 4, sequenceIndex: 1 },   // Position 1 in sequence
-        { expectedValue: 12, sequenceIndex: 5 },  // Position 5 in sequence
+        { expectedValue: 4, sequenceIndex: 1 },
+        { expectedValue: 12, sequenceIndex: 5 },
     ];
 
-    // Floating rock element IDs from scenes.json
+    // Floating rock element IDs from scenes.json (shared visual layout)
     private floatingRockIds = [
-        'rock with number',     // Value: 4 (correct for drop zone 0)
-        'rock with number_1',   // Value: 12 (correct for drop zone 1)
-        'rock with number_2',   // Value: 3 (distractor)
-        'rock with number_3',   // Value: 7 (distractor)
-        'rock with number_4',   // Value: 5 (distractor)
+        'rock with number',
+        'rock with number_1',
+        'rock with number_2',
+        'rock with number_3',
+        'rock with number_4',
     ];
 
-    // Floating rock values (2 correct answers + 3 distractors)
     private floatingRockValues = [4, 12, 3, 7, 5];
 
     // Game state
@@ -147,7 +173,7 @@ export class ForestRiddleScene extends Phaser.Scene {
     private bridgeBlockX = 280;
 
     // Room data (objects like mushroom)
-    private roomData: { objects: RoomObject[]; battleBackground?: string } | null = null;
+    private roomData: { objects: RoomObject[]; battleBackground?: string; exits?: { targetRoom: string; direction: string }[] } | null = null;
     private mushroomSprite: Phaser.GameObjects.Container | null = null;
     private mushroomDefeated = false;
     private battleWon = false;
@@ -202,6 +228,20 @@ export class ForestRiddleScene extends Phaser.Scene {
         this.mushroomSprite = null;
         this.mushroomDefeated = false;
 
+        // Select puzzle config based on roomId
+        const puzzleConfig = ForestRiddleScene.PUZZLE_CONFIGS[this.roomId]
+            ?? ForestRiddleScene.PUZZLE_CONFIGS['forest_riddle'];
+        this.config = {
+            sequence: puzzleConfig.sequence,
+            fixedIndices: puzzleConfig.fixedIndices,
+            distractors: puzzleConfig.distractors,
+            manaReward: 3,
+            wrongAnswerDamage: 1
+        };
+        this.stoneDisplayValues = puzzleConfig.stoneDisplayValues;
+        this.dropZoneConfig = puzzleConfig.dropZoneConfig;
+        this.floatingRockValues = puzzleConfig.floatingRockValues;
+
         // Check if puzzle was already solved in this journey
         const state = this.journeySystem.getObjectState(this.roomId, 'bridge_riddle');
         if (state?.completed) {
@@ -230,14 +270,16 @@ export class ForestRiddleScene extends Phaser.Scene {
             }
         }
 
-        // Load room data from cache
-        this.roomData = this.cache.json.get('forestRooms')?.rooms?.forest_riddle || null;
+        // Load room data from cache (keyed by roomId, not hardcoded)
+        this.roomData = this.cache.json.get('forestRooms')?.rooms?.[this.roomId] || null;
 
-        // BLOCK: Cannot enter this scene from the right (no backtracking from deep_forest)
+        // BLOCK: Cannot enter this scene from the right (no backtracking)
         if (this.fromDirection === 'right') {
-            // Redirect back to where they came from
+            // Find the right exit's target room to redirect back to
+            const rightExit = this.roomData?.exits?.find((e: any) => e.direction === 'right');
+            const redirectRoom = rightExit?.targetRoom || 'deep_forest';
             this.scene.start('ForestRoomScene', {
-                roomId: 'deep_forest',
+                roomId: redirectRoom,
                 fromDirection: 'left'
             });
         }
@@ -529,21 +571,25 @@ export class ForestRiddleScene extends Phaser.Scene {
             { x: (stonePositions[3].x + stonePositions[4].x) / 2, y: 625 },
         ];
 
-        // Rock indices 0 and 1 are correct answers (4 and 12)
-        // Rock indices 2, 3, 4 are distractors (3, 7, 5)
+        // Match rocks to drop zones by value (correct answers can be at any index)
+        const expectedValues = this.dropZoneConfig.map(dz => dz.expectedValue);
+
         this.floatingRockIds.forEach((id, index) => {
             const container = this.sceneBuilder.get<Phaser.GameObjects.Container>(id);
             if (!container) return;
 
-            if (index < 2) {
-                // Correct answer rock - position it in the drop zone
-                const dropZonePos = dropZonePositions[index];
+            const rockValue = this.floatingRockValues[index];
+            const dropZoneIndex = expectedValues.indexOf(rockValue);
+
+            if (dropZoneIndex !== -1) {
+                // Correct answer rock - position it in the matching drop zone
+                const dropZonePos = dropZonePositions[dropZoneIndex];
                 container.setPosition(dropZonePos.x, dropZonePos.y);
                 container.setScale(0.7);  // Scaled down like when placed
                 container.setDepth(60);
 
                 // Update the text to show correct value
-                this.updateRockText(container, this.floatingRockValues[index].toString());
+                this.updateRockText(container, rockValue.toString());
             } else {
                 // Distractor rock - destroy it
                 container.destroy();
@@ -869,21 +915,19 @@ export class ForestRiddleScene extends Phaser.Scene {
         // Show reward
         this.showFloatingText(`+${this.config.manaReward} ✨ Mana`, '#44aaff', 640, 300);
 
-        // 4. Victory message
-        this.time.delayedCall(600, () => {
-            this.showMessage('Most je odemčen! Můžeš pokračovat.');
-        });
-
-        // 5. Victory flash
+        // 4. Victory flash
         this.cameras.main.flash(300, 100, 255, 100);
 
-        // 6. Spawn mushroom after a delay (blocks path forward)
-        this.time.delayedCall(1000, () => {
-            if (!this.mushroomDefeated) {
-                this.createMushroom();
-                this.showMessage('Pozor! Něco blokuje cestu...');
-            }
-        });
+        // 5. Spawn enemy after a delay if room has one (blocks path forward)
+        const hasEnemyObj = this.roomData?.objects?.some(o => o.type === 'enemy');
+        if (hasEnemyObj) {
+            this.time.delayedCall(2000, () => {
+                if (!this.mushroomDefeated) {
+                    this.createMushroom();
+                    this.showMessage('Pozor! Něco blokuje cestu...');
+                }
+            });
+        }
     }
 
     /**
@@ -901,15 +945,40 @@ export class ForestRiddleScene extends Phaser.Scene {
         // Create container for enemy
         const container = this.add.container(mushroomObj.x, mushroomObj.y);
 
-        // Use the sprite from room data (forest-wolf for now)
-        const spriteKey = mushroomObj.sprite || 'forest-wolf';
+        // Use the sprite from room data
+        const spriteKey = mushroomObj.sprite || 'spritesheet--36--sheet';
         let enemySprite: Phaser.GameObjects.Sprite | Phaser.GameObjects.Circle;
 
         if (this.textures.exists(spriteKey)) {
             enemySprite = this.add.sprite(0, 0, spriteKey);
             enemySprite.setScale(1.5);
-            // Flip to face left (toward player)
-            enemySprite.setFlipX(true);
+
+            // Apply scale and play idle animation from enemies.json or forest-enemies.json
+            if (mushroomObj.enemyId) {
+                const enemies = this.cache.json.get('enemies') as any[];
+                let enemyDef = enemies?.find((e: any) => e.id === mushroomObj.enemyId);
+
+                // Fallback to forest enemies
+                if (!enemyDef && this.cache.json.has('forestEnemies')) {
+                    const forestData = this.cache.json.get('forestEnemies') as any;
+                    const fe = forestData?.enemies?.[mushroomObj.enemyId];
+                    if (fe) {
+                        enemyDef = { ...fe, attack: fe.atk, animPrefix: fe.animPrefix || fe.spriteKey?.replace('-sheet', '') };
+                    }
+                }
+
+                if (enemyDef) {
+                    if (enemyDef.scale) {
+                        enemySprite.setScale(enemyDef.scale);
+                    }
+                    if (enemyDef.animPrefix) {
+                        const idleAnim = `${enemyDef.animPrefix}-idle`;
+                        if (this.anims.exists(idleAnim)) {
+                            enemySprite.play(idleAnim);
+                        }
+                    }
+                }
+            }
         } else {
             // Fallback placeholder
             enemySprite = this.add.circle(0, 0, 40, 0x884422, 1);
@@ -1250,19 +1319,26 @@ export class ForestRiddleScene extends Phaser.Scene {
      * Check if player is in exit zone and handle transition
      */
     private checkExitZones(): void {
-        // Left exit (back to forest_edge) - only allowed if bridge NOT yet crossed
-        if (this.player.x < 80 && !this.hasCrossedBridge) {
-            this.transitionToRoom('forest_edge', 'left');
+        // Find exit targets from room data
+        const exits = (this.roomData as any)?.exits || [];
+        const leftExit = exits.find((e: any) => e.direction === 'left');
+        const rightExit = exits.find((e: any) => e.direction === 'right');
+
+        // Left exit - only allowed if bridge NOT yet crossed
+        if (this.player.x < 80 && !this.hasCrossedBridge && leftExit) {
+            this.transitionToRoom(leftExit.targetRoom, 'left');
             return;
         }
 
-        // Right exit (to deep_forest) - only if bridge unlocked AND mushroom defeated
-        if (this.player.x > 1150 && this.bridgeUnlocked) {
-            if (!this.mushroomDefeated) {
-                this.showMessage('Musíš porazit houbu, která blokuje cestu!');
+        // Right exit - only if bridge unlocked AND enemy defeated (if any)
+        if (this.player.x > 1150 && this.bridgeUnlocked && rightExit) {
+            // Check if there's an enemy blocking the path (e.g. mushroom_1)
+            const hasEnemy = this.roomData?.objects?.some(o => o.type === 'enemy');
+            if (hasEnemy && !this.mushroomDefeated) {
+                this.showMessage('Musíš porazit nepřítele, který blokuje cestu!');
                 return;
             }
-            this.transitionToRoom('deep_forest', 'right');
+            this.transitionToRoom(rightExit.targetRoom, 'right');
             return;
         }
     }

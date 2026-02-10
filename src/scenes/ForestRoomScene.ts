@@ -13,8 +13,11 @@ interface RoomObject {
     y: number;
     sprite?: string;
     enemyId?: string;
+    // Additional enemies that join the battle (multi-enemy encounters)
+    companions?: string[];
     // Enemy aggro - triggers battle when player gets within this radius
     aggroRadius?: number;
+    flipX?: boolean;
     // Letter lock chest
     riddle?: string;
     riddleEn?: string;
@@ -433,27 +436,57 @@ export class ForestRoomScene extends Phaser.Scene {
         // Try to use actual sprite, fall back to placeholder
         if (obj.sprite && this.textures.exists(obj.sprite)) {
             const sprite = this.add.sprite(0, 0, obj.sprite).setScale(0.8);
+            if (obj.flipX) sprite.setFlipX(true);
             container.add(sprite);
+
+            // For enemies, apply scale and play idle animation from enemies.json or forest-enemies.json
+            if (obj.enemyId) {
+                const enemies = this.cache.json.get('enemies') as any[];
+                let enemyDef = enemies?.find((e: any) => e.id === obj.enemyId);
+
+                // Fallback to forest enemies
+                if (!enemyDef && this.cache.json.has('forestEnemies')) {
+                    const forestData = this.cache.json.get('forestEnemies') as any;
+                    const fe = forestData?.enemies?.[obj.enemyId];
+                    if (fe) {
+                        enemyDef = { ...fe, attack: fe.atk, animPrefix: fe.animPrefix || fe.spriteKey?.replace('-sheet', '') };
+                    }
+                }
+
+                if (enemyDef) {
+                    if (enemyDef.scale) {
+                        sprite.setScale(enemyDef.scale);
+                    }
+                    if (enemyDef.animPrefix) {
+                        const idleAnim = `${enemyDef.animPrefix}-idle`;
+                        if (this.anims.exists(idleAnim)) {
+                            sprite.play(idleAnim);
+                        }
+                    }
+                }
+            }
         } else {
             // Placeholder based on type
             const placeholder = this.createPlaceholder(obj);
             container.add(placeholder);
         }
 
-        // Add interaction indicator (pulsing circle)
-        const indicator = this.add.circle(0, -50, 8, this.getObjectColor(obj.type), 0.8);
-        container.add(indicator);
+        // Add interaction indicator (pulsing circle) - skip for aggro enemies (they auto-trigger)
+        if (!obj.aggroRadius) {
+            const indicator = this.add.circle(0, -50, 8, this.getObjectColor(obj.type), 0.8);
+            container.add(indicator);
 
-        // Pulsing animation
-        this.tweens.add({
-            targets: indicator,
-            scaleX: 1.3,
-            scaleY: 1.3,
-            alpha: 0.4,
-            duration: 800,
-            yoyo: true,
-            repeat: -1
-        });
+            // Pulsing animation
+            this.tweens.add({
+                targets: indicator,
+                scaleX: 1.3,
+                scaleY: 1.3,
+                alpha: 0.4,
+                duration: 800,
+                yoyo: true,
+                repeat: -1
+            });
+        }
 
         // Store object data for interaction
         container.setData('objectData', obj);
@@ -940,6 +973,27 @@ export class ForestRoomScene extends Phaser.Scene {
         // Use room's battle background if available, otherwise fall back to regular background
         const battleBg = this.currentRoom.battleBackground || this.currentRoom.background;
 
+        // Build multi-enemy encounter if companions are defined
+        if (obj.companions && obj.companions.length > 0) {
+            const allEnemyIds = [obj.enemyId, ...obj.companions];
+            const enemyDefs = allEnemyIds.map(id => this.resolveForestEnemy(id)).filter(Boolean) as import('../types').EnemyDefinition[];
+
+            if (enemyDefs.length > 0) {
+                this.scene.start('BattleScene', {
+                    mode: 'journey',
+                    enemyDefs,
+                    returnScene: 'ForestRoomScene',
+                    returnData: {
+                        roomId: this.roomId,
+                        defeatedObjectId: obj.id
+                    },
+                    backgroundKey: battleBg,
+                    isBoss: obj.type === 'boss'
+                });
+                return;
+            }
+        }
+
         this.scene.start('BattleScene', {
             mode: 'journey',
             enemyId: obj.enemyId,
@@ -951,6 +1005,39 @@ export class ForestRoomScene extends Phaser.Scene {
             backgroundKey: battleBg,
             isBoss: obj.type === 'boss'
         });
+    }
+
+    private resolveForestEnemy(enemyId: string): import('../types').EnemyDefinition | null {
+        // Try main enemies list first
+        const enemies = this.cache.json.get('enemies') as any[];
+        const mainEnemy = enemies?.find((e: any) => e.id === enemyId);
+        if (mainEnemy) return mainEnemy;
+
+        // Try forest enemies
+        if (this.cache.json.has('forestEnemies')) {
+            const forestData = this.cache.json.get('forestEnemies') as any;
+            const fe = forestData?.enemies?.[enemyId];
+            if (fe) {
+                const goldMin = fe.goldMin || 5;
+                const goldMax = fe.goldMax || goldMin + 5;
+                return {
+                    id: fe.id,
+                    name: fe.nameCs || fe.name,
+                    hp: fe.hp,
+                    attack: fe.atk || 3,
+                    defense: fe.defense ?? 0,
+                    xpReward: fe.xp || 10,
+                    goldReward: [goldMin, goldMax],
+                    difficulty: fe.difficulty || 5,
+                    spriteKey: fe.spriteKey,
+                    animPrefix: fe.animPrefix || fe.spriteKey?.replace('-sheet', '') || 'slime',
+                    scale: fe.scale
+                } as import('../types').EnemyDefinition;
+            }
+        }
+
+        console.warn(`[ForestRoomScene] Could not resolve enemy: ${enemyId}`);
+        return null;
     }
 
     private openChest(obj: RoomObject): void {
