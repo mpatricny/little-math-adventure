@@ -36,7 +36,8 @@ export class ProgressionSystem {
      * Get total coin value
      */
     static getTotalCoinValue(coins: CoinCurrency): number {
-        return coins.copper + (coins.silver * 5) + (coins.gold * 10) + ((coins.pouch ?? 0) * 100);
+        if (!coins) return 0;
+        return (coins.copper || 0) + ((coins.silver || 0) * 5) + ((coins.gold || 0) * 10) + ((coins.pouch ?? 0) * 100);
     }
 
     /**
@@ -378,6 +379,13 @@ export class ProgressionSystem {
         // Migrate: Add defeatedBosses if missing
         if (!player.defeatedBosses) {
             player.defeatedBosses = [];
+        }
+
+        // Migrate: Convert ancient `gold: number` to `coins: CoinCurrency`
+        if (!player.coins || typeof player.coins === 'number') {
+            const oldGold = (player as any).gold ?? (typeof player.coins === 'number' ? player.coins : 0);
+            player.coins = { copper: oldGold || 0, silver: 0, gold: 0, pouch: 0 };
+            this.normalizeCoins(player);
         }
 
         // Migrate: Add pouch field if missing (pre-pouch saves) and re-normalize
