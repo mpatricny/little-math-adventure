@@ -121,7 +121,7 @@ export class CharacterUI {
         this.levelText.setText(`ÚROVEŇ: ${player.level}`);
         this.xpText.setText(`XP: ${player.xp}/${player.xpToNextLevel}`);
         this.hpText.setText(`HP: ${player.hp}/${player.maxHp}`);
-        this.goldText.setText(`ZLATO: ${player.gold}`);
+        this.goldText.setText(`ZLATO: ${ProgressionSystem.getTotalCoinValue(player.coins)}`);
         this.statusText.setText(`STAV: ${player.status === 'healthy' ? 'ZDRAVÝ' : 'ZRANĚNÝ'}`);
         this.statusText.setColor(player.status === 'healthy' ? '#00ff00' : '#ff0000');
         this.attackText.setText(`ÚTOK: ${player.attack}`);
