@@ -189,12 +189,18 @@ export class BattleScene extends Phaser.Scene {
             this.enemyDefs = data.enemyDefs;
         } else {
             const enemyId = data.enemyId || data.enemy || 'slime_green';
-            
-            // Try main enemies list first
+            const useForestEnemy = data.useForestEnemy === true;
+
+            // When launched from forest, check forest enemies first (they have full boss phase data)
+            // Otherwise, check main enemies list first for backward compatibility
             const enemies = this.cache.json.get('enemies') as EnemyDefinition[];
-            let enemy = enemies?.find(e => e.id === enemyId);
-            
-            // If not found, try forest enemies
+            let enemy: EnemyDefinition | undefined;
+
+            if (!useForestEnemy) {
+                enemy = enemies?.find(e => e.id === enemyId);
+            }
+
+            // Try forest enemies
             if (!enemy && this.cache.json.has('forestEnemies')) {
                 interface ForestEnemy {
                     id: string;
@@ -284,7 +290,12 @@ export class BattleScene extends Phaser.Scene {
                     }
                 }
             }
-            
+
+            // If useForestEnemy was set but enemy wasn't in forest data, fall back to main enemies
+            if (!enemy && useForestEnemy) {
+                enemy = enemies?.find(e => e.id === enemyId);
+            }
+
             // Fallback to first enemy if still not found
             this.enemyDefs = [enemy || enemies?.[0]];
         }

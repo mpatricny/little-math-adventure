@@ -988,7 +988,8 @@ export class ForestRoomScene extends Phaser.Scene {
                         defeatedObjectId: obj.id
                     },
                     backgroundKey: battleBg,
-                    isBoss: obj.type === 'boss'
+                    isBoss: obj.type === 'boss',
+                    useForestEnemy: true
                 });
                 return;
             }
@@ -1003,17 +1004,13 @@ export class ForestRoomScene extends Phaser.Scene {
                 defeatedObjectId: obj.id
             },
             backgroundKey: battleBg,
-            isBoss: obj.type === 'boss'
+            isBoss: obj.type === 'boss',
+            useForestEnemy: true
         });
     }
 
     private resolveForestEnemy(enemyId: string): import('../types').EnemyDefinition | null {
-        // Try main enemies list first
-        const enemies = this.cache.json.get('enemies') as any[];
-        const mainEnemy = enemies?.find((e: any) => e.id === enemyId);
-        if (mainEnemy) return mainEnemy;
-
-        // Try forest enemies
+        // Try forest enemies first (they have full definitions with phases, proper stats, etc.)
         if (this.cache.json.has('forestEnemies')) {
             const forestData = this.cache.json.get('forestEnemies') as any;
             const fe = forestData?.enemies?.[enemyId];
@@ -1031,10 +1028,16 @@ export class ForestRoomScene extends Phaser.Scene {
                     difficulty: fe.difficulty || 5,
                     spriteKey: fe.spriteKey,
                     animPrefix: fe.animPrefix || fe.spriteKey?.replace('-sheet', '') || 'slime',
-                    scale: fe.scale
+                    scale: fe.scale,
+                    battleOffsetY: fe.battleOffsetY
                 } as import('../types').EnemyDefinition;
             }
         }
+
+        // Fall back to main enemies list
+        const enemies = this.cache.json.get('enemies') as any[];
+        const mainEnemy = enemies?.find((e: any) => e.id === enemyId);
+        if (mainEnemy) return mainEnemy;
 
         console.warn(`[ForestRoomScene] Could not resolve enemy: ${enemyId}`);
         return null;
@@ -1080,7 +1083,7 @@ export class ForestRoomScene extends Phaser.Scene {
 
     private openLetterLockChest(obj: RoomObject): void {
         // Launch puzzle scene as overlay
-        this.scene.launch('LetterLockPuzzleScene', {
+        this.scene.launch('SpinLockPuzzleScene', {
             riddle: obj.riddle,
             riddleEn: obj.riddleEn,
             answer: obj.answer,

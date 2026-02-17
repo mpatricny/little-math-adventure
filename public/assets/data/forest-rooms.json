@@ -306,7 +306,7 @@
           "enemyId": "verdant_guardian",
           "x": 900,
           "y": 420,
-          "sprite": "verdant-guardian",
+          "sprite": "spritesheet--38--sheet",
           "hidden": true,
           "appearsAfter": {
             "puzzleInteracted": "puzzle_offering"
