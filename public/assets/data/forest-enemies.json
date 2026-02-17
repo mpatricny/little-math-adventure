@@ -55,7 +55,8 @@
       "difficulty": 7,
       "spriteKey": "spritesheet--37--sheet",
       "animPrefix": "treant",
-      "scale": 1.5,
+      "scale": 1.3,
+      "battleOffsetY": -40,
       "region": "verdant_forest"
     },
     "verdant_guardian": {
@@ -63,6 +64,9 @@
       "name": "Verdant Guardian",
       "nameCs": "Strážce lesa",
       "isBoss": true,
+      "spriteKey": "spritesheet--38--sheet",
+      "animPrefix": "verdant",
+      "scale": 1.2,
       "phases": [
         {
           "hp": 10,
@@ -82,7 +86,9 @@
           "mathType": "missing_operand",
           "mathDifficulty": 5,
           "ability": "vengeful_strike",
-          "healPercent": 15
+          "healPercent": 15,
+          "transitionAnim": "verdant-enraged",
+          "tint": "0xffaaaa"
         },
         {
           "hp": 12,
@@ -92,7 +98,11 @@
           "mathType": "comparison",
           "mathDifficulty": 6,
           "ability": "last_stand",
-          "healPercent": 0
+          "healPercent": 0,
+          "transitionAnim": "verdant-shield-on",
+          "idleAnim": "verdant-shield-idle",
+          "attackAnim": "verdant-shield-attack",
+          "deathSequence": ["verdant-shield-broke", "verdant-death"]
         }
       ],
       "phaseHealPlayer": 0,
@@ -101,9 +111,7 @@
       "goldMax": 120,
       "diamonds": 5,
       "difficulty": 8,
-      "spriteKey": "forest-wolf",
-      "region": "verdant_forest",
-      "_note": "TODO: Replace with boss-guardian when art is ready"
+      "region": "verdant_forest"
     }
   }
 }

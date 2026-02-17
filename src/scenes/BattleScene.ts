@@ -127,9 +127,22 @@ export class BattleScene extends Phaser.Scene {
         mathDifficulty?: number;
         ability?: string | null;
         healPercent?: number;
+        transitionAnim?: string;
+        idleAnim?: string;
+        attackAnim?: string;
+        tint?: string;
+        deathSequence?: string[];
     }[] = [];
     private currentBossPhase: number = 0;
     private bossPhaseHealPlayer: number = 0;
+
+    // Boss phase animation overrides (applied per-phase)
+    private bossPhaseAnimOverrides: {
+        idleAnim?: string;
+        attackAnim?: string;
+        tint?: number;
+        deathSequence?: string[];
+    } = {};
 
     // Boss ability tracking
     private currentPhaseAbility: string | null = null;
@@ -169,6 +182,7 @@ export class BattleScene extends Phaser.Scene {
         this.bossPhases = [];
         this.currentBossPhase = 0;
         this.bossPhaseHealPlayer = 0;
+        this.bossPhaseAnimOverrides = {};
 
         // Get enemy data - either from arena or single enemy
         if (data.enemyDefs && data.enemyDefs.length > 0) {
@@ -194,6 +208,7 @@ export class BattleScene extends Phaser.Scene {
                     spriteKey: string;
                     animPrefix?: string;
                     scale?: number;
+                    battleOffsetY?: number;
                     // Boss properties
                     isBoss?: boolean;
                     phases?: {
@@ -205,6 +220,11 @@ export class BattleScene extends Phaser.Scene {
                         mathDifficulty?: number;
                         ability?: string | null;
                         healPercent?: number;
+                        transitionAnim?: string;
+                        idleAnim?: string;
+                        attackAnim?: string;
+                        tint?: string;
+                        deathSequence?: string[];
                     }[];
                     phaseHealPlayer?: number;
                 }
@@ -224,6 +244,9 @@ export class BattleScene extends Phaser.Scene {
                         this.lastAnswerCorrect = true;
                         this.lastStandTriggered = false;
 
+                        // Apply phase 1 animation overrides
+                        this.applyBossPhaseOverrides(phase1);
+
                         console.log(`[BattleScene] Boss battle! ${forestEnemy.phases.length} phases. Starting phase: ${phase1.nameCs}, ability: ${this.currentPhaseAbility}`);
 
                         const goldMin = forestEnemy.goldMin || 5;
@@ -238,7 +261,8 @@ export class BattleScene extends Phaser.Scene {
                             goldReward: [goldMin, goldMax],
                             spriteKey: forestEnemy.spriteKey,
                             animPrefix: forestEnemy.animPrefix || forestEnemy.spriteKey?.replace('-sheet', '') || 'slime',
-                            scale: forestEnemy.scale
+                            scale: forestEnemy.scale,
+                            battleOffsetY: forestEnemy.battleOffsetY
                         } as unknown as EnemyDefinition;
                     } else {
                         // Regular forest enemy
@@ -254,7 +278,8 @@ export class BattleScene extends Phaser.Scene {
                             goldReward: [goldMin, goldMax],
                             spriteKey: forestEnemy.spriteKey,
                             animPrefix: forestEnemy.animPrefix || forestEnemy.spriteKey?.replace('-sheet', '') || 'slime',
-                            scale: forestEnemy.scale
+                            scale: forestEnemy.scale,
+                            battleOffsetY: forestEnemy.battleOffsetY
                         } as unknown as EnemyDefinition;
                     }
                 }
@@ -415,8 +440,10 @@ export class BattleScene extends Phaser.Scene {
             // Use the texture that actually exists (might be fallback)
             const actualSpriteKey = this.textures.exists(def.spriteKey) ? def.spriteKey : 'slime-sheet';
 
-            const container = this.add.container(x, y);
-            const sprite = this.add.sprite(0, 0, actualSpriteKey).setScale(enemyScale).play(`${animPrefix}-idle`);
+            const offsetY = def.battleOffsetY || 0;
+            const container = this.add.container(x, y + offsetY);
+            const idleAnimKey = (this.isBoss && index === 0) ? this.getBossAnimKey(0, 'idle') : `${animPrefix}-idle`;
+            const sprite = this.add.sprite(0, 0, actualSpriteKey).setScale(enemyScale).play(idleAnimKey);
             const hpBar = this.createHpBar(0, -80, enemy.hp, enemy.maxHp, '#cc4444');
             container.add([sprite, hpBar.container]);
 
@@ -932,14 +959,20 @@ export class BattleScene extends Phaser.Scene {
 
         // Enemy hit effect
         if (enemy.hp > 0) {
-            enemySprite.play(`${animPrefix}-hurt`);
+            const hurtKey = (this.isBoss && targetIdx === 0) ? this.getBossAnimKey(0, 'hurt') : `${animPrefix}-hurt`;
+            enemySprite.play(hurtKey);
             enemySprite.setTint(0xff0000);
             this.time.delayedCall(100, () => {
-                enemySprite.clearTint();
+                if (this.isBoss && targetIdx === 0 && this.bossPhaseAnimOverrides.tint) {
+                    enemySprite.setTint(this.bossPhaseAnimOverrides.tint);
+                } else {
+                    enemySprite.clearTint();
+                }
             });
             enemySprite.once('animationcomplete', () => {
                 if (enemy.hp > 0) {
-                    enemySprite.play(`${animPrefix}-idle`);
+                    const idleKey = (this.isBoss && targetIdx === 0) ? this.getBossAnimKey(0, 'idle') : `${animPrefix}-idle`;
+                    enemySprite.play(idleKey);
                 }
             });
         }
@@ -956,20 +989,26 @@ export class BattleScene extends Phaser.Scene {
 
         // Check if target enemy died from pet attack
         if (enemy.hp <= 0) {
-            enemySprite.play(`${animPrefix}-death`);
-            enemySprite.once('animationcomplete', () => {
-                // Fade out the defeated monster after 1 second
-                this.time.delayedCall(1000, () => {
-                    this.tweens.add({
-                        targets: this.enemyContainers[targetIdx],
-                        alpha: 0,
-                        duration: 500,
-                        onComplete: () => {
-                            this.checkVictoryOrContinue();
-                        }
+            if (this.isBoss && targetIdx === 0 && this.bossPhaseAnimOverrides.deathSequence?.length) {
+                this.playBossDeathSequence(targetIdx, enemySprite, () => {
+                    this.checkVictoryOrContinue();
+                });
+            } else {
+                const deathKey = (this.isBoss && targetIdx === 0) ? this.getBossAnimKey(0, 'death') : `${animPrefix}-death`;
+                enemySprite.play(deathKey);
+                enemySprite.once('animationcomplete', () => {
+                    this.time.delayedCall(1000, () => {
+                        this.tweens.add({
+                            targets: this.enemyContainers[targetIdx],
+                            alpha: 0,
+                            duration: 500,
+                            onComplete: () => {
+                                this.checkVictoryOrContinue();
+                            }
+                        });
                     });
                 });
-            });
+            }
         } else {
             this.setPhase('enemy_turn');
         }
@@ -1067,23 +1106,27 @@ export class BattleScene extends Phaser.Scene {
         enemy.hp = 0;
         this.updateHpBar(this.enemyHpBars[idx], 0, enemy.maxHp);
 
-        // Play death animation
         const animPrefix = this.enemyAnimPrefixes[idx];
-        this.enemies[idx].play(`${animPrefix}-death`);
-
-        // Fade out the defeated monster after 1 second
-        this.enemies[idx].once('animationcomplete', () => {
-            this.time.delayedCall(1000, () => {
-                this.tweens.add({
-                    targets: this.enemyContainers[idx],
-                    alpha: 0,
-                    duration: 500,
-                    onComplete: () => {
-                        this.checkVictoryOrContinue();
-                    }
+        if (this.isBoss && idx === 0 && this.bossPhaseAnimOverrides.deathSequence?.length) {
+            this.playBossDeathSequence(idx, this.enemies[idx], () => {
+                this.checkVictoryOrContinue();
+            });
+        } else {
+            const deathKey = (this.isBoss && idx === 0) ? this.getBossAnimKey(0, 'death') : `${animPrefix}-death`;
+            this.enemies[idx].play(deathKey);
+            this.enemies[idx].once('animationcomplete', () => {
+                this.time.delayedCall(1000, () => {
+                    this.tweens.add({
+                        targets: this.enemyContainers[idx],
+                        alpha: 0,
+                        duration: 500,
+                        onComplete: () => {
+                            this.checkVictoryOrContinue();
+                        }
+                    });
                 });
             });
-        });
+        }
     }
 
     private debugFullHeal(): void {
@@ -1739,6 +1782,73 @@ export class BattleScene extends Phaser.Scene {
     }
 
     /**
+     * Get the correct animation key for a boss enemy, respecting phase overrides
+     */
+    private getBossAnimKey(idx: number, slot: 'idle' | 'attack' | 'hurt' | 'death'): string {
+        const prefix = this.enemyAnimPrefixes[idx];
+        if (this.isBoss && idx === 0) {
+            const o = this.bossPhaseAnimOverrides;
+            if (slot === 'idle' && o.idleAnim) return o.idleAnim;
+            if (slot === 'attack' && o.attackAnim) return o.attackAnim;
+        }
+        if (slot === 'attack') return `${prefix}-attack`;
+        return `${prefix}-${slot}`;
+    }
+
+    /**
+     * Get the animation definition key for enemy attack movement data
+     */
+    private getBossAttackAnimDefKey(idx: number): string {
+        if (this.isBoss && idx === 0 && this.bossPhaseAnimOverrides.attackAnim) {
+            return this.bossPhaseAnimOverrides.attackAnim;
+        }
+        return `${this.enemyAnimPrefixes[idx]}-attack-anim`;
+    }
+
+    /**
+     * Apply animation overrides from a boss phase config
+     */
+    private applyBossPhaseOverrides(phase: typeof this.bossPhases[0]): void {
+        this.bossPhaseAnimOverrides = {
+            idleAnim: phase.idleAnim,
+            attackAnim: phase.attackAnim,
+            tint: phase.tint ? parseInt(phase.tint, 16) : undefined,
+            deathSequence: phase.deathSequence,
+        };
+    }
+
+    /**
+     * Play a chained sequence of animations for boss death
+     */
+    private playBossDeathSequence(
+        idx: number,
+        sprite: Phaser.GameObjects.Sprite,
+        onComplete: () => void
+    ): void {
+        const sequence = [...this.bossPhaseAnimOverrides.deathSequence!];
+        const playNext = () => {
+            if (sequence.length === 0) {
+                this.tweens.add({
+                    targets: this.enemyContainers[idx],
+                    alpha: 0,
+                    duration: 500,
+                    onComplete: () => onComplete(),
+                });
+                return;
+            }
+            const animKey = sequence.shift()!;
+            if (this.anims.exists(animKey)) {
+                sprite.play(animKey);
+                sprite.once('animationcomplete', playNext);
+            } else {
+                console.warn(`[BattleScene] Boss death sequence anim missing: ${animKey}`);
+                playNext();
+            }
+        };
+        playNext();
+    }
+
+    /**
      * Trigger boss phase transition
      */
     private triggerBossPhaseTransition(): void {
@@ -1756,8 +1866,33 @@ export class BattleScene extends Phaser.Scene {
         this.currentPhaseAbility = nextPhase.ability || null;
         this.lastStandTriggered = false; // Reset for new phase
 
-        console.log(`[BattleScene] Boss phase transition! Phase ${this.currentBossPhase + 1}: ${nextPhase.nameCs}, ability: ${this.currentPhaseAbility}, heal: ${healAmount} (${healPercent}%)`);
+        console.log(`[BattleScene] Boss phase transition! Phase ${this.currentBossPhase + 1}: ${nextPhase.nameCs}, ability: ${this.currentPhaseAbility}, heal: ${healAmount} (${healPercent}%), transitionAnim: ${nextPhase.transitionAnim || 'none'}`);
 
+        // Make boss visible again before transition animation
+        this.enemyContainers[0].setAlpha(1);
+        this.enemies[0].setAlpha(1);
+
+        // Play transition animation if defined, then show overlay
+        const showOverlay = () => {
+            this.showBossPhaseOverlay(nextPhase, healAmount, healPercent);
+        };
+
+        if (nextPhase.transitionAnim && this.anims.exists(nextPhase.transitionAnim)) {
+            this.enemies[0].play(nextPhase.transitionAnim);
+            this.enemies[0].once('animationcomplete', showOverlay);
+        } else {
+            showOverlay();
+        }
+    }
+
+    /**
+     * Show the phase transition overlay UI and apply phase changes
+     */
+    private showBossPhaseOverlay(
+        nextPhase: typeof this.bossPhases[0],
+        healAmount: number,
+        healPercent: number
+    ): void {
         // Show phase transition overlay
         const overlay = this.add.rectangle(640, 360, 1280, 720, 0x000000, 0.7).setDepth(100);
 
@@ -1834,6 +1969,7 @@ export class BattleScene extends Phaser.Scene {
         // After delay, apply phase changes and continue battle
         this.time.delayedCall(2500, () => {
             // Heal player (percentage-based)
+            const player = this.gameState.getPlayer();
             if (healAmount > 0) {
                 this.battleState.playerHp = Math.min(
                     this.battleState.playerHp + healAmount,
@@ -1852,9 +1988,25 @@ export class BattleScene extends Phaser.Scene {
             // Update HP bar
             this.updateHpBar(this.enemyHpBars[0], boss.hp, boss.maxHp);
 
-            // Make sure boss is visible (might have been fading)
+            // Make sure boss is visible
             this.enemyContainers[0].setAlpha(1);
             this.enemies[0].setAlpha(1);
+
+            // Apply new phase animation overrides
+            this.applyBossPhaseOverrides(nextPhase);
+
+            // Apply persistent tint if set, or clear
+            if (this.bossPhaseAnimOverrides.tint) {
+                this.enemies[0].setTint(this.bossPhaseAnimOverrides.tint);
+            } else {
+                this.enemies[0].clearTint();
+            }
+
+            // Play new idle animation
+            const idleAnim = this.getBossAnimKey(0, 'idle');
+            if (this.anims.exists(idleAnim)) {
+                this.enemies[0].play(idleAnim);
+            }
 
             // Fade out overlay
             this.tweens.add({
@@ -2020,14 +2172,20 @@ export class BattleScene extends Phaser.Scene {
             });
 
             // Enemy hit effect
-            enemySprite.play(`${animPrefix}-hurt`);
+            const hurtAnimKey = (this.isBoss && idx === 0) ? this.getBossAnimKey(0, 'hurt') : `${animPrefix}-hurt`;
+            enemySprite.play(hurtAnimKey);
             enemySprite.setTint(0xff0000);
             this.time.delayedCall(100, () => {
-                enemySprite.clearTint();
+                if (this.isBoss && idx === 0 && this.bossPhaseAnimOverrides.tint) {
+                    enemySprite.setTint(this.bossPhaseAnimOverrides.tint);
+                } else {
+                    enemySprite.clearTint();
+                }
             });
             enemySprite.once('animationcomplete', () => {
                 if (enemy.hp > 0) {
-                    enemySprite.play(`${animPrefix}-idle`);
+                    const idleAnimKey = (this.isBoss && idx === 0) ? this.getBossAnimKey(0, 'idle') : `${animPrefix}-idle`;
+                    enemySprite.play(idleAnimKey);
                 }
             });
 
@@ -2095,33 +2253,44 @@ export class BattleScene extends Phaser.Scene {
     }
 
     private playEnemyDeathAndFade(idx: number, enemySprite: Phaser.GameObjects.Sprite, animPrefix: string, onComplete: () => void): void {
-        enemySprite.play(`${animPrefix}-death`);
-        enemySprite.once('animationcomplete', () => {
-            this.tweens.add({
-                targets: this.enemyContainers[idx],
-                alpha: 0,
-                duration: 500,
-                onComplete: () => onComplete(),
+        if (this.isBoss && idx === 0 && this.bossPhaseAnimOverrides.deathSequence?.length) {
+            this.playBossDeathSequence(idx, enemySprite, onComplete);
+        } else {
+            const deathKey = (this.isBoss && idx === 0) ? this.getBossAnimKey(0, 'death') : `${animPrefix}-death`;
+            enemySprite.play(deathKey);
+            enemySprite.once('animationcomplete', () => {
+                this.tweens.add({
+                    targets: this.enemyContainers[idx],
+                    alpha: 0,
+                    duration: 500,
+                    onComplete: () => onComplete(),
+                });
             });
-        });
+        }
     }
 
     private continueAfterAttack(idx: number, enemy: BattleEnemy, enemySprite: Phaser.GameObjects.Sprite, animPrefix: string): void {
         if (enemy.hp <= 0) {
-            enemySprite.play(`${animPrefix}-death`);
-            enemySprite.once('animationcomplete', () => {
-                // Fade out the defeated monster after 1 second
-                this.time.delayedCall(1000, () => {
-                    this.tweens.add({
-                        targets: this.enemyContainers[idx],
-                        alpha: 0,
-                        duration: 500,
-                        onComplete: () => {
-                            this.checkVictoryOrContinue();
-                        }
+            if (this.isBoss && idx === 0 && this.bossPhaseAnimOverrides.deathSequence?.length) {
+                this.playBossDeathSequence(idx, enemySprite, () => {
+                    this.checkVictoryOrContinue();
+                });
+            } else {
+                const deathKey = (this.isBoss && idx === 0) ? this.getBossAnimKey(0, 'death') : `${animPrefix}-death`;
+                enemySprite.play(deathKey);
+                enemySprite.once('animationcomplete', () => {
+                    this.time.delayedCall(1000, () => {
+                        this.tweens.add({
+                            targets: this.enemyContainers[idx],
+                            alpha: 0,
+                            duration: 500,
+                            onComplete: () => {
+                                this.checkVictoryOrContinue();
+                            }
+                        });
                     });
                 });
-            });
+            }
         } else {
             this.setPhase('enemy_turn');
         }
@@ -2166,8 +2335,8 @@ export class BattleScene extends Phaser.Scene {
         this.enemyAttackStartPosition = { x: startX, y: startY };
 
         // Get enemy attack animation movement data
-        const attackAnimKey = `${animPrefix}-attack-anim`;
-        const attackAnim = this.animationDefs[attackAnimKey];
+        const attackDefKey = (this.isBoss && idx === 0) ? this.getBossAttackAnimDefKey(0) : `${animPrefix}-attack-anim`;
+        const attackAnim = this.animationDefs[attackDefKey];
         const movement = attackAnim?.movement;
         const moveDuration = movement?.duration || 400;
         const moveEase = movement?.ease || 'Power1';
@@ -2176,7 +2345,7 @@ export class BattleScene extends Phaser.Scene {
         enemyContainer.setDepth(10);
 
         // Play attack animation immediately during approach
-        const attackAnimName = `${animPrefix}-attack`;
+        const attackAnimName = (this.isBoss && idx === 0) ? this.getBossAnimKey(0, 'attack') : `${animPrefix}-attack`;
         if (this.anims.exists(attackAnimName)) {
             enemySprite.play(attackAnimName);
         }
@@ -2249,7 +2418,8 @@ export class BattleScene extends Phaser.Scene {
                 this.time.delayedCall(moveDuration - 100, () => {
                     // Brief pause at hero (100ms), then return to idle and go back
                     this.time.delayedCall(100, () => {
-                        enemySprite.play(`${animPrefix}-idle`);
+                        const returnIdleKey = (this.isBoss && idx === 0) ? this.getBossAnimKey(0, 'idle') : `${animPrefix}-idle`;
+                        enemySprite.play(returnIdleKey);
                         // Return enemy to start position
                         this.returnEnemyToPosition(idx);
                     });
