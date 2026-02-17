@@ -74,9 +74,61 @@ private updateBindButton(): void {
 
 | Method | Use Case |
 |--------|----------|
-| `sceneBuilder.bindClick(id, handler)` | UiElementBuilder buttons, template-based UI |
+| `sceneBuilder.bindClick(id, handler)` | Whole-element click on UiElementBuilder buttons/template UI |
+| Standalone Zone at world position | **Specific layer** inside a template container (see below) |
 | `container.on('pointerdown', handler)` | Simple containers you created with `this.add.container()` |
 | `sprite.on('pointerdown', handler)` | Individual sprites/images |
+
+## Per-Layer Click Inside Template Containers
+
+When you need only a **specific layer** inside a template container to be clickable (not the whole container), `sceneBuilder.bindClick()` won't work because it makes the entire container's first child interactive.
+
+Instead, create a **standalone Zone** at the layer's computed world position. This bypasses the container-child input hierarchy entirely.
+
+### Why `layer.setInteractive()` Doesn't Work
+
+Making a child layer interactive inside a UiElementBuilder container is unreliable when the container has a large background layer (e.g., a frame image covering the entire template area). Phaser's container-child input processing may fail to route clicks to smaller interactive children.
+
+### The Zone Solution
+
+```typescript
+private setupButton(): void {
+    const frameContainer = this.sceneBuilder.get<Phaser.GameObjects.Container>('Spin frame');
+    if (!frameContainer) return;
+
+    const layerObjects = frameContainer.getData('layerObjects') as Map<string, Phaser.GameObjects.Image>;
+    const buttonLayer = layerObjects?.get(BUTTON_LAYER_ID);
+    if (!buttonLayer) return;
+
+    // Compute the button's world center from its world transform.
+    // Origin(0,0) images: getWorldTransformMatrix().tx/ty = world top-left corner.
+    const worldMatrix = buttonLayer.getWorldTransformMatrix();
+    const worldCenterX = worldMatrix.tx + buttonLayer.displayWidth / 2;
+    const worldCenterY = worldMatrix.ty + buttonLayer.displayHeight / 2;
+
+    // Create an invisible zone at the button's world position
+    const buttonZone = this.add.zone(worldCenterX, worldCenterY,
+        buttonLayer.displayWidth, buttonLayer.displayHeight);
+    buttonZone.setInteractive({ useHandCursor: true });
+    buttonZone.setDepth(20);  // Above containers at depth 10
+
+    // Visual feedback targets the original layer; click handler on the zone
+    buttonZone.on('pointerover', () => buttonLayer.setAlpha(0.85));
+    buttonZone.on('pointerout', () => buttonLayer.setAlpha(1));
+    buttonZone.on('pointerdown', () => {
+        buttonLayer.setTint(0xcccccc);
+        this.time.delayedCall(100, () => buttonLayer.clearTint());
+        this.checkAnswer();
+    });
+}
+```
+
+### Key Points
+
+1. The Zone is a **standalone scene object** (not inside any container) — input works reliably
+2. Set Zone depth **above** the container depth (e.g., 20 vs 10)
+3. Visual feedback (tint, alpha) targets the original layer inside the container
+4. `getWorldTransformMatrix()` on origin(0,0) images gives the **top-left** corner — add half width/height for center
 
 ## Related Issues
 

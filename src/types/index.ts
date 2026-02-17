@@ -269,6 +269,7 @@ export interface EnemyDefinition {
     goldReward: [number, number];  // [min, max]
     difficulty: number;            // Recommended player level
     scale?: number;                // Character scale multiplier
+    battleOffsetY?: number;        // Vertical offset on battlefield (negative = up)
 }
 
 // ===== ITEMS =====

@@ -1255,6 +1255,15 @@
                     0.5
                 ],
                 "scale": 1
+            },
+            "ancient_forest_bg": {
+                "type": "staticImage",
+                "texture": "ancient-forest-bg",
+                "origin": [
+                    0.5,
+                    0.5
+                ],
+                "scale": 1
             }
         }
     },
@@ -2019,6 +2028,22 @@
         "ancient-forst-bg": {
             "type": "staticImage",
             "texture": "Ancient-forst-bg",
+            "origin": [
+                0.5,
+                0.5
+            ]
+        },
+        "spin-frame": {
+            "type": "staticImage",
+            "texture": "Spin frame",
+            "origin": [
+                0.5,
+                0.5
+            ]
+        },
+        "spin-4": {
+            "type": "staticImage",
+            "texture": "spin-4",
             "origin": [
                 0.5,
                 0.5

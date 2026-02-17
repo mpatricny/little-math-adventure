@@ -575,6 +575,187 @@
                 "frameRate": 4,
                 "repeat": 0
             }
+        },
+        "verdant": {
+            "verdant-idle": {
+                "texture": "spritesheet--38--sheet",
+                "frames": {
+                    "sequence": [
+                        0,
+                        1,
+                        2,
+                        3,
+                        4,
+                        5,
+                        6,
+                        7,
+                        8,
+                        9,
+                        10,
+                        11,
+                        12,
+                        13,
+                        14,
+                        15,
+                        14,
+                        13,
+                        12,
+                        11,
+                        10,
+                        9,
+                        8,
+                        7,
+                        6
+                    ]
+                },
+                "frameRate": 6,
+                "repeat": -1
+            },
+            "verdant-attack-anim": {
+                "texture": "spritesheet--38--sheet",
+                "frames": {
+                    "sequence": [
+                        0,
+                        13,
+                        14,
+                        15,
+                        16,
+                        17,
+                        18,
+                        19,
+                        20,
+                        21,
+                        22,
+                        23,
+                        24,
+                        25,
+                        26,
+                        27,
+                        28,
+                        29,
+                        30,
+                        31,
+                        32
+                    ]
+                },
+                "frameRate": 8,
+                "repeat": 0
+            },
+            "verdant-hurt": {
+                "texture": "spritesheet--38--sheet",
+                "frames": {
+                    "sequence": [
+                        0,
+                        15,
+                        14,
+                        13,
+                        12,
+                        11
+                    ]
+                },
+                "frameRate": 7,
+                "repeat": 0
+            },
+            "verdant-death": {
+                "texture": "spritesheet--38--sheet",
+                "frames": {
+                    "sequence": [
+                        2,
+                        4,
+                        10,
+                        13,
+                        23
+                    ]
+                },
+                "frameRate": 8,
+                "repeat": 0
+            },
+            "verdant-enraged": {
+                "texture": "spritesheet--39--sheet",
+                "frames": {
+                    "sequence": [
+                        0,
+                        1,
+                        2,
+                        3,
+                        4,
+                        5,
+                        6,
+                        7,
+                        8,
+                        9,
+                        10,
+                        11,
+                        12,
+                        13,
+                        14,
+                        15,
+                        16,
+                        17,
+                        18,
+                        19,
+                        20,
+                        21,
+                        22,
+                        23,
+                        24,
+                        25,
+                        26,
+                        26,
+                        26,
+                        26,
+                        5,
+                        4,
+                        3,
+                        0
+                    ]
+                },
+                "frameRate": 6,
+                "repeat": 0
+            },
+            "verdant-shield-on": {
+                "texture": "spritesheet--40--sheet",
+                "frames": {
+                    "start": 0,
+                    "end": 17
+                },
+                "frameRate": 8,
+                "repeat": 0
+            },
+            "verdant-shield-broke": {
+                "texture": "spritesheet--40--sheet",
+                "frames": {
+                    "start": 18,
+                    "end": 41
+                },
+                "frameRate": 8,
+                "repeat": 0
+            },
+            "verdant-shield-idle": {
+                "texture": "spritesheet--40--sheet",
+                "frames": {
+                    "start": 16,
+                    "end": 21
+                },
+                "frameRate": 8,
+                "repeat": -1
+            },
+            "verdant-shield-attack": {
+                "texture": "spritesheet--40--sheet",
+                "frames": {
+                    "sequence": [
+                        16,
+                        20,
+                        27,
+                        29,
+                        28,
+                        26,
+                        20
+                    ]
+                },
+                "frameRate": 8,
+                "repeat": 0
+            }
         }
     },
     "pets": {

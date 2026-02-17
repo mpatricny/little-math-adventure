@@ -169,6 +169,21 @@
             "path": "sprites/spritesheet (37).png",
             "frameWidth": 512,
             "frameHeight": 512
+        },
+        "spritesheet--38--sheet": {
+            "path": "sprites/spritesheet (38).png",
+            "frameWidth": 630,
+            "frameHeight": 630
+        },
+        "spritesheet--39--sheet": {
+            "path": "sprites/spritesheet (39).png",
+            "frameWidth": 512,
+            "frameHeight": 512
+        },
+        "spritesheet--40--sheet": {
+            "path": "sprites/spritesheet (40).png",
+            "frameWidth": 512,
+            "frameHeight": 512
         }
     },
     "images": {
@@ -304,6 +319,13 @@
         "chest-forest-spin": "library:originals/4c1ea033-fab39d61.png",
         "Ancient-forst-bg": "library:originals/7379f8c8-8fcdc1f3.png",
         "ancient-forest-battle-bg": "library:originals/9c82b5f1-e99f7577.png",
-        "guardian-lair": "library:originals/29ed4d90-f384af7a.png"
+        "guardian-lair": "library:originals/29ed4d90-f384af7a.png",
+        "092dee05-89e1-4197-a7cb-02f46da5e091": "library:originals/ba0defbd-11c09ddc.png",
+        "283aeee5-dbb0-4770-859d-306ab830904d": "library:originals/8079d2f4-53b1f26a.png",
+        "b2822ee5-de27-43b2-8e54-a20b7eef45f5": "library:originals/f8527569-2691c918.png",
+        "19eb34dc-d392-4b2a-91e7-ebcad64f66e6": "library:originals/ec482076-3216fa74.png",
+        "1c833eff-d5de-41de-acd4-719f7a9b2ad1": "library:originals/f034e90b-d33680ca.png",
+        "f0de37c1-0d3b-4250-8e2a-a6838aad08d5": "library:originals/8296aab4-d25ad7d6.png",
+        "ancient-forest-bg": "library:originals/7379f8c8-8fcdc1f3.png"
     }
 }

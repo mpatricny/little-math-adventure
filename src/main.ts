@@ -24,6 +24,7 @@ import { ForestMapScene } from './scenes/ForestMapScene';
 import { ForestPuzzleScene } from './scenes/ForestPuzzleScene';
 import { ForestRoomScene } from './scenes/ForestRoomScene';
 import { LetterLockPuzzleScene } from './scenes/LetterLockPuzzleScene';
+import { SpinLockPuzzleScene } from './scenes/SpinLockPuzzleScene';
 import { ForestCampScene } from './scenes/ForestCampScene';
 import { ForestRiddleScene } from './scenes/ForestRiddleScene';
 import { ComicScene } from './scenes/ComicScene';
@@ -48,7 +49,7 @@ const config: Phaser.Types.Core.GameConfig = {
     dom: {
         createContainer: true
     },
-    scene: [BootScene, AssetLoaderScene, MenuScene, MenuNewScene, SaveSlotScene, CharacterSelectScene, CharacterSelectNewScene, TownScene, TestingTownScene, TestingWitchHutScene, BattleScene, ArenaScene, VictoryScene, WitchHutScene, PythiaWorkshopScene, ShopScene, GuildScene, TavernScene, CrystalForgeScene, MathBoardDebugScene, AssetFactoryTestScene, ForestAdventureStartScene, ForestMapScene, ForestPuzzleScene, ForestRoomScene, LetterLockPuzzleScene, ForestCampScene, ForestRiddleScene, ComicScene, CrashSiteScene],
+    scene: [BootScene, AssetLoaderScene, MenuScene, MenuNewScene, SaveSlotScene, CharacterSelectScene, CharacterSelectNewScene, TownScene, TestingTownScene, TestingWitchHutScene, BattleScene, ArenaScene, VictoryScene, WitchHutScene, PythiaWorkshopScene, ShopScene, GuildScene, TavernScene, CrystalForgeScene, MathBoardDebugScene, AssetFactoryTestScene, ForestAdventureStartScene, ForestMapScene, ForestPuzzleScene, ForestRoomScene, LetterLockPuzzleScene, SpinLockPuzzleScene, ForestCampScene, ForestRiddleScene, ComicScene, CrashSiteScene],
 };
 
 new Phaser.Game(config);

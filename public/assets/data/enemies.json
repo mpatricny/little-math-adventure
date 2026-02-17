@@ -110,5 +110,39 @@
         ],
         "difficulty": 1,
         "scale": 1.5
+    },
+    {
+        "id": "verdant_guardian",
+        "name": "Verdant Guardian",
+        "spriteKey": "spritesheet--38--sheet",
+        "animPrefix": "verdant",
+        "hp": 5,
+        "attack": 1,
+        "defense": 0,
+        "xpReward": 20,
+        "goldReward": [
+            5,
+            15
+        ],
+        "difficulty": 1,
+        "scale": 1.2,
+        "isBoss": true,
+        "bossAnimations": [
+            {
+                "key": "verdant-enraged"
+            },
+            {
+                "key": "verdant-shield-on"
+            },
+            {
+                "key": "verdant-shield-broke"
+            },
+            {
+                "key": "verdant-shield-idle"
+            },
+            {
+                "key": "verdant-shield-attack"
+            }
+        ]
     }
 ]

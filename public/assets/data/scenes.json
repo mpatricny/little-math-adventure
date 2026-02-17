@@ -833,7 +833,8 @@
           "asset": "Black-frmae-Forest",
           "x": 1140,
           "y": 246,
-          "scale": 0.4,
+          "scaleX": 0.4,
+          "scaleY": 0.5,
           "uiElement": {
             "templateId": "1770645244366-9dcdse47n"
           }
@@ -1441,15 +1442,6 @@
           }
         },
         {
-          "id": "Arrow_1",
-          "asset": "Arrow",
-          "x": 1072,
-          "y": 348,
-          "uiElement": {
-            "templateId": "1768918531203-8o2htxgfn"
-          }
-        },
-        {
           "id": "Back button",
           "asset": "Back button",
           "x": 179,
@@ -1459,22 +1451,85 @@
           }
         },
         {
-          "id": "TestElement",
-          "asset": "misc.testelement",
-          "x": 727,
-          "y": 273,
+          "id": "Spin frame",
+          "asset": "misc.spin-frame",
+          "x": 652,
+          "y": 283,
           "uiElement": {
-            "templateId": "1769693066140-2ralxm6zc"
+            "templateId": "1770852041344-wqct3lyr0"
           }
         },
         {
-          "id": "test2",
-          "asset": "misc.test2",
-          "x": 230,
-          "y": 298,
+          "id": "spin-4",
+          "asset": "misc.spin-4",
+          "x": 648,
+          "y": 338,
           "uiElement": {
-            "templateId": "1769696963661-i46etvvkk"
+            "templateId": "1770850974657-wuo61sld6"
           }
+        }
+      ],
+      "markers": [
+        {
+          "id": "F0KWWkk13vo9XO9dl5oWi",
+          "name": "marker-1 - close",
+          "x": 832,
+          "y": 139,
+          "width": 31,
+          "height": 37
+        },
+        {
+          "id": "iwX2iHfE1LWUipfly6KR1",
+          "name": "marker-2-container",
+          "x": 513,
+          "y": 311,
+          "width": 48,
+          "height": 56
+        }
+      ]
+    },
+    "SpinLockPuzzleScene": {
+      "viewport": {
+        "width": 1280,
+        "height": 720
+      },
+      "elements": [],
+      "ui": [
+        {
+          "id": "Spin frame",
+          "asset": "misc.spin-frame",
+          "x": 652,
+          "y": 283,
+          "uiElement": {
+            "templateId": "1770852041344-wqct3lyr0"
+          }
+        },
+        {
+          "id": "spin-4",
+          "asset": "misc.spin-4",
+          "x": 648,
+          "y": 338,
+          "uiElement": {
+            "templateId": "1770850974657-wuo61sld6"
+          }
+        }
+      ],
+      "markers": [
+        {
+          "id": "close-marker",
+          "name": "marker-1 - close",
+          "x": 832,
+          "y": 139,
+          "width": 31,
+          "height": 37
+        },
+        {
+          "id": "clip-marker",
+          "name": "marker-2-container",
+          "x": 513,
+          "y": 311,
+          "width": 48,
+          "height": 56
         }
       ]
     },
@@ -2226,7 +2281,7 @@
           "x": 1084,
           "y": 455,
           "flipX": true,
-          "scale": 0.6
+          "scale": 0.3
         }
       ],
       "ui": [
@@ -2268,7 +2323,7 @@
       "elements": [
         {
           "id": "Ancient-forst-bg",
-          "asset": "misc.ancient-forst-bg",
+          "asset": "library.image.ancient_forest_bg",
           "x": 640,
           "y": 360
         }

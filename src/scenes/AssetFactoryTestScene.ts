@@ -34,7 +34,25 @@ export class AssetFactoryTestScene extends Phaser.Scene {
         // 3. Use AssetFactory to resolve "environments.backgrounds.arena" -> creates image with "bg-arena" texture
         this.sceneBuilder.buildScene('AssetFactoryTestScene');
 
-        // Log success message to console for verification
-        console.log('[AssetFactoryTestScene] Scene built successfully. If you see the arena background, the Asset Factory integration is working!');
+        // Make the Spin frame clickable to test the SpinLockPuzzleScene
+        this.sceneBuilder.bindClick('Spin frame', () => {
+            this.scene.launch('SpinLockPuzzleScene', {
+                riddle: 'Má čtyři nohy, ale nechodí. Co to je?',
+                riddleEn: 'Has four legs but doesn\'t walk. What is it?',
+                answer: 'STUL',
+                reward: { gold: 35, diamonds: 1 },
+                objectId: 'chest_locked_test',
+                roomId: 'test_room',
+                parentScene: 'AssetFactoryTestScene'
+            });
+            this.scene.pause();
+        });
+
+        // Resume when puzzle closes
+        this.events.on('puzzleSolved', () => {
+            console.log('[AssetFactoryTestScene] Puzzle solved!');
+        });
+
+        console.log('[AssetFactoryTestScene] Scene built. Click the Spin frame to test the puzzle overlay.');
     }
 }
