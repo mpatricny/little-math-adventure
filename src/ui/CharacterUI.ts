@@ -159,7 +159,7 @@ export class CharacterUI {
 
             // Label
             const label = this.scene.add.text(rightX, y - 35, slot.label, {
-                fontSize: '12px',
+                fontSize: '14px',
                 fontFamily: 'Arial, sans-serif',
                 color: '#888888',
             }).setOrigin(0.5);

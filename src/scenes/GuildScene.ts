@@ -119,6 +119,36 @@ export class GuildScene extends Phaser.Scene {
         this.input.on('wheel', (_pointer: any, _gameObjects: any, _deltaX: number, deltaY: number) => {
             this.scroll(deltaY > 0 ? 1 : -1);
         });
+
+        // Touch-drag scrolling for mobile
+        this.setupTouchScroll();
+    }
+
+    private setupTouchScroll(): void {
+        let lastPointerY = 0;
+        let isScrollDragging = false;
+
+        this.input.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
+            const panelBounds = this.listPanel.getBounds();
+            if (panelBounds.contains(pointer.x, pointer.y)) {
+                const hitObjects = this.input.hitTestPointer(pointer);
+                if (hitObjects.length === 0) {
+                    lastPointerY = pointer.y;
+                    isScrollDragging = true;
+                }
+            }
+        });
+
+        this.input.on('pointermove', (pointer: Phaser.Input.Pointer) => {
+            if (!isScrollDragging) return;
+            const delta = lastPointerY - pointer.y;
+            if (Math.abs(delta) > 10) {
+                this.scroll(delta > 0 ? 1 : -1);
+                lastPointerY = pointer.y;
+            }
+        });
+
+        this.input.on('pointerup', () => { isScrollDragging = false; });
     }
 
     private createStatsSummary(x: number, y: number, depth: number): void {
@@ -293,10 +323,14 @@ export class GuildScene extends Phaser.Scene {
 
         // Up button
         const upBtn = this.add.text(155, -100, '▲', {
-            fontSize: '20px',
+            fontSize: '28px',
             fontFamily: 'Arial, sans-serif',
             color: '#5a4a3a'
-        }).setOrigin(0.5).setInteractive({ useHandCursor: true });
+        }).setOrigin(0.5).setInteractive({
+            hitArea: new Phaser.Geom.Rectangle(-22, -22, 44, 44),
+            hitAreaCallback: Phaser.Geom.Rectangle.Contains,
+            useHandCursor: true
+        });
 
         upBtn.on('pointerover', () => upBtn.setColor('#8a6a4a'));
         upBtn.on('pointerout', () => upBtn.setColor('#5a4a3a'));
@@ -305,10 +339,14 @@ export class GuildScene extends Phaser.Scene {
 
         // Down button
         const downBtn = this.add.text(155, 100, '▼', {
-            fontSize: '20px',
+            fontSize: '28px',
             fontFamily: 'Arial, sans-serif',
             color: '#5a4a3a'
-        }).setOrigin(0.5).setInteractive({ useHandCursor: true });
+        }).setOrigin(0.5).setInteractive({
+            hitArea: new Phaser.Geom.Rectangle(-22, -22, 44, 44),
+            hitAreaCallback: Phaser.Geom.Rectangle.Contains,
+            useHandCursor: true
+        });
 
         downBtn.on('pointerover', () => downBtn.setColor('#8a6a4a'));
         downBtn.on('pointerout', () => downBtn.setColor('#5a4a3a'));
@@ -318,7 +356,7 @@ export class GuildScene extends Phaser.Scene {
         // Scroll info
         const scrollInfo = this.add.text(155, 0,
             `${Math.min(this.problemList.length, VISIBLE_ROWS)}/${this.problemList.length}`, {
-            fontSize: '11px',
+            fontSize: '14px',
             fontFamily: 'Arial, sans-serif',
             color: '#7a6a5a'
         }).setOrigin(0.5);
@@ -399,7 +437,7 @@ export class GuildScene extends Phaser.Scene {
         const manaCount = ManaSystem.getMana(player);
         const manaText = this.add.text(20, 30,
             `⚡ Mana: ${manaCount}`, {
-            fontSize: '13px',
+            fontSize: '14px',
             fontFamily: 'Arial, sans-serif',
             color: '#44ffff'
         }).setOrigin(0, 0.5);
@@ -423,11 +461,11 @@ export class GuildScene extends Phaser.Scene {
         this.collectButtonContainer.setDepth(buttonDepth);
 
         if (collectableMana > 0) {
-            const btnBg = this.add.rectangle(0, 0, 140, 32, 0x2288aa)
+            const btnBg = this.add.rectangle(0, 0, 140, 48, 0x2288aa)
                 .setStrokeStyle(2, 0x44aacc);
 
             const btnText = this.add.text(0, 0, `⚡ SBÍRAT MANU (${collectableMana})`, {
-                fontSize: '12px',
+                fontSize: '14px',
                 fontFamily: 'Arial, sans-serif',
                 color: '#ffffff',
                 fontStyle: 'bold'
@@ -453,7 +491,7 @@ export class GuildScene extends Phaser.Scene {
             });
         } else {
             const infoText = this.add.text(0, 0, '(5✓ = ⚡)', {
-                fontSize: '12px',
+                fontSize: '14px',
                 fontFamily: 'Arial, sans-serif',
                 color: '#888888'
             }).setOrigin(0.5);

@@ -350,6 +350,14 @@
           "depth": -10,
           "scale": 1,
           "visible": true
+        },
+        {
+          "id": "pauseButton",
+          "asset": "ui.containers.empty",
+          "x": 1240,
+          "y": 30,
+          "depth": 500,
+          "visible": true
         }
       ],
       "zones": [
@@ -507,6 +515,14 @@
           "x": 108,
           "y": 660,
           "scale": 0.6
+        },
+        {
+          "id": "characterButton",
+          "asset": "ui.containers.empty",
+          "x": 1240,
+          "y": 30,
+          "depth": 500,
+          "visible": true
         }
       ],
       "zones": [

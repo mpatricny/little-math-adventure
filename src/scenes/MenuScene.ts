@@ -2,6 +2,7 @@ import Phaser from 'phaser';
 import { SaveSystem } from '../systems/SaveSystem';
 import { SceneDebugger } from '../systems/SceneDebugger';
 import { SceneBuilder } from '../systems/SceneBuilder';
+import { isTouchDevice, requestFullscreen } from '../utils/mobileSetup';
 
 export class MenuScene extends Phaser.Scene {
     private debugger!: SceneDebugger;
@@ -55,6 +56,11 @@ export class MenuScene extends Phaser.Scene {
             if (btnNewGame && btnContinue) {
                 btnNewGame.y = btnContinue.y;
             }
+        }
+
+        // Request fullscreen on first touch (mobile only)
+        if (isTouchDevice()) {
+            this.input.once('pointerdown', () => requestFullscreen());
         }
 
         // Setup universal debugger

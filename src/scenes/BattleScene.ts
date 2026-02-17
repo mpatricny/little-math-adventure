@@ -1086,6 +1086,17 @@ export class BattleScene extends Phaser.Scene {
         // Create pause menu (ESC key to toggle)
         this.pauseMenu = new PauseMenu(this);
 
+        // Visible pause button (for mobile + desktop convenience)
+        const pauseEl = this.sceneBuilder.get('pauseButton') as Phaser.GameObjects.Container | undefined;
+        const pauseBtn = this.add.text(
+            pauseEl?.x ?? 1240, pauseEl?.y ?? 30, '\u23f8',
+            { fontSize: '36px', color: '#ffffff' }
+        ).setOrigin(0.5)
+            .setInteractive({ useHandCursor: true })
+            .setDepth(pauseEl?.depth ?? 500)
+            .setScrollFactor(0);
+        pauseBtn.on('pointerdown', () => this.pauseMenu.toggle());
+
         // Register containers (sprite + HP bar move together)
         this.debugger.register('hero', this.heroContainer);
         this.enemyContainers.forEach((container, index) => {

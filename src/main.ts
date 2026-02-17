@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import { setupMobile } from './utils/mobileSetup';
 import { BootScene, AssetLoaderScene } from './scenes/BootScene';
 import { MenuScene } from './scenes/MenuScene';
 import { MenuNewScene } from './scenes/MenuNewScene';
@@ -30,6 +31,8 @@ import { ForestRiddleScene } from './scenes/ForestRiddleScene';
 import { ComicScene } from './scenes/ComicScene';
 import { CrashSiteScene } from './scenes/CrashSiteScene';
 
+setupMobile();
+
 const config: Phaser.Types.Core.GameConfig = {
     type: Phaser.AUTO,
     width: 1280,
@@ -39,6 +42,9 @@ const config: Phaser.Types.Core.GameConfig = {
     scale: {
         mode: Phaser.Scale.FIT,
         autoCenter: Phaser.Scale.CENTER_BOTH,
+    },
+    input: {
+        activePointers: 2,
     },
     render: {
         antialias: true,

@@ -110,6 +110,17 @@ export class TownScene extends Phaser.Scene {
         // Create UI Overlays
         this.characterUI = new CharacterUI(this);
 
+        // Visible character UI button (for mobile + desktop convenience)
+        const charBtnEl = this.sceneBuilder.get('characterButton') as Phaser.GameObjects.Container | undefined;
+        const charBtn = this.add.text(
+            charBtnEl?.x ?? 1240, charBtnEl?.y ?? 30, '\u2699',
+            { fontSize: '36px', color: '#ffffff' }
+        ).setOrigin(0.5)
+            .setInteractive({ useHandCursor: true })
+            .setDepth(charBtnEl?.depth ?? 500)
+            .setScrollFactor(0);
+        charBtn.on('pointerdown', () => this.characterUI.toggle());
+
         // Show guild notification if player is ready to promote AND guild is unlocked
         const guildNotification = this.sceneBuilder.get<Phaser.GameObjects.Container>('guild-notification');
         if (guildNotification) {

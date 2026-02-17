@@ -60,7 +60,7 @@ export class HealthBar {
         // Optional text display
         if (config.showText !== false) {
             this.text = scene.add.text(0, 0, this.getDisplayText(), {
-                fontSize: `${Math.max(10, this.height - 4)}px`,
+                fontSize: `${Math.max(14, this.height - 4)}px`,
                 fontFamily: 'Arial, sans-serif',
                 color: '#ffffff',
                 fontStyle: 'bold',
