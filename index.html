@@ -34,6 +34,9 @@
   </head>
   <body>
     <div id="game-container"></div>
+    <script src="/sdk/mesa-sdk.js"></script>
+    <script>if(window.Mesa){Mesa.init().then(function(){console.log('[LMA] Mesa SDK initialized, env:', Mesa.getEnvironment());});}</script>
+    
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>
