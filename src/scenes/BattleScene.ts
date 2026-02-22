@@ -455,8 +455,11 @@ export class BattleScene extends Phaser.Scene {
             const container = this.add.container(x, y + offsetY);
             const idleAnimKey = (this.isBoss && index === 0) ? this.getBossAnimKey(0, 'idle') : `${animPrefix}-idle`;
             const sprite = this.add.sprite(0, 0, actualSpriteKey).setScale(enemyScale).play(idleAnimKey);
-            const hpBar = this.createHpBar(0, -80, enemy.hp, enemy.maxHp, '#cc4444');
+            const hpBarY = -(sprite.displayHeight / 2) - 15;
+            const hpBar = this.createHpBar(0, hpBarY, enemy.hp, enemy.maxHp, '#cc4444');
             container.add([sprite, hpBar.container]);
+            container.setData('hpBarY', hpBarY);
+            container.setData('origFrameW', sprite.width);
 
             // Make enemy clickable to select as target (for both player and pet turns)
             sprite.setInteractive({ useHandCursor: true });
@@ -1171,8 +1174,9 @@ export class BattleScene extends Phaser.Scene {
         const idx = this.battleState.selectedEnemyIndex;
         const container = this.enemyContainers[idx];
 
-        // Position sword above the enemy's head
-        this.targetIndicator.setPosition(container.x, container.y - 100);
+        // Position sword above the enemy's health bar
+        const indicatorY = container.y + (container.getData('hpBarY') ?? -80) - 25;
+        this.targetIndicator.setPosition(container.x, indicatorY);
 
         // Hide indicator if target is dead
         if (this.battleState.enemies[idx].hp <= 0) {
@@ -1328,7 +1332,7 @@ export class BattleScene extends Phaser.Scene {
         }
 
         // Position above enemy (same height as player indicator)
-        const baseY = container.y - 100;
+        const baseY = container.y + (container.getData('hpBarY') ?? -80) - 25;
         this.petTargetIndicator?.setPosition(container.x, baseY);
         this.petTargetIndicator?.setVisible(true);
 
@@ -2028,6 +2032,15 @@ export class BattleScene extends Phaser.Scene {
             const idleAnim = this.getBossAnimKey(0, 'idle');
             if (this.anims.exists(idleAnim)) {
                 this.enemies[0].play(idleAnim);
+            }
+
+            // Compensate scale for frame size differences between spritesheets
+            // Keep visual size consistent across phase transitions
+            const origFrameW = this.enemyContainers[0]?.getData('origFrameW') as number | undefined;
+            const currentFrameW = this.enemies[0].width;
+            if (origFrameW && currentFrameW && origFrameW !== currentFrameW && this.enemyDefs[0]?.scale) {
+                const compensatedScale = this.enemyDefs[0].scale * (origFrameW / currentFrameW);
+                this.enemies[0].setScale(compensatedScale);
             }
 
             // Fade out overlay

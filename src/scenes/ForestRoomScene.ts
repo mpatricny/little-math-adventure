@@ -30,6 +30,7 @@ interface RoomObject {
     // Puzzle
     puzzleId?: string;
     // Hidden object support
+    scale?: number;
     hidden?: boolean;
     appearsAfter?: {
         objectDefeated?: string;    // Show after this enemy is defeated
@@ -435,7 +436,7 @@ export class ForestRoomScene extends Phaser.Scene {
 
         // Try to use actual sprite, fall back to placeholder
         if (obj.sprite && this.textures.exists(obj.sprite)) {
-            const sprite = this.add.sprite(0, 0, obj.sprite).setScale(0.8);
+            const sprite = this.add.sprite(0, 0, obj.sprite).setScale(obj.scale ?? 0.8);
             if (obj.flipX) sprite.setFlipX(true);
             container.add(sprite);
 
@@ -471,8 +472,8 @@ export class ForestRoomScene extends Phaser.Scene {
             container.add(placeholder);
         }
 
-        // Add interaction indicator (pulsing circle) - skip for aggro enemies (they auto-trigger)
-        if (!obj.aggroRadius) {
+        // Add interaction indicator (pulsing circle) - skip for aggro enemies and chests
+        if (!obj.aggroRadius && obj.type !== 'chest' && obj.type !== 'letter_lock_chest') {
             const indicator = this.add.circle(0, -50, 8, this.getObjectColor(obj.type), 0.8);
             container.add(indicator);
 

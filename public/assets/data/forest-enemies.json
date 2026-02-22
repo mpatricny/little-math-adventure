@@ -12,6 +12,7 @@
       "difficulty": 5,
       "spriteKey": "wolves-only-transparent-sheet",
       "animPrefix": "wolf",
+      "scale": 0.5,
       "region": "verdant_forest"
     },
     "mushroom_giant": {
@@ -55,8 +56,7 @@
       "difficulty": 7,
       "spriteKey": "spritesheet--37--sheet",
       "animPrefix": "treant",
-      "scale": 1.1,
-      "battleOffsetY": -40,
+      "scale": 0.8,
       "region": "verdant_forest"
     },
     "verdant_guardian": {
@@ -66,11 +66,12 @@
       "isBoss": true,
       "spriteKey": "spritesheet--38--sheet",
       "animPrefix": "verdant",
-      "scale": 1.2,
+      "scale": 0.73,
+      "battleOffsetY": -100,
       "phases": [
         {
-          "hp": 10,
-          "atk": 2,
+          "hp": 15,
+          "atk": 3,
           "name": "Awakening",
           "nameCs": "Probuzení",
           "mathType": "addition",
@@ -80,7 +81,7 @@
         },
         {
           "hp": 10,
-          "atk": 3,
+          "atk": 5,
           "name": "Fury",
           "nameCs": "Zuřivost",
           "mathType": "missing_operand",
@@ -91,8 +92,8 @@
           "tint": "0xffaaaa"
         },
         {
-          "hp": 12,
-          "atk": 3,
+          "hp": 18,
+          "atk": 4,
           "name": "Final Stand",
           "nameCs": "Poslední vzdor",
           "mathType": "comparison",

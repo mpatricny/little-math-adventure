@@ -116,8 +116,8 @@
         {
           "id": "chest_locked",
           "type": "letter_lock_chest",
-          "x": 1000,
-          "y": 580,
+          "x": 950,
+          "y": 630,
           "sprite": "chest-forest-spin",
           "flipX": true,
           "scale": 0.5,
@@ -305,7 +305,7 @@
           "type": "boss",
           "enemyId": "verdant_guardian",
           "x": 900,
-          "y": 420,
+          "y": 320,
           "sprite": "spritesheet--38--sheet",
           "hidden": true,
           "appearsAfter": {
