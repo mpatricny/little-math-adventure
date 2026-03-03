@@ -923,15 +923,6 @@
           "alpha": 0.3
         },
         {
-          "id": "guildmaster",
-          "asset": "characters.npcs.guildmaster",
-          "x": 176,
-          "y": 174,
-          "scale": 0.4,
-          "depth": 10,
-          "visible": true
-        },
-        {
           "id": "resultsTable",
           "asset": "ui.tables.results-table",
           "x": 893,
@@ -947,6 +938,21 @@
           "y": 333,
           "depth": 6,
           "visible": true
+        },
+        {
+          "id": "Frame metalic-small",
+          "asset": "misc.frame-metalic-small",
+          "x": 181,
+          "y": 194,
+          "scaleX": 1.752990236511134,
+          "scaleY": 1.7529902365111338
+        },
+        {
+          "id": "Zyx1",
+          "asset": "misc.zyx1",
+          "x": 177,
+          "y": 176,
+          "scale": 0.4
         }
       ],
       "ui": [

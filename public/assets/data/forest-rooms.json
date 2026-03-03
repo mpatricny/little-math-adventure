@@ -218,7 +218,7 @@
           "type": "enemy",
           "enemyId": "elder_treant",
           "x": 750,
-          "y": 450,
+          "y": 580,
           "sprite": "spritesheet--37--sheet",
           "aggroRadius": 150
         }
@@ -244,10 +244,10 @@
           "requiresDefeated": ["treant_1"]
         }
       ],
-      "playerSpawn": { "x": 150, "y": 500 },
+      "playerSpawn": { "x": 150, "y": 610 },
       "spawnFromDirection": {
-        "left": { "x": 150, "y": 500 },
-        "right": { "x": 1100, "y": 500 }
+        "left": { "x": 150, "y": 610 },
+        "right": { "x": 1100, "y": 610 }
       }
     },
     "ancient_bridge": {
@@ -297,7 +297,7 @@
           "type": "puzzle",
           "puzzleId": "crystal_offering",
           "x": 450,
-          "y": 450,
+          "y": 580,
           "sprite": "crystal-altar"
         },
         {
@@ -305,7 +305,7 @@
           "type": "boss",
           "enemyId": "verdant_guardian",
           "x": 900,
-          "y": 320,
+          "y": 560,
           "sprite": "spritesheet--38--sheet",
           "hidden": true,
           "appearsAfter": {
@@ -324,10 +324,10 @@
           "direction": "left"
         }
       ],
-      "playerSpawn": { "x": 150, "y": 500 },
+      "playerSpawn": { "x": 150, "y": 610 },
       "spawnFromDirection": {
-        "left": { "x": 150, "y": 500 },
-        "right": { "x": 1100, "y": 500 }
+        "left": { "x": 150, "y": 610 },
+        "right": { "x": 1100, "y": 610 }
       }
     }
   }

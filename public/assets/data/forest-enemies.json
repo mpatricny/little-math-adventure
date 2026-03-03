@@ -67,7 +67,6 @@
       "spriteKey": "spritesheet--38--sheet",
       "animPrefix": "verdant",
       "scale": 0.73,
-      "battleOffsetY": -100,
       "phases": [
         {
           "hp": 15,

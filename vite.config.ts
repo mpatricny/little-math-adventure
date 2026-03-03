@@ -36,8 +36,35 @@ function debugSavePlugin(): Plugin {
     };
 }
 
+/**
+ * Vite plugin that removes non-game files from the production build.
+ * The library/ folder contains Scene Editor database files and thumbnails
+ * that are not needed at runtime.
+ */
+function cleanBuildPlugin(): Plugin {
+    return {
+        name: 'clean-build',
+        closeBundle() {
+            const distLibrary = path.resolve('dist/assets/library');
+            const removals = [
+                'assets.db',
+                'assets.db-shm',
+                'assets.db-wal',
+                'thumbnails',
+            ];
+            for (const name of removals) {
+                const target = path.join(distLibrary, name);
+                if (fs.existsSync(target)) {
+                    fs.rmSync(target, { recursive: true });
+                    console.log(`🧹 Removed from build: library/${name}`);
+                }
+            }
+        }
+    };
+}
+
 export default defineConfig({
-    plugins: [debugSavePlugin()],
+    plugins: [debugSavePlugin(), cleanBuildPlugin()],
     server: {
         host: '0.0.0.0',
         port: 8000,

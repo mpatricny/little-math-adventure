@@ -2048,6 +2048,24 @@
                 0.5,
                 0.5
             ]
+        },
+        "frame-metalic-small": {
+            "type": "staticImage",
+            "texture": "Frame metalic-small",
+            "origin": [
+                0.5,
+                0.5
+            ],
+            "scale": 1.752990236511134
+        },
+        "zyx1": {
+            "type": "staticImage",
+            "texture": "Zyx1",
+            "origin": [
+                0.5,
+                0.5
+            ],
+            "scale": 0.4
         }
     }
 }

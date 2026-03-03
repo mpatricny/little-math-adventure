@@ -498,27 +498,49 @@ export class ForestRoomScene extends Phaser.Scene {
 
         container.on('pointerdown', () => {
             if (!this.isWalking) {
-                this.walkToAndInteract(obj);
+                if (obj.type === 'boss') {
+                    // Boss battle starts immediately with fade - no walking into the boss
+                    this.interactWith(obj);
+                } else {
+                    this.walkToAndInteract(obj);
+                }
             }
         });
 
-        container.on('pointerover', () => {
-            this.tweens.add({
-                targets: container,
-                scaleX: 1.1,
-                scaleY: 1.1,
-                duration: 150
+        if (obj.type === 'enemy' || obj.type === 'boss') {
+            // Subtle diffused glow for enemies/bosses - scale looks weird on characters
+            const sprite = container.getAt(0) as Phaser.GameObjects.Sprite;
+            container.on('pointerover', () => {
+                if (sprite?.preFX) {
+                    sprite.setData('glowFx', sprite.preFX.addGlow(0xffaa44, 8, 0, false, 0.05, 24));
+                }
             });
-        });
-
-        container.on('pointerout', () => {
-            this.tweens.add({
-                targets: container,
-                scaleX: 1,
-                scaleY: 1,
-                duration: 150
+            container.on('pointerout', () => {
+                const fx = sprite?.getData('glowFx');
+                if (fx && sprite?.preFX) {
+                    sprite.preFX.remove(fx);
+                    sprite.setData('glowFx', null);
+                }
             });
-        });
+        } else {
+            // Scale effect for non-enemy objects (chests, rest points, etc.)
+            container.on('pointerover', () => {
+                this.tweens.add({
+                    targets: container,
+                    scaleX: 1.1,
+                    scaleY: 1.1,
+                    duration: 150
+                });
+            });
+            container.on('pointerout', () => {
+                this.tweens.add({
+                    targets: container,
+                    scaleX: 1,
+                    scaleY: 1,
+                    duration: 150
+                });
+            });
+        }
 
         return container;
     }

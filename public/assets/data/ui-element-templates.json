@@ -26,7 +26,7 @@
           "opacity": 1,
           "visible": true,
           "imageAssetId": "12aef62b-ac16-4077-af64-14f2a40cbff6",
-          "imagePath": "originals/21efcce0-1946495a.png",
+          "imagePath": "originals/21efcce0-1946495a.webp",
           "states": {
             "hover": {
               "brightness": 1.55,
@@ -245,7 +245,7 @@
           "opacity": 1,
           "visible": true,
           "imageAssetId": "a0c1b437-0a95-427f-a60c-09c6570d0bd6",
-          "imagePath": "originals/1b1c5ea8-29a1c2d8.png",
+          "imagePath": "originals/1b1c5ea8-29a1c2d8.webp",
           "states": {
             "hover": {
               "glow": {
@@ -363,7 +363,7 @@
           "opacity": 1,
           "visible": true,
           "imageAssetId": "a49772d4-89b0-4291-bf1b-9d3adfbe56dd",
-          "imagePath": "originals/de862222-d00d3d96.png"
+          "imagePath": "originals/de862222-d00d3d96.webp"
         }
       ],
       "textAreas": [
@@ -463,7 +463,7 @@
           "opacity": 1,
           "visible": true,
           "imageAssetId": "d666fcf8-8427-411a-8706-fb368c04f68f",
-          "imagePath": "originals/acf70b7a-a3d06b23.png"
+          "imagePath": "originals/acf70b7a-a3d06b23.webp"
         }
       ],
       "textAreas": [
@@ -538,7 +538,7 @@
           "opacity": 1,
           "visible": true,
           "imageAssetId": "3f955692-2c14-49d8-94ce-77b6e5bc2d9c",
-          "imagePath": "originals/74636147-83687a13.png",
+          "imagePath": "originals/74636147-83687a13.webp",
           "states": {
             "hover": {
               "glow": {
@@ -621,7 +621,7 @@
           "opacity": 1,
           "visible": true,
           "imageAssetId": "8543a828-7208-457b-92ad-15b4bd6e8c4d",
-          "imagePath": "originals/07d4f012-a02d0df4.png"
+          "imagePath": "originals/07d4f012-a02d0df4.webp"
         },
         {
           "id": "1769723192093-zixq0kkxn",
@@ -638,7 +638,7 @@
           "opacity": 1,
           "visible": true,
           "imageAssetId": "725a75ec-1e3a-4ec5-925c-838ab3d6302e",
-          "imagePath": "originals/10b4ba94-ca253133.png"
+          "imagePath": "originals/10b4ba94-ca253133.webp"
         }
       ],
       "textAreas": [
@@ -737,7 +737,7 @@
           "opacity": 1,
           "visible": true,
           "imageAssetId": "f3c6087b-a81d-497a-91ca-6b1a8830c686",
-          "imagePath": "originals/b9fac964-a7f6b189.png",
+          "imagePath": "originals/b9fac964-a7f6b189.webp",
           "states": {
             "hover": {
               "glow": {
@@ -999,7 +999,7 @@
           "opacity": 1,
           "visible": true,
           "imageAssetId": "725a75ec-1e3a-4ec5-925c-838ab3d6302e",
-          "imagePath": "originals/10b4ba94-ca253133.png"
+          "imagePath": "originals/10b4ba94-ca253133.webp"
         }
       ],
       "textAreas": [
@@ -1172,7 +1172,7 @@
           "opacity": 1,
           "visible": true,
           "imageAssetId": "ab231324-7760-4728-b5dd-bfad9a14e118",
-          "imagePath": "originals/684c55b2-0fd0fd17.png"
+          "imagePath": "originals/684c55b2-0fd0fd17.webp"
         }
       ],
       "textAreas": [
@@ -1244,7 +1244,7 @@
           "opacity": 1,
           "visible": true,
           "imageAssetId": "a1791e5a-925f-4bac-b865-829f8c5dc782",
-          "imagePath": "originals/117cb6d5-b7e84c67.png"
+          "imagePath": "originals/117cb6d5-b7e84c67.webp"
         }
       ],
       "textAreas": [
@@ -1400,7 +1400,7 @@
           "opacity": 1,
           "visible": true,
           "imageAssetId": "fe348755-e122-426e-bf87-c60bf1eed5c0",
-          "imagePath": "originals/9efa7032-dac56709.png"
+          "imagePath": "originals/9efa7032-dac56709.webp"
         },
         {
           "id": "1770150364402-twzxmxrgz",
@@ -1417,7 +1417,7 @@
           "opacity": 1,
           "visible": true,
           "imageAssetId": "5ab2e856-0eb0-4cfe-ae26-408835252ba8",
-          "imagePath": "originals/5ab2e856-0eb0-4cfe-ae26-408835252ba8-cb4358e1.png"
+          "imagePath": "originals/5ab2e856-0eb0-4cfe-ae26-408835252ba8-cb4358e1.webp"
         }
       ],
       "textAreas": [
@@ -1492,7 +1492,7 @@
           "opacity": 1,
           "visible": true,
           "imageAssetId": "513de516-671c-4665-b336-d0634e89429e",
-          "imagePath": "originals/3f07ff6e-9dd8761d.png"
+          "imagePath": "originals/3f07ff6e-9dd8761d.webp"
         },
         {
           "id": "1770151076016-hztvhaeco",
@@ -1509,7 +1509,7 @@
           "opacity": 1,
           "visible": true,
           "imageAssetId": "ae3b597b-437b-4b7f-9689-e6744cea68fe",
-          "imagePath": "originals/ae3b597b-437b-4b7f-9689-e6744cea68fe-6ab49efb.png"
+          "imagePath": "originals/ae3b597b-437b-4b7f-9689-e6744cea68fe-6ab49efb.webp"
         },
         {
           "id": "1770151141818-f4pyywxep",
@@ -1526,7 +1526,7 @@
           "opacity": 1,
           "visible": true,
           "imageAssetId": "5ab2e856-0eb0-4cfe-ae26-408835252ba8",
-          "imagePath": "originals/5ab2e856-0eb0-4cfe-ae26-408835252ba8-cb4358e1.png"
+          "imagePath": "originals/5ab2e856-0eb0-4cfe-ae26-408835252ba8-cb4358e1.webp"
         }
       ],
       "textAreas": [
@@ -1621,7 +1621,7 @@
           "opacity": 1,
           "visible": true,
           "imageAssetId": "b2bd897e-ecb3-4760-bb01-12009b048679",
-          "imagePath": "originals/2bc83716-e6a42c52.png"
+          "imagePath": "originals/2bc83716-e6a42c52.webp"
         }
       ],
       "textAreas": [
@@ -1696,7 +1696,7 @@
           "opacity": 1,
           "visible": true,
           "imageAssetId": "f1a7b425-1d84-423e-8fc1-76cb4ede5c5d",
-          "imagePath": "originals/c4467c58-b30a31fc.png",
+          "imagePath": "originals/c4467c58-b30a31fc.webp",
           "states": {
             "hover": {
               "glow": {
@@ -1734,7 +1734,7 @@
           "opacity": 1,
           "visible": true,
           "imageAssetId": "5ab2e856-0eb0-4cfe-ae26-408835252ba8",
-          "imagePath": "originals/5ab2e856-0eb0-4cfe-ae26-408835252ba8-cb4358e1.png"
+          "imagePath": "originals/5ab2e856-0eb0-4cfe-ae26-408835252ba8-cb4358e1.webp"
         },
         {
           "id": "1770239327803-9bwv79vqa",
@@ -1751,7 +1751,7 @@
           "opacity": 1,
           "visible": true,
           "imageAssetId": "5ab2e856-0eb0-4cfe-ae26-408835252ba8",
-          "imagePath": "originals/5ab2e856-0eb0-4cfe-ae26-408835252ba8-cb4358e1.png"
+          "imagePath": "originals/5ab2e856-0eb0-4cfe-ae26-408835252ba8-cb4358e1.webp"
         },
         {
           "id": "1770239374888-gn4c8vceb",
@@ -1768,7 +1768,7 @@
           "opacity": 1,
           "visible": true,
           "imageAssetId": "5ab2e856-0eb0-4cfe-ae26-408835252ba8",
-          "imagePath": "originals/5ab2e856-0eb0-4cfe-ae26-408835252ba8-cb4358e1.png"
+          "imagePath": "originals/5ab2e856-0eb0-4cfe-ae26-408835252ba8-cb4358e1.webp"
         }
       ],
       "textAreas": [
@@ -1952,7 +1952,7 @@
           "opacity": 1,
           "visible": true,
           "imageAssetId": "9459fa3f-7c31-4909-88ed-972c23300bfb",
-          "imagePath": "originals/bfd20120-6fc58449.png"
+          "imagePath": "originals/bfd20120-6fc58449.webp"
         },
         {
           "id": "1770241583983-i5f270whb",
@@ -1969,7 +1969,7 @@
           "opacity": 1,
           "visible": true,
           "imageAssetId": "49c4cc53-afca-4f0d-a6ba-d0ad25b46477",
-          "imagePath": "originals/c930eab1-92340540.png"
+          "imagePath": "originals/c930eab1-92340540.webp"
         },
         {
           "id": "1770241717318-txxt6qgm0",
@@ -1986,7 +1986,7 @@
           "opacity": 1,
           "visible": true,
           "imageAssetId": "15170c92-6deb-4386-ab06-06cd3be2cadd",
-          "imagePath": "originals/f26dac7f-f1b408f8.png"
+          "imagePath": "originals/f26dac7f-f1b408f8.webp"
         },
         {
           "id": "1770241793891-rippdw590",
@@ -2003,7 +2003,7 @@
           "opacity": 1,
           "visible": true,
           "imageAssetId": "b94bf0f6-089b-49f0-a97e-0b3154c9a9fd",
-          "imagePath": "originals/1152bf5e-fcb2fb37.png"
+          "imagePath": "originals/1152bf5e-fcb2fb37.webp"
         }
       ],
       "textAreas": [
@@ -2162,7 +2162,7 @@
           "opacity": 1,
           "visible": true,
           "imageAssetId": "8543a828-7208-457b-92ad-15b4bd6e8c4d",
-          "imagePath": "originals/07d4f012-a02d0df4.png",
+          "imagePath": "originals/07d4f012-a02d0df4.webp",
           "states": {
             "hover": {
               "glow": {
@@ -2205,7 +2205,7 @@
           "opacity": 1,
           "visible": true,
           "imageAssetId": "8543a828-7208-457b-92ad-15b4bd6e8c4d",
-          "imagePath": "originals/07d4f012-a02d0df4.png",
+          "imagePath": "originals/07d4f012-a02d0df4.webp",
           "states": {
             "hover": {
               "glow": {
@@ -2244,7 +2244,7 @@
           "opacity": 1,
           "visible": true,
           "imageAssetId": "725a75ec-1e3a-4ec5-925c-838ab3d6302e",
-          "imagePath": "originals/10b4ba94-ca253133.png"
+          "imagePath": "originals/10b4ba94-ca253133.webp"
         },
         {
           "id": "1769721050388-6v536l8pm",
@@ -2261,7 +2261,7 @@
           "opacity": 1,
           "visible": true,
           "imageAssetId": "725a75ec-1e3a-4ec5-925c-838ab3d6302e",
-          "imagePath": "originals/10b4ba94-ca253133.png"
+          "imagePath": "originals/10b4ba94-ca253133.webp"
         },
         {
           "id": "1769721071575-teuuc558l",
@@ -2278,7 +2278,7 @@
           "opacity": 1,
           "visible": true,
           "imageAssetId": "725a75ec-1e3a-4ec5-925c-838ab3d6302e",
-          "imagePath": "originals/10b4ba94-ca253133.png"
+          "imagePath": "originals/10b4ba94-ca253133.webp"
         }
       ],
       "textAreas": [
@@ -2402,7 +2402,7 @@
           "opacity": 1,
           "visible": true,
           "imageAssetId": "220df935-19a2-4f53-b25c-a4a7aeeaa91e",
-          "imagePath": "originals/709ce301-9c7d68b6.png",
+          "imagePath": "originals/709ce301-9c7d68b6.webp",
           "states": {
             "hover": {
               "scale": {
@@ -2563,7 +2563,7 @@
           "opacity": 1,
           "visible": true,
           "imageAssetId": "a49772d4-89b0-4291-bf1b-9d3adfbe56dd",
-          "imagePath": "originals/de862222-d00d3d96.png"
+          "imagePath": "originals/de862222-d00d3d96.webp"
         }
       ],
       "textAreas": [
@@ -2647,7 +2647,7 @@
           "opacity": 1,
           "visible": true,
           "imageAssetId": "092dee05-89e1-4197-a7cb-02f46da5e091",
-          "imagePath": "originals/ba0defbd-11c09ddc.png"
+          "imagePath": "originals/ba0defbd-11c09ddc.webp"
         },
         {
           "id": "1770851180785-uwnb5uuvc",
@@ -2664,7 +2664,7 @@
           "opacity": 1,
           "visible": true,
           "imageAssetId": "283aeee5-dbb0-4770-859d-306ab830904d",
-          "imagePath": "originals/8079d2f4-53b1f26a.png"
+          "imagePath": "originals/8079d2f4-53b1f26a.webp"
         },
         {
           "id": "1770851277223-c769svdnp",
@@ -2681,7 +2681,7 @@
           "opacity": 1,
           "visible": true,
           "imageAssetId": "283aeee5-dbb0-4770-859d-306ab830904d",
-          "imagePath": "originals/8079d2f4-53b1f26a.png"
+          "imagePath": "originals/8079d2f4-53b1f26a.webp"
         },
         {
           "id": "1770851343608-o7bfxj5kl",
@@ -2698,7 +2698,7 @@
           "opacity": 1,
           "visible": true,
           "imageAssetId": "b2822ee5-de27-43b2-8e54-a20b7eef45f5",
-          "imagePath": "originals/f8527569-2691c918.png",
+          "imagePath": "originals/f8527569-2691c918.webp",
           "flipY": true
         },
         {
@@ -2716,7 +2716,7 @@
           "opacity": 1,
           "visible": true,
           "imageAssetId": "19eb34dc-d392-4b2a-91e7-ebcad64f66e6",
-          "imagePath": "originals/ec482076-3216fa74.png"
+          "imagePath": "originals/ec482076-3216fa74.webp"
         },
         {
           "id": "1770851487140-wi7oqh6xo",
@@ -2733,7 +2733,7 @@
           "opacity": 1,
           "visible": true,
           "imageAssetId": "19eb34dc-d392-4b2a-91e7-ebcad64f66e6",
-          "imagePath": "originals/ec482076-3216fa74.png"
+          "imagePath": "originals/ec482076-3216fa74.webp"
         },
         {
           "id": "1770851505433-f1p9bs0sf",
@@ -2750,7 +2750,7 @@
           "opacity": 1,
           "visible": true,
           "imageAssetId": "19eb34dc-d392-4b2a-91e7-ebcad64f66e6",
-          "imagePath": "originals/ec482076-3216fa74.png"
+          "imagePath": "originals/ec482076-3216fa74.webp"
         },
         {
           "id": "1770851527922-0wsj2412v",
@@ -2767,7 +2767,7 @@
           "opacity": 1,
           "visible": true,
           "imageAssetId": "19eb34dc-d392-4b2a-91e7-ebcad64f66e6",
-          "imagePath": "originals/ec482076-3216fa74.png"
+          "imagePath": "originals/ec482076-3216fa74.webp"
         }
       ],
       "textAreas": [
@@ -2894,7 +2894,7 @@
           "opacity": 1,
           "visible": true,
           "imageAssetId": "1c833eff-d5de-41de-acd4-719f7a9b2ad1",
-          "imagePath": "originals/f034e90b-d33680ca.png"
+          "imagePath": "originals/f034e90b-d33680ca.webp"
         },
         {
           "id": "1770852193477-f1e43lfj7",
@@ -2911,7 +2911,7 @@
           "opacity": 1,
           "visible": true,
           "imageAssetId": "f0de37c1-0d3b-4250-8e2a-a6838aad08d5",
-          "imagePath": "originals/8296aab4-d25ad7d6.png"
+          "imagePath": "originals/8296aab4-d25ad7d6.webp"
         }
       ],
       "textAreas": [
