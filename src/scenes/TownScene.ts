@@ -8,7 +8,7 @@ import { ManaSystem } from '../systems/ManaSystem';
 import { ProgressionSystem, createInitialTownProgress } from '../systems/ProgressionSystem';
 import { uiTemplateLoader } from '../systems/UiTemplateLoader';
 import { getPlayerSpriteConfig } from '../utils/characterUtils';
-import { Crystal, PlayerState } from '../types';
+import { Crystal, PlayerState, TownProgress } from '../types';
 
 /** Building unlock order — condition checked against player state */
 const BUILDING_UNLOCK_CONFIG: {
@@ -121,11 +121,12 @@ export class TownScene extends Phaser.Scene {
             .setScrollFactor(0);
         charBtn.on('pointerdown', () => this.characterUI.toggle());
 
-        // Show guild notification if player is ready to promote AND guild is unlocked
+        // Show guild notification if player is ready to promote OR has failed trial AND guild is unlocked
         const guildNotification = this.sceneBuilder.get<Phaser.GameObjects.Container>('guild-notification');
         if (guildNotification) {
-            const isGuildUnlocked = player.townProgress!.unlockedBuildings.includes('guild');
-            guildNotification.setVisible(player.readyToPromote && isGuildUnlocked);
+            const isGuildRevealed = player.townProgress!.revealedBuildings.includes('guild');
+            const isFailBlocked = player.trialHistory?.failedTrialLevel != null;
+            guildNotification.setVisible((player.readyToPromote || isFailBlocked) && isGuildRevealed);
         }
 
         // Show forest exit if Arena Level 2 is complete
@@ -396,6 +397,9 @@ export class TownScene extends Phaser.Scene {
             if (!p.townProgress) p.townProgress = createInitialTownProgress();
             p.townProgress.totalWavesCompleted = 20;
             p.townProgress.wavesAfterForgeUnlock = 5;
+            const allBuildingIds = BUILDING_UNLOCK_CONFIG.map(c => c.buildingId);
+            p.townProgress.unlockedBuildings = [...allBuildingIds, 'forest-exit'];
+            p.townProgress.revealedBuildings = [...allBuildingIds, 'forest-exit'];
             if (!p.unlockedPets.includes('pink_beast')) p.unlockedPets.push('pink_beast');
             if (!p.arena.completedArenaLevels.includes(1)) p.arena.completedArenaLevels.push(1);
             if (!p.arena.completedArenaLevels.includes(2)) p.arena.completedArenaLevels.push(2);
@@ -637,20 +641,44 @@ export class TownScene extends Phaser.Scene {
 
     /**
      * Check each building's unlock condition and apply visibility.
-     * Returns list of building IDs that were newly unlocked this frame.
+     * Uses three-state model: unlocked → revealed → visited.
+     * Only one building is revealed at a time to prevent multiple Zyx guides.
+     * Returns list of building IDs that were newly revealed this frame.
      */
     private applyBuildingVisibility(player: PlayerState): string[] {
         const tp = player.townProgress!;
-        const newlyUnlocked: string[] = [];
 
+        // Step 1: Update unlockedBuildings (conditions met)
+        for (const config of BUILDING_UNLOCK_CONFIG) {
+            const conditionMet = config.condition(player);
+            if (conditionMet && !tp.unlockedBuildings.includes(config.buildingId)) {
+                tp.unlockedBuildings.push(config.buildingId);
+            }
+        }
+
+        // Step 2: Determine which buildings should be revealed next
+        const pendingReveals = this.getPendingReveals(tp);
+        const newlyRevealed: string[] = [];
+
+        // Only reveal next building if no revealed-but-unvisited building exists
+        const hasUnvisitedRevealed = tp.revealedBuildings.some(
+            id => id !== 'arena-building' && !tp.visitedBuildings.includes(id)
+        );
+
+        if (!hasUnvisitedRevealed && pendingReveals.length > 0) {
+            const nextReveal = pendingReveals[0];
+            tp.revealedBuildings.push(nextReveal);
+            newlyRevealed.push(nextReveal);
+        }
+
+        // Step 3: Apply visibility based on revealedBuildings
         for (const config of BUILDING_UNLOCK_CONFIG) {
             const building = this.sceneBuilder.get<Phaser.GameObjects.Image>(config.buildingId);
             const label = this.sceneBuilder.get<Phaser.GameObjects.GameObject>(config.labelId);
-            const conditionMet = config.condition(player);
-            const wasUnlocked = tp.unlockedBuildings.includes(config.buildingId);
+            const isRevealed = tp.revealedBuildings.includes(config.buildingId);
 
-            if (!conditionMet) {
-                // Locked: hide building + label
+            if (!isRevealed) {
+                // Not revealed: hide building + label
                 if (building) {
                     (building as any).setVisible(false);
                     building.disableInteractive();
@@ -659,10 +687,8 @@ export class TownScene extends Phaser.Scene {
                     (label as any).setVisible(false);
                     if ((label as any).disableInteractive) (label as any).disableInteractive();
                 }
-            } else if (!wasUnlocked) {
-                // Newly unlocked: start hidden, will animate in
-                tp.unlockedBuildings.push(config.buildingId);
-                newlyUnlocked.push(config.buildingId);
+            } else if (newlyRevealed.includes(config.buildingId)) {
+                // Newly revealed: start hidden, will animate in
                 if (building) {
                     (building as any).setVisible(false);
                     building.disableInteractive();
@@ -671,10 +697,20 @@ export class TownScene extends Phaser.Scene {
                     (label as any).setVisible(false);
                 }
             }
-            // Already unlocked: leave visible (SceneBuilder already created it)
+            // Already revealed: leave visible (SceneBuilder already created it)
         }
 
-        return newlyUnlocked;
+        return newlyRevealed;
+    }
+
+    /**
+     * Get buildings that are unlocked but not yet revealed, in unlock order.
+     */
+    private getPendingReveals(tp: TownProgress): string[] {
+        return BUILDING_UNLOCK_CONFIG
+            .filter(c => tp.unlockedBuildings.includes(c.buildingId)
+                      && !tp.revealedBuildings.includes(c.buildingId))
+            .map(c => c.buildingId);
     }
 
     /**
@@ -686,10 +722,10 @@ export class TownScene extends Phaser.Scene {
 
         for (const config of BUILDING_UNLOCK_CONFIG) {
             if (config.buildingId === 'arena-building') continue; // Arena never gets guide
-            const isUnlocked = tp.unlockedBuildings.includes(config.buildingId);
+            const isRevealed = tp.revealedBuildings.includes(config.buildingId);
             const isVisited = tp.visitedBuildings.includes(config.buildingId);
 
-            if (isUnlocked && !isVisited) {
+            if (isRevealed && !isVisited) {
                 const building = this.sceneBuilder.get<Phaser.GameObjects.Image>(config.buildingId);
                 if (building) {
                     this.showZyxAtBuilding(config.buildingId, building.x, building.y);
@@ -699,7 +735,7 @@ export class TownScene extends Phaser.Scene {
         }
 
         // Forest exit guide (arrow is on right side at x=1220)
-        if (tp.unlockedBuildings.includes('forest-exit') && !tp.visitedBuildings.includes('forest-exit')) {
+        if (tp.revealedBuildings.includes('forest-exit') && !tp.visitedBuildings.includes('forest-exit')) {
             this.showZyxAtBuilding('forest-exit', 1140, 559);
             this.showNewBadge('forest-exit', 1220, 520);
         }
@@ -880,11 +916,14 @@ export class TownScene extends Phaser.Scene {
         const hasArena2 = player.arena?.completedArenaLevels?.includes(2) ?? false;
         if (!hasArena2) return;
 
-        // Ensure it's tracked as unlocked
+        // Ensure it's tracked as unlocked and revealed
         if (!player.townProgress!.unlockedBuildings.includes('forest-exit')) {
             player.townProgress!.unlockedBuildings.push('forest-exit');
-            GameStateManager.getInstance().save();
         }
+        if (!player.townProgress!.revealedBuildings.includes('forest-exit')) {
+            player.townProgress!.revealedBuildings.push('forest-exit');
+        }
+        GameStateManager.getInstance().save();
 
         // The "arrow forest" element is created by SceneBuilder from scenes.json
         const arrowElement = this.sceneBuilder.get('arrow forest');

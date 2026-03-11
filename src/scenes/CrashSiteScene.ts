@@ -241,6 +241,7 @@ export class CrashSiteScene extends Phaser.Scene {
             this.zyx = this.add.sprite(zyxX, zyxY, 'spritesheet-zyx-sheet')
                 .setScale(0.35)
                 .setDepth(8)
+                .setInteractive({ useHandCursor: true })
                 .play('zyx-idle');
         } else {
             // Fallback: simple alien shape
@@ -258,6 +259,7 @@ export class CrashSiteScene extends Phaser.Scene {
             this.zyx = this.add.sprite(CrashSiteScene.ZYX_EXIT_X, zyxY, 'spritesheet-zyx-sheet')
                 .setScale(0.35)
                 .setDepth(8)
+                .setInteractive({ useHandCursor: true })
                 .play('zyx-idle');
         } else {
             this.zyx = this.createPlaceholderZyx(CrashSiteScene.ZYX_EXIT_X, zyxY);
@@ -296,7 +298,7 @@ export class CrashSiteScene extends Phaser.Scene {
         graphics.generateTexture('zyx-placeholder', 80, 100);
         graphics.destroy();
 
-        return this.add.sprite(x, y, 'zyx-placeholder').setDepth(8);
+        return this.add.sprite(x, y, 'zyx-placeholder').setDepth(8).setInteractive({ useHandCursor: true });
     }
 
     /**
@@ -314,7 +316,8 @@ export class CrashSiteScene extends Phaser.Scene {
             this.slime = this.add.sprite(CrashSiteScene.SLIME_X, slimeY, textureKey)
                 .setScale(0.5)
                 .setDepth(8)
-                .setFlipX(true);  // Face left (toward player)
+                .setFlipX(true)  // Face left (toward player)
+                .setInteractive({ useHandCursor: true });
 
             // Angry bobbing animation (bob up from ground level)
             this.tweens.add({
@@ -333,7 +336,8 @@ export class CrashSiteScene extends Phaser.Scene {
                     .setScale(1.2)
                     .setDepth(8)
                     .setFlipX(true)
-                    .setTint(0xff8888);  // Red tint for "angry"
+                    .setTint(0xff8888)  // Red tint for "angry"
+                    .setInteractive({ useHandCursor: true });
 
                 this.tweens.add({
                     targets: this.slime,
@@ -353,7 +357,10 @@ export class CrashSiteScene extends Phaser.Scene {
      * Create exit arrow to town
      */
     private createExitArrow(): void {
-        const container = this.add.container(CrashSiteScene.EXIT_X, 400).setDepth(100);
+        const arrowY = this.getPathY(CrashSiteScene.EXIT_X) - 30;
+        const container = this.add.container(CrashSiteScene.EXIT_X, arrowY).setDepth(100)
+            .setSize(80, 100)
+            .setInteractive({ useHandCursor: true });
 
         // Arrow pointing right
         const arrow = this.add.text(0, 0, '→', {

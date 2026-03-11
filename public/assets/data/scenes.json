@@ -1134,6 +1134,36 @@
           "visible": false
         },
         {
+          "id": "overviewOverlay",
+          "asset": "ui.panels.dark-overlay",
+          "x": 640,
+          "y": 360,
+          "depth": 200,
+          "width": 1280,
+          "height": 720,
+          "visible": false,
+          "alpha": 0.92
+        },
+        {
+          "id": "feedbackOverlay",
+          "asset": "ui.panels.dark-overlay",
+          "x": 640,
+          "y": 360,
+          "depth": 210,
+          "width": 1280,
+          "height": 720,
+          "visible": false,
+          "alpha": 0.85
+        },
+        {
+          "id": "progressDots",
+          "asset": "ui.containers.empty",
+          "x": 640,
+          "y": 80,
+          "depth": 201,
+          "visible": false
+        },
+        {
           "id": "backButton",
           "asset": "ui.buttons.back-button",
           "x": 100,

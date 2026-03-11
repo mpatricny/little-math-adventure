@@ -2,29 +2,55 @@ import Phaser from 'phaser';
 import { SceneDebugger } from '../systems/SceneDebugger';
 import { GameStateManager } from '../systems/GameStateManager';
 import { ProgressionSystem } from '../systems/ProgressionSystem';
-import { CrystalSystem } from '../systems/CrystalSystem';
+import { UiElementBuilder } from '../systems/UiElementBuilder';
 import { Crystal } from '../types';
 
 interface VictoryData {
-    xpReward?: number;
-    goldReward?: number;
+    // Navigation after dismiss
+    returnScene: string;
+    returnData: Record<string, unknown>;
+
+    // Rewards
+    goldReward: number;
+    xpReward: number;
     enemyName?: string;
-    readyForTrial?: boolean;
-    arenaComplete?: boolean;
-    // New arena completion data
+
+    // First-defeat tracking
+    isFirstDefeat: boolean;
+    isPerfectDefeat: boolean;
+    wasPerfectBefore: boolean;
+
+    // Pet unlock with sprite data
+    unlockedPet?: {
+        name: string;
+        spriteKey: string;
+        animPrefix: string;
+    } | null;
+
+    // Enemy sprite for transformation display
+    enemySpriteKey?: string;
+    enemyAnimPrefix?: string;
+
+    // Crystal rewards
+    crystalDrops: Crystal[];
+    crystalLabels: string[];
+    crystalOverflow: boolean;
+
+    // Arena-specific
     arenaCompleted?: boolean;
     arenaLevel?: number;
     nextArenaLevel?: number;
-    playerHp?: number;
-    // Crystal drops
-    crystalDrops?: Crystal[];
-    crystalOverflow?: boolean;
+
+    readyForTrial?: boolean;
 }
 
 export class VictoryScene extends Phaser.Scene {
     private victoryData!: VictoryData;
     private debugger!: SceneDebugger;
     private gameState!: GameStateManager;
+
+    // Nine-slice grey frame (same as PictureDialog)
+    private static readonly FRAME_TEXTURE = '991bb46f-0417-4c22-8e3e-04cea0a3079a';
 
     constructor() {
         super({ key: 'VictoryScene' });
@@ -54,16 +80,55 @@ export class VictoryScene extends Phaser.Scene {
     }
 
     create(): void {
-        // Dark background overlay (1280x720)
-        this.add.rectangle(640, 360, 1280, 720, 0x000000, 0.8);
+        const isArenaComplete = this.victoryData.arenaCompleted;
+        const hasPet = !!this.victoryData.unlockedPet;
+        const crystalDrops = this.victoryData.crystalDrops || [];
+        const hasCrystals = crystalDrops.length > 0;
+        const hasEnemyName = !isArenaComplete && !!this.victoryData.enemyName;
 
-        // Check for arena completion (both old and new fields)
-        const isArenaComplete = this.victoryData.arenaComplete || this.victoryData.arenaCompleted;
+        // === COMPUTE LAYOUT ===
+        // Each section: height of its content + gap after it.
+        // yOffset tracks the TOP edge of the next section.
+        // All text origins are (0.5, 0) so y is the top of the text.
+        const SECTION_GAP = 18;
+        const TOP_MARGIN = 40;
+        const BOTTOM_MARGIN = 35;
 
-        // Victory Title
+        // Section heights (measured from top of section to bottom of its last element)
+        const titleH = 44 + SECTION_GAP;                         // 44px font
+        const enemyNameH = hasEnemyName ? 20 + SECTION_GAP : 0;  // 20px font
+        const rewardsH = 45 + SECTION_GAP;                       // coin sprite ~45px at 0.18 scale
+        const petH = hasPet ? 115 + SECTION_GAP : 0;             // title(18) + gap(8) + sprite(80) + gap(4) + name(16) + gap(2) + hint(12) = ~140 but squished
+        const crystalH = hasCrystals ? 90 + SECTION_GAP : 0;     // holders(~65) + labels(~25)
+        const arenaH = isArenaComplete ? 50 + SECTION_GAP : 0;
+        const trialH = this.victoryData.readyForTrial ? 50 + SECTION_GAP : 0;
+        const buttonH = 50;
+
+        const totalContentH = titleH + enemyNameH + rewardsH + petH + crystalH + arenaH + trialH + buttonH;
+        const panelHeight = Math.max(totalContentH + TOP_MARGIN + BOTTOM_MARGIN, 260);
+
+        // Dark overlay
+        const overlay = this.add.rectangle(640, 360, 1280, 720, 0x000000, 0.7)
+            .setDepth(99).setAlpha(0);
+
+        // Nine-slice grey frame panel — sized to content
+        const panel = this.add.nineslice(
+            640, 360,
+            VictoryScene.FRAME_TEXTURE, undefined,
+            680, panelHeight,
+            41, 57, 45, 50
+        ).setOrigin(0.5).setDepth(100).setScale(0).setAlpha(0);
+
+        // Content container at depth 101
+        const content = this.add.container(640, 360).setDepth(101).setAlpha(0);
+
+        // yOffset = top of content area (container-local, 0 = panel center)
+        let yOffset = -(panelHeight / 2) + TOP_MARGIN;
+
+        // === TITLE ===
         const titleText = isArenaComplete ? 'ARÉNA DOKONČENA!' : 'VÍTĚZSTVÍ!';
-        const title = this.add.text(640, 120, titleText, {
-            fontSize: '48px',
+        const title = this.add.text(0, yOffset + 22, titleText, {
+            fontSize: '44px',
             fontFamily: 'Arial, sans-serif',
             color: '#ffd700',
             fontStyle: 'bold',
@@ -71,410 +136,302 @@ export class VictoryScene extends Phaser.Scene {
             strokeThickness: 6,
             shadow: { offsetX: 2, offsetY: 2, color: '#000000', blur: 5, fill: true }
         }).setOrigin(0.5).setScale(0);
+        content.add(title);
+        yOffset += titleH;
 
-        // Animate title
-        this.tweens.add({
-            targets: title,
-            scale: 1,
-            duration: 500,
-            ease: 'Back.out'
-        });
-
-        // Enemy Defeated Text (skip for arena complete)
-        if (!isArenaComplete && this.victoryData.enemyName) {
-            const defeatedText = this.add.text(640, 200, `PORAZIL JSI: ${this.victoryData.enemyName.toUpperCase()}`, {
-                fontSize: '24px',
+        // === ENEMY NAME (non-arena only) ===
+        if (hasEnemyName) {
+            const defeated = this.add.text(0, yOffset + 10, `PORAZIL JSI: ${this.victoryData.enemyName!.toUpperCase()}`, {
+                fontSize: '20px',
                 fontFamily: 'Arial, sans-serif',
-                color: '#ffffff'
+                color: '#dddddd'
             }).setOrigin(0.5).setAlpha(0);
-
-            this.tweens.add({
-                targets: defeatedText,
-                alpha: 1,
-                duration: 500,
-                delay: 300
-            });
+            content.add(defeated);
+            yOffset += enemyNameH;
         }
 
-        // Rewards Container
-        const rewardsY = isArenaComplete ? 240 : 300;
+        // === REWARDS ROW (XP + Coin sprite) ===
+        const rewardsContainer = this.add.container(0, yOffset + 13);
 
-        // XP Reward with animation (only if XP was given)
         if (this.victoryData.xpReward) {
-            const xpText = this.add.text(540, rewardsY, `XP: +${this.victoryData.xpReward}`, {
-                fontSize: '32px',
+            const xpText = this.add.text(-70, 0, `XP: +${this.victoryData.xpReward}`, {
+                fontSize: '26px',
                 fontFamily: 'Arial, sans-serif',
                 color: '#44aaff',
                 fontStyle: 'bold'
-            }).setOrigin(0.5).setAlpha(0).setScale(0.5);
-
-            this.tweens.add({
-                targets: xpText,
-                alpha: 1,
-                scale: 1,
-                duration: 400,
-                delay: 500,
-                ease: 'Back.out'
-            });
+            }).setOrigin(0.5);
+            rewardsContainer.add(xpText);
         }
 
-        // Coin Reward with animation (visual coin icon)
         if (this.victoryData.goldReward) {
-            this.showCoinReward(740, rewardsY, this.victoryData.goldReward);
-        }
-
-        // Arena Complete celebration
-        if (isArenaComplete) {
-            this.showArenaCompleteMessage(400);
-        }
-
-        // Crystal drops notification
-        if (this.victoryData.crystalDrops && this.victoryData.crystalDrops.length > 0) {
-            this.showCrystalDrops(isArenaComplete ? 480 : 360);
-        }
-
-        // Pet unlock notification
-        this.showPetUnlockNotification();
-
-        // Ready for Guild Trial message
-        if (this.victoryData.readyForTrial && !isArenaComplete) {
-            this.showGuildPrompt();
-        } else {
-            this.showContinueButton(isArenaComplete ? 520 : 480);
-        }
-
-        // Setup universal debugger
-        this.debugger = new SceneDebugger(this, 'VictoryScene');
-    }
-
-    private showCoinReward(x: number, y: number, amount: number): void {
-        // Create coin container with animated coins
-        const container = this.add.container(x, y);
-
-        // Coin icon (using emoji for now - can be replaced with sprite)
-        const coinIcon = this.add.text(-30, 0, '🪙', {
-            fontSize: '36px',
-        }).setOrigin(0.5);
-
-        // Amount text
-        const amountText = this.add.text(20, 0, `+${amount}`, {
-            fontSize: '32px',
-            fontFamily: 'Arial, sans-serif',
-            color: '#ffaa00',
-            fontStyle: 'bold'
-        }).setOrigin(0, 0.5);
-
-        container.add([coinIcon, amountText]);
-        container.setAlpha(0).setScale(0.5);
-
-        // Animate in
-        this.tweens.add({
-            targets: container,
-            alpha: 1,
-            scale: 1,
-            duration: 400,
-            delay: 700,
-            ease: 'Back.out'
-        });
-
-        // Coin bounce animation
-        this.tweens.add({
-            targets: coinIcon,
-            y: -10,
-            duration: 300,
-            delay: 1000,
-            yoyo: true,
-            repeat: 2,
-            ease: 'Sine.inOut'
-        });
-    }
-
-    private showArenaCompleteMessage(y: number): void {
-        const arenaLevel = this.victoryData.arenaLevel || 1;
-        const nextLevel = this.victoryData.nextArenaLevel || arenaLevel + 1;
-
-        const completeText = this.add.text(640, y, `🏆 ARÉNA ${arenaLevel} DOKONČENA! 🏆`, {
-            fontSize: '28px',
-            fontFamily: 'Arial, sans-serif',
-            color: '#00ff00',
-            fontStyle: 'bold',
-            stroke: '#000000',
-            strokeThickness: 3
-        }).setOrigin(0.5).setAlpha(0);
-
-        this.tweens.add({
-            targets: completeText,
-            alpha: 1,
-            duration: 500,
-            delay: 1000
-        });
-
-        // Pulsing glow effect
-        this.tweens.add({
-            targets: completeText,
-            scale: 1.1,
-            duration: 800,
-            delay: 1500,
-            yoyo: true,
-            repeat: -1,
-            ease: 'Sine.inOut'
-        });
-
-        // Show next arena info if available
-        if (nextLevel <= 3) {
-            const nextText = this.add.text(640, y + 50, `ARÉNA ${nextLevel} JE ODEMČENA!`, {
-                fontSize: '20px',
+            // Copper coin sprite from shop spritesheet (frame 1, 241px → ~43px at 0.18)
+            const coinSprite = this.add.image(55, 0, 'shop-coins-sheet', 1)
+                .setScale(0.18).setOrigin(0.5);
+            const coinAmount = this.add.text(80, 0, `+${this.victoryData.goldReward}`, {
+                fontSize: '26px',
                 fontFamily: 'Arial, sans-serif',
-                color: '#ffcc00',
+                color: '#ffaa00',
+                fontStyle: 'bold'
+            }).setOrigin(0, 0.5);
+            rewardsContainer.add([coinSprite, coinAmount]);
+        }
+
+        rewardsContainer.setScale(0);
+        content.add(rewardsContainer);
+        yOffset += rewardsH;
+
+        // === CREATURE FREED (pet image + name, NO enemy sprite or arrow) ===
+        let petContainer: Phaser.GameObjects.Container | null = null;
+        if (hasPet) {
+            const pet = this.victoryData.unlockedPet!;
+            // Container y = top of section. Layout top-down within container.
+            petContainer = this.add.container(0, yOffset);
+
+            // "TVOR OSVOBOZEN!" label at top
+            const freedTitle = this.add.text(0, 10, 'TVOR OSVOBOZEN!', {
+                fontSize: '18px',
+                fontFamily: 'Arial, sans-serif',
+                color: '#88ff88',
                 fontStyle: 'bold',
                 stroke: '#000000',
-                strokeThickness: 2
-            }).setOrigin(0.5).setAlpha(0);
+                strokeThickness: 3
+            }).setOrigin(0.5, 0);
+            petContainer.add(freedTitle);
 
-            this.tweens.add({
-                targets: nextText,
-                alpha: 1,
-                duration: 500,
-                delay: 1500
-            });
-        } else {
-            // All arenas completed
-            const finalText = this.add.text(640, y + 50, '🎉 VSE ARÉNY DOKONČENY! 🎉', {
-                fontSize: '24px',
+            // Pet sprite (static frame 0, scale 0.4 = 80x80px)
+            const petSprite = this.add.image(0, 55, pet.spriteKey, 0).setScale(0.4);
+            petContainer.add(petSprite);
+
+            // Pet name
+            const petName = this.add.text(0, 100, pet.name, {
+                fontSize: '15px',
                 fontFamily: 'Arial, sans-serif',
-                color: '#ff88ff',
-                fontStyle: 'bold',
-                stroke: '#000000',
-                strokeThickness: 2
-            }).setOrigin(0.5).setAlpha(0);
+                color: '#ffffff',
+                fontStyle: 'bold'
+            }).setOrigin(0.5, 0);
+            petContainer.add(petName);
 
-            this.tweens.add({
-                targets: finalText,
-                alpha: 1,
-                duration: 500,
-                delay: 1500
-            });
+            petContainer.setScale(0);
+            content.add(petContainer);
+            yOffset += petH;
         }
-    }
 
-    private showGuildPrompt(): void {
-        const startY = 400;
+        // === CRYSTAL REWARDS ===
+        let crystalContainer: Phaser.GameObjects.Container | null = null;
 
-        // Ready for Trial Text
-        const readyText = this.add.text(640, startY, 'JSI PŘIPRAVEN!', {
-            fontSize: '36px',
-            fontFamily: 'Arial, sans-serif',
-            color: '#00ff00',
-            fontStyle: 'bold',
-            stroke: '#000000',
-            strokeThickness: 4
-        }).setOrigin(0.5).setScale(0);
+        if (hasCrystals) {
+            // Container y = top of section. Holders centered in section.
+            crystalContainer = this.add.container(0, yOffset);
 
-        this.tweens.add({
-            targets: readyText,
-            scale: 1,
-            duration: 500,
-            delay: 500,
-            ease: 'Back.out'
-        });
+            const holderSpacing = 150;
+            const startX = -(crystalDrops.length - 1) * holderSpacing / 2;
 
-        // Guild prompt message
-        const guildText = this.add.text(640, startY + 60, 'JDI DO CECHU PRO ZKOUŠKU HRDINY!', {
-            fontSize: '24px',
-            fontFamily: 'Arial, sans-serif',
-            color: '#ffd700',
-            fontStyle: 'bold'
-        }).setOrigin(0.5).setAlpha(0);
+            crystalDrops.forEach((crystal, index) => {
+                const holderX = startX + index * holderSpacing;
 
-        // Pulsing animation for guild text
-        this.tweens.add({
-            targets: guildText,
-            alpha: 1,
-            duration: 500,
-            delay: 1000,
-            onComplete: () => {
-                this.tweens.add({
-                    targets: guildText,
-                    scale: 1.05,
-                    duration: 800,
-                    yoyo: true,
-                    repeat: -1,
-                    ease: 'Sine.inOut'
-                });
+                // Crystal holder from forge template (scale 0.5 → ~65px)
+                const holder = this.createCrystalHolder(holderX, 35, 0.5);
+                this.updateCrystalHolder(holder, crystal);
+                crystalContainer!.add(holder);
+
+                // Label below holder (from BattleScene-provided labels)
+                const labelText = (this.victoryData.crystalLabels || [])[index] || '';
+
+                if (labelText) {
+                    const label = this.add.text(holderX, 75, labelText, {
+                        fontSize: '14px',
+                        fontFamily: 'Arial, sans-serif',
+                        color: '#ccccff',
+                        align: 'center'
+                    }).setOrigin(0.5, 0);
+                    crystalContainer!.add(label);
+                }
+            });
+
+            // Overflow warning
+            if (this.victoryData.crystalOverflow) {
+                const warning = this.add.text(0, 88, '⚠️ Inventář plný! Krystaly zůstaly na zemi.', {
+                    fontSize: '12px',
+                    fontFamily: 'Arial, sans-serif',
+                    color: '#ffaa44',
+                    fontStyle: 'bold'
+                }).setOrigin(0.5, 0);
+                crystalContainer.add(warning);
             }
-        });
 
-        this.showContinueButton(560);
-    }
+            crystalContainer.setScale(0);
+            content.add(crystalContainer);
+            yOffset += crystalH;
+        }
 
-    private showContinueButton(y: number): void {
-        const button = this.add.container(640, y);
+        // === ARENA COMPLETION INFO ===
+        let arenaContainer: Phaser.GameObjects.Container | null = null;
+        if (isArenaComplete) {
+            arenaContainer = this.add.container(0, yOffset);
+            const arenaLevel = this.victoryData.arenaLevel || 1;
+            const nextLevel = this.victoryData.nextArenaLevel || arenaLevel + 1;
 
-        const bg = this.add.rectangle(0, 0, 200, 60, 0x444444)
+            const completeMsg = this.add.text(0, 5, `🏆 ARÉNA ${arenaLevel} DOKONČENA! 🏆`, {
+                fontSize: '22px',
+                fontFamily: 'Arial, sans-serif',
+                color: '#00ff00',
+                fontStyle: 'bold',
+                stroke: '#000000',
+                strokeThickness: 3
+            }).setOrigin(0.5, 0);
+            arenaContainer.add(completeMsg);
+
+            if (nextLevel <= 3) {
+                const nextMsg = this.add.text(0, 32, `ARÉNA ${nextLevel} JE ODEMČENA!`, {
+                    fontSize: '16px',
+                    fontFamily: 'Arial, sans-serif',
+                    color: '#ffcc00',
+                    fontStyle: 'bold'
+                }).setOrigin(0.5, 0);
+                arenaContainer.add(nextMsg);
+            } else {
+                const finalMsg = this.add.text(0, 32, 'VSE ARÉNY DOKONČENY!', {
+                    fontSize: '16px',
+                    fontFamily: 'Arial, sans-serif',
+                    color: '#ff88ff',
+                    fontStyle: 'bold'
+                }).setOrigin(0.5, 0);
+                arenaContainer.add(finalMsg);
+            }
+
+            arenaContainer.setAlpha(0);
+            content.add(arenaContainer);
+            yOffset += arenaH;
+        }
+
+        // === GUILD TRIAL PROMPT ===
+        if (this.victoryData.readyForTrial) {
+            const trialContainer = this.add.container(0, yOffset);
+            const readyText = this.add.text(0, 5, 'JSI PŘIPRAVEN!', {
+                fontSize: '22px',
+                fontFamily: 'Arial, sans-serif',
+                color: '#00ff00',
+                fontStyle: 'bold',
+                stroke: '#000000',
+                strokeThickness: 3
+            }).setOrigin(0.5, 0);
+            const guildText = this.add.text(0, 32, 'JDI DO CECHU PRO ZKOUŠKU HRDINY!', {
+                fontSize: '15px',
+                fontFamily: 'Arial, sans-serif',
+                color: '#ffd700',
+                fontStyle: 'bold'
+            }).setOrigin(0.5, 0);
+            trialContainer.add([readyText, guildText]);
+            trialContainer.setAlpha(0);
+            content.add(trialContainer);
+            yOffset += trialH;
+        }
+
+        // === CONTINUE BUTTON ===
+        const button = this.add.container(0, yOffset + 25);
+
+        const bg = this.add.rectangle(0, 0, 200, 50, 0x444444)
             .setStrokeStyle(2, 0xffffff);
-
-        const text = this.add.text(0, 0, 'POKRAČOVAT', {
-            fontSize: '24px',
+        const btnText = this.add.text(0, 0, 'POKRAČOVAT', {
+            fontSize: '22px',
             fontFamily: 'Arial, sans-serif',
             color: '#ffffff'
         }).setOrigin(0.5);
-
-        button.add([bg, text]);
+        button.add([bg, btnText]);
         button.setAlpha(0);
 
-        // Make interactive
         bg.setInteractive({ useHandCursor: true })
             .on('pointerover', () => bg.setFillStyle(0x666666))
             .on('pointerout', () => bg.setFillStyle(0x444444))
-            .on('pointerdown', () => this.returnToTown());
+            .on('pointerdown', () => this.returnToNextScene());
 
-        this.tweens.add({
-            targets: button,
-            alpha: 1,
-            duration: 500,
-            delay: 1500
-        });
+        content.add(button);
 
-        // Also allow spacebar
-        this.input.keyboard!.once('keydown-SPACE', () => this.returnToTown());
-    }
+        // === STAGGERED ANIMATION SEQUENCE ===
 
-    private returnToTown(): void {
-        // Clear notifications before leaving
-        this.registry.remove('newPetUnlocks');
-        this.registry.remove('crystalDrops');
-        this.registry.remove('crystalOverflow');
-        this.scene.start('TownScene');
-    }
+        // 0ms: Overlay + panel
+        this.tweens.add({ targets: overlay, alpha: 1, duration: 300 });
+        this.tweens.add({ targets: panel, scale: 1, alpha: 1, duration: 400, ease: 'Back.out' });
+        this.tweens.add({ targets: content, alpha: 1, duration: 200 });
 
-    private showCrystalDrops(y: number): void {
-        const crystals = this.victoryData.crystalDrops!;
-        const overflow = this.victoryData.crystalOverflow || false;
+        // 300ms: Title
+        this.tweens.add({ targets: title, scale: 1, duration: 500, delay: 300, ease: 'Back.out' });
 
-        // Create container
-        const container = this.add.container(640, y);
+        // 600ms: Rewards
+        this.tweens.add({ targets: rewardsContainer, scale: 1, duration: 400, delay: 600, ease: 'Back.out' });
 
-        // Background
-        const bgWidth = Math.max(300, 100 + crystals.length * 80);
-        const bg = this.add.rectangle(0, 0, bgWidth, 60, 0x224466, 0.9)
-            .setStrokeStyle(2, 0x4488aa);
-        container.add(bg);
-
-        // Title
-        const title = this.add.text(-bgWidth / 2 + 20, 0, '💎', {
-            fontSize: '24px'
-        }).setOrigin(0, 0.5);
-        container.add(title);
-
-        // Crystal displays
-        let xOffset = -bgWidth / 2 + 60;
-        crystals.forEach((crystal, index) => {
-            const display = CrystalSystem.getCrystalDisplay(crystal);
-            const config = CrystalSystem.getTierConfig(crystal.tier);
-
-            const crystalText = this.add.text(xOffset + index * 70, 0, display, {
-                fontSize: '20px',
-                fontFamily: 'Arial, sans-serif',
-                color: config.color,
-                fontStyle: 'bold'
-            }).setOrigin(0, 0.5);
-            container.add(crystalText);
-        });
-
-        // Animate in
-        container.setScale(0).setAlpha(0);
-        this.tweens.add({
-            targets: container,
-            scale: 1,
-            alpha: 1,
-            duration: 500,
-            delay: 900,
-            ease: 'Back.out'
-        });
-
-        // Show overflow warning
-        if (overflow) {
-            const warningText = this.add.text(640, y + 45, '⚠️ Inventář plný! Krystaly zůstaly na zemi.', {
-                fontSize: '14px',
-                fontFamily: 'Arial, sans-serif',
-                color: '#ffaa44',
-                fontStyle: 'bold'
-            }).setOrigin(0.5).setAlpha(0);
-
-            this.tweens.add({
-                targets: warningText,
-                alpha: 1,
-                duration: 500,
-                delay: 1400
-            });
+        // 900ms: Pet section
+        if (petContainer) {
+            this.tweens.add({ targets: petContainer, scale: 1, duration: 500, delay: 900, ease: 'Back.out' });
         }
+
+        // 1200ms: Crystal holders
+        if (crystalContainer) {
+            this.tweens.add({ targets: crystalContainer, scale: 1, duration: 400, delay: 1200, ease: 'Back.out' });
+        }
+
+        // Arena info fade
+        if (arenaContainer) {
+            this.tweens.add({ targets: arenaContainer, alpha: 1, duration: 500, delay: 1000 });
+        }
+
+        // 1500ms: Continue button
+        this.tweens.add({ targets: button, alpha: 1, duration: 500, delay: 1500 });
+
+        // Spacebar shortcut (delayed to match button appearance)
+        this.time.delayedCall(1500, () => {
+            this.input.keyboard!.once('keydown-SPACE', () => this.returnToNextScene());
+        });
+
+        // Setup debugger
+        this.debugger = new SceneDebugger(this, 'VictoryScene');
     }
 
-    private showPetUnlockNotification(): void {
-        const newPetUnlocks = this.registry.get('newPetUnlocks') as string[] | undefined;
-        if (!newPetUnlocks || newPetUnlocks.length === 0) return;
+    /**
+     * Creates a crystal holder from the UI template (same as CrystalForgeScene).
+     */
+    private createCrystalHolder(x: number, y: number, scale: number): Phaser.GameObjects.Container {
+        const builder = new UiElementBuilder(this);
+        const templateId = '1770150302226-gb3gzlbpa';
+        const container = builder.buildFromTemplate(templateId, x, y, [0.5, 0.5]);
+        if (!container) {
+            console.warn('[VictoryScene] Failed to create crystal holder from template');
+            return this.add.container(x, y);
+        }
+        container.setScale(scale);
+        return container;
+    }
 
-        const y = this.victoryData.arenaComplete ? 340 : 360;
+    /**
+     * Updates a crystal holder's visual state (simplified version, no selection/usability logic).
+     */
+    private updateCrystalHolder(container: Phaser.GameObjects.Container, crystal: Crystal): void {
+        const layerObjects = container.getData('layerObjects') as Map<string, Phaser.GameObjects.Image> | undefined;
+        const textObjects = container.getData('textObjects') as Map<string, { text: Phaser.GameObjects.Text }> | undefined;
 
-        // Create notification container
-        const container = this.add.container(640, y);
+        const crystalLayer = layerObjects?.get('1770150364402-twzxmxrgz');
+        const valueTextInfo = textObjects?.get('1770150398556-n42xyxo4u');
 
-        // Background
-        const bg = this.add.rectangle(0, 0, 400, 50, 0x884488, 0.9)
-            .setStrokeStyle(2, 0xaa66aa);
-        container.add(bg);
+        // Frame indices: shard=1, fragment=3, prism=5
+        const tierFrames: { [key: string]: number } = { shard: 1, fragment: 3, prism: 5 };
 
-        // Pet icon
-        const petIcon = this.add.text(-150, 0, '🐾', {
-            fontSize: '28px'
-        }).setOrigin(0.5);
-        container.add(petIcon);
+        if (crystalLayer && this.textures.exists('gemstone-icons')) {
+            crystalLayer.setTexture('gemstone-icons', tierFrames[crystal.tier] ?? 1);
+            crystalLayer.setVisible(true);
+            // Offset crystal for better centering (matching forge pattern)
+            if (crystalLayer.getData('originalX') === undefined) {
+                crystalLayer.setData('originalX', crystalLayer.x);
+                crystalLayer.setData('originalY', crystalLayer.y);
+            }
+            crystalLayer.setPosition(
+                (crystalLayer.getData('originalX') as number) - 6,
+                (crystalLayer.getData('originalY') as number) - 12
+            );
+        }
+        valueTextInfo?.text.setText(String(crystal.value));
+    }
 
-        // Message
-        const petNames = newPetUnlocks.join(', ');
-        const message = this.add.text(20, 0,
-            `NOVÝ MAZLÍČEK K DISPOZICI!\n${petNames}`, {
-                fontSize: '14px',
-                fontFamily: 'Arial, sans-serif',
-                color: '#ffffff',
-                fontStyle: 'bold',
-                align: 'center'
-            }).setOrigin(0.5);
-        container.add(message);
-
-        // Animate in
-        container.setScale(0).setAlpha(0);
-        this.tweens.add({
-            targets: container,
-            scale: 1,
-            alpha: 1,
-            duration: 500,
-            delay: 1200,
-            ease: 'Back.out'
-        });
-
-        // Glow animation
-        this.tweens.add({
-            targets: bg,
-            strokeColor: { from: 0xaa66aa, to: 0xffaaff },
-            duration: 600,
-            delay: 1700,
-            yoyo: true,
-            repeat: 3
-        });
-
-        // Hint to visit witch
-        const hint = this.add.text(640, y + 40, 'Navštiv čarodějnici pro koupi!', {
-            fontSize: '12px',
-            fontFamily: 'Arial, sans-serif',
-            color: '#aaaaff'
-        }).setOrigin(0.5).setAlpha(0);
-
-        this.tweens.add({
-            targets: hint,
-            alpha: 1,
-            duration: 500,
-            delay: 2000
-        });
+    private returnToNextScene(): void {
+        this.scene.start(this.victoryData.returnScene, this.victoryData.returnData);
     }
 }

@@ -19,11 +19,11 @@ export class CharacterSelectNewScene extends Phaser.Scene {
     private targetSlotIndex: number = 0;
     private characterName: string = 'Hrdina';
 
-    // Sprites and selectors
+    // Sprites and frame layer references
     private girlPreview!: Phaser.GameObjects.Sprite;
     private boyPreview!: Phaser.GameObjects.Sprite;
-    private girlSelector!: Phaser.GameObjects.Rectangle;
-    private boySelector!: Phaser.GameObjects.Rectangle;
+    private leftFrame?: Phaser.GameObjects.Image;
+    private rightFrame?: Phaser.GameObjects.Image;
     private nameInputElement: Phaser.GameObjects.DOMElement | null = null;
 
     constructor() {
@@ -53,61 +53,142 @@ export class CharacterSelectNewScene extends Phaser.Scene {
     }
 
     private createCharacterPreviews(): void {
-        // CharacterNew template (500x500) positioned at (638, 378) with default origin (0.5, 0.5)
-        // Template origin offset: (250, 250)
-        // Left frame center: template (20+124, 38+124) = (144, 162) -> screen (638-250+144, 378-250+162) = (532, 290)
-        // Right frame center: template (231+124, 38+124) = (355, 162) -> screen (638-250+355, 378-250+162) = (743, 290)
-        // Adjusted: moved up 15px to better fit inside frames
+        // Access frame layers from the CharacterNew template container
+        const characterContainer = this.sceneBuilder.get<Phaser.GameObjects.Container>('CharacterNew');
+        const layerObjects = characterContainer?.getData('layerObjects') as
+            Map<string, Phaser.GameObjects.Image> | undefined;
+
+        // Frame layer IDs from CharacterNew template
+        this.leftFrame = layerObjects?.get('1769720600506-f7j78jt2b') as Phaser.GameObjects.Image | undefined;
+        this.rightFrame = layerObjects?.get('1769720697747-ny4v9kkg6') as Phaser.GameObjects.Image | undefined;
+
+        // Disable template-built-in hover/pressed on frame layers (we handle it ourselves)
+        this.leftFrame?.disableInteractive();
+        this.rightFrame?.disableInteractive();
+
+        // Frame centers in screen coordinates
+        // Template 500x500 at (638, 378), origin (0.5, 0.5), offset (-250, -250)
+        // Left frame: bounds(20, 38, 248, 248) → center (532, 290)
+        // Right frame: bounds(231, 38, 248, 248) → center (743, 290)
         const girlX = 532;
-        const girlY = 275;
+        const girlY = 290;
         const boyX = 743;
-        const boyY = 275;
+        const boyY = 290;
 
         const girlConfig = getPlayerSpriteConfig('girl_knight');
         const boyConfig = getPlayerSpriteConfig('boy_knight');
-
-        // Character scale - slightly smaller to fit better in frames
         const characterScale = 0.85;
-        const characterScaleHover = characterScale * 1.0625;
 
-        // Create sprites with idle animations
+        // Create character sprites (non-interactive — zones handle input)
         this.girlPreview = this.add.sprite(girlX, girlY, girlConfig.idleTexture)
             .setScale(characterScale)
             .setDepth(20)
-            .play(girlConfig.idleAnim)
-            .setInteractive({ useHandCursor: true });
+            .play(girlConfig.idleAnim);
 
         this.boyPreview = this.add.sprite(boyX, boyY, boyConfig.idleTexture)
             .setScale(characterScale)
             .setDepth(20)
-            .play(boyConfig.idleAnim)
-            .setInteractive({ useHandCursor: true });
+            .play(boyConfig.idleAnim);
 
-        // Selection indicators (positioned behind sprites, adjusted for smaller sprites)
-        this.girlSelector = this.add.rectangle(girlX, girlY, 180, 200, 0x000000, 0)
-            .setStrokeStyle(4, 0xffd700)
-            .setDepth(19);
+        // Interactive zones covering entire frame areas for consistent hover/click
+        const frameSize = 248;
+        this.setupFrameZone(girlX, girlY, frameSize, 'girl_knight');
+        this.setupFrameZone(boyX, boyY, frameSize, 'boy_knight');
 
-        this.boySelector = this.add.rectangle(boyX, boyY, 180, 200, 0x000000, 0)
-            .setStrokeStyle(4, 0x666666)
-            .setDepth(19);
+        // Apply initial selection visuals
+        this.updateSelectionVisuals();
+    }
 
-        // Click handlers
-        this.girlPreview.on('pointerdown', () => this.selectCharacter('girl_knight'));
-        this.boyPreview.on('pointerdown', () => this.selectCharacter('boy_knight'));
+    private setupFrameZone(x: number, y: number, size: number, type: CharacterType): void {
+        const zone = this.add.zone(x, y, size, size)
+            .setInteractive({ useHandCursor: true })
+            .setDepth(21);
 
-        // Hover effects
-        this.girlPreview.on('pointerover', () => this.girlPreview.setScale(characterScaleHover));
-        this.girlPreview.on('pointerout', () => this.girlPreview.setScale(characterScale));
-        this.boyPreview.on('pointerover', () => this.boyPreview.setScale(characterScaleHover));
-        this.boyPreview.on('pointerout', () => this.boyPreview.setScale(characterScale));
+        zone.on('pointerover', () => this.onFrameHover(type));
+        zone.on('pointerout', () => this.onFrameHoverOut(type));
+        zone.on('pointerdown', () => this.selectCharacter(type));
+    }
+
+    private onFrameHover(type: CharacterType): void {
+        const frame = type === 'girl_knight' ? this.leftFrame : this.rightFrame;
+        const sprite = type === 'girl_knight' ? this.girlPreview : this.boyPreview;
+
+        // Scale up sprite
+        this.tweens.killTweensOf(sprite);
+        this.tweens.add({
+            targets: sprite,
+            scaleX: 0.92,
+            scaleY: 0.92,
+            duration: 150,
+            ease: 'Power2.easeOut'
+        });
+
+        // Apply hover glow to frame via postFX
+        if (frame && (frame as any).postFX) {
+            (frame as any).postFX.clear();
+            if (type === this.selectedCharacter) {
+                // Selected + hover: intensified golden glow
+                (frame as any).postFX.addGlow(0xffd700, 3, 0, false);
+                (frame as any).postFX.addColorMatrix().brightness(1.3);
+            } else {
+                // Non-selected hover: subtle yellow glow
+                (frame as any).postFX.addGlow(0xffff00, 1.5, 0, false);
+                (frame as any).postFX.addColorMatrix().brightness(1.2);
+            }
+        }
+    }
+
+    private onFrameHoverOut(type: CharacterType): void {
+        const frame = type === 'girl_knight' ? this.leftFrame : this.rightFrame;
+        const sprite = type === 'girl_knight' ? this.girlPreview : this.boyPreview;
+
+        // Scale down sprite
+        this.tweens.killTweensOf(sprite);
+        this.tweens.add({
+            targets: sprite,
+            scaleX: 0.85,
+            scaleY: 0.85,
+            duration: 150,
+            ease: 'Power2.easeOut'
+        });
+
+        // Restore frame: clear then re-apply selection glow if needed
+        if (frame && (frame as any).postFX) {
+            (frame as any).postFX.clear();
+            if (type === this.selectedCharacter) {
+                this.applySelectedGlow(frame);
+            }
+        }
+    }
+
+    private updateSelectionVisuals(): void {
+        // Clear both frames
+        if (this.leftFrame && (this.leftFrame as any).postFX) {
+            (this.leftFrame as any).postFX.clear();
+        }
+        if (this.rightFrame && (this.rightFrame as any).postFX) {
+            (this.rightFrame as any).postFX.clear();
+        }
+
+        // Apply golden glow to selected frame
+        const selectedFrame = this.selectedCharacter === 'girl_knight' ? this.leftFrame : this.rightFrame;
+        if (selectedFrame) {
+            this.applySelectedGlow(selectedFrame);
+        }
+    }
+
+    private applySelectedGlow(frame: Phaser.GameObjects.Image): void {
+        if ((frame as any).postFX) {
+            (frame as any).postFX.addGlow(0xffd700, 2, 0, false);
+            (frame as any).postFX.addColorMatrix().brightness(1.15);
+        }
     }
 
     private createNameInput(): void {
-        // Position adjusted to center in the wooden name frame
-        // Fine-tuned to visually center in the frame
-        const inputX = 648;
-        const inputY = 557;
+        // Centered in the name frame layer: bounds(113, 360, 280, 100) in template
+        // Template at (638, 378), origin (0.5, 0.5) → frame center = (641, 538)
+        const inputX = 641;
+        const inputY = 538;
 
         // Create HTML input element - transparent to blend with UI
         const inputHtml = `
@@ -153,15 +234,7 @@ export class CharacterSelectNewScene extends Phaser.Scene {
 
     private selectCharacter(type: CharacterType): void {
         this.selectedCharacter = type;
-
-        // Update selection visuals
-        if (type === 'girl_knight') {
-            this.girlSelector.setStrokeStyle(4, 0xffd700);
-            this.boySelector.setStrokeStyle(4, 0x666666);
-        } else {
-            this.girlSelector.setStrokeStyle(4, 0x666666);
-            this.boySelector.setStrokeStyle(4, 0xffd700);
-        }
+        this.updateSelectionVisuals();
     }
 
     private confirmSelection(): void {

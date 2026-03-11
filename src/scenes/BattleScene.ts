@@ -2591,8 +2591,9 @@ export class BattleScene extends Phaser.Scene {
         player.hp = this.battleState.playerHp; // Persist HP loss
         ProgressionSystem.awardXp(player, xpReward);
 
-        // === ARENA CRYSTAL DROPS ===
+        // === CRYSTAL DROPS (arena + non-arena) ===
         const crystalDrops: Crystal[] = [];
+        const crystalLabels: string[] = [];
         let crystalOverflow = false;
 
         if (this.fromArena) {
@@ -2645,16 +2646,20 @@ export class BattleScene extends Phaser.Scene {
                 waveResults: JSON.stringify(player.arena.waveResults)
             });
 
-            // Wave crystal drop (after each wave except the last)
-            // Only award crystals if there's something new to give
-            if (this.arenaWave < 4 && crystalsToAward > 0) {
-                const waveCrystal = CrystalSystem.generateCrystal('shard', crystalsToAward);
-                const added = CrystalSystem.addToInventory(player, waveCrystal);
-                if (added) {
-                    crystalDrops.push(waveCrystal);
-                } else {
-                    CrystalSystem.addToGroundDrops(player, [waveCrystal]);
-                    crystalOverflow = true;
+            // Wave crystal drops (after each wave except the last)
+            // Generate SEPARATE crystals for base and perfect rewards
+            if (this.arenaWave < 4) {
+                if (!wasCompletedBefore) {
+                    const baseCrystal = CrystalSystem.generateCrystal('shard', 1);
+                    const added = CrystalSystem.addToInventory(player, baseCrystal);
+                    if (added) { crystalDrops.push(baseCrystal); crystalLabels.push('Za první porážku'); }
+                    else { CrystalSystem.addToGroundDrops(player, [baseCrystal]); crystalOverflow = true; }
+                }
+                if (isPerfect && !wasPerfectBefore) {
+                    const perfectCrystal = CrystalSystem.generateCrystal('shard', 1);
+                    const added = CrystalSystem.addToInventory(player, perfectCrystal);
+                    if (added) { crystalDrops.push(perfectCrystal); crystalLabels.push('Za bezchybný souboj!'); }
+                    else { CrystalSystem.addToGroundDrops(player, [perfectCrystal]); crystalOverflow = true; }
                 }
             }
 
@@ -2665,6 +2670,7 @@ export class BattleScene extends Phaser.Scene {
                 const added = CrystalSystem.addToInventory(player, completionCrystal);
                 if (added) {
                     crystalDrops.push(completionCrystal);
+                    crystalLabels.push('Za dokončení arény');
                 } else {
                     CrystalSystem.addToGroundDrops(player, [completionCrystal]);
                     crystalOverflow = true;
@@ -2676,6 +2682,7 @@ export class BattleScene extends Phaser.Scene {
                     const addedSpecial = CrystalSystem.addToInventory(player, specialCrystal);
                     if (addedSpecial) {
                         crystalDrops.push(specialCrystal);
+                        crystalLabels.push('Speciální krystal');
                     } else {
                         CrystalSystem.addToGroundDrops(player, [specialCrystal]);
                         crystalOverflow = true;
@@ -2683,18 +2690,19 @@ export class BattleScene extends Phaser.Scene {
                 }
             }
 
-            // Store crystal drops for VictoryScene display
-            if (crystalDrops.length > 0) {
-                this.registry.set('crystalDrops', crystalDrops);
-            }
-            if (crystalOverflow) {
-                this.registry.set('crystalOverflow', true);
-            }
         }
+
+        // === FIRST DEFEAT & PERFECT TRACKING ===
+        const primaryEnemy = this.enemyDefs[0];
+        const isFirstDefeat = !player.unlockedPets.includes(primaryEnemy.id);
+        const isPerfectDefeat = this.waveWrongAnswerCount === 0;
+        player.perfectDefeats ??= [];
+        const wasPerfectBefore = player.perfectDefeats.includes(primaryEnemy.id);
 
         // Check for pet unlocks from defeated enemies
         const petsData = this.cache.json.get('pets') as PetDefinition[];
         const newPetUnlocks: string[] = [];
+        let unlockedPetData: { name: string; spriteKey: string; animPrefix: string } | null = null;
 
         this.enemyDefs.forEach(def => {
             if (!player.unlockedPets.includes(def.id)) {
@@ -2703,13 +2711,34 @@ export class BattleScene extends Phaser.Scene {
                 const pet = petsData.find(p => p.unlockedByEnemy === def.id);
                 if (pet) {
                     newPetUnlocks.push(pet.name);
+                    if (!unlockedPetData) {
+                        unlockedPetData = {
+                            name: pet.name,
+                            spriteKey: pet.spriteKey,
+                            animPrefix: pet.animPrefix
+                        };
+                    }
                 }
             }
         });
 
-        // Store new unlocks for victory notification
-        if (newPetUnlocks.length > 0) {
-            this.registry.set('newPetUnlocks', newPetUnlocks);
+        // === NON-ARENA CRYSTAL REWARDS ===
+        if (!this.fromArena) {
+            // Base crystal for first defeat
+            if (isFirstDefeat) {
+                const baseCrystal = CrystalSystem.generateCrystal('shard', 1);
+                const added = CrystalSystem.addToInventory(player, baseCrystal);
+                if (added) { crystalDrops.push(baseCrystal); crystalLabels.push('Za první porážku'); }
+                else { CrystalSystem.addToGroundDrops(player, [baseCrystal]); crystalOverflow = true; }
+            }
+            // Bonus crystal for first perfect (including on repeat if perfect wasn't achieved before)
+            if (isPerfectDefeat && !wasPerfectBefore) {
+                const bonusCrystal = CrystalSystem.generateCrystal('shard', 1);
+                const added = CrystalSystem.addToInventory(player, bonusCrystal);
+                if (added) { crystalDrops.push(bonusCrystal); crystalLabels.push('Za bezchybný souboj!'); }
+                else { CrystalSystem.addToGroundDrops(player, [bonusCrystal]); crystalOverflow = true; }
+                player.perfectDefeats.push(primaryEnemy.id);
+            }
         }
 
         // Save game
@@ -2739,71 +2768,90 @@ export class BattleScene extends Phaser.Scene {
                         ProgressionSystem.awardBattleCoin(player, bonus);
 
                         // Always add arena_level_X unlock key when completing arena X
-                        // This enables pets with unlockedByArenaLevel or unlockedByArenaLevels requirements
                         const arenaUnlockKey = `arena_level_${this.arenaLevel}`;
                         if (!player.unlockedPets.includes(arenaUnlockKey)) {
                             player.unlockedPets.push(arenaUnlockKey);
                         }
 
-                        // Check for pet unlocks by arena level completion (single level requirement)
+                        // Check for pet unlocks by arena level completion
                         petsData.forEach(pet => {
                             if (pet.unlockedByArenaLevel === this.arenaLevel) {
                                 newPetUnlocks.push(pet.name);
                             }
-                            // Also check for pets that require multiple arenas (all must be completed)
                             if (pet.unlockedByArenaLevels) {
                                 const allLevelsCompleted = pet.unlockedByArenaLevels.every(
                                     level => player.unlockedPets.includes(`arena_level_${level}`)
                                 );
-                                if (allLevelsCompleted) {
-                                    // Only notify once (check if we just unlocked the final required level)
-                                    if (pet.unlockedByArenaLevels.includes(this.arenaLevel)) {
-                                        newPetUnlocks.push(pet.name);
-                                    }
+                                if (allLevelsCompleted && pet.unlockedByArenaLevels.includes(this.arenaLevel)) {
+                                    newPetUnlocks.push(pet.name);
                                 }
                             }
                         });
-
-                        // Update registry with any new arena-based unlocks
-                        if (newPetUnlocks.length > 0) {
-                            this.registry.set('newPetUnlocks', newPetUnlocks);
-                        }
 
                         this.gameState.save();
                     }
 
                     // Arena completed! Go to VictoryScene
                     this.scene.start('VictoryScene', {
+                        returnScene: 'TownScene',
+                        returnData: {},
+                        goldReward: totalCoins,
+                        xpReward: xpReward,
+                        isFirstDefeat,
+                        isPerfectDefeat,
+                        wasPerfectBefore,
+                        unlockedPet: unlockedPetData,
+                        enemySpriteKey: primaryEnemy.spriteKey,
+                        enemyAnimPrefix: primaryEnemy.animPrefix,
+                        crystalDrops,
+                        crystalLabels,
+                        crystalOverflow,
                         arenaCompleted: true,
                         arenaLevel: this.arenaLevel,
                         nextArenaLevel: this.arenaLevel + 1,
-                        playerHp: this.battleState.playerHp,
-                        crystalDrops: crystalDrops,
-                        crystalOverflow: crystalOverflow
+                        readyForTrial: player.readyToPromote
                     });
                 } else {
-                    // Return to arena for next wave - show crystal drop notification
-                    this.showCrystalDropNotification(crystalDrops, crystalOverflow);
-
-                    this.time.delayedCall(1500, () => {
-                        console.log('[BattleScene] Transitioning to ArenaScene:', {
+                    // Arena waves 1-4: route through VictoryScene, then back to ArenaScene
+                    this.scene.start('VictoryScene', {
+                        returnScene: 'ArenaScene',
+                        returnData: {
                             arenaLevel: this.arenaLevel,
-                            nextWave: this.arenaWave + 1,
-                            waveResults: JSON.stringify(player.arena.waveResults)
-                        });
-                        this.scene.start('ArenaScene', {
-                            arenaLevel: this.arenaLevel,  // Fixed: was 'level'
                             wave: this.arenaWave + 1,
                             fromBattle: true
-                        });
+                        },
+                        goldReward: totalCoins,
+                        xpReward: xpReward,
+                        isFirstDefeat,
+                        isPerfectDefeat,
+                        wasPerfectBefore,
+                        unlockedPet: unlockedPetData,
+                        enemySpriteKey: primaryEnemy.spriteKey,
+                        enemyAnimPrefix: primaryEnemy.animPrefix,
+                        crystalDrops,
+                        crystalLabels,
+                        crystalOverflow,
+                        readyForTrial: player.readyToPromote
                     });
                 }
             } else {
-                // Return to calling scene (town or forest map)
-                // Pass battleWon flag for journey mode and any custom return data
-                this.scene.start(this.returnScene, {
-                    battleWon: true,
-                    ...this.returnData
+                // Route ALL non-arena victories through VictoryScene
+                this.scene.start('VictoryScene', {
+                    returnScene: this.returnScene,
+                    returnData: { battleWon: true, ...this.returnData },
+                    goldReward: totalCoins,
+                    xpReward: xpReward,
+                    enemyName: primaryEnemy.name,
+                    isFirstDefeat,
+                    isPerfectDefeat,
+                    wasPerfectBefore,
+                    unlockedPet: unlockedPetData,
+                    enemySpriteKey: primaryEnemy.spriteKey,
+                    enemyAnimPrefix: primaryEnemy.animPrefix,
+                    crystalDrops,
+                    crystalLabels,
+                    crystalOverflow,
+                    readyForTrial: player.readyToPromote
                 });
             }
         });

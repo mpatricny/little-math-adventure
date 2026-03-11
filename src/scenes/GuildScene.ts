@@ -3,14 +3,13 @@ import { GameStateManager } from '../systems/GameStateManager';
 import { MathEngine } from '../systems/MathEngine';
 import { ProgressionSystem } from '../systems/ProgressionSystem';
 import { ManaSystem } from '../systems/ManaSystem';
-import { MathProblemDef, ProblemStats, MathProblem, TrialState } from '../types';
+import { MathProblemDef, ProblemStats, MathProblem, TrialState, TrialProblemResult, TrialTier, TRIAL_TOTAL_PROBLEMS, TRIAL_TIME_PER_PROBLEM, TRIAL_LEVEL_DESCRIPTIONS } from '../types';
 import { SceneDebugger } from '../systems/SceneDebugger';
 import { SceneBuilder } from '../systems/SceneBuilder';
+import { TrialFeedbackVisualizer } from '../ui/TrialFeedbackVisualizer';
 
 const ROW_HEIGHT = 28;
 const VISIBLE_ROWS = 8;
-const TRIAL_DURATION = 60; // seconds
-const TRIAL_REQUIRED_CORRECT = 10; // correct answers needed to pass
 
 export class GuildScene extends Phaser.Scene {
     private gameState!: GameStateManager;
@@ -23,13 +22,20 @@ export class GuildScene extends Phaser.Scene {
     // Trial mode state
     private trialState: TrialState = {
         isActive: false,
-        timeRemaining: TRIAL_DURATION,
+        currentProblemIndex: 0,
+        totalProblems: TRIAL_TOTAL_PROBLEMS,
+        timePerProblem: TRIAL_TIME_PER_PROBLEM,
+        timeRemainingForProblem: TRIAL_TIME_PER_PROBLEM,
         correctCount: 0,
         wrongCount: 0,
-        totalProblems: 0
+        results: [],
+        tier: 'none',
+        phase: 'overview',
     };
+    private trialProblems: MathProblem[] = [];
     private currentTrialProblem: MathProblem | null = null;
     private trialTimer: Phaser.Time.TimerEvent | null = null;
+    private problemStartTime: number = 0;
 
     // Trial UI elements
     private trialOverlay!: Phaser.GameObjects.Container;
@@ -38,12 +44,20 @@ export class GuildScene extends Phaser.Scene {
     private timerBar!: Phaser.GameObjects.Graphics;
     private timerFrame!: Phaser.GameObjects.Image;
     private timerBg!: Phaser.GameObjects.Rectangle;
-    private scoreText!: Phaser.GameObjects.Text;
     private problemText!: Phaser.GameObjects.Text;
     private answerButtonBgs: Phaser.GameObjects.Rectangle[] = [];
     private answerButtonTexts: Phaser.GameObjects.Text[] = [];
     private answerButtonValues: number[] = [0, 0, 0];
+    private progressDots: Phaser.GameObjects.Text[] = [];
+    private feedbackOverlay!: Phaser.GameObjects.Container;
+    private feedbackVisualizer: TrialFeedbackVisualizer | null = null;
     private resultsOverlay!: Phaser.GameObjects.Container;
+    private overviewOverlay!: Phaser.GameObjects.Container;
+    private historyOverlay!: Phaser.GameObjects.Container;
+    private historyButton!: Phaser.GameObjects.Container;
+
+    // Current trial level (may differ from player level on retry)
+    private currentTrialLevel: number = 0;
 
     // Universal debugger
     private debugger!: SceneDebugger;
@@ -52,7 +66,6 @@ export class GuildScene extends Phaser.Scene {
     private sceneBuilder!: SceneBuilder;
 
     // UI references for debug repositioning
-    private guildmaster!: Phaser.GameObjects.Image;
     private titleText!: Phaser.GameObjects.Text;
     private statsContainer!: Phaser.GameObjects.Container;
     private resultsTableImage!: Phaser.GameObjects.Image;
@@ -81,7 +94,6 @@ export class GuildScene extends Phaser.Scene {
         this.sceneBuilder.buildScene();
 
         // Retrieve references from SceneBuilder (positions come from scenes.json)
-        this.guildmaster = this.sceneBuilder.get('guildmaster') as Phaser.GameObjects.Image;
         this.titleText = this.sceneBuilder.get('title') as Phaser.GameObjects.Text;
         this.backButtonContainer = this.sceneBuilder.get('backButton') as Phaser.GameObjects.Container;
         this.resultsTableImage = this.sceneBuilder.get('resultsTable') as Phaser.GameObjects.Image;
@@ -539,12 +551,13 @@ export class GuildScene extends Phaser.Scene {
         // Register elements
     }
 
-    // ============ TRIAL MODE ============
+    // ============ TRIAL MODE (4-phase system) ============
 
     private createTrialUI(): void {
         const player = this.gameState.getPlayer();
+        const trialStatus = ProgressionSystem.canStartTrial(player);
 
-        // Get positions from SceneBuilder (cast to access x/y properties)
+        // Get positions from SceneBuilder
         const trialStartButtonEl = this.sceneBuilder.get('trialStartButton') as Phaser.GameObjects.Container | undefined;
         const trialOverlayEl = this.sceneBuilder.get('trialOverlay') as Phaser.GameObjects.Container | undefined;
         const trialDialogEl = this.sceneBuilder.get('trialDialog') as Phaser.GameObjects.Container | undefined;
@@ -559,34 +572,50 @@ export class GuildScene extends Phaser.Scene {
         this.trialStartButton = this.add.container(startBtnX, startBtnY);
         this.trialStartButton.setDepth(50);
 
-        const btnBg = this.add.rectangle(0, 0, 180, 60, 0x228822)
-            .setStrokeStyle(3, 0x44aa44);
+        // Determine button appearance based on trial status
+        const isFailRetry = trialStatus.reason === 'retry_fail' || trialStatus.reason === 'blocked_by_fail';
+        const btnColor = isFailRetry ? 0x882222 : 0x228822;
+        const btnHoverColor = isFailRetry ? 0xaa3333 : 0x33aa33;
+        const btnStrokeColor = isFailRetry ? 0xaa4444 : 0x44aa44;
+        const btnLabel = isFailRetry ? 'OPAKOVAT ZKOUŠKU' : 'ZAČÍT ZKOUŠKU';
 
-        const btnText = this.add.text(0, 0, 'ZAČÍT ZKOUŠKU', {
-            fontSize: '18px',
+        const btnBg = this.add.rectangle(0, 0, 200, 60, btnColor)
+            .setStrokeStyle(3, btnStrokeColor);
+
+        const btnText = this.add.text(0, 0, btnLabel, {
+            fontSize: '17px',
             fontFamily: 'Arial, sans-serif',
             color: '#ffffff',
             fontStyle: 'bold'
         }).setOrigin(0.5);
 
-        // Add bg first, then text on top (consistent pattern)
         this.trialStartButton.add(btnBg);
         this.trialStartButton.add(btnText);
 
-        if (player.readyToPromote) {
-            const dialog = this.add.text(dialogX, dialogY, 'VIDÍM, ŽE JSI ZESÍLIL.\nUKAŽ MI, CO UMÍŠ!', {
+        const showButton = trialStatus.canStart;
+
+        if (showButton) {
+            // Determine dialog text
+            let dialogMsg: string;
+            if (isFailRetry) {
+                dialogMsg = 'MUSÍŠ TO ZKUSIT ZNOVU!\nNEVZDÁVEJ SE!';
+            } else {
+                dialogMsg = 'VIDÍM, ŽE JSI ZESÍLIL.\nUKAŽ MI, CO UMÍŠ!';
+            }
+
+            this.add.text(dialogX, dialogY, dialogMsg, {
                 fontSize: '14px',
                 fontFamily: 'Arial, sans-serif',
-                color: '#ffffff',
+                color: isFailRetry ? '#ff8888' : '#ffffff',
                 align: 'center',
                 backgroundColor: '#333333',
                 padding: { x: 10, y: 8 }
             }).setOrigin(0.5).setDepth(50);
 
             btnBg.setInteractive({ useHandCursor: true })
-                .on('pointerover', () => btnBg.setFillStyle(0x33aa33))
-                .on('pointerout', () => btnBg.setFillStyle(0x228822))
-                .on('pointerdown', () => this.startTrial());
+                .on('pointerover', () => btnBg.setFillStyle(btnHoverColor))
+                .on('pointerout', () => btnBg.setFillStyle(btnColor))
+                .on('pointerdown', () => this.showTrialOverview());
 
             this.tweens.add({
                 targets: this.trialStartButton,
@@ -601,9 +630,146 @@ export class GuildScene extends Phaser.Scene {
             this.trialStartButton.setVisible(false);
         }
 
+        // History button (visible if there are any attempts)
+        const history = ProgressionSystem.ensureTrialHistory(player);
+        this.historyButton = this.add.container(startBtnX, startBtnY + 50);
+        this.historyButton.setDepth(50);
+
+        if (history.attempts.length > 0) {
+            const hBtnBg = this.add.rectangle(0, 0, 200, 36, 0x444466)
+                .setStrokeStyle(2, 0x6666aa);
+            const hBtnText = this.add.text(0, 0, 'HISTORIE ZKOUŠEK', {
+                fontSize: '14px',
+                fontFamily: 'Arial, sans-serif',
+                color: '#aaaacc',
+                fontStyle: 'bold'
+            }).setOrigin(0.5);
+            this.historyButton.add(hBtnBg);
+            this.historyButton.add(hBtnText);
+
+            hBtnBg.setInteractive({ useHandCursor: true })
+                .on('pointerover', () => { hBtnBg.setFillStyle(0x555588); hBtnText.setColor('#ffffff'); })
+                .on('pointerout', () => { hBtnBg.setFillStyle(0x444466); hBtnText.setColor('#aaaacc'); })
+                .on('pointerdown', () => this.showHistoryOverlay());
+        } else {
+            this.historyButton.setVisible(false);
+        }
+
+        this.createOverviewOverlay(overlayX, overlayY);
         this.createTrialOverlay(overlayX, overlayY);
+        this.createFeedbackOverlay(overlayX, overlayY);
         this.createResultsOverlay(overlayX, overlayY);
+        this.createHistoryOverlay(overlayX, overlayY);
     }
+
+    // === Phase 1: Overview ===
+
+    private createOverviewOverlay(x: number, y: number): void {
+        this.overviewOverlay = this.add.container(x, y);
+        this.overviewOverlay.setDepth(200);
+        this.overviewOverlay.setVisible(false);
+
+        const bg = this.add.rectangle(0, 0, 1280, 720, 0x000000, 0.92);
+        this.overviewOverlay.add(bg);
+
+        const title = this.add.text(0, -200, 'ZKOUŠKA HRDINY', {
+            fontSize: '36px',
+            fontFamily: 'Arial, sans-serif',
+            color: '#ffd700',
+            fontStyle: 'bold',
+            stroke: '#000000',
+            strokeThickness: 4
+        }).setOrigin(0.5);
+        this.overviewOverlay.add(title);
+
+        // Zyx dialog placeholder
+        const dialog = this.add.text(0, -100, '', {
+            fontSize: '18px',
+            fontFamily: 'Arial, sans-serif',
+            color: '#ffffff',
+            align: 'center',
+            wordWrap: { width: 500 }
+        }).setOrigin(0.5);
+        this.overviewOverlay.add(dialog);
+        this.overviewOverlay.setData('dialog', dialog);
+
+        // Test description placeholder
+        const desc = this.add.text(0, 10, '', {
+            fontSize: '16px',
+            fontFamily: 'Arial, sans-serif',
+            color: '#aaaaaa',
+            align: 'center',
+            wordWrap: { width: 500 }
+        }).setOrigin(0.5);
+        this.overviewOverlay.add(desc);
+        this.overviewOverlay.setData('desc', desc);
+
+        // Start button
+        const startBg = this.add.rectangle(0, 120, 220, 60, 0x228822)
+            .setStrokeStyle(3, 0x44aa44);
+        this.overviewOverlay.add(startBg);
+        this.overviewOverlay.setData('startBtnBg', startBg);
+
+        const startText = this.add.text(0, 120, 'ZAČÍT ZKOUŠKU', {
+            fontSize: '22px',
+            fontFamily: 'Arial, sans-serif',
+            color: '#ffffff',
+            fontStyle: 'bold'
+        }).setOrigin(0.5);
+        this.overviewOverlay.add(startText);
+        this.overviewOverlay.setData('startBtnText', startText);
+
+        startBg.setInteractive({ useHandCursor: true })
+            .on('pointerover', () => startBg.setFillStyle(0x33aa33))
+            .on('pointerout', () => startBg.setFillStyle(0x228822))
+            .on('pointerdown', () => this.startTrial());
+    }
+
+    private showTrialOverview(): void {
+        const player = this.gameState.getPlayer();
+        const trialStatus = ProgressionSystem.canStartTrial(player);
+        this.currentTrialLevel = trialStatus.trialLevel;
+
+        const isFailRetry = trialStatus.reason === 'retry_fail' || trialStatus.reason === 'blocked_by_fail';
+        const isRetryImprove = player.trialHistory?.retryLevel != null;
+        const levelDesc = TRIAL_LEVEL_DESCRIPTIONS[this.currentTrialLevel] || this.getDifficultyDescription(this.currentTrialLevel);
+
+        const dialog = this.overviewOverlay.getData('dialog') as Phaser.GameObjects.Text;
+        const startBtnBg = this.overviewOverlay.getData('startBtnBg') as Phaser.GameObjects.Rectangle;
+        const startBtnText = this.overviewOverlay.getData('startBtnText') as Phaser.GameObjects.Text;
+
+        if (isFailRetry) {
+            dialog.setText('Minule to nedopadlo...\nAle nevzdávej se! Zkus to znovu!');
+            if (startBtnBg) { startBtnBg.setFillStyle(0x882222).setStrokeStyle(3, 0xaa4444); }
+            if (startBtnText) { startBtnText.setText('OPAKOVAT'); }
+        } else if (isRetryImprove) {
+            const bestTier = player.trialHistory?.bestTiers[this.currentTrialLevel] || 'none';
+            const tierName = bestTier === 'bronze' ? 'bronz' : 'stříbro';
+            dialog.setText(`Máš ${tierName} — zkus dosáhnout lepšího výsledku!`);
+            if (startBtnText) { startBtnText.setText('ZLEPŠIT SE'); }
+        } else {
+            dialog.setText('Ukaž mi, co už umíš!\nNeboj se, každou chybu si vysvětlíme.');
+        }
+
+        const desc = this.overviewOverlay.getData('desc') as Phaser.GameObjects.Text;
+        desc.setText(
+            `Úroveň ${this.currentTrialLevel}: ${levelDesc}\n\n` +
+            `10 příkladů, ${TRIAL_TIME_PER_PROBLEM}s na každý\n` +
+            `6+ správně = postup`
+        );
+
+        this.overviewOverlay.setVisible(true);
+        this.trialState.phase = 'overview';
+    }
+
+    private getDifficultyDescription(level: number): string {
+        if (level <= 2) return 'sčítání';
+        if (level <= 3) return 'sčítání a odčítání';
+        if (level <= 6) return 'sčítání, odčítání a tříoperandové';
+        return 'odčítání a tříoperandové příklady';
+    }
+
+    // === Phase 2: Problem display with per-problem timer ===
 
     private createTrialOverlay(x: number, y: number): void {
         this.trialOverlay = this.add.container(x, y);
@@ -613,44 +779,39 @@ export class GuildScene extends Phaser.Scene {
         const bg = this.add.rectangle(0, 0, 1280, 720, 0x000000, 0.9);
         this.trialOverlay.add(bg);
 
-        const title = this.add.text(0, -250, 'ZKOUŠKA HRDINY', {
-            fontSize: '36px',
-            fontFamily: 'Arial, sans-serif',
-            color: '#ffd700',
-            fontStyle: 'bold',
-            stroke: '#000000',
-            strokeThickness: 4
-        }).setOrigin(0.5);
-        this.trialOverlay.add(title);
+        // Progress dots (10 dots at top)
+        this.progressDots = [];
+        const dotsStartX = -((TRIAL_TOTAL_PROBLEMS - 1) * 36) / 2;
+        for (let i = 0; i < TRIAL_TOTAL_PROBLEMS; i++) {
+            const dot = this.add.text(dotsStartX + i * 36, -280, '○', {
+                fontSize: '24px',
+                fontFamily: 'Arial, sans-serif',
+                color: '#666666',
+            }).setOrigin(0.5);
+            this.trialOverlay.add(dot);
+            this.progressDots.push(dot);
+        }
 
-        // Read timer frame and bar positions/sizes from scene-layouts.json
-        // trialOverlay is at viewport center (640, 360)
-        // Layout positions are absolute, so convert to relative
+        // Timer bar area
         const overlayX = 640;
         const overlayY = 360;
 
         const timerFrameLayout = this.sceneBuilder.getLayoutOverride('timerFrame');
         const timerBarLayout = this.sceneBuilder.getLayoutOverride('timerBar');
 
-        // Timer frame position (relative to overlay) and scale
         const frameX = (timerFrameLayout?.x ?? 640) - overlayX;
         const frameY = (timerFrameLayout?.y ?? 180) - overlayY;
         const frameScaleX = timerFrameLayout?.scaleX ?? timerFrameLayout?.scale ?? 0.178;
         const frameScaleY = timerFrameLayout?.scaleY ?? timerFrameLayout?.scale ?? 0.123;
 
-        // Timer bar position (relative to overlay) and dimensions
         const barX = (timerBarLayout?.x ?? 640) - overlayX;
         const barY = (timerBarLayout?.y ?? 180) - overlayY;
-        // Bar dimensions from scenes.json or defaults
         const barWidth = timerBarLayout?.width ?? 200;
         const barHeight = timerBarLayout?.height ?? 24;
 
-        // Timer background (dark rectangle behind the bar)
         this.timerBg = this.add.rectangle(barX, barY, barWidth, barHeight, 0x333333);
         this.trialOverlay.add(this.timerBg);
 
-        // Timer bar using Graphics for reliable rendering
-        // Position at top-left corner of timerBg
         const barLeft = barX - barWidth / 2;
         const barTop = barY - barHeight / 2;
         this.timerBar = this.add.graphics();
@@ -659,16 +820,14 @@ export class GuildScene extends Phaser.Scene {
         this.timerBar.fillRect(0, 0, barWidth, barHeight);
         this.trialOverlay.add(this.timerBar);
 
-        // Store bar dimensions for updateTrialUI
         this.timerBar.setData('barWidth', barWidth);
         this.timerBar.setData('barHeight', barHeight);
 
-        // Timer frame - read position and scale from scene-layouts.json
         this.timerFrame = this.add.image(frameX, frameY, 'ui-stone-bar-frame');
         this.timerFrame.setScale(frameScaleX, frameScaleY);
         this.trialOverlay.add(this.timerFrame);
 
-        this.timerText = this.add.text(frameX, frameY, '60', {
+        this.timerText = this.add.text(frameX, frameY, '', {
             fontSize: '24px',
             fontFamily: 'Arial, sans-serif',
             color: '#ffffff',
@@ -676,14 +835,7 @@ export class GuildScene extends Phaser.Scene {
         }).setOrigin(0.5);
         this.trialOverlay.add(this.timerText);
 
-        this.scoreText = this.add.text(0, -120, `SKÓRE: 0 / ${TRIAL_REQUIRED_CORRECT}`, {
-            fontSize: '24px',
-            fontFamily: 'Arial, sans-serif',
-            color: '#ffffff',
-            fontStyle: 'bold'
-        }).setOrigin(0.5);
-        this.trialOverlay.add(this.scoreText);
-
+        // Problem text
         this.problemText = this.add.text(0, 0, '', {
             fontSize: '64px',
             fontFamily: 'Arial, sans-serif',
@@ -692,7 +844,7 @@ export class GuildScene extends Phaser.Scene {
         }).setOrigin(0.5);
         this.trialOverlay.add(this.problemText);
 
-        // Create answer buttons WITHOUT nested containers
+        // Answer buttons
         const buttonY = 120;
         const buttonSpacing = 150;
         this.answerButtonBgs = [];
@@ -701,13 +853,11 @@ export class GuildScene extends Phaser.Scene {
         for (let i = 0; i < 3; i++) {
             const btnX = (i - 1) * buttonSpacing;
 
-            // Add background rectangle directly to trialOverlay
             const btnBg = this.add.rectangle(btnX, buttonY, 120, 80, 0x4466aa)
                 .setStrokeStyle(3, 0x6688cc);
             this.trialOverlay.add(btnBg);
             this.answerButtonBgs.push(btnBg);
 
-            // Add text directly to trialOverlay (added after bg so it renders on top)
             const btnText = this.add.text(btnX, buttonY, '', {
                 fontSize: '32px',
                 fontFamily: 'Arial, sans-serif',
@@ -717,177 +867,680 @@ export class GuildScene extends Phaser.Scene {
             this.trialOverlay.add(btnText);
             this.answerButtonTexts.push(btnText);
 
-            // Setup interactivity on background
             const buttonIndex = i;
             btnBg.setInteractive({ useHandCursor: true })
-                .on('pointerover', () => btnBg.setFillStyle(0x5577bb))
-                .on('pointerout', () => btnBg.setFillStyle(0x4466aa))
+                .on('pointerover', () => {
+                    if (this.trialState.phase === 'problem') btnBg.setFillStyle(0x5577bb);
+                })
+                .on('pointerout', () => {
+                    if (this.trialState.phase === 'problem') btnBg.setFillStyle(0x4466aa);
+                })
                 .on('pointerdown', () => this.checkTrialAnswer(buttonIndex));
         }
     }
+
+    // === Phase 3: Feedback overlay ===
+
+    private createFeedbackOverlay(x: number, y: number): void {
+        this.feedbackOverlay = this.add.container(x, y);
+        this.feedbackOverlay.setDepth(210);
+        this.feedbackOverlay.setVisible(false);
+
+        const bg = this.add.rectangle(0, 0, 1280, 720, 0x000000, 0.85);
+        this.feedbackOverlay.add(bg);
+    }
+
+    private showFeedback(problem: MathProblem, _playerAnswer: number | null): void {
+        this.trialState.phase = 'feedback';
+
+        // Pause per-problem timer
+        if (this.trialTimer) this.trialTimer.paused = true;
+
+        // Clear previous feedback content (keep bg)
+        while (this.feedbackOverlay.length > 1) {
+            this.feedbackOverlay.removeAt(1, true);
+        }
+
+        // Destroy previous visualizer
+        if (this.feedbackVisualizer) {
+            this.feedbackVisualizer.destroy();
+            this.feedbackVisualizer = null;
+        }
+
+        this.feedbackOverlay.setVisible(true);
+
+        // Only show the equation — no text explanation (first-graders can barely read)
+        const { operand1, operand2, operand3, operator, operator2, answer } = problem;
+        let equationStr: string;
+        if (operand3 !== undefined && operator2) {
+            equationStr = `${operand1} ${operator} ${operand2} ${operator2} ${operand3} = ${answer}`;
+        } else if (problem.problemType === 'missing_operand') {
+            equationStr = `${operand1} ${operator} ${answer} = ${operand2}`;
+        } else {
+            equationStr = `${operand1} ${operator} ${operand2} = ${answer}`;
+        }
+
+        const correctLabel = this.add.text(0, -250, equationStr, {
+            fontSize: '36px',
+            fontFamily: 'Arial, sans-serif',
+            color: '#44ff44',
+            fontStyle: 'bold',
+            stroke: '#000000',
+            strokeThickness: 4,
+        }).setOrigin(0.5);
+        this.feedbackOverlay.add(correctLabel);
+
+        // Visual counting animation (centered, large area)
+        const visualContainer = this.add.container(0, 20);
+        this.feedbackOverlay.add(visualContainer);
+
+        // Create visualizer — ROZUMÍM button appears after animation completes
+        let animationDone = false;
+        this.feedbackVisualizer = new TrialFeedbackVisualizer(this, visualContainer, () => {
+            if (animationDone) return;
+            animationDone = true;
+            // Minimum 3s viewing time before button (animations are longer now)
+            const elapsed = Date.now() - showTime;
+            const remaining = Math.max(0, 3000 - elapsed);
+            this.time.delayedCall(remaining, () => this.showUnderstandButton());
+        });
+        const showTime = Date.now();
+        this.feedbackVisualizer.show(problem);
+    }
+
+    private showUnderstandButton(): void {
+        const btnBg = this.add.rectangle(0, 200, 200, 50, 0x4466aa)
+            .setStrokeStyle(2, 0x6688cc);
+        this.feedbackOverlay.add(btnBg);
+
+        const btnText = this.add.text(0, 200, 'ROZUMÍM', {
+            fontSize: '22px',
+            fontFamily: 'Arial, sans-serif',
+            color: '#ffffff',
+            fontStyle: 'bold'
+        }).setOrigin(0.5);
+        this.feedbackOverlay.add(btnText);
+
+        // Animate button appearance
+        btnBg.setAlpha(0);
+        btnText.setAlpha(0);
+        this.tweens.add({
+            targets: [btnBg, btnText],
+            alpha: 1,
+            duration: 300,
+            ease: 'Power2',
+        });
+
+        btnBg.setInteractive({ useHandCursor: true })
+            .on('pointerover', () => btnBg.setFillStyle(0x5577bb))
+            .on('pointerout', () => btnBg.setFillStyle(0x4466aa))
+            .on('pointerdown', () => this.closeFeedback());
+    }
+
+    private closeFeedback(): void {
+        this.feedbackOverlay.setVisible(false);
+        if (this.feedbackVisualizer) {
+            this.feedbackVisualizer.destroy();
+            this.feedbackVisualizer = null;
+        }
+
+        // Resume timer and advance to next problem
+        if (this.trialTimer) this.trialTimer.paused = false;
+        this.advanceToNextProblem();
+    }
+
+    // === Phase 4: Results overlay ===
 
     private createResultsOverlay(x: number, y: number): void {
         this.resultsOverlay = this.add.container(x, y);
         this.resultsOverlay.setDepth(200);
         this.resultsOverlay.setVisible(false);
+    }
 
-        const bg = this.add.rectangle(0, 0, 1280, 720, 0x000000, 0.9);
+    private showResults(): void {
+        // Clear previous results content
+        this.resultsOverlay.removeAll(true);
+        this.resultsOverlay.setVisible(true);
+        this.trialState.phase = 'results';
+
+        const bg = this.add.rectangle(0, 0, 1280, 720, 0x000000, 0.92);
         this.resultsOverlay.add(bg);
 
-        const title = this.add.text(0, -100, '', {
-            fontSize: '48px',
+        const tier = this.trialState.tier;
+        const correctCount = this.trialState.correctCount;
+
+        // Tier display
+        const tierConfig = this.getTierDisplay(tier);
+        const title = this.add.text(0, -280, tierConfig.title, {
+            fontSize: '36px',
             fontFamily: 'Arial, sans-serif',
-            color: '#ffffff',
+            color: tierConfig.color,
             fontStyle: 'bold',
             stroke: '#000000',
-            strokeThickness: 4
+            strokeThickness: 4,
         }).setOrigin(0.5);
         this.resultsOverlay.add(title);
-        this.resultsOverlay.setData('title', title);
 
-        const message = this.add.text(0, 0, '', {
-            fontSize: '24px',
+        // Stars
+        const stars = this.add.text(0, -230, tierConfig.stars, {
+            fontSize: '36px',
+            fontFamily: 'Arial, sans-serif',
+            color: '#ffd700',
+        }).setOrigin(0.5);
+        this.resultsOverlay.add(stars);
+
+        // Score summary
+        const score = this.add.text(0, -190, `${correctCount} / ${TRIAL_TOTAL_PROBLEMS} správně`, {
+            fontSize: '20px',
             fontFamily: 'Arial, sans-serif',
             color: '#cccccc',
-            align: 'center'
         }).setOrigin(0.5);
-        this.resultsOverlay.add(message);
-        this.resultsOverlay.setData('message', message);
+        this.resultsOverlay.add(score);
 
-        const closeBtn = this.add.text(0, 150, 'POKRAČOVAT', {
-            fontSize: '32px',
+        // Problem review list (compact, 2 columns)
+        const results = this.trialState.results;
+        const colWidth = 240;
+        const rowH = 26;
+        const startY = -140;
+
+        for (let i = 0; i < results.length; i++) {
+            const r = results[i];
+            const col = i < 5 ? -1 : 1;
+            const row = i < 5 ? i : i - 5;
+            const px = col * (colWidth / 2);
+            const py = startY + row * rowH;
+
+            const icon = r.wasCorrect ? '✓' : '✗';
+            const iconColor = r.wasCorrect ? '#44ff44' : '#ff4444';
+
+            const { operand1, operand2, operand3, operator, operator2, answer } = r.problem;
+            let pStr: string;
+            if (operand3 !== undefined && operator2) {
+                pStr = `${operand1}${operator}${operand2}${operator2}${operand3}=${answer}`;
+            } else {
+                pStr = `${operand1}${operator}${operand2}=${answer}`;
+            }
+
+            const entry = this.add.text(px, py, `${icon} ${pStr}`, {
+                fontSize: '16px',
+                fontFamily: 'Arial, sans-serif',
+                color: iconColor,
+            }).setOrigin(0.5);
+            this.resultsOverlay.add(entry);
+        }
+
+        // Apply rewards and show gains
+        const player = this.gameState.getPlayer();
+        const rewardResult = ProgressionSystem.applyTrialResultWithHistory(
+            player, tier, correctCount, this.trialState.wrongCount
+        );
+        this.gameState.save();
+        this.registry.set('playerLevel', player.level);
+
+        let rewardText: string;
+        if (rewardResult.leveledUp) {
+            const parts: string[] = [
+                `NOVÁ ÚROVEŇ: ${rewardResult.newLevel}`,
+            ];
+            if (rewardResult.hpGain > 0) parts.push(`HP: +${rewardResult.hpGain}`);
+            if (rewardResult.attackGain > 0) parts.push(`ÚTOK: +${rewardResult.attackGain}`);
+            if (rewardResult.manaGain > 0) parts.push(`MANA: +${rewardResult.manaGain}`);
+            rewardText = parts.join('   ');
+        } else if (rewardResult.wasRetry && rewardResult.isImprovement) {
+            // Improved on retry
+            const parts: string[] = ['VYLEPŠENÍ!'];
+            if (rewardResult.hpGain > 0) parts.push(`HP: +${rewardResult.hpGain}`);
+            if (rewardResult.attackGain > 0) parts.push(`ÚTOK: +${rewardResult.attackGain}`);
+            if (rewardResult.manaGain > 0) parts.push(`MANA: +${rewardResult.manaGain}`);
+            rewardText = parts.join('   ');
+        } else if (rewardResult.wasRetry && !rewardResult.isImprovement && tier !== 'none') {
+            rewardText = 'Stejný výsledek jako předtím — zkus ještě lépe!';
+        } else if (tier === 'none') {
+            rewardText = 'Musíš to zkusit znovu — nedáš se!';
+        } else {
+            rewardText = 'Zkus to znovu - příště to zvládneš lépe!';
+        }
+
+        const rewardColor = (rewardResult.leveledUp || rewardResult.isImprovement) ? '#ffd700' : '#aaaaaa';
+        const rewards = this.add.text(0, 50, rewardText, {
+            fontSize: '18px',
+            fontFamily: 'Arial, sans-serif',
+            color: rewardColor,
+            fontStyle: 'bold',
+            align: 'center',
+            wordWrap: { width: 500 },
+        }).setOrigin(0.5);
+        this.resultsOverlay.add(rewards);
+
+        // Zyx encouragement
+        const zyxMsg = this.getZyxMessage(tier);
+        const zyxText = this.add.text(0, 110, zyxMsg, {
+            fontSize: '16px',
+            fontFamily: 'Arial, sans-serif',
+            color: '#88ccff',
+            align: 'center',
+            wordWrap: { width: 500 },
+        }).setOrigin(0.5);
+        this.resultsOverlay.add(zyxText);
+
+        // Fail warning
+        if (tier === 'none' && !rewardResult.wasRetry) {
+            const warnText = this.add.text(0, 155, '⚠ Další postup je blokován — musíš zkoušku složit!', {
+                fontSize: '14px',
+                fontFamily: 'Arial, sans-serif',
+                color: '#ff6666',
+                align: 'center',
+                wordWrap: { width: 500 },
+            }).setOrigin(0.5);
+            this.resultsOverlay.add(warnText);
+        }
+
+        // Continue button
+        const closeBg = this.add.rectangle(0, 210, 220, 50, 0x444444)
+            .setStrokeStyle(2, 0x666666);
+        this.resultsOverlay.add(closeBg);
+
+        const closeText = this.add.text(0, 210, 'POKRAČOVAT', {
+            fontSize: '22px',
             fontFamily: 'Arial, sans-serif',
             color: '#ffffff',
-            backgroundColor: '#444444',
-            padding: { x: 20, y: 10 }
-        }).setOrigin(0.5).setInteractive({ useHandCursor: true });
+            fontStyle: 'bold'
+        }).setOrigin(0.5);
+        this.resultsOverlay.add(closeText);
 
-        closeBtn.on('pointerdown', () => {
-            this.resultsOverlay.setVisible(false);
-            this.scene.restart();
-        });
-        this.resultsOverlay.add(closeBtn);
+        closeBg.setInteractive({ useHandCursor: true })
+            .on('pointerover', () => closeBg.setFillStyle(0x555555))
+            .on('pointerout', () => closeBg.setFillStyle(0x444444))
+            .on('pointerdown', () => {
+                this.resultsOverlay.setVisible(false);
+                this.scene.restart();
+            });
     }
 
-    private startTrial(): void {
-        this.trialState = {
-            isActive: true,
-            timeRemaining: TRIAL_DURATION,
-            correctCount: 0,
-            wrongCount: 0,
-            totalProblems: 0
-        };
-
-        this.trialOverlay.setVisible(true);
-        this.updateTrialUI();
-        this.nextTrialProblem();
-
-        this.trialTimer = this.time.addEvent({
-            delay: 1000,
-            callback: this.onTrialTick,
-            callbackScope: this,
-            loop: true
-        });
-    }
-
-    private onTrialTick(): void {
-        if (!this.trialState.isActive) return;
-
-        this.trialState.timeRemaining--;
-        this.updateTrialUI();
-
-        if (this.trialState.timeRemaining <= 0) {
-            this.endTrial(false);
+    private getTierDisplay(tier: TrialTier): { title: string; stars: string; color: string } {
+        switch (tier) {
+            case 'gold':   return { title: 'ZLATÁ ZKOUŠKA!', stars: '★ ★ ★', color: '#ffd700' };
+            case 'silver': return { title: 'STŘÍBRNÁ ZKOUŠKA!', stars: '★ ★ ☆', color: '#c0c0c0' };
+            case 'bronze': return { title: 'BRONZOVÁ ZKOUŠKA!', stars: '★ ☆ ☆', color: '#cd7f32' };
+            default:       return { title: 'ZKOUŠKA NEÚSPĚŠNÁ', stars: '☆ ☆ ☆', color: '#ff4444' };
         }
     }
 
-    private updateTrialUI(): void {
-        this.timerText.setText(this.trialState.timeRemaining.toString());
-        this.scoreText.setText(`SKÓRE: ${this.trialState.correctCount} / ${TRIAL_REQUIRED_CORRECT}`);
+    private getZyxMessage(tier: TrialTier): string {
+        switch (tier) {
+            case 'gold':   return '"Perfektní! Tvá Numera Energie září jako hvězda!"';
+            case 'silver': return '"Skvělá práce! Ještě trocha cviku a budeš mistr!"';
+            case 'bronze': return '"Dobrý začátek! Každá zkouška tě posouvá dál."';
+            default:       return '"Nevěš hlavu! Procvič si příklady a zkus to znovu."';
+        }
+    }
 
-        const progress = this.trialState.timeRemaining / TRIAL_DURATION;
+    // === Trial flow control ===
+
+    private startTrial(): void {
+        this.overviewOverlay.setVisible(false);
+
+        // Generate problems for the trial level (may differ from player level on retry)
+        const playerLevel = this.registry.get('playerLevel') || 1;
+        if (this.currentTrialLevel !== playerLevel) {
+            // Retry at a different level — use level-specific generation
+            this.trialProblems = this.mathEngine.generateTrialProblemsForLevel(TRIAL_TOTAL_PROBLEMS, this.currentTrialLevel);
+        } else {
+            this.trialProblems = this.mathEngine.generateTrialProblems(TRIAL_TOTAL_PROBLEMS);
+        }
+
+        this.trialState = {
+            isActive: true,
+            currentProblemIndex: 0,
+            totalProblems: TRIAL_TOTAL_PROBLEMS,
+            timePerProblem: TRIAL_TIME_PER_PROBLEM,
+            timeRemainingForProblem: TRIAL_TIME_PER_PROBLEM,
+            correctCount: 0,
+            wrongCount: 0,
+            results: [],
+            tier: 'none',
+            phase: 'problem',
+        };
+
+        // Reset progress dots
+        for (const dot of this.progressDots) {
+            dot.setText('○');
+            dot.setColor('#666666');
+        }
+
+        this.trialOverlay.setVisible(true);
+        this.showCurrentProblem();
+
+        // Per-problem timer
+        this.trialTimer = this.time.addEvent({
+            delay: 1000,
+            callback: this.onProblemTick,
+            callbackScope: this,
+            loop: true,
+        });
+    }
+
+    private showCurrentProblem(): void {
+        const idx = this.trialState.currentProblemIndex;
+        if (idx >= this.trialProblems.length) {
+            this.endTrial();
+            return;
+        }
+
+        this.currentTrialProblem = this.trialProblems[idx];
+        this.trialState.timeRemainingForProblem = TRIAL_TIME_PER_PROBLEM;
+        this.trialState.phase = 'problem';
+        this.problemStartTime = Date.now();
+
+        const { operand1, operand2, operand3, operator, operator2 } = this.currentTrialProblem;
+        let text: string;
+        if (operand3 !== undefined && operator2) {
+            text = `${operand1} ${operator} ${operand2} ${operator2} ${operand3} = ?`;
+        } else {
+            text = `${operand1} ${operator} ${operand2} = ?`;
+        }
+        this.problemText.setText(text);
+
+        // Update choices
+        const answers = this.currentTrialProblem.choices;
+        for (let i = 0; i < 3; i++) {
+            this.answerButtonTexts[i].setText(answers[i].toString());
+            this.answerButtonValues[i] = answers[i];
+            this.answerButtonBgs[i].setFillStyle(0x4466aa);
+        }
+
+        // Highlight current progress dot
+        this.progressDots[idx].setText('●');
+        this.progressDots[idx].setColor('#ffffff');
+
+        this.updateTimerUI();
+    }
+
+    private onProblemTick(): void {
+        if (this.trialState.phase !== 'problem') return;
+
+        this.trialState.timeRemainingForProblem--;
+        this.updateTimerUI();
+
+        if (this.trialState.timeRemainingForProblem <= 0) {
+            // Time expired = wrong answer
+            this.recordTrialAnswer(null);
+        }
+    }
+
+    private updateTimerUI(): void {
+        const remaining = this.trialState.timeRemainingForProblem;
+        this.timerText.setText(remaining.toString());
+
+        const progress = remaining / TRIAL_TIME_PER_PROBLEM;
         const fullBarWidth = this.timerBar.getData('barWidth') as number || 320;
         const barHeight = this.timerBar.getData('barHeight') as number || 55;
         const currentBarWidth = fullBarWidth * progress;
-        const color = this.trialState.timeRemaining <= 10 ? 0xff4444 : 0x44aa44;
+        const color = remaining <= 5 ? 0xff4444 : (remaining <= 10 ? 0xffaa44 : 0x44aa44);
 
-        // Clear and redraw the timer bar using Graphics
         this.timerBar.clear();
         this.timerBar.fillStyle(color, 1);
         this.timerBar.fillRect(0, 0, currentBarWidth, barHeight);
     }
 
-    private nextTrialProblem(): void {
-        this.currentTrialProblem = this.mathEngine.generateProblem();
-        this.problemText.setText(`${this.currentTrialProblem.operand1} ${this.currentTrialProblem.operator} ${this.currentTrialProblem.operand2} = ?`);
-
-        // Use the choices already included in the MathProblem
-        const answers = this.currentTrialProblem.choices;
-        for (let i = 0; i < 3; i++) {
-            this.answerButtonTexts[i].setText(answers[i].toString());
-            this.answerButtonValues[i] = answers[i];
-        }
-    }
-
     private checkTrialAnswer(index: number): void {
-        if (!this.trialState.isActive || !this.currentTrialProblem) return;
+        if (this.trialState.phase !== 'problem' || !this.currentTrialProblem) return;
 
         const value = this.answerButtonValues[index];
-        const isCorrect = value === this.currentTrialProblem.answer;
+        this.recordTrialAnswer(value);
+    }
 
-        // Record the result to statistics using the problem ID
-        this.mathEngine.recordResultForProblem(this.currentTrialProblem.id, isCorrect);
+    private recordTrialAnswer(playerAnswer: number | null): void {
+        if (!this.currentTrialProblem) return;
 
+        const problem = this.currentTrialProblem;
+        const isCorrect = playerAnswer === problem.answer;
+        const timeSpent = (Date.now() - this.problemStartTime) / 1000;
+        const idx = this.trialState.currentProblemIndex;
+
+        // Record stats
+        this.mathEngine.recordResultForProblem(problem.id, isCorrect);
+
+        // Store result
+        const result: TrialProblemResult = {
+            problemId: problem.id,
+            problem,
+            wasCorrect: isCorrect,
+            playerAnswer,
+            correctAnswer: problem.answer,
+            timeSpent,
+        };
+        this.trialState.results.push(result);
+
+        // Update progress dot
         if (isCorrect) {
             this.trialState.correctCount++;
-            if (this.trialState.correctCount >= TRIAL_REQUIRED_CORRECT) {
-                this.endTrial(true);
-            } else {
-                this.nextTrialProblem();
-                this.updateTrialUI();
-            }
+            this.progressDots[idx].setText('✓');
+            this.progressDots[idx].setColor('#44ff44');
+
+            // Green flash on correct
+            this.problemText.setColor('#44ff44');
+            this.time.delayedCall(400, () => {
+                this.problemText.setColor('#ffffff');
+                this.advanceToNextProblem();
+            });
         } else {
             this.trialState.wrongCount++;
-            // Penalty? For now just wrong
+            this.progressDots[idx].setText('✗');
+            this.progressDots[idx].setColor('#ff4444');
+
+            // Show feedback for wrong answer
             this.cameras.main.shake(200, 0.01);
-            this.nextTrialProblem();
+            this.showFeedback(problem, playerAnswer);
         }
     }
 
-    private endTrial(success: boolean): void {
+    private advanceToNextProblem(): void {
+        this.trialState.currentProblemIndex++;
+
+        if (this.trialState.currentProblemIndex >= TRIAL_TOTAL_PROBLEMS) {
+            this.endTrial();
+        } else {
+            this.showCurrentProblem();
+        }
+    }
+
+    private endTrial(): void {
         this.trialState.isActive = false;
+        this.trialState.phase = 'results';
+
         if (this.trialTimer) {
             this.trialTimer.remove();
+            this.trialTimer = null;
         }
         this.trialOverlay.setVisible(false);
 
-        this.resultsOverlay.setVisible(true);
-        const title = this.resultsOverlay.getData('title') as Phaser.GameObjects.Text;
-        const message = this.resultsOverlay.getData('message') as Phaser.GameObjects.Text;
+        // Determine tier
+        this.trialState.tier = ProgressionSystem.getTrialTier(this.trialState.correctCount);
 
-        if (success) {
-            title.setText('ZKOUŠKA SPLNĚNA!');
-            title.setColor('#44ff44');
+        this.showResults();
+    }
 
-            // Apply level up using ProgressionSystem (adds HP and ATK)
-            const player = this.gameState.getPlayer();
-            const result = ProgressionSystem.applyLevelUp(player, 1);
-            this.gameState.save();
+    // ============ TRIAL HISTORY OVERLAY ============
 
-            // Update registry with new level for adaptive difficulty
-            this.registry.set('playerLevel', player.level);
+    private createHistoryOverlay(x: number, y: number): void {
+        this.historyOverlay = this.add.container(x, y);
+        this.historyOverlay.setDepth(200);
+        this.historyOverlay.setVisible(false);
+    }
 
-            // Show stats gains in the message
-            message.setText(
-                `Gratuluji! Prokázal jsi své schopnosti.\n\n` +
-                `📈 NOVÁ ÚROVEŇ: ${result.newLevel}\n` +
-                `❤️ HP: +${result.hpGain} (nyní ${player.maxHp})\n` +
-                `⚔️ ÚTOK: +${result.attackGain} (nyní ${player.attack})`
-            );
-        } else {
-            title.setText('ZKOUŠKA NEÚSPĚŠNÁ');
-            title.setColor('#ff4444');
-            message.setText('Bohužel jsi nestihl vyřešit dostatek příkladů.\nZkus to znovu, až budeš připraven.');
+    private showHistoryOverlay(): void {
+        this.historyOverlay.removeAll(true);
+        this.historyOverlay.setVisible(true);
+
+        const player = this.gameState.getPlayer();
+        const history = ProgressionSystem.ensureTrialHistory(player);
+
+        // Background
+        const bg = this.add.rectangle(0, 0, 1280, 720, 0x000000, 0.94);
+        this.historyOverlay.add(bg);
+
+        // Title
+        const title = this.add.text(0, -310, 'HISTORIE ZKOUŠEK', {
+            fontSize: '30px',
+            fontFamily: 'Arial, sans-serif',
+            color: '#ffd700',
+            fontStyle: 'bold',
+            stroke: '#000000',
+            strokeThickness: 3,
+        }).setOrigin(0.5);
+        this.historyOverlay.add(title);
+
+        // Scrollable content container
+        const contentContainer = this.add.container(0, 0);
+        this.historyOverlay.add(contentContainer);
+
+        // Group attempts by level
+        const levelMap = new Map<number, typeof history.attempts>();
+        for (const attempt of history.attempts) {
+            if (!levelMap.has(attempt.level)) {
+                levelMap.set(attempt.level, []);
+            }
+            levelMap.get(attempt.level)!.push(attempt);
+        }
+
+        // Sort levels
+        const sortedLevels = [...levelMap.keys()].sort((a, b) => a - b);
+
+        let yOffset = -240;
+        const contentItems: Phaser.GameObjects.GameObject[] = [];
+
+        for (const level of sortedLevels) {
+            const attempts = levelMap.get(level)!;
+            const bestTier = history.bestTiers[level] || 'none';
+            const tierDisplay = this.getTierDisplay(bestTier);
+            const levelDesc = TRIAL_LEVEL_DESCRIPTIONS[level] || this.getDifficultyDescription(level);
+
+            // Level header
+            const headerBg = this.add.rectangle(0, yOffset, 560, 32, 0x333355, 0.8)
+                .setStrokeStyle(1, 0x555577);
+            contentContainer.add(headerBg);
+            contentItems.push(headerBg);
+
+            const headerText = this.add.text(-270, yOffset, `Úroveň ${level}: ${tierDisplay.stars}  ${levelDesc}`, {
+                fontSize: '15px',
+                fontFamily: 'Arial, sans-serif',
+                color: tierDisplay.color,
+                fontStyle: 'bold',
+            }).setOrigin(0, 0.5);
+            contentContainer.add(headerText);
+            contentItems.push(headerText);
+
+            yOffset += 24;
+
+            // Individual attempts
+            for (let i = 0; i < attempts.length; i++) {
+                const a = attempts[i];
+                const tierName = this.getTierLabel(a.tier);
+                const tierColor = this.getTierDisplay(a.tier).color;
+                const retryTag = a.isRetry ? ' (opakování)' : '';
+
+                // Rewards summary
+                const rewardParts: string[] = [];
+                if (a.rewardsGiven.hp > 0) rewardParts.push(`+${a.rewardsGiven.hp} HP`);
+                if (a.rewardsGiven.atk > 0) rewardParts.push(`+${a.rewardsGiven.atk} ÚTOK`);
+                if (a.rewardsGiven.mana > 0) rewardParts.push(`+${a.rewardsGiven.mana} ⚡`);
+                const rewardStr = rewardParts.length > 0 ? `  ${rewardParts.join(' ')}` : '';
+
+                const attemptText = this.add.text(-260, yOffset,
+                    `  Pokus ${i + 1}: ${a.correctCount}/${TRIAL_TOTAL_PROBLEMS}  ${tierName}${retryTag}${rewardStr}`, {
+                    fontSize: '13px',
+                    fontFamily: 'Arial, sans-serif',
+                    color: tierColor,
+                }).setOrigin(0, 0.5);
+                contentContainer.add(attemptText);
+                contentItems.push(attemptText);
+
+                yOffset += 22;
+            }
+
+            // Retry button for bronze/silver (only when no pending fail block)
+            if (ProgressionSystem.canRetryForImprovement(player, level) && history.failedTrialLevel == null) {
+                const retryBtnBg = this.add.rectangle(220, yOffset - 11, 100, 24, 0x446644)
+                    .setStrokeStyle(1, 0x66aa66);
+                contentContainer.add(retryBtnBg);
+                contentItems.push(retryBtnBg);
+
+                const retryBtnText = this.add.text(220, yOffset - 11, 'ZLEPŠIT', {
+                    fontSize: '12px',
+                    fontFamily: 'Arial, sans-serif',
+                    color: '#88ff88',
+                    fontStyle: 'bold',
+                }).setOrigin(0.5);
+                contentContainer.add(retryBtnText);
+                contentItems.push(retryBtnText);
+
+                const capturedLevel = level;
+                retryBtnBg.setInteractive({ useHandCursor: true })
+                    .on('pointerover', () => retryBtnBg.setFillStyle(0x558855))
+                    .on('pointerout', () => retryBtnBg.setFillStyle(0x446644))
+                    .on('pointerdown', () => {
+                        ProgressionSystem.startRetryForImprovement(player, capturedLevel);
+                        this.gameState.save();
+                        this.historyOverlay.setVisible(false);
+                        this.showTrialOverview();
+                    });
+            }
+
+            yOffset += 16; // spacing between levels
+        }
+
+        // If no attempts
+        if (sortedLevels.length === 0) {
+            const emptyText = this.add.text(0, 0, 'Zatím žádné zkoušky.', {
+                fontSize: '18px',
+                fontFamily: 'Arial, sans-serif',
+                color: '#888888',
+            }).setOrigin(0.5);
+            contentContainer.add(emptyText);
+        }
+
+        // Scrolling support
+        const totalContentHeight = yOffset + 240; // approximate total height
+        const visibleHeight = 480;
+        let scrollY = 0;
+        const maxScroll = Math.max(0, totalContentHeight - visibleHeight);
+
+        if (maxScroll > 0) {
+            bg.setInteractive();
+            bg.on('wheel', (_pointer: Phaser.Input.Pointer, _dx: number, _dy: number, dz: number) => {
+                scrollY = Phaser.Math.Clamp(scrollY + dz * 0.5, 0, maxScroll);
+                contentContainer.setY(-scrollY);
+            });
+        }
+
+        // Close button
+        const closeBg = this.add.rectangle(0, 290, 180, 44, 0x444444)
+            .setStrokeStyle(2, 0x666666);
+        this.historyOverlay.add(closeBg);
+
+        const closeText = this.add.text(0, 290, 'ZAVŘÍT', {
+            fontSize: '20px',
+            fontFamily: 'Arial, sans-serif',
+            color: '#ffffff',
+            fontStyle: 'bold',
+        }).setOrigin(0.5);
+        this.historyOverlay.add(closeText);
+
+        closeBg.setInteractive({ useHandCursor: true })
+            .on('pointerover', () => closeBg.setFillStyle(0x555555))
+            .on('pointerout', () => closeBg.setFillStyle(0x444444))
+            .on('pointerdown', () => {
+                this.historyOverlay.setVisible(false);
+            });
+    }
+
+    private getTierLabel(tier: TrialTier): string {
+        switch (tier) {
+            case 'gold':   return 'ZLATO';
+            case 'silver': return 'STŘÍBRO';
+            case 'bronze': return 'BRONZ';
+            default:       return 'NEÚSPĚCH';
         }
     }
 }

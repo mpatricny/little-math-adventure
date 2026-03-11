@@ -41,12 +41,31 @@ export class ComicScene extends Phaser.Scene {
         'Intro_comic_6-cropped',    // Panel 6
     ];
 
+    private static readonly AUTO_ADVANCE_DELAY = 3000; // ms between auto-advances
+
+    /**
+     * Per-panel motion effects (Ken Burns style).
+     * - 'zoom': slow scale increase centered on the image
+     * - 'pan-right': slight zoom + horizontal slide left→right
+     * - 'zoom-pan-right': start zoomed on left portion, slowly pan right
+     * Key = panel index
+     */
+    private static readonly PANEL_EFFECTS: Record<number, { type: 'zoom' | 'pan-right' | 'pan-left' | 'zoom-then-pan'; amount: number }> = {
+        0: { type: 'zoom', amount: 1.08 },            // Panel 1: gentle zoom on space scene
+        1: { type: 'pan-right', amount: 1.15 },        // Panel 2: viewport scans left→right
+        2: { type: 'zoom', amount: 1.10 },              // Panel 3: zoom on crash-landing
+        3: { type: 'pan-left', amount: 1.15 },          // Panel 4: same direction as panel 2
+        4: { type: 'zoom', amount: 1.10 },              // Panel 5: zoom (Zyx wants home)
+        5: { type: 'zoom-then-pan', amount: 1.45 },     // Panel 6: full image → zoom Zyx → pan to knight
+    };
+
     private currentPanelIndex = 0;
     private currentPanel: Phaser.GameObjects.Image | null = null;
     private nextPanel: Phaser.GameObjects.Image | null = null;
     private isTransitioning = false;
     private skipButton: Phaser.GameObjects.Container | null = null;
     private panelIndicators: Phaser.GameObjects.Container | null = null;
+    private autoAdvanceTimer: Phaser.Time.TimerEvent | null = null;
 
     constructor() {
         super({ key: 'ComicScene' });
@@ -77,6 +96,9 @@ export class ComicScene extends Phaser.Scene {
 
         // Fade in from black
         this.cameras.main.fadeIn(500, 0, 0, 0);
+
+        // Start auto-advance timer
+        this.startAutoAdvanceTimer();
     }
 
     /**
@@ -96,6 +118,9 @@ export class ComicScene extends Phaser.Scene {
         // Set as current panel
         this.currentPanel = panel;
 
+        // Set up motion effect starting position BEFORE fade-in (no visible jump)
+        this.preparePanelEffect(panel, index);
+
         // Fade in
         panel.setAlpha(0);
         this.tweens.add({
@@ -104,6 +129,9 @@ export class ComicScene extends Phaser.Scene {
             duration: 400,
             ease: 'Power2.easeOut',
         });
+
+        // Start motion tween alongside fade-in
+        this.applyPanelEffect(panel, index);
 
         // Update indicators
         this.updatePanelIndicators();
@@ -256,6 +284,9 @@ export class ComicScene extends Phaser.Scene {
     private advancePanel(): void {
         if (this.isTransitioning) return;
 
+        // Stop current auto-advance timer (will be restarted after transition)
+        this.autoAdvanceTimer?.destroy();
+
         const nextIndex = this.currentPanelIndex + 1;
 
         if (nextIndex >= ComicScene.PANEL_KEYS.length) {
@@ -287,6 +318,12 @@ export class ComicScene extends Phaser.Scene {
         this.fitPanelToScreen(newPanel);
         this.nextPanel = newPanel;
 
+        // Set up motion effect starting position BEFORE cross-fade (no visible jump)
+        this.preparePanelEffect(newPanel, newIndex);
+
+        // Start motion tween alongside cross-fade
+        this.applyPanelEffect(newPanel, newIndex);
+
         // Cross-fade animation
         this.tweens.add({
             targets: oldPanel,
@@ -314,8 +351,120 @@ export class ComicScene extends Phaser.Scene {
 
                 // Update indicators
                 this.updatePanelIndicators();
+
+                // Restart auto-advance timer
+                this.startAutoAdvanceTimer();
             },
         });
+    }
+
+    /**
+     * Start (or restart) the auto-advance timer.
+     * Resets on every panel change so the user always gets the full
+     * display duration after manually advancing.
+     */
+    private startAutoAdvanceTimer(): void {
+        // Clear any existing timer
+        this.autoAdvanceTimer?.destroy();
+
+        // Some panels need extra time for their effects
+        const effect = ComicScene.PANEL_EFFECTS[this.currentPanelIndex];
+        let delay = ComicScene.AUTO_ADVANCE_DELAY;
+        if (effect?.type === 'pan-left') {
+            delay = ComicScene.AUTO_ADVANCE_DELAY + 2400; // 1s hold start + ~1s hold end
+        } else if (effect?.type === 'zoom-then-pan') {
+            delay = ComicScene.AUTO_ADVANCE_DELAY * 3;
+        }
+
+        this.autoAdvanceTimer = this.time.addEvent({
+            delay,
+            callback: () => this.advancePanel(),
+            loop: false,
+        });
+    }
+
+    /**
+     * Immediately set the panel's starting position/scale for its effect.
+     * Must be called BEFORE the panel becomes visible (before fade-in)
+     * to avoid a visible jump.
+     */
+    private preparePanelEffect(panel: Phaser.GameObjects.Image, panelIndex: number): void {
+        const effect = ComicScene.PANEL_EFFECTS[panelIndex];
+        if (!effect) return;
+
+        if (effect.type === 'pan-right') {
+            const zoomedScale = panel.scale * effect.amount;
+            panel.setScale(zoomedScale);
+            const overflow = (panel.width * zoomedScale - 1280) / 2;
+            panel.setX(640 - overflow);
+        } else if (effect.type === 'pan-left') {
+            // Mirror of pan-right: start showing right side, pan to show left
+            const zoomedScale = panel.scale * effect.amount;
+            panel.setScale(zoomedScale);
+            const overflow = (panel.width * zoomedScale - 1280) / 2;
+            panel.setX(640 + overflow);
+        }
+        // 'zoom' and 'zoom-then-pan' start at base scale — no preparation needed
+    }
+
+    /**
+     * Start the Ken Burns motion tween (zoom or pan) on the panel.
+     * The panel must already be in its starting state via preparePanelEffect().
+     */
+    private applyPanelEffect(panel: Phaser.GameObjects.Image, panelIndex: number): void {
+        const effect = ComicScene.PANEL_EFFECTS[panelIndex];
+        if (!effect) return;
+
+        const duration = ComicScene.AUTO_ADVANCE_DELAY + 400;
+
+        if (effect.type === 'zoom') {
+            this.tweens.add({
+                targets: panel,
+                scale: panel.scale * effect.amount,
+                duration,
+                ease: 'Sine.easeInOut',
+            });
+        } else if (effect.type === 'pan-right') {
+            const overflow = (panel.width * panel.scaleX - 1280) / 2;
+            this.tweens.add({
+                targets: panel,
+                x: 640 + overflow,
+                duration,
+                ease: 'Sine.easeInOut',
+            });
+        } else if (effect.type === 'pan-left') {
+            const overflow = (panel.width * panel.scaleX - 1280) / 2;
+            this.tweens.add({
+                targets: panel,
+                x: 640 - overflow,
+                delay: 1000, // Hold still for 1s before panning
+                duration,
+                ease: 'Sine.easeInOut',
+            });
+        } else if (effect.type === 'zoom-then-pan') {
+            // Phase 1: Zoom into left portion (Zyx with bubble)
+            // x > 640 shifts image RIGHT → viewport shows LEFT side of image (Zyx)
+            const baseScale = panel.scale;
+            const zoomedScale = baseScale * effect.amount;
+            const overflow = (panel.width * zoomedScale - 1280) / 2;
+
+            this.tweens.add({
+                targets: panel,
+                scale: zoomedScale,
+                x: 640 + overflow, // Viewport focuses on LEFT side (Zyx)
+                duration: duration * 0.8,
+                ease: 'Sine.easeInOut',
+                onComplete: () => {
+                    // Phase 2: Slow pan to right side (knight)
+                    this.tweens.add({
+                        targets: panel,
+                        x: 640 - overflow, // Viewport focuses on RIGHT side (knight)
+                        duration: duration * 1.5,
+                        ease: 'Sine.easeInOut',
+                    });
+                },
+            });
+        }
     }
 
     /**

@@ -110,6 +110,7 @@ export interface PlayerState {
     hasPotionSubscription: boolean;   // True once player buys potion at witch (enables auto-refill)
     pet: PetState | null;             // Active pet companion
     unlockedPets: string[];           // NEW: Enemy IDs defeated (unlocks purchase)
+    perfectDefeats?: string[];        // Enemy IDs where flawless victory was achieved
     ownedPets: string[];              // NEW: Pet IDs player has bought
     activePet: string | null;         // NEW: Currently equipped pet ID
     arena: ArenaState;                // Arena progress tracking
@@ -120,6 +121,9 @@ export interface PlayerState {
     mana?: number;                    // Mana count for Crystal Forge operations (no max limit)
     groundCrystals?: Crystal[];       // Overflow crystals dropped on ground
     defeatedBosses?: string[];        // Track defeated boss IDs for progression
+    // === TRIAL HISTORY ===
+    bestTrialTiers?: Record<number, TrialTier>;  // Best tier achieved per level (legacy, migrated to trialHistory)
+    trialHistory?: TrialHistory;
     // === STORY PROGRESS ===
     storyProgress?: StoryProgress;     // Track story milestones for visual storytelling
     // === TOWN PROGRESS ===
@@ -127,12 +131,63 @@ export interface PlayerState {
 }
 
 // ===== GUILD TRIAL SYSTEM =====
-export interface TrialState {
-    isActive: boolean;
-    timeRemaining: number;    // seconds
+export type TrialTier = 'none' | 'bronze' | 'silver' | 'gold';
+
+export const TRIAL_TOTAL_PROBLEMS = 10;
+export const TRIAL_TIME_PER_PROBLEM = 15; // seconds per problem (uniform for all levels)
+
+export const TRIAL_TIER_THRESHOLDS = { bronze: 6, silver: 8, gold: 10 };
+
+export interface TrialAttempt {
+    level: number;           // Trial level (may differ from player level on retry)
+    tier: TrialTier;
     correctCount: number;
     wrongCount: number;
-    totalProblems: number;
+    timestamp: number;
+    isRetry: boolean;
+    rewardsGiven: { hp: number; atk: number; mana: number };
+}
+
+export interface TrialHistory {
+    attempts: TrialAttempt[];
+    bestTiers: Record<number, TrialTier>;  // Best tier achieved per trial level
+    failedTrialLevel: number | null;       // Fail block — must retry this level
+    retryLevel: number | null;             // Retry for improvement (bronze/silver)
+}
+
+export const TRIAL_LEVEL_DESCRIPTIONS: Record<number, string> = {
+    1:  'sčítání do 5',
+    2:  'sčítání do 8',
+    3:  'sčítání do 8, odčítání do 5',
+    4:  'sčítání a odčítání do 8, tříoperandové do 8',
+    5:  'sčítání do 10, odčítání do 8, tříoperandové do 8',
+    6:  'sčítání do 10, odčítání a tříoperandové do 10',
+    7:  'sčítání a odčítání do 10, tříoperandové do 10',
+    8:  'sčítání a odčítání do 10, tříoperandové do 10',
+    9:  'odčítání do 10, tříoperandové do 10',
+    10: 'odčítání do 10, tříoperandové do 10',
+};
+
+export interface TrialProblemResult {
+    problemId: string;
+    problem: MathProblem;
+    wasCorrect: boolean;
+    playerAnswer: number | null;
+    correctAnswer: number;
+    timeSpent: number;       // seconds spent on this problem
+}
+
+export interface TrialState {
+    isActive: boolean;
+    currentProblemIndex: number;     // 0-9
+    totalProblems: number;           // 10
+    timePerProblem: number;          // seconds per problem
+    timeRemainingForProblem: number; // countdown for current problem
+    correctCount: number;
+    wrongCount: number;
+    results: TrialProblemResult[];
+    tier: TrialTier;
+    phase: 'overview' | 'problem' | 'feedback' | 'results';
 }
 
 export interface MathStats {
@@ -350,7 +405,8 @@ export interface CrystalInventory {
 // ===== TOWN PROGRESS SYSTEM =====
 // Tracks building unlocks and progressive town growth
 export interface TownProgress {
-    unlockedBuildings: string[];     // Building IDs that have been unlocked
+    unlockedBuildings: string[];     // Building IDs that have been unlocked (condition met)
+    revealedBuildings: string[];     // Building IDs visible to player (revealed one at a time)
     visitedBuildings: string[];      // Building IDs player has entered (clears NEW badge)
     totalWavesCompleted: number;     // Cumulative first-time arena wave completions
     wavesAfterForgeUnlock: number;   // Waves completed after Crystal Forge unlocked (Shop trigger)

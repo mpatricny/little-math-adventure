@@ -1018,6 +1018,117 @@ export class MathEngine {
     }
 
     /**
+     * Generate targeted trial problems using spaced repetition principles:
+     * 1. 3-4 problematic (wrongCount > correctCount or low correctCount)
+     * 2. 2-3 recently learned (correctCount 1-4, retention check)
+     * 3. 2-3 well mastered (correctCount 5+, confidence building)
+     * 4. 1-2 never seen (readiness test)
+     */
+    generateTrialProblems(count: number): MathProblem[] {
+        const config = this.getConfig();
+        const allProblems = this.levelPool;
+        const usedIds = new Set<string>();
+        const result: MathProblem[] = [];
+
+        // Categorize problems
+        const problematic: MathProblemDef[] = [];
+        const recentlyLearned: MathProblemDef[] = [];
+        const wellMastered: MathProblemDef[] = [];
+        const neverSeen: MathProblemDef[] = [];
+
+        for (const problem of allProblems) {
+            const stats = this.stats.problemStats[problem.id];
+            if (!stats) {
+                neverSeen.push(problem);
+            } else if (stats.wrongCount > stats.correctCount || (stats.wrongCount > 0 && stats.correctCount < 3)) {
+                problematic.push(problem);
+            } else if (stats.correctCount >= 1 && stats.correctCount <= 4) {
+                recentlyLearned.push(problem);
+            } else {
+                wellMastered.push(problem);
+            }
+        }
+
+        // Shuffle each category
+        this.shuffle(problematic);
+        this.shuffle(recentlyLearned);
+        this.shuffle(wellMastered);
+        this.shuffle(neverSeen);
+
+        const pickFrom = (source: MathProblemDef[], max: number): void => {
+            let picked = 0;
+            for (const prob of source) {
+                if (picked >= max || result.length >= count) break;
+                if (usedIds.has(prob.id)) continue;
+                usedIds.add(prob.id);
+                const choices = this.generateChoices(prob.answer, config.maxNumber);
+                result.push({
+                    id: prob.id,
+                    operand1: prob.operand1,
+                    operand2: prob.operand2,
+                    operator: prob.operator,
+                    answer: prob.answer,
+                    choices,
+                    showVisualHint: false,
+                    hintType: 'none',
+                });
+                picked++;
+            }
+        };
+
+        // Pick from each category
+        pickFrom(problematic, 4);
+        pickFrom(recentlyLearned, 3);
+        pickFrom(wellMastered, 3);
+        pickFrom(neverSeen, 2);
+
+        // Fill remaining from any category
+        if (result.length < count) {
+            const remaining = [...problematic, ...recentlyLearned, ...wellMastered, ...neverSeen];
+            pickFrom(remaining, count - result.length);
+        }
+
+        return this.shuffle(result);
+    }
+
+    /**
+     * Generate trial problems for a specific level (used for retries).
+     * Temporarily builds the level pool for the given level, generates problems,
+     * then restores the original pool.
+     */
+    generateTrialProblemsForLevel(count: number, level: number): MathProblem[] {
+        const originalPool = this.levelPool;
+        this.levelPool = this.generateLevelPool(level);
+        const problems = this.generateTrialProblems(count);
+        this.levelPool = originalPool;
+        return problems;
+    }
+
+    /**
+     * Generate a text explanation for a wrong answer
+     */
+    getExplanation(problem: MathProblem, _playerAnswer: number | null): string {
+        const { operand1, operand2, operand3, operator, operator2, answer } = problem;
+
+        if (operand3 !== undefined && operator2) {
+            // Three-operand
+            const intermediate = operator === '+' ? operand1 + operand2 : operand1 - operand2;
+            return `${operand1} ${operator} ${operand2} = ${intermediate}, ` +
+                   `${intermediate} ${operator2} ${operand3} = ${answer}`;
+        }
+
+        if (problem.problemType === 'missing_operand') {
+            return `${operand1} ${operator} ${answer} = ${operand2}`;
+        }
+
+        if (operator === '+') {
+            return `Měl jsi ${operand1}, přidáš ${operand2}, celkem ${answer}`;
+        } else {
+            return `Měl jsi ${operand1}, odebereš ${operand2}, zůstane ${answer}`;
+        }
+    }
+
+    /**
      * Get total problems for a level (for UI display)
      */
     getTotalProblemsForLevel(level: number): number {
