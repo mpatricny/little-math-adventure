@@ -53,6 +53,12 @@ export class ShopScene extends Phaser.Scene {
     // Item slot tracking (icon per container, for removal after purchase)
     private itemIcons: Map<string, Phaser.GameObjects.Image> = new Map();
 
+    // Tooltip & hint state
+    private tooltipContainer: Phaser.GameObjects.Container | null = null;
+    private paymentHintRect: Phaser.GameObjects.Graphics | null = null;
+    private paymentHintTween: Phaser.Tweens.Tween | null = null;
+    private itemContainers: Map<string, Phaser.GameObjects.Image> = new Map();
+    private shieldWiggleEvents: Phaser.Time.TimerEvent[] = [];
 
     // Universal debugger
     private debugger!: SceneDebugger;
@@ -75,6 +81,11 @@ export class ShopScene extends Phaser.Scene {
         this.paymentCoins = [];
         this.draggedCoin = null;
         this.selectedItem = null;
+        this.tooltipContainer = null;
+        this.paymentHintRect = null;
+        this.paymentHintTween = null;
+        this.itemContainers = new Map();
+        this.shieldWiggleEvents = [];
 
         // Ensure coins are normalized with current algorithm (handles pre-pouch saves)
         ProgressionSystem.normalizeCoins(this.gameState.getPlayer());
@@ -332,9 +343,48 @@ export class ShopScene extends Phaser.Scene {
             // Make container interactive
             container.setInteractive({ useHandCursor: true });
             container.on('pointerdown', () => this.onItemClicked(item));
+            container.on('pointerover', () => this.createTooltip(item, container.x, container.y));
+            container.on('pointerout', () => this.destroyTooltip());
+            this.itemContainers.set(item.id, container);
 
             this.itemSlots.push(container);
         }
+
+        // Wiggle hint on wooden shield if it's visible
+        this.scheduleShieldWiggle();
+    }
+
+    private scheduleShieldWiggle(): void {
+        const shieldContainer = this.itemContainers.get('shield_wooden');
+        const shieldIcon = this.itemIcons.get('shield_wooden');
+        if (!shieldContainer) return;
+
+        const targets = shieldIcon ? [shieldContainer, shieldIcon] : [shieldContainer];
+
+        // Wiggle at 1s, then 3s (1+2), then 6s (1+2+3)
+        const delays = [1000, 3000, 6000];
+        for (const delay of delays) {
+            const event = this.time.delayedCall(delay, () => {
+                this.tweens.add({
+                    targets,
+                    angle: { from: -6, to: 6 },
+                    duration: 80,
+                    yoyo: true,
+                    repeat: 2,
+                    onComplete: () => {
+                        for (const t of targets) t.setAngle(0);
+                    },
+                });
+            });
+            this.shieldWiggleEvents.push(event);
+        }
+    }
+
+    private cancelShieldWiggle(): void {
+        for (const event of this.shieldWiggleEvents) {
+            event.destroy();
+        }
+        this.shieldWiggleEvents = [];
     }
 
     private spawnPlayerCoins(): void {
@@ -459,6 +509,13 @@ export class ShopScene extends Phaser.Scene {
         if (totalText) {
             totalText.setText(`CELKEM: ${total} měďáků`);
         }
+
+        // Show/hide payment hint based on whether total meets price
+        if (this.selectedItem && total >= this.selectedItem.price) {
+            this.hidePaymentTrayHint();
+        } else if (this.selectedItem && !this.paymentHintRect) {
+            this.showPaymentTrayHint();
+        }
     }
 
     private getPaymentTotal(): number {
@@ -477,8 +534,14 @@ export class ShopScene extends Phaser.Scene {
         }
 
         this.selectedItem = item;
+        this.cancelShieldWiggle();
         this.updatePurchasePanel();
         this.purchasePanel.setVisible(true);
+
+        // Visual hints
+        this.destroyTooltip();
+        this.playCoinHintAnimation();
+        this.showPaymentTrayHint();
     }
 
     private updatePurchasePanel(): void {
@@ -540,6 +603,7 @@ export class ShopScene extends Phaser.Scene {
 
     private completePurchase(): void {
         if (!this.selectedItem) return;
+        this.hidePaymentTrayHint();
 
         const player = this.gameState.getPlayer();
 
@@ -620,6 +684,208 @@ export class ShopScene extends Phaser.Scene {
             case 'shield':
                 player.equippedShield = item.id;
                 break;
+        }
+    }
+
+    // ── Tooltip ──────────────────────────────────────────────
+
+    private createTooltip(item: ItemDefinition, anchorX: number, anchorY: number): void {
+        this.destroyTooltip();
+
+        const padding = 12;
+        const lineHeight = 22;
+
+        interface TooltipLine {
+            text: string;
+            color: string;
+            bold?: boolean;
+            icon?: { texture: string; frame: number; size: number };
+        }
+
+        const lines: TooltipLine[] = [];
+
+        // Line 1: Item name
+        lines.push({ text: item.name, color: '#ffd700', bold: true });
+
+        // Line 2: Price with copper coin icon
+        lines.push({
+            text: `  ${item.price} měďáků`,
+            color: '#ffaa00',
+            icon: { texture: 'shop-coins-sheet', frame: 1, size: 18 },
+        });
+
+        // Line 3+: Stats based on item type
+        if (item.type === 'weapon') {
+            if (item.attackBonus) lines.push({ text: `Útok: +${item.attackBonus}`, color: '#66ff66' });
+            if (item.damageMultiplier && item.damageMultiplier > 1) {
+                lines.push({ text: `${item.damageMultiplier}× síla`, color: '#66ccff' });
+            }
+        } else if (item.type === 'shield') {
+            if (item.blockTime) lines.push({ text: `Blok: ${item.blockTime}s`, color: '#aaddff' });
+            if (item.blockAttempts) lines.push({ text: `Pokusy: ${item.blockAttempts}`, color: '#aaddff' });
+        }
+
+        const contentHeight = lines.length * lineHeight;
+        const bgWidth = 160;
+        const bgHeight = contentHeight + padding * 2;
+        const halfW = bgWidth / 2;
+        const halfH = bgHeight / 2;
+
+        // Position below item, clamped to screen edges
+        let tx = anchorX;
+        let ty = anchorY + 75;
+        if (tx - halfW < 10) tx = 10 + halfW;
+        if (tx + halfW > 1270) tx = 1270 - halfW;
+        if (ty + halfH > 710) ty = 710 - halfH;
+
+        this.tooltipContainer = this.add.container(tx, ty);
+        this.tooltipContainer.setDepth(50);
+        this.tooltipContainer.setAlpha(0);
+
+        // Background
+        const bg = this.add.graphics();
+        bg.fillStyle(0x1a1a0e, 0.92);
+        bg.lineStyle(2, 0xffd700, 0.8);
+        bg.fillRoundedRect(-halfW, -halfH, bgWidth, bgHeight, 8);
+        bg.strokeRoundedRect(-halfW, -halfH, bgWidth, bgHeight, 8);
+        this.tooltipContainer.add(bg);
+
+        // Text lines
+        lines.forEach((line, i) => {
+            const y = -halfH + padding + i * lineHeight + lineHeight / 2;
+
+            if (line.icon) {
+                const icon = this.add.image(-halfW + padding, y, line.icon.texture, line.icon.frame);
+                icon.setDisplaySize(line.icon.size, line.icon.size);
+                icon.setOrigin(0, 0.5);
+                this.tooltipContainer!.add(icon);
+            }
+
+            const textX = line.icon ? -halfW + padding + 20 : -halfW + padding;
+            const text = this.add.text(textX, y, line.text, {
+                fontSize: line.bold ? '16px' : '14px',
+                fontFamily: 'Arial, sans-serif',
+                color: line.color,
+                fontStyle: line.bold ? 'bold' : 'normal',
+            }).setOrigin(0, 0.5);
+            this.tooltipContainer!.add(text);
+        });
+
+        // Fade in
+        this.tweens.add({
+            targets: this.tooltipContainer,
+            alpha: 1,
+            duration: 150,
+        });
+    }
+
+    private destroyTooltip(): void {
+        if (this.tooltipContainer) {
+            this.tweens.killTweensOf(this.tooltipContainer);
+            this.tooltipContainer.destroy();
+            this.tooltipContainer = null;
+        }
+    }
+
+    // ── Coin Hint Animation ─────────────────────────────────
+
+    private playCoinHintAnimation(): void {
+        // Start from the first copper coin on the table (or first available coin)
+        const sourceCoin = this.playerCoins.find(c => c.coinType.key === 'copper') ?? this.playerCoins[0];
+        if (!sourceCoin) return;
+
+        const fromX = sourceCoin.x;
+        const fromY = sourceCoin.y;
+        const bounds = this.paymentArea.getBounds();
+        const toX = bounds.centerX;
+        const toY = bounds.centerY;
+        const dy = toY - fromY;
+
+        const coin = this.add.image(fromX, fromY, 'shop-coins-sheet', 1);
+        coin.setDisplaySize(30, 30);
+        coin.setDepth(150);
+        coin.setAlpha(0);
+
+        // Brief delay so the player sees the purchase panel first, then the hint
+        this.tweens.add({
+            targets: coin,
+            alpha: 0.85,
+            duration: 200,
+            delay: 2000,
+            onComplete: () => {
+                this.tweens.add({
+                    targets: coin,
+                    x: toX,
+                    duration: 600,
+                    ease: 'Sine.easeInOut',
+                    onUpdate: (tween: Phaser.Tweens.Tween) => {
+                        const progress = tween.progress;
+                        const linearY = fromY + dy * progress;
+                        const arcOffset = -80 * Math.sin(Math.PI * progress);
+                        coin.y = linearY + arcOffset;
+                    },
+                    onComplete: () => {
+                        this.tweens.add({
+                            targets: coin,
+                            alpha: 0,
+                            scaleX: 0.5,
+                            scaleY: 0.5,
+                            duration: 300,
+                            onComplete: () => coin.destroy(),
+                        });
+                    },
+                });
+            },
+        });
+    }
+
+    // ── Payment Tray Hint ───────────────────────────────────
+
+    private showPaymentTrayHint(): void {
+        this.hidePaymentTrayHint();
+
+        const bounds = this.paymentArea.getBounds();
+        const inset = 10;
+        const x = bounds.x + inset;
+        const y = bounds.y + inset;
+        const w = bounds.width - inset * 2;
+        const h = bounds.height - inset * 2;
+
+        this.paymentHintRect = this.add.graphics();
+        this.paymentHintRect.setDepth(6);
+
+        // Gold rounded rectangle outline
+        this.paymentHintRect.lineStyle(3, 0xffd700, 1);
+        this.paymentHintRect.strokeRoundedRect(x, y, w, h, 10);
+
+        // Small gold corner accents
+        const cornerR = 4;
+        this.paymentHintRect.fillStyle(0xffd700, 1);
+        this.paymentHintRect.fillCircle(x + 8, y + 8, cornerR);
+        this.paymentHintRect.fillCircle(x + w - 8, y + 8, cornerR);
+        this.paymentHintRect.fillCircle(x + 8, y + h - 8, cornerR);
+        this.paymentHintRect.fillCircle(x + w - 8, y + h - 8, cornerR);
+
+        this.paymentHintRect.setAlpha(0.3);
+
+        // Pulsing alpha
+        this.paymentHintTween = this.tweens.add({
+            targets: this.paymentHintRect,
+            alpha: 0.9,
+            duration: 800,
+            yoyo: true,
+            repeat: -1,
+        });
+    }
+
+    private hidePaymentTrayHint(): void {
+        if (this.paymentHintTween) {
+            this.paymentHintTween.destroy();
+            this.paymentHintTween = null;
+        }
+        if (this.paymentHintRect) {
+            this.paymentHintRect.destroy();
+            this.paymentHintRect = null;
         }
     }
 

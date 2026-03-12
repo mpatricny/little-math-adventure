@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import { MathProblem } from '../types';
+import { MasterySystem } from '../systems/MasterySystem';
 
 // Visual hint configuration
 const HINT_ITEM_COUNT = 8;      // Total items in spritesheet
@@ -61,17 +62,20 @@ export class MathBoard {
     private problemRows: ProblemRow[] = [];
     private hintContainer!: Phaser.GameObjects.Container;
     private damageText!: Phaser.GameObjects.Text;
-    private onComplete: (damageDealt: number, results: boolean[]) => void;
-    private originalOnComplete: (damageDealt: number, results: boolean[]) => void; // Store original callback
+    private onComplete: (damageDealt: number, results: boolean[], timings: number[]) => void;
+    private originalOnComplete: (damageDealt: number, results: boolean[], timings: number[]) => void; // Store original callback
     private hintTimer: Phaser.Time.TimerEvent | null = null;
     private completionTimer: Phaser.Time.TimerEvent | null = null; // Track pending onComplete callback
     private advanceTimer: Phaser.Time.TimerEvent | null = null; // Track 400ms delay between problems
+    private onWrongAnswer?: (problem: MathProblem, onDismiss: () => void) => void; // Optional wrong answer callback
 
     // Multi-problem state
     private problems: MathProblem[] = [];
     private currentProblemIndex: number = 0;
     private damageDealt: number = 0;
     private results: boolean[] = [];
+    private timings: number[] = [];            // Response time per problem (ms)
+    private problemStartTime: number = 0;       // Timestamp when current problem activated
 
     // Configurable layout
     private layout = { ...DEFAULT_LAYOUT };
@@ -83,12 +87,17 @@ export class MathBoard {
         defaultPreset: string;
     } | null = null;
 
-    constructor(scene: Phaser.Scene, onComplete: (damageDealt: number, results: boolean[]) => void) {
+    constructor(scene: Phaser.Scene, onComplete: (damageDealt: number, results: boolean[], timings: number[]) => void) {
         this.scene = scene;
         this.onComplete = onComplete;
         this.originalOnComplete = onComplete; // Store original for restoration
         this.loadUILayouts();
         this.create();
+    }
+
+    /** Set optional callback for wrong answers (shows explanation popup) */
+    setOnWrongAnswer(callback: (problem: MathProblem, onDismiss: () => void) => void): void {
+        this.onWrongAnswer = callback;
     }
 
     /**
@@ -245,10 +254,26 @@ export class MathBoard {
         let problemString: string;
         if (problem.problemType === 'missing_operand') {
             // Missing operand: "5 + ? = 8" (operand2 stores the result)
-            problemString = `${problem.operand1} ${displayOperator} ? = ${problem.operand2}`;
+            // Three-operand variant: "4 + ? - 5 = 4" (operand3 + operator2 present)
+            if (problem.operand3 !== undefined && problem.operator2) {
+                const displayOp2 = problem.operator2 === '*' ? '×' : problem.operator2;
+                problemString = `${problem.operand1} ${displayOperator} ? ${displayOp2} ${problem.operand3} = ${problem.operand2}`;
+            } else {
+                problemString = `${problem.operand1} ${displayOperator} ? = ${problem.operand2}`;
+            }
+        } else if (problem.problemType === 'comparison_eq_vs_eq') {
+            // Equation vs equation: "3 + 2 ○ 4 - 1"
+            const rightOp = problem.operator3 === '-' ? '-' : '+';
+            problemString = `${problem.operand1} ${displayOperator} ${problem.operand2} ○ ${problem.operand3} ${rightOp} ${problem.operand4}`;
         } else if (problem.problemType === 'comparison') {
-            // Comparison: "7 + 2 ○ 10" (operand3 stores the right side)
-            problemString = `${problem.operand1} ${displayOperator} ${problem.operand2} ○ ${problem.operand3}`;
+            if (problem.operand4 !== undefined && problem.operator2) {
+                // Three-operand comparison: "1 + 3 - 2 ○ 2" (operand4 is the comparison target)
+                const displayOp2 = problem.operator2 === '*' ? '×' : problem.operator2;
+                problemString = `${problem.operand1} ${displayOperator} ${problem.operand2} ${displayOp2} ${problem.operand3} ○ ${problem.operand4}`;
+            } else {
+                // Two-operand comparison: "7 + 2 ○ 10" (operand3 stores the right side)
+                problemString = `${problem.operand1} ${displayOperator} ${problem.operand2} ○ ${problem.operand3}`;
+            }
         } else {
             // Standard: "5 + 3 = ?"
             problemString = `${problem.operand1} ${displayOperator} ${problem.operand2}`;
@@ -259,7 +284,9 @@ export class MathBoard {
             problemString += ' = ?';
         }
 
-        const fontSize = useTwoColumns ? '22px' : '32px';
+        // Use smaller font for long problem strings (three-operand missing_part)
+        const isLongString = problemString.length > 14;
+        const fontSize = useTwoColumns ? '22px' : (isLongString ? '24px' : '32px');
         const textX = useTwoColumns ? this.layout.problemTextXTwoCol : this.layout.problemTextX;
 
         // Determine text color based on source
@@ -273,8 +300,24 @@ export class MathBoard {
         }).setOrigin(0, 0.5);
         rowContainer.add(problemText);
 
-        // Source label (pet or sword indicator)
+        // Source label (pet, sword, or attack power bonus indicator)
         let sourceLabel: Phaser.GameObjects.Container | null = null;
+        const hasAttackPowerBonus = problem.source !== 'pet' && problem.source !== 'sword'
+            && problem.damageMultiplier && problem.damageMultiplier > 1;
+        if (hasAttackPowerBonus) {
+            const labelFontSize = useTwoColumns ? '12px' : '14px';
+            const labelY = useTwoColumns ? -22 : -28;
+
+            sourceLabel = this.scene.add.container(textX, labelY);
+            const labelText = this.scene.add.text(0, 0, `${problem.damageMultiplier}× Síla`, {
+                fontSize: labelFontSize,
+                fontFamily: 'Arial, sans-serif',
+                color: '#ff8844',
+                fontStyle: 'bold',
+            }).setOrigin(0, 0.5);
+            sourceLabel.add(labelText);
+            rowContainer.add(sourceLabel);
+        }
         if (problem.source === 'pet' || problem.source === 'sword') {
             const labelColor = this.getSourceLabelColor(problem.source);
             const labelFontSize = useTwoColumns ? '12px' : '14px';
@@ -322,7 +365,7 @@ export class MathBoard {
         for (let i = 0; i < 3; i++) {
             // For comparison problems, display symbols instead of numbers
             let displayValue: string;
-            if (problem.problemType === 'comparison') {
+            if (problem.problemType === 'comparison' || problem.problemType === 'comparison_eq_vs_eq') {
                 const comparisonSymbols = ['<', '=', '>'];
                 displayValue = comparisonSymbols[problem.choices[i]];
             } else {
@@ -472,6 +515,8 @@ export class MathBoard {
         this.currentProblemIndex = 0;
         this.damageDealt = 0;
         this.results = [];
+        this.timings = [];
+        this.problemStartTime = Date.now();
 
         // Clear old problem rows
         this.problemRows.forEach(row => row.container.destroy());
@@ -519,10 +564,10 @@ export class MathBoard {
     }
 
     // Legacy single-problem support (for shield block, pet turn, etc.)
-    showSingle(problem: MathProblem, onAnswer: (isCorrect: boolean) => void): void {
+    showSingle(problem: MathProblem, onAnswer: (isCorrect: boolean, responseTimeMs: number) => void): void {
         const wrappedCallback = this.onComplete;
-        this.onComplete = (damage, results) => {
-            onAnswer(results[0] || false);
+        this.onComplete = (damage, results, timings) => {
+            onAnswer(results[0] || false, timings[0] || 0);
             this.onComplete = wrappedCallback;
         };
         this.show([problem]);
@@ -624,6 +669,10 @@ export class MathBoard {
         // Only handle if this is the current problem
         if (rowIndex !== this.currentProblemIndex) return;
 
+        // Record response time for this problem
+        const responseTimeMs = Date.now() - this.problemStartTime;
+        this.timings.push(responseTimeMs);
+
         // Immediately cancel any pending hint timer to prevent wrong hints
         if (this.hintTimer) {
             this.hintTimer.destroy();
@@ -643,10 +692,24 @@ export class MathBoard {
             row.statusIcon.setColor('#44aa44');
             // Add damage with multiplier (from equipment bonuses)
             const multiplier = row.problem.damageMultiplier || 1;
-            this.damageDealt += multiplier;
-            // Show multiplier indicator for bonus damage
-            if (multiplier > 1) {
-                row.statusIcon.setText(`✓ ×${multiplier}`);
+            let totalHit = multiplier;
+
+            // Speed bonus for mastery problems
+            let speedLabel = '';
+            if (row.problem.masteryKey && responseTimeMs > 0) {
+                const speedBonus = MasterySystem.getInstance().getSpeedBonus(responseTimeMs);
+                if (speedBonus.bonusDamage > 0 && speedBonus.type !== 'none') {
+                    totalHit += speedBonus.bonusDamage;
+                    speedLabel = speedBonus.type === 'lightning' ? ' ⚡' : ' ✨';
+                }
+            }
+
+            this.damageDealt += totalHit;
+            // Show hit detail on status icon
+            if (totalHit > 1) {
+                row.statusIcon.setText(`✓ ×${totalHit}${speedLabel}`);
+            } else if (speedLabel) {
+                row.statusIcon.setText(`✓${speedLabel}`);
             }
             row.correct = true;
         } else {
@@ -683,12 +746,29 @@ export class MathBoard {
             });
         }
 
+        // If wrong and onWrongAnswer is set, show explanation instead of auto-advancing
+        if (!isCorrect && this.onWrongAnswer) {
+            const problem = row.problem;
+            this.onWrongAnswer(problem, () => {
+                this.advanceAfterAnswer();
+            });
+            return;
+        }
+
         // Move to next problem or complete
+        this.advanceAfterAnswer();
+    }
+
+    /** Advance to next problem or complete (called after answer or after wrong-answer popup dismissed) */
+    private advanceAfterAnswer(): void {
         this.advanceTimer = this.scene.time.delayedCall(400, () => {
             this.advanceTimer = null;
             this.currentProblemIndex++;
 
             if (this.currentProblemIndex < this.problems.length) {
+                // Start timing the next problem
+                this.problemStartTime = Date.now();
+
                 // Activate next row
                 const nextRow = this.problemRows[this.currentProblemIndex];
                 nextRow.container.setAlpha(1);
@@ -711,7 +791,7 @@ export class MathBoard {
                 // All problems answered - complete (track the timer so it can be cancelled)
                 this.completionTimer = this.scene.time.delayedCall(300, () => {
                     this.completionTimer = null;
-                    this.onComplete(this.damageDealt, this.results);
+                    this.onComplete(this.damageDealt, this.results, this.timings);
                 });
             }
         });

@@ -2,6 +2,7 @@ import Phaser from 'phaser';
 import { BattleState, BattlePhase, BattleEnemy, EnemyDefinition, ItemDefinition, PetDefinition, MathProblem, Crystal, CrystalTier } from '../types';
 import { MathEngine } from '../systems/MathEngine';
 import { MathBoard } from '../ui/MathBoard';
+import { MasterySystem } from '../systems/MasterySystem';
 import { GameStateManager } from '../systems/GameStateManager';
 import { ProgressionSystem, createInitialTownProgress } from '../systems/ProgressionSystem';
 import { CrystalSystem } from '../systems/CrystalSystem';
@@ -671,8 +672,13 @@ export class BattleScene extends Phaser.Scene {
             this.showActiveHighlight(this.petContainer.x, this.petContainer.y + 30, 'green');
         }
 
-        // Generate pet's single problem
-        this.petMathProblem = this.mathEngine.generatePetTurnProblem(this.equippedPetDef);
+        // Generate pet's single problem from mastery pool
+        this.petMathProblem = this.generatePetProblemFromPool(this.equippedPetDef);
+
+        if (!this.petMathProblem) {
+            this.transitionToEnemyTurn();
+            return;
+        }
 
         // Show in MathBoard with pet styling
         this.mathBoard.showSingle(this.petMathProblem, this.onPetMathComplete.bind(this));
@@ -681,12 +687,22 @@ export class BattleScene extends Phaser.Scene {
     /**
      * Handle pet math problem completion
      */
-    private onPetMathComplete(isCorrect: boolean): void {
+    private onPetMathComplete(isCorrect: boolean, responseTimeMs: number): void {
         this.mathBoard.hide();
         this.hideActiveHighlight();
 
         if (this.petMathProblem) {
             this.mathEngine.recordResultForProblem(this.petMathProblem.id, isCorrect);
+
+            // Record to mastery system if this was a mastery problem
+            if (this.petMathProblem.masteryKey) {
+                MasterySystem.getInstance().recordSolve(
+                    this.petMathProblem.masteryKey,
+                    isCorrect,
+                    responseTimeMs,
+                    'battle_pet'
+                );
+            }
         }
 
         // Track wrong answers for arena perfect wave calculation
@@ -1505,8 +1521,8 @@ export class BattleScene extends Phaser.Scene {
         if (this.isBoss && this.bossPhases[this.currentBossPhase]) {
             const phase = this.bossPhases[this.currentBossPhase];
             if (phase.mathType) {
-                // Generate boss phase-specific problems
-                const problemCount = this.mathEngine.getTotalProblemsForLevel(player.level);
+                // Generate boss phase-specific problems (count based on player.attack, same as normal fights)
+                const problemCount = MasterySystem.getInstance().getProblemsPerTurn();
                 const problems: MathProblem[] = [];
                 for (let i = 0; i < problemCount; i++) {
                     problems.push(this.mathEngine.generateBossPhaseProblem(
@@ -1515,18 +1531,12 @@ export class BattleScene extends Phaser.Scene {
                     ));
                 }
 
-                // Add sword bonus problem if equipped (sword keeps its own math type for consistency)
+                // Add sword bonus problem if equipped (drawn from mastery master pool)
                 if (equippedSword && equippedSword.mathProblemType) {
-                    // Use sword's configured math type (typically addition) - not the boss phase type
-                    const swordProblem = this.mathEngine.generateBossPhaseProblem(
-                        equippedSword.mathProblemType,
-                        equippedSword.mathProblemMax || 5
-                    );
-                    swordProblem.damageMultiplier = equippedSword.damageMultiplier || 1;
-                    swordProblem.source = 'sword';
-                    problems.push(swordProblem); // Sword is always last
+                    problems.push(this.generateSwordProblem(equippedSword));
                 }
 
+                this.applyAttackPowerBonus(problems);
                 this.battleState.currentProblems = problems;
                 this.mathBoardContext = 'attack';
                 this.mathBoard.show(problems);
@@ -1534,14 +1544,36 @@ export class BattleScene extends Phaser.Scene {
             }
         }
 
-        // Generate problems WITHOUT pet (pet has its own turn now)
-        const problems = this.mathEngine.generateAttackProblems(player.level, null, equippedSword);
+        // Generate problems from mastery pool
+        const masterySystem = MasterySystem.getInstance();
+        const count = masterySystem.getProblemsPerTurn();
+        const problemKeys = masterySystem.drawFromPool(count);
+        const problems: MathProblem[] = [];
+        for (const key of problemKeys) {
+            const problem = this.mathEngine.generateProblemFromKey(key);
+            if (problem) {
+                problems.push(problem);
+            }
+        }
+
+        // Fallback: if mastery system returned no problems, use legacy generation
+        if (problems.length === 0) {
+            const legacyProblems = this.mathEngine.generateAttackProblems(player.level, null, equippedSword);
+            problems.push(...legacyProblems);
+        } else {
+            // Add sword bonus problem if equipped (drawn from mastery master pool)
+            if (equippedSword && equippedSword.mathProblemType) {
+                problems.push(this.generateSwordProblem(equippedSword));
+            }
+        }
+
+        this.applyAttackPowerBonus(problems);
         this.battleState.currentProblems = problems;
         this.mathBoardContext = 'attack';
         this.mathBoard.show(problems);
     }
 
-    private onMathComplete(damageDealt: number, results: boolean[]): void {
+    private onMathComplete(_damageDealt: number, results: boolean[], timings: number[]): void {
         const context = this.mathBoardContext;
         this.mathBoardContext = null;
 
@@ -1559,14 +1591,28 @@ export class BattleScene extends Phaser.Scene {
                 return;
             }
 
-            // Count correct answers for blocking
+            // Count correct answers for blocking + mastery recording + quick-block bonus
             let correctCount = 0;
+            const masterySystem = MasterySystem.getInstance();
+            const masteryRT = masterySystem.getMasteryRTThreshold();
+
             results.forEach((isCorrect, index) => {
                 const problem = this.battleState.currentProblems[index];
                 if (problem) {
                     this.mathEngine.recordResultForProblem(problem.id, isCorrect);
+                    // Mastery recording: feeds into [retry]/[slow] pools
+                    if (problem.masteryKey) {
+                        const rt = timings[index] || 0;
+                        masterySystem.recordSolve(problem.masteryKey, isCorrect, rt, 'battle_block');
+                    }
                 }
-                if (isCorrect) correctCount++;
+                if (isCorrect) {
+                    correctCount++;
+                    // Quick block bonus: +1 extra block if answered under mastery RT threshold
+                    if (timings[index] && timings[index] < masteryRT) {
+                        correctCount++;
+                    }
+                }
             });
             this.blockCorrectCount = correctCount;
             this.blockAttemptsMade = results.length;
@@ -1583,19 +1629,37 @@ export class BattleScene extends Phaser.Scene {
         // ---- ATTACK PHASE ---- (context === 'attack')
         this.mathBoard.hide();
 
-        // Calculate total damage with multipliers
+        // Calculate total damage with multipliers + speed bonuses
         let totalDamage = 0;
+        const masterySystem = MasterySystem.getInstance();
 
         results.forEach((isCorrect, index) => {
             const problem = this.battleState.currentProblems[index];
             if (problem) {
-                // Record results for stats
+                // Record results for stats (legacy)
                 this.mathEngine.recordResultForProblem(problem.id, isCorrect);
+
+                // Record to mastery system (for mastery problems only)
+                if (problem.masteryKey) {
+                    const responseTimeMs = timings[index] || 0;
+                    const ctx = problem.source === 'sword' ? 'battle_sword' : 'battle';
+                    masterySystem.recordSolve(problem.masteryKey, isCorrect, responseTimeMs, ctx);
+                }
 
                 // Add damage with multiplier if correct
                 if (isCorrect) {
                     const multiplier = problem.damageMultiplier || 1;
                     totalDamage += multiplier;
+
+                    // Speed bonus for mastery problems
+                    if (problem.masteryKey && timings[index]) {
+                        const speedBonus = masterySystem.getSpeedBonus(timings[index]);
+                        if (speedBonus.bonusDamage > 0 && speedBonus.type !== 'none') {
+                            totalDamage += speedBonus.bonusDamage;
+                            // Show speed bonus visual (Phase 5)
+                            this.showSpeedBonusEffect(speedBonus.type, index);
+                        }
+                    }
                 } else if (this.fromArena) {
                     // Track wrong answers for arena perfect wave calculation
                     this.waveWrongAnswerCount++;
@@ -1614,6 +1678,165 @@ export class BattleScene extends Phaser.Scene {
             this.setPhase('player_attack');
         } else {
             this.setPhase('player_miss');
+        }
+    }
+
+    /** Apply attack power bonus: mark N player problems as 2× damage (N = player.attack beyond 5) */
+    private applyAttackPowerBonus(problems: MathProblem[]): void {
+        const bonus = MasterySystem.getInstance().getAttackPowerBonus();
+        if (bonus <= 0) return;
+
+        // Only boost player problems (not sword/pet), one at a time
+        let applied = 0;
+        for (const problem of problems) {
+            if (applied >= bonus) break;
+            if (problem.source !== 'sword' && problem.source !== 'pet' && (!problem.damageMultiplier || problem.damageMultiplier === 1)) {
+                problem.damageMultiplier = 2;
+                applied++;
+            }
+        }
+    }
+
+    /** Generate a sword problem from mastery master pool, with fallbacks */
+    private generateSwordProblem(sword: ItemDefinition): MathProblem {
+        const masterySystem = MasterySystem.getInstance();
+
+        // 1. Try master pool (Mastery sub-atoms)
+        const masterKeys = masterySystem.drawFromMasterPool(1);
+        if (masterKeys.length > 0) {
+            const problem = this.mathEngine.generateProblemFromKey(masterKeys[0]);
+            if (problem) {
+                problem.damageMultiplier = sword.damageMultiplier || 1;
+                problem.source = 'sword';
+                return problem;
+            }
+        }
+
+        // 2. Fallback: standard mastery pool (consumes 1 from main pool)
+        const poolKeys = masterySystem.drawFromPool(1);
+        if (poolKeys.length > 0) {
+            const problem = this.mathEngine.generateProblemFromKey(poolKeys[0]);
+            if (problem) {
+                problem.damageMultiplier = sword.damageMultiplier || 1;
+                problem.source = 'sword';
+                return problem;
+            }
+        }
+
+        // 3. Last resort: legacy generation (should rarely happen)
+        const problem = this.mathEngine.generateBossPhaseProblem(
+            sword.mathProblemType!, sword.mathProblemMax || 5
+        );
+        problem.damageMultiplier = sword.damageMultiplier || 1;
+        problem.source = 'sword';
+        return problem;
+    }
+
+    /** Generate block problems from mastery review pool (Fluent sub-atoms), with fallbacks */
+    private generateBlockProblemsFromPool(count: number): MathProblem[] {
+        const masterySystem = MasterySystem.getInstance();
+        const problems: MathProblem[] = [];
+
+        // 1. Try review pool (Fluent sub-atoms)
+        const reviewKeys = masterySystem.drawFromReviewPool(count);
+        for (const key of reviewKeys) {
+            const problem = this.mathEngine.generateProblemFromKey(key);
+            if (problem) problems.push(problem);
+        }
+
+        // 2. Fallback for remaining: standard mastery pool
+        if (problems.length < count) {
+            const remaining = count - problems.length;
+            const poolKeys = masterySystem.drawFromPool(remaining);
+            for (const key of poolKeys) {
+                const problem = this.mathEngine.generateProblemFromKey(key);
+                if (problem) problems.push(problem);
+            }
+        }
+
+        return problems;
+    }
+
+    /** Generate pet problem from mastery review pool (Fluent sub-atoms), with fallbacks */
+    private generatePetProblemFromPool(pet: PetDefinition): MathProblem | null {
+        const masterySystem = MasterySystem.getInstance();
+
+        // 1. Try review pool (Fluent sub-atoms) — same as shield block
+        const reviewKeys = masterySystem.drawFromReviewPool(1);
+        if (reviewKeys.length > 0) {
+            const problem = this.mathEngine.generateProblemFromKey(reviewKeys[0]);
+            if (problem) {
+                problem.damageMultiplier = pet.damageMultiplier || 1;
+                problem.source = 'pet';
+                return problem;
+            }
+        }
+
+        // 2. Fallback: standard mastery pool
+        const poolKeys = masterySystem.drawFromPool(1);
+        if (poolKeys.length > 0) {
+            const problem = this.mathEngine.generateProblemFromKey(poolKeys[0]);
+            if (problem) {
+                problem.damageMultiplier = pet.damageMultiplier || 1;
+                problem.source = 'pet';
+                return problem;
+            }
+        }
+
+        // 3. Last resort: legacy pet problem generation
+        return this.mathEngine.generatePetTurnProblem(pet);
+    }
+
+    /** Show speed bonus visual effect (Phase 5) */
+    private showSpeedBonusEffect(type: 'swift' | 'lightning', problemIndex: number): void {
+        const text = type === 'lightning' ? 'Lightning Hit! ⚡' : 'Swift Hit! ✨';
+        const color = type === 'lightning' ? '#4488ff' : '#ffcc00';
+
+        // Offset vertically when multiple bonus texts appear (one per problem)
+        const baseY = 280 + problemIndex * 40;
+
+        const bonusText = this.add.text(640, baseY, text, {
+            fontSize: '32px',
+            fontFamily: 'Arial, sans-serif',
+            color: color,
+            fontStyle: 'bold',
+            stroke: '#000000',
+            strokeThickness: 4,
+        }).setOrigin(0.5).setDepth(200).setScale(0.5).setAlpha(0);
+
+        // Pop-in then float up and fade
+        this.tweens.add({
+            targets: bonusText,
+            scale: 1,
+            alpha: 1,
+            duration: 200,
+            ease: 'Back.easeOut',
+            onComplete: () => {
+                this.tweens.add({
+                    targets: bonusText,
+                    y: baseY - 60,
+                    alpha: 0,
+                    duration: 2000,
+                    ease: 'Sine.easeIn',
+                    onComplete: () => bonusText.destroy(),
+                });
+            },
+        });
+
+        // Lightning effect: white flash on enemy
+        if (type === 'lightning' && this.battleState.enemies.length > 0) {
+            const targetEnemy = this.battleState.enemies[this.battleState.selectedEnemyIndex];
+            if (targetEnemy) {
+                // Brief white flash effect
+                const flash = this.add.rectangle(640, 360, 1280, 720, 0xffffff, 0.2)
+                    .setDepth(150);
+                this.tweens.add({
+                    targets: flash,
+                    alpha: 0,
+                    duration: 300,
+                    onComplete: () => flash.destroy(),
+                });
+            }
         }
     }
 
@@ -1644,38 +1867,14 @@ export class BattleScene extends Phaser.Scene {
         this.blockMaxAttempts = shield.blockAttempts || 1;
         this.blockTimeRemaining = shield.blockTime || 5;
 
-        // Show block UI
+        // Show block UI (no countdown timer — block phase ends when all problems answered)
         this.blockUI.setVisible(true);
         this.blockDamageText.setText(`ÚTOK: ${damage} DMG`);
-        this.blockTimerText.setText(`ČAS: ${this.blockTimeRemaining}S`);
+        this.blockTimerText.setVisible(false); // Timer removed; block ends on completion
         this.blockAttemptsText.setText(`BLOKUJI: 0 DMG`);
 
-        // Start timer
-        this.blockTimerEvent = this.time.addEvent({
-            delay: 1000,
-            callback: () => {
-                this.blockTimeRemaining--;
-                this.blockTimerText.setText(`ČAS: ${this.blockTimeRemaining}S`);
-
-                if (this.blockTimeRemaining <= 0) {
-                    // Grace period: wait 500ms for any in-flight answer to resolve
-                    // before ending the block phase. If the player clicked at the
-                    // last second, MathBoard needs up to 700ms (400ms advance + 300ms
-                    // completion) to fire onMathComplete, which calls endBlockPhase
-                    // itself. The grace period lets that natural path complete.
-                    this.time.delayedCall(500, () => {
-                        // Only end if onMathComplete hasn't already ended it
-                        if (this.isBlockPhase) {
-                            this.endBlockPhase();
-                        }
-                    });
-                }
-            },
-            repeat: this.blockTimeRemaining - 1,
-        });
-
-        // Generate ALL block problems at once and show them together
-        const problems = this.mathEngine.generateBlockProblems(this.blockMaxAttempts, shield);
+        // Generate block problems from mastery review pool (Fluent sub-atoms)
+        const problems = this.generateBlockProblemsFromPool(this.blockMaxAttempts);
         this.battleState.currentProblems = problems;
 
         // DEBUG: Log block phase setup
@@ -2551,6 +2750,9 @@ export class BattleScene extends Phaser.Scene {
     }
 
     private onVictory(): void {
+        // Record fight end for mastery system (updates fightsSinceSeen counters)
+        MasterySystem.getInstance().recordFightEnd();
+
         // Victory fanfare
         const victoryText = this.add.text(640, 300, 'VÍTĚZSTVÍ!', {
             fontSize: '64px',
@@ -2571,11 +2773,6 @@ export class BattleScene extends Phaser.Scene {
 
         // Calculate rewards
         const player = this.gameState.getPlayer();
-        const baseXp = 20;
-
-        // Bonus for arena
-        const multiplier = this.fromArena ? 1 + (this.arenaWave * 0.2) : 1;
-        const xpReward = Math.floor(baseXp * multiplier);
 
         // Calculate total coins from all defeated enemies
         let totalCoins = 0;
@@ -2586,10 +2783,9 @@ export class BattleScene extends Phaser.Scene {
             totalCoins += Phaser.Math.Between(minReward, maxReward);
         });
 
-        // Update player state - award coins and XP
+        // Update player state - award coins
         ProgressionSystem.awardBattleCoin(player, totalCoins);  // Award coins from all enemies
         player.hp = this.battleState.playerHp; // Persist HP loss
-        ProgressionSystem.awardXp(player, xpReward);
 
         // === CRYSTAL DROPS (arena + non-arena) ===
         const crystalDrops: Crystal[] = [];
@@ -2796,7 +2992,6 @@ export class BattleScene extends Phaser.Scene {
                         returnScene: 'TownScene',
                         returnData: {},
                         goldReward: totalCoins,
-                        xpReward: xpReward,
                         isFirstDefeat,
                         isPerfectDefeat,
                         wasPerfectBefore,
@@ -2808,31 +3003,56 @@ export class BattleScene extends Phaser.Scene {
                         crystalOverflow,
                         arenaCompleted: true,
                         arenaLevel: this.arenaLevel,
-                        nextArenaLevel: this.arenaLevel + 1,
-                        readyForTrial: player.readyToPromote
+                        nextArenaLevel: this.arenaLevel + 1
                     });
                 } else {
-                    // Arena waves 1-4: route through VictoryScene, then back to ArenaScene
-                    this.scene.start('VictoryScene', {
-                        returnScene: 'ArenaScene',
-                        returnData: {
-                            arenaLevel: this.arenaLevel,
-                            wave: this.arenaWave + 1,
-                            fromBattle: true
-                        },
-                        goldReward: totalCoins,
-                        xpReward: xpReward,
-                        isFirstDefeat,
-                        isPerfectDefeat,
-                        wasPerfectBefore,
-                        unlockedPet: unlockedPetData,
-                        enemySpriteKey: primaryEnemy.spriteKey,
-                        enemyAnimPrefix: primaryEnemy.animPrefix,
-                        crystalDrops,
-                        crystalLabels,
-                        crystalOverflow,
-                        readyForTrial: player.readyToPromote
-                    });
+                    // Find next wave that isn't already perfected (skip perfect waves)
+                    let nextWave: number | null = null;
+                    for (let i = this.arenaWave + 1; i < 5; i++) {
+                        const r = player.arena.waveResults?.[i];
+                        if (!r?.completed || !r?.perfectWave) {
+                            nextWave = i;
+                            break;
+                        }
+                    }
+
+                    if (nextWave !== null) {
+                        // More waves to play — advance to next non-perfect wave
+                        this.scene.start('VictoryScene', {
+                            returnScene: 'ArenaScene',
+                            returnData: {
+                                arenaLevel: this.arenaLevel,
+                                wave: nextWave,
+                                fromBattle: true
+                            },
+                            goldReward: totalCoins,
+                            isFirstDefeat,
+                            isPerfectDefeat,
+                            wasPerfectBefore,
+                            unlockedPet: unlockedPetData,
+                            enemySpriteKey: primaryEnemy.spriteKey,
+                            enemyAnimPrefix: primaryEnemy.animPrefix,
+                            crystalDrops,
+                            crystalLabels,
+                            crystalOverflow
+                        });
+                    } else {
+                        // All remaining waves already perfect — arena run complete, return to town
+                        this.scene.start('VictoryScene', {
+                            returnScene: 'TownScene',
+                            returnData: {},
+                            goldReward: totalCoins,
+                            isFirstDefeat,
+                            isPerfectDefeat,
+                            wasPerfectBefore,
+                            unlockedPet: unlockedPetData,
+                            enemySpriteKey: primaryEnemy.spriteKey,
+                            enemyAnimPrefix: primaryEnemy.animPrefix,
+                            crystalDrops,
+                            crystalLabels,
+                            crystalOverflow
+                        });
+                    }
                 }
             } else {
                 // Route ALL non-arena victories through VictoryScene
@@ -2840,7 +3060,6 @@ export class BattleScene extends Phaser.Scene {
                     returnScene: this.returnScene,
                     returnData: { battleWon: true, ...this.returnData },
                     goldReward: totalCoins,
-                    xpReward: xpReward,
                     enemyName: primaryEnemy.name,
                     isFirstDefeat,
                     isPerfectDefeat,
@@ -2850,8 +3069,7 @@ export class BattleScene extends Phaser.Scene {
                     enemyAnimPrefix: primaryEnemy.animPrefix,
                     crystalDrops,
                     crystalLabels,
-                    crystalOverflow,
-                    readyForTrial: player.readyToPromote
+                    crystalOverflow
                 });
             }
         });
@@ -2907,6 +3125,9 @@ export class BattleScene extends Phaser.Scene {
     }
 
     private onDefeat(): void {
+        // Record fight end for mastery system
+        MasterySystem.getInstance().recordFightEnd();
+
         // Defeat text
         const defeatText = this.add.text(640, 300, 'PORÁŽKA...', {
             fontSize: '64px',

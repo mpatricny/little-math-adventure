@@ -1,13 +1,27 @@
 [
     {
+        "id": "slime_tutorial",
+        "name": "Zelený Sliz",
+        "spriteKey": "slime-sheet",
+        "animPrefix": "slime",
+        "hp": 4,
+        "attack": 1,
+        "defense": 0,
+        "goldReward": [
+            1,
+            1
+        ],
+        "difficulty": 1,
+        "scale": 1
+    },
+    {
         "id": "slime_green",
         "name": "Zelený Sliz",
         "spriteKey": "slime-sheet",
         "animPrefix": "slime",
-        "hp": 3,
+        "hp": 7,
         "attack": 1,
         "defense": 0,
-        "xpReward": 20,
         "goldReward": [
             1,
             1
@@ -20,10 +34,9 @@
         "name": "Fialový démon",
         "spriteKey": "purple-attack-sheet",
         "animPrefix": "purple",
-        "hp": 4,
+        "hp": 9,
         "attack": 2,
         "defense": 0,
-        "xpReward": 40,
         "goldReward": [
             2,
             2
@@ -36,10 +49,9 @@
         "name": "Růžová bestie",
         "spriteKey": "pink-idle-sheet",
         "animPrefix": "pink",
-        "hp": 10,
-        "attack": 2,
+        "hp": 18,
+        "attack": 3,
         "defense": 0,
-        "xpReward": 70,
         "goldReward": [
             3,
             3
@@ -55,7 +67,6 @@
         "hp": 15,
         "attack": 3,
         "defense": 0,
-        "xpReward": 100,
         "goldReward": [
             5,
             5
@@ -71,7 +82,6 @@
         "hp": 15,
         "attack": 3,
         "defense": 0,
-        "xpReward": 30,
         "goldReward": [
             7,
             7
@@ -87,7 +97,6 @@
         "hp": 20,
         "attack": 2,
         "defense": 2,
-        "xpReward": 40,
         "goldReward": [
             8,
             8
@@ -100,15 +109,14 @@
         "name": "Ancient Treant",
         "spriteKey": "spritesheet--37--sheet",
         "animPrefix": "treant",
-        "hp": 5,
-        "attack": 1,
-        "defense": 0,
-        "xpReward": 20,
+        "hp": 20,
+        "attack": 2,
+        "defense": 1,
         "goldReward": [
-            5,
-            15
+            25,
+            40
         ],
-        "difficulty": 1,
+        "difficulty": 7,
         "scale": 1.5
     },
     {
@@ -116,15 +124,14 @@
         "name": "Verdant Guardian",
         "spriteKey": "spritesheet--38--sheet",
         "animPrefix": "verdant",
-        "hp": 5,
-        "attack": 1,
+        "hp": 15,
+        "attack": 3,
         "defense": 0,
-        "xpReward": 20,
         "goldReward": [
-            5,
-            15
+            80,
+            120
         ],
-        "difficulty": 1,
+        "difficulty": 8,
         "scale": 1.2,
         "isBoss": true,
         "bossAnimations": [

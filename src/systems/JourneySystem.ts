@@ -417,9 +417,8 @@ export class JourneySystem {
 
         this.currentJourney.completed = true;
 
-        // Apply accumulated rewards to player
+        // Apply accumulated rewards to player (XP removed — mastery system handles progression)
         const player = this.gameState.getPlayer();
-        player.xp += this.currentJourney.totalXp;
 
         // Add gold to coins
         if (this.currentJourney.totalGold > 0) {
@@ -673,9 +672,8 @@ export class JourneySystem {
 
         this.currentJourney.completed = true;
 
-        // Apply accumulated rewards
+        // Apply accumulated rewards (XP removed — mastery system handles progression)
         const player = this.gameState.getPlayer();
-        player.xp += this.currentJourney.totalXp;
 
         if (this.currentJourney.totalGold > 0) {
             ProgressionSystem.awardBattleCoin(player, this.currentJourney.totalGold);

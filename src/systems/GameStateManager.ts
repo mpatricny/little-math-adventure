@@ -1,6 +1,18 @@
-import { PlayerState, MathStats, ProblemStats, CharacterType } from '../types';
+import { PlayerState, MathStats, ProblemStats, CharacterType, MasteryData, BandId, SubAtomId, ALL_BANDS, ALL_SUB_ATOM_NUMBERS } from '../types';
+import { MasteryMigration } from './MasteryMigration';
 import { ProgressionSystem } from './ProgressionSystem';
 import { SaveSystem } from './SaveSystem';
+
+/** Deferred level sync — called after GameStateManager is fully constructed */
+let pendingLevelSync = false;
+
+/** Sync player level from mastery data (lazy import to break circular dependency) */
+function syncPlayerLevel(): void {
+    // Use dynamic import to avoid circular dependency
+    import('./MasterySystem').then(({ MasterySystem }) => {
+        MasterySystem.getInstance().updatePlayerLevel();
+    }).catch(() => { /* MasterySystem not available */ });
+}
 
 /**
  * Global game state manager
@@ -31,6 +43,7 @@ export class GameStateManager {
                 // Migration: add crystal and mana systems if missing
                 this.player = ProgressionSystem.migratePlayerState(this.player);
                 this.mathStats = this.migrateMathStats(saveData.mathStats);
+                pendingLevelSync = true;
                 return;
             }
         }
@@ -44,6 +57,11 @@ export class GameStateManager {
     static getInstance(): GameStateManager {
         if (!GameStateManager.instance) {
             GameStateManager.instance = new GameStateManager();
+        }
+        // Deferred level sync: update player.level from mastery data after construction
+        if (pendingLevelSync) {
+            pendingLevelSync = false;
+            syncPlayerLevel();
         }
         return GameStateManager.instance;
     }
@@ -95,6 +113,12 @@ export class GameStateManager {
         this.player = ProgressionSystem.migratePlayerState(this.player);
 
         this.mathStats = this.migrateMathStats(saveData.mathStats);
+
+        // Sync player level from mastery data
+        import('./MasterySystem').then(({ MasterySystem }) => {
+            MasterySystem.destroyInstance(); // Force re-init with new GameStateManager data
+            MasterySystem.getInstance().updatePlayerLevel();
+        }).catch(() => { /* MasterySystem not available */ });
 
         console.log(`[GameStateManager] Loaded slot ${slotIndex}`);
         return true;
@@ -207,7 +231,76 @@ export class GameStateManager {
             poolCycle: stats.poolCycle || 0,
             dailyAttempts: stats.dailyAttempts || 0,
             lastAttemptDate: stats.lastAttemptDate || '',
+            masteryData: stats.masteryData || this.migrateMasteryData(stats),
         };
+    }
+
+    /**
+     * Migrate mastery data from existing stats — if player has progress, import it
+     */
+    private migrateMasteryData(stats: MathStats): MasteryData {
+        // If player has solved problems, try to infer level from stats
+        const totalCorrect = stats.correctAnswers || 0;
+        const estimatedLevel = Math.min(10, Math.max(1, Math.floor(totalCorrect / 20) + 1));
+
+        if (estimatedLevel > 1 && Object.keys(stats.problemStats || {}).length > 0) {
+            return MasteryMigration.migrateFromLevel(estimatedLevel, stats);
+        }
+
+        return this.createInitialMasteryData();
+    }
+
+    /**
+     * Create initial mastery data: Band A = Training, A1 = Training, rest locked
+     */
+    private createInitialMasteryData(): MasteryData {
+        const bands = {} as Record<BandId, { id: BandId; state: 'locked' | 'training' | 'secure' | 'fluent' | 'mastery'; gateExamBestMedal: null; bandMasteryChallengeResult: null }>;
+        const subAtoms = {} as Record<SubAtomId, { id: SubAtomId; state: 'locked' | 'training' | 'secure' | 'fluent' | 'mastery'; successfulSolves: number; examBestMedal: null; fluencyChallengeResult: null; masteryChallengeResult: null; fightsSinceSeen: number }>;
+
+        for (const band of ALL_BANDS) {
+            bands[band] = {
+                id: band,
+                state: band === 'A' ? 'training' : 'locked',
+                gateExamBestMedal: null,
+                bandMasteryChallengeResult: null,
+            };
+
+            for (const num of ALL_SUB_ATOM_NUMBERS) {
+                const subAtomId = `${band}${num}` as SubAtomId;
+                subAtoms[subAtomId] = {
+                    id: subAtomId,
+                    state: (band === 'A' && num === 1) ? 'training' : 'locked',
+                    successfulSolves: 0,
+                    examBestMedal: null,
+                    fluencyChallengeResult: null,
+                    masteryChallengeResult: null,
+                    fightsSinceSeen: 0,
+                };
+            }
+        }
+
+        return {
+            bands,
+            subAtoms,
+            problemRecords: {},
+            globalSolveSequence: 0,
+            fightCount: 0,
+            retryPool: [],
+            slowPool: [],
+            currentPool: [],
+            currentPoolIndex: 0,
+            lastPoolProblems: [],
+        };
+    }
+
+    /**
+     * Get mastery data (creates if missing)
+     */
+    getMasteryData(): MasteryData {
+        if (!this.mathStats.masteryData) {
+            this.mathStats.masteryData = this.createInitialMasteryData();
+        }
+        return this.mathStats.masteryData;
     }
 
     /**

@@ -1,12 +1,14 @@
 import Phaser from 'phaser';
 import { GameStateManager } from '../systems/GameStateManager';
 import { MathEngine } from '../systems/MathEngine';
-import { ProgressionSystem } from '../systems/ProgressionSystem';
 import { ManaSystem } from '../systems/ManaSystem';
-import { MathProblemDef, ProblemStats, MathProblem, TrialState, TrialProblemResult, TrialTier, TRIAL_TOTAL_PROBLEMS, TRIAL_TIME_PER_PROBLEM, TRIAL_LEVEL_DESCRIPTIONS } from '../types';
+import { MathProblemDef, ProblemStats, MathProblem, TrialState, TrialProblemResult, TrialTier, ExamType, SubAtomId, BandId, EXAM_CONFIGS } from '../types';
+import { MasterySystem } from '../systems/MasterySystem';
 import { SceneDebugger } from '../systems/SceneDebugger';
 import { SceneBuilder } from '../systems/SceneBuilder';
 import { TrialFeedbackVisualizer } from '../ui/TrialFeedbackVisualizer';
+import { ExamsOverlay } from '../ui/ExamsOverlay';
+import { MasteryMapOverlay } from '../ui/MasteryMapOverlay';
 
 const ROW_HEIGHT = 28;
 const VISIBLE_ROWS = 8;
@@ -23,9 +25,9 @@ export class GuildScene extends Phaser.Scene {
     private trialState: TrialState = {
         isActive: false,
         currentProblemIndex: 0,
-        totalProblems: TRIAL_TOTAL_PROBLEMS,
-        timePerProblem: TRIAL_TIME_PER_PROBLEM,
-        timeRemainingForProblem: TRIAL_TIME_PER_PROBLEM,
+        totalProblems: 10,
+        timePerProblem: 15,
+        timeRemainingForProblem: 15,
         correctCount: 0,
         wrongCount: 0,
         results: [],
@@ -58,6 +60,15 @@ export class GuildScene extends Phaser.Scene {
 
     // Current trial level (may differ from player level on retry)
     private currentTrialLevel: number = 0;
+
+    // Mastery exam state (used when taking mastery-system exams)
+    private currentMasteryExamType: ExamType | null = null;
+    private currentMasteryExamTarget: SubAtomId | BandId | null = null;
+    private masteryExamStatGains: { hpGain: number; attackGain: number; manaGain: number } = { hpGain: 0, attackGain: 0, manaGain: 0 };
+
+    // Info overlays
+    private examsOverlay!: ExamsOverlay;
+    private masteryMapOverlay!: MasteryMapOverlay;
 
     // Universal debugger
     private debugger!: SceneDebugger;
@@ -123,6 +134,11 @@ export class GuildScene extends Phaser.Scene {
             collectButtonDepth
         );
         this.createTrialUI();
+
+        // Create info overlays and their buttons
+        this.examsOverlay = new ExamsOverlay(this);
+        this.masteryMapOverlay = new MasteryMapOverlay(this);
+        this.createInfoButtons();
 
         // Setup universal debugger
         this.setupDebugger();
@@ -298,8 +314,26 @@ export class GuildScene extends Phaser.Scene {
                 this.listContainer.add(slot);
             }
 
-            // Problem text
-            const problemText = `${problem.operand1} ${problem.operator} ${problem.operand2} = ${problem.answer}`;
+            // Problem text — format based on problem type
+            let problemText: string;
+            switch (problem.problemType) {
+                case 'missing_operand':
+                    problemText = `${problem.operand1} ${problem.operator} ? = ${problem.operand2}`;
+                    break;
+                case 'comparison':
+                    problemText = `${problem.operand1} ${problem.operator} ${problem.operand2} ○ ${problem.operand3}`;
+                    break;
+                case 'comparison_eq_vs_eq': {
+                    const rOp = (problem.operator3 || '+') === '-' ? '-' : '+';
+                    problemText = `${problem.operand1} ${problem.operator} ${problem.operand2} ○ ${problem.operand3} ${rOp} ${problem.operand4}`;
+                    break;
+                }
+                case 'three_operand':
+                    problemText = `${problem.operand1} + ${problem.operand2} + ${problem.operand3} = ${problem.answer}`;
+                    break;
+                default:
+                    problemText = `${problem.operand1} ${problem.operator} ${problem.operand2} = ${problem.answer}`;
+            }
             const txt = this.add.text(-120, y, problemText, {
                 fontSize: '16px',
                 fontFamily: 'Arial, sans-serif',
@@ -546,6 +580,40 @@ export class GuildScene extends Phaser.Scene {
         });
     }
 
+    private createInfoButtons(): void {
+        // Position below the history button area
+        const btnX = 180;
+        const btnBaseY = 530;
+
+        // "ZKOUŠKY" button
+        this.createInfoButton(btnX, btnBaseY, 'ZKOUŠKY', () => this.examsOverlay.show());
+
+        // "MAPA MISTROVSTVÍ" button
+        this.createInfoButton(btnX, btnBaseY + 46, 'MAPA MISTROVSTVÍ', () => this.masteryMapOverlay.show());
+    }
+
+    private createInfoButton(x: number, y: number, label: string, onClick: () => void): void {
+        const container = this.add.container(x, y);
+        container.setDepth(50);
+
+        const bg = this.add.rectangle(0, 0, 200, 36, 0x444466)
+            .setStrokeStyle(2, 0x6688aa);
+        const text = this.add.text(0, 0, label, {
+            fontSize: '14px',
+            fontFamily: 'Arial, sans-serif',
+            color: '#aaaacc',
+            fontStyle: 'bold',
+        }).setOrigin(0.5);
+
+        container.add(bg);
+        container.add(text);
+
+        bg.setInteractive({ useHandCursor: true })
+            .on('pointerover', () => { bg.setFillStyle(0x555588); text.setColor('#ffffff'); })
+            .on('pointerout', () => { bg.setFillStyle(0x444466); text.setColor('#aaaacc'); })
+            .on('pointerdown', onClick);
+    }
+
     private setupDebugger(): void {
         this.debugger = new SceneDebugger(this, 'GuildScene');
         // Register elements
@@ -555,7 +623,7 @@ export class GuildScene extends Phaser.Scene {
 
     private createTrialUI(): void {
         const player = this.gameState.getPlayer();
-        const trialStatus = ProgressionSystem.canStartTrial(player);
+        const availableExams = MasterySystem.getInstance().getAvailableExams();
 
         // Get positions from SceneBuilder
         const trialStartButtonEl = this.sceneBuilder.get('trialStartButton') as Phaser.GameObjects.Container | undefined;
@@ -572,12 +640,11 @@ export class GuildScene extends Phaser.Scene {
         this.trialStartButton = this.add.container(startBtnX, startBtnY);
         this.trialStartButton.setDepth(50);
 
-        // Determine button appearance based on trial status
-        const isFailRetry = trialStatus.reason === 'retry_fail' || trialStatus.reason === 'blocked_by_fail';
-        const btnColor = isFailRetry ? 0x882222 : 0x228822;
-        const btnHoverColor = isFailRetry ? 0xaa3333 : 0x33aa33;
-        const btnStrokeColor = isFailRetry ? 0xaa4444 : 0x44aa44;
-        const btnLabel = isFailRetry ? 'OPAKOVAT ZKOUŠKU' : 'ZAČÍT ZKOUŠKU';
+        // Button appearance for mastery exams
+        const btnColor = 0x228822;
+        const btnHoverColor = 0x33aa33;
+        const btnStrokeColor = 0x44aa44;
+        const btnLabel = 'ZAČÍT ZKOUŠKU';
 
         const btnBg = this.add.rectangle(0, 0, 200, 60, btnColor)
             .setStrokeStyle(3, btnStrokeColor);
@@ -592,21 +659,20 @@ export class GuildScene extends Phaser.Scene {
         this.trialStartButton.add(btnBg);
         this.trialStartButton.add(btnText);
 
-        const showButton = trialStatus.canStart;
+        const showButton = availableExams.length > 0;
 
         if (showButton) {
-            // Determine dialog text
-            let dialogMsg: string;
-            if (isFailRetry) {
-                dialogMsg = 'MUSÍŠ TO ZKUSIT ZNOVU!\nNEVZDÁVEJ SE!';
-            } else {
-                dialogMsg = 'VIDÍM, ŽE JSI ZESÍLIL.\nUKAŽ MI, CO UMÍŠ!';
-            }
+            // Set mastery exam context for the first available exam
+            const firstExam = availableExams[0];
+            this.currentMasteryExamType = firstExam.type;
+            this.currentMasteryExamTarget = firstExam.targetId as SubAtomId | BandId;
+
+            const dialogMsg = `ZKOUŠKA K DISPOZICI:\n${firstExam.label}`;
 
             this.add.text(dialogX, dialogY, dialogMsg, {
                 fontSize: '14px',
                 fontFamily: 'Arial, sans-serif',
-                color: isFailRetry ? '#ff8888' : '#ffffff',
+                color: '#ffffff',
                 align: 'center',
                 backgroundColor: '#333333',
                 padding: { x: 10, y: 8 }
@@ -631,7 +697,7 @@ export class GuildScene extends Phaser.Scene {
         }
 
         // History button (visible if there are any attempts)
-        const history = ProgressionSystem.ensureTrialHistory(player);
+        const history = player.trialHistory || { attempts: [], bestTiers: {}, failedTrialLevel: null, retryLevel: null };
         this.historyButton = this.add.container(startBtnX, startBtnY + 50);
         this.historyButton.setDepth(50);
 
@@ -726,37 +792,26 @@ export class GuildScene extends Phaser.Scene {
     }
 
     private showTrialOverview(): void {
-        const player = this.gameState.getPlayer();
-        const trialStatus = ProgressionSystem.canStartTrial(player);
-        this.currentTrialLevel = trialStatus.trialLevel;
-
-        const isFailRetry = trialStatus.reason === 'retry_fail' || trialStatus.reason === 'blocked_by_fail';
-        const isRetryImprove = player.trialHistory?.retryLevel != null;
-        const levelDesc = TRIAL_LEVEL_DESCRIPTIONS[this.currentTrialLevel] || this.getDifficultyDescription(this.currentTrialLevel);
+        const examType = this.currentMasteryExamType;
+        const examTarget = this.currentMasteryExamTarget;
 
         const dialog = this.overviewOverlay.getData('dialog') as Phaser.GameObjects.Text;
-        const startBtnBg = this.overviewOverlay.getData('startBtnBg') as Phaser.GameObjects.Rectangle;
-        const startBtnText = this.overviewOverlay.getData('startBtnText') as Phaser.GameObjects.Text;
-
-        if (isFailRetry) {
-            dialog.setText('Minule to nedopadlo...\nAle nevzdávej se! Zkus to znovu!');
-            if (startBtnBg) { startBtnBg.setFillStyle(0x882222).setStrokeStyle(3, 0xaa4444); }
-            if (startBtnText) { startBtnText.setText('OPAKOVAT'); }
-        } else if (isRetryImprove) {
-            const bestTier = player.trialHistory?.bestTiers[this.currentTrialLevel] || 'none';
-            const tierName = bestTier === 'bronze' ? 'bronz' : 'stříbro';
-            dialog.setText(`Máš ${tierName} — zkus dosáhnout lepšího výsledku!`);
-            if (startBtnText) { startBtnText.setText('ZLEPŠIT SE'); }
-        } else {
-            dialog.setText('Ukaž mi, co už umíš!\nNeboj se, každou chybu si vysvětlíme.');
-        }
+        dialog.setText('Ukaž mi, co už umíš!\nNeboj se, každou chybu si vysvětlíme.');
 
         const desc = this.overviewOverlay.getData('desc') as Phaser.GameObjects.Text;
-        desc.setText(
-            `Úroveň ${this.currentTrialLevel}: ${levelDesc}\n\n` +
-            `10 příkladů, ${TRIAL_TIME_PER_PROBLEM}s na každý\n` +
-            `6+ správně = postup`
-        );
+        if (examType && examTarget) {
+            const config = EXAM_CONFIGS[examType];
+            const examLabel = MasterySystem.getInstance().getAvailableExams()
+                .find(e => e.type === examType && e.targetId === examTarget)?.label || `Zkouška ${examTarget}`;
+            const thresholdText = config.passThreshold
+                ? `${config.passThreshold}+ správně = postup`
+                : `${config.bronzeThreshold}+ správně = postup`;
+            desc.setText(
+                `${examLabel}\n\n` +
+                `${config.itemCount} příkladů, ${config.timePerItem}s na každý\n` +
+                thresholdText
+            );
+        }
 
         this.overviewOverlay.setVisible(true);
         this.trialState.phase = 'overview';
@@ -779,10 +834,11 @@ export class GuildScene extends Phaser.Scene {
         const bg = this.add.rectangle(0, 0, 1280, 720, 0x000000, 0.9);
         this.trialOverlay.add(bg);
 
-        // Progress dots (10 dots at top)
+        // Progress dots (dynamically sized at top)
         this.progressDots = [];
-        const dotsStartX = -((TRIAL_TOTAL_PROBLEMS - 1) * 36) / 2;
-        for (let i = 0; i < TRIAL_TOTAL_PROBLEMS; i++) {
+        const maxDots = 20; // Maximum possible exam items
+        const dotsStartX = -((maxDots - 1) * 36) / 2;
+        for (let i = 0; i < maxDots; i++) {
             const dot = this.add.text(dotsStartX + i * 36, -280, '○', {
                 fontSize: '24px',
                 fontFamily: 'Arial, sans-serif',
@@ -1030,7 +1086,7 @@ export class GuildScene extends Phaser.Scene {
         this.resultsOverlay.add(stars);
 
         // Score summary
-        const score = this.add.text(0, -190, `${correctCount} / ${TRIAL_TOTAL_PROBLEMS} správně`, {
+        const score = this.add.text(0, -190, `${correctCount} / ${this.trialState.totalProblems} správně`, {
             fontSize: '20px',
             fontFamily: 'Arial, sans-serif',
             color: '#cccccc',
@@ -1069,39 +1125,28 @@ export class GuildScene extends Phaser.Scene {
             this.resultsOverlay.add(entry);
         }
 
-        // Apply rewards and show gains
+        // Show stat gains from mastery exam (already applied by applyMasteryExamResult)
         const player = this.gameState.getPlayer();
-        const rewardResult = ProgressionSystem.applyTrialResultWithHistory(
-            player, tier, correctCount, this.trialState.wrongCount
-        );
         this.gameState.save();
         this.registry.set('playerLevel', player.level);
 
+        const gains = this.masteryExamStatGains;
+        const hasGains = gains.hpGain > 0 || gains.attackGain > 0 || gains.manaGain > 0;
+
         let rewardText: string;
-        if (rewardResult.leveledUp) {
-            const parts: string[] = [
-                `NOVÁ ÚROVEŇ: ${rewardResult.newLevel}`,
-            ];
-            if (rewardResult.hpGain > 0) parts.push(`HP: +${rewardResult.hpGain}`);
-            if (rewardResult.attackGain > 0) parts.push(`ÚTOK: +${rewardResult.attackGain}`);
-            if (rewardResult.manaGain > 0) parts.push(`MANA: +${rewardResult.manaGain}`);
+        if (tier !== 'none' && hasGains) {
+            const parts: string[] = [`ÚROVEŇ: ${player.level}`];
+            if (gains.hpGain > 0) parts.push(`HP: +${gains.hpGain}`);
+            if (gains.attackGain > 0) parts.push(`ÚTOK: +${gains.attackGain}`);
+            if (gains.manaGain > 0) parts.push(`MANA: +${gains.manaGain}`);
             rewardText = parts.join('   ');
-        } else if (rewardResult.wasRetry && rewardResult.isImprovement) {
-            // Improved on retry
-            const parts: string[] = ['VYLEPŠENÍ!'];
-            if (rewardResult.hpGain > 0) parts.push(`HP: +${rewardResult.hpGain}`);
-            if (rewardResult.attackGain > 0) parts.push(`ÚTOK: +${rewardResult.attackGain}`);
-            if (rewardResult.manaGain > 0) parts.push(`MANA: +${rewardResult.manaGain}`);
-            rewardText = parts.join('   ');
-        } else if (rewardResult.wasRetry && !rewardResult.isImprovement && tier !== 'none') {
-            rewardText = 'Stejný výsledek jako předtím — zkus ještě lépe!';
-        } else if (tier === 'none') {
-            rewardText = 'Musíš to zkusit znovu — nedáš se!';
+        } else if (tier !== 'none') {
+            rewardText = `ÚROVEŇ: ${player.level}   POSTUP!`;
         } else {
-            rewardText = 'Zkus to znovu - příště to zvládneš lépe!';
+            rewardText = 'Musíš to zkusit znovu — nedáš se!';
         }
 
-        const rewardColor = (rewardResult.leveledUp || rewardResult.isImprovement) ? '#ffd700' : '#aaaaaa';
+        const rewardColor = tier !== 'none' ? '#ffd700' : '#aaaaaa';
         const rewards = this.add.text(0, 50, rewardText, {
             fontSize: '18px',
             fontFamily: 'Arial, sans-serif',
@@ -1123,17 +1168,6 @@ export class GuildScene extends Phaser.Scene {
         }).setOrigin(0.5);
         this.resultsOverlay.add(zyxText);
 
-        // Fail warning
-        if (tier === 'none' && !rewardResult.wasRetry) {
-            const warnText = this.add.text(0, 155, '⚠ Další postup je blokován — musíš zkoušku složit!', {
-                fontSize: '14px',
-                fontFamily: 'Arial, sans-serif',
-                color: '#ff6666',
-                align: 'center',
-                wordWrap: { width: 500 },
-            }).setOrigin(0.5);
-            this.resultsOverlay.add(warnText);
-        }
 
         // Continue button
         const closeBg = this.add.rectangle(0, 210, 220, 50, 0x444444)
@@ -1179,22 +1213,68 @@ export class GuildScene extends Phaser.Scene {
 
     private startTrial(): void {
         this.overviewOverlay.setVisible(false);
+        this.startMasteryExam();
+    }
 
-        // Generate problems for the trial level (may differ from player level on retry)
-        const playerLevel = this.registry.get('playerLevel') || 1;
-        if (this.currentTrialLevel !== playerLevel) {
-            // Retry at a different level — use level-specific generation
-            this.trialProblems = this.mathEngine.generateTrialProblemsForLevel(TRIAL_TOTAL_PROBLEMS, this.currentTrialLevel);
-        } else {
-            this.trialProblems = this.mathEngine.generateTrialProblems(TRIAL_TOTAL_PROBLEMS);
+    /** Start a mastery-system exam (sub-atom, fluency, mastery challenge, band gate, band mastery) */
+    private startMasteryExam(): void {
+        const examType = this.currentMasteryExamType!;
+        const target = this.currentMasteryExamTarget!;
+        const config = EXAM_CONFIGS[examType];
+        const masterySystem = MasterySystem.getInstance();
+
+        // Generate exam problems based on type
+        let problemKeys: string[] = [];
+        switch (examType) {
+            case 'sub_atom':
+                problemKeys = masterySystem.generateSubAtomExamProblems(target as SubAtomId);
+                break;
+            case 'fluency_challenge':
+            case 'mastery_challenge':
+                problemKeys = masterySystem.generateChallengeProblemKeys(target as SubAtomId, config.itemCount, examType);
+                break;
+            case 'band_gate':
+                problemKeys = masterySystem.generateBandGateProblems(target as BandId);
+                break;
+            case 'band_mastery':
+                problemKeys = masterySystem.generateBandMasteryProblems(target as BandId);
+                break;
         }
 
+        // Convert keys to MathProblems
+        this.trialProblems = [];
+        for (const key of problemKeys) {
+            const problem = this.mathEngine.generateProblemFromKey(key);
+            if (problem) this.trialProblems.push(problem);
+        }
+
+        // Ensure we have enough problems
+        while (this.trialProblems.length < config.itemCount) {
+            // Fallback: generate more problems from the same target
+            const additionalKeys = examType === 'band_gate' || examType === 'band_mastery'
+                ? masterySystem.generateBandGateProblems(target as BandId)
+                : masterySystem.generateSubAtomExamProblems(target as SubAtomId);
+            for (const key of additionalKeys) {
+                if (this.trialProblems.length >= config.itemCount) break;
+                const problem = this.mathEngine.generateProblemFromKey(key);
+                if (problem && !this.trialProblems.some(p => p.id === problem.id)) {
+                    this.trialProblems.push(problem);
+                }
+            }
+            break; // Prevent infinite loop
+        }
+
+        this.initTrialState(config.itemCount, config.timePerItem);
+    }
+
+    /** Common initialization for trial/exam state */
+    private initTrialState(totalProblems: number, timePerProblem: number): void {
         this.trialState = {
             isActive: true,
             currentProblemIndex: 0,
-            totalProblems: TRIAL_TOTAL_PROBLEMS,
-            timePerProblem: TRIAL_TIME_PER_PROBLEM,
-            timeRemainingForProblem: TRIAL_TIME_PER_PROBLEM,
+            totalProblems: totalProblems,
+            timePerProblem: timePerProblem,
+            timeRemainingForProblem: timePerProblem,
             correctCount: 0,
             wrongCount: 0,
             results: [],
@@ -1202,10 +1282,20 @@ export class GuildScene extends Phaser.Scene {
             phase: 'problem',
         };
 
-        // Reset progress dots
-        for (const dot of this.progressDots) {
-            dot.setText('○');
-            dot.setColor('#666666');
+        // Reset progress dots (show only the right number)
+        for (let i = 0; i < this.progressDots.length; i++) {
+            if (i < totalProblems) {
+                this.progressDots[i].setText('○');
+                this.progressDots[i].setColor('#666666');
+                this.progressDots[i].setVisible(true);
+            } else {
+                this.progressDots[i].setVisible(false);
+            }
+        }
+        // Re-center visible dots
+        const dotsStartX = -((totalProblems - 1) * 36) / 2;
+        for (let i = 0; i < totalProblems && i < this.progressDots.length; i++) {
+            this.progressDots[i].setX(dotsStartX + i * 36);
         }
 
         this.trialOverlay.setVisible(true);
@@ -1228,23 +1318,33 @@ export class GuildScene extends Phaser.Scene {
         }
 
         this.currentTrialProblem = this.trialProblems[idx];
-        this.trialState.timeRemainingForProblem = TRIAL_TIME_PER_PROBLEM;
+        this.trialState.timeRemainingForProblem = this.trialState.timePerProblem;
         this.trialState.phase = 'problem';
         this.problemStartTime = Date.now();
 
-        const { operand1, operand2, operand3, operator, operator2 } = this.currentTrialProblem;
+        const { operand1, operand2, operand3, operand4, operator, operator2, operator3 } = this.currentTrialProblem;
         let text: string;
-        if (operand3 !== undefined && operator2) {
+        if (this.currentTrialProblem.problemType === 'missing_operand') {
+            text = `${operand1} ${operator} ? = ${operand2}`;
+        } else if (this.currentTrialProblem.problemType === 'comparison') {
+            text = `${operand1} ${operator} ${operand2} ○ ${operand3}`;
+        } else if (this.currentTrialProblem.problemType === 'comparison_eq_vs_eq') {
+            const rightOp = (operator3 || '+') === '-' ? '-' : '+';
+            text = `${operand1} ${operator} ${operand2} ○ ${operand3} ${rightOp} ${operand4}`;
+        } else if (operand3 !== undefined && operator2) {
             text = `${operand1} ${operator} ${operand2} ${operator2} ${operand3} = ?`;
         } else {
             text = `${operand1} ${operator} ${operand2} = ?`;
         }
         this.problemText.setText(text);
 
-        // Update choices
+        // Update choices — display symbols for comparison types
         const answers = this.currentTrialProblem.choices;
+        const isComparison = this.currentTrialProblem.problemType === 'comparison' || this.currentTrialProblem.problemType === 'comparison_eq_vs_eq';
+        const comparisonSymbols = ['<', '=', '>'];
         for (let i = 0; i < 3; i++) {
-            this.answerButtonTexts[i].setText(answers[i].toString());
+            const displayText = isComparison ? comparisonSymbols[answers[i]] : answers[i].toString();
+            this.answerButtonTexts[i].setText(displayText);
             this.answerButtonValues[i] = answers[i];
             this.answerButtonBgs[i].setFillStyle(0x4466aa);
         }
@@ -1272,7 +1372,7 @@ export class GuildScene extends Phaser.Scene {
         const remaining = this.trialState.timeRemainingForProblem;
         this.timerText.setText(remaining.toString());
 
-        const progress = remaining / TRIAL_TIME_PER_PROBLEM;
+        const progress = remaining / this.trialState.timePerProblem;
         const fullBarWidth = this.timerBar.getData('barWidth') as number || 320;
         const barHeight = this.timerBar.getData('barHeight') as number || 55;
         const currentBarWidth = fullBarWidth * progress;
@@ -1338,7 +1438,7 @@ export class GuildScene extends Phaser.Scene {
     private advanceToNextProblem(): void {
         this.trialState.currentProblemIndex++;
 
-        if (this.trialState.currentProblemIndex >= TRIAL_TOTAL_PROBLEMS) {
+        if (this.trialState.currentProblemIndex >= this.trialState.totalProblems) {
             this.endTrial();
         } else {
             this.showCurrentProblem();
@@ -1355,10 +1455,91 @@ export class GuildScene extends Phaser.Scene {
         }
         this.trialOverlay.setVisible(false);
 
-        // Determine tier
-        this.trialState.tier = ProgressionSystem.getTrialTier(this.trialState.correctCount);
+        // Record answers to mastery system
+        if (this.currentMasteryExamType && this.currentMasteryExamTarget) {
+            const masterySystem = MasterySystem.getInstance();
+            const context = this.getMasteryExamContext();
+
+            for (const result of this.trialState.results) {
+                if (result.problem.masteryKey) {
+                    masterySystem.recordSolve(
+                        result.problem.masteryKey,
+                        result.wasCorrect,
+                        result.timeSpent * 1000, // Convert seconds to ms
+                        context
+                    );
+                }
+            }
+
+            // Apply mastery exam result
+            this.applyMasteryExamResult();
+        }
+
+        // Tier is already set by applyMasteryExamResult() — no need to overwrite
 
         this.showResults();
+
+        // Clear mastery exam state
+        this.currentMasteryExamType = null;
+        this.currentMasteryExamTarget = null;
+    }
+
+    /** Map exam type to mastery attempt context */
+    private getMasteryExamContext(): 'exam' | 'fluency' | 'mastery_challenge' | 'band_gate' {
+        switch (this.currentMasteryExamType) {
+            case 'sub_atom': return 'exam';
+            case 'fluency_challenge': return 'fluency';
+            case 'mastery_challenge': return 'mastery_challenge';
+            case 'band_gate': return 'band_gate';
+            case 'band_mastery': return 'band_gate'; // Same context
+            default: return 'exam';
+        }
+    }
+
+    /** Apply the result of a mastery exam to the mastery system */
+    private applyMasteryExamResult(): void {
+        const masterySystem = MasterySystem.getInstance();
+        const target = this.currentMasteryExamTarget!;
+        const correct = this.trialState.correctCount;
+
+        // Reset stat gains
+        this.masteryExamStatGains = { hpGain: 0, attackGain: 0, manaGain: 0 };
+
+        switch (this.currentMasteryExamType) {
+            case 'sub_atom': {
+                const result = masterySystem.applyExamResult(target as SubAtomId, correct);
+                this.trialState.tier = result.tier;
+                this.masteryExamStatGains = { hpGain: result.hpGain, attackGain: result.attackGain, manaGain: result.manaGain };
+                break;
+            }
+            case 'fluency_challenge': {
+                const result = masterySystem.applyFluencyResult(target as SubAtomId, correct);
+                this.trialState.tier = result.passed ? 'gold' : 'none';
+                this.masteryExamStatGains = { hpGain: result.hpGain, attackGain: result.attackGain, manaGain: result.manaGain };
+                break;
+            }
+            case 'mastery_challenge': {
+                const result = masterySystem.applyMasteryResult(target as SubAtomId, correct);
+                this.trialState.tier = result.passed ? 'gold' : 'none';
+                this.masteryExamStatGains = { hpGain: result.hpGain, attackGain: result.attackGain, manaGain: result.manaGain };
+                break;
+            }
+            case 'band_gate': {
+                const result = masterySystem.applyBandGateResult(target as BandId, correct);
+                this.trialState.tier = result.tier;
+                this.masteryExamStatGains = { hpGain: result.hpGain, attackGain: result.attackGain, manaGain: result.manaGain };
+                break;
+            }
+            case 'band_mastery': {
+                const result = masterySystem.applyBandMasteryResult(target as BandId, correct);
+                this.trialState.tier = result.passed ? 'gold' : 'none';
+                this.masteryExamStatGains = { hpGain: result.hpGain, attackGain: result.attackGain, manaGain: result.manaGain };
+                break;
+            }
+        }
+
+        // Save state
+        this.gameState.save();
     }
 
     // ============ TRIAL HISTORY OVERLAY ============
@@ -1374,7 +1555,7 @@ export class GuildScene extends Phaser.Scene {
         this.historyOverlay.setVisible(true);
 
         const player = this.gameState.getPlayer();
-        const history = ProgressionSystem.ensureTrialHistory(player);
+        const history = player.trialHistory || { attempts: [], bestTiers: {}, failedTrialLevel: null, retryLevel: null };
 
         // Background
         const bg = this.add.rectangle(0, 0, 1280, 720, 0x000000, 0.94);
@@ -1414,7 +1595,7 @@ export class GuildScene extends Phaser.Scene {
             const attempts = levelMap.get(level)!;
             const bestTier = history.bestTiers[level] || 'none';
             const tierDisplay = this.getTierDisplay(bestTier);
-            const levelDesc = TRIAL_LEVEL_DESCRIPTIONS[level] || this.getDifficultyDescription(level);
+            const levelDesc = this.getDifficultyDescription(level);
 
             // Level header
             const headerBg = this.add.rectangle(0, yOffset, 560, 32, 0x333355, 0.8)
@@ -1448,7 +1629,7 @@ export class GuildScene extends Phaser.Scene {
                 const rewardStr = rewardParts.length > 0 ? `  ${rewardParts.join(' ')}` : '';
 
                 const attemptText = this.add.text(-260, yOffset,
-                    `  Pokus ${i + 1}: ${a.correctCount}/${TRIAL_TOTAL_PROBLEMS}  ${tierName}${retryTag}${rewardStr}`, {
+                    `  Pokus ${i + 1}: ${a.correctCount}/${a.correctCount + a.wrongCount}  ${tierName}${retryTag}${rewardStr}`, {
                     fontSize: '13px',
                     fontFamily: 'Arial, sans-serif',
                     color: tierColor,
@@ -1459,8 +1640,8 @@ export class GuildScene extends Phaser.Scene {
                 yOffset += 22;
             }
 
-            // Retry button for bronze/silver (only when no pending fail block)
-            if (ProgressionSystem.canRetryForImprovement(player, level) && history.failedTrialLevel == null) {
+            // Retry button (legacy — hidden since mastery system handles retries)
+            if (false) {
                 const retryBtnBg = this.add.rectangle(220, yOffset - 11, 100, 24, 0x446644)
                     .setStrokeStyle(1, 0x66aa66);
                 contentContainer.add(retryBtnBg);
@@ -1480,7 +1661,6 @@ export class GuildScene extends Phaser.Scene {
                     .on('pointerover', () => retryBtnBg.setFillStyle(0x558855))
                     .on('pointerout', () => retryBtnBg.setFillStyle(0x446644))
                     .on('pointerdown', () => {
-                        ProgressionSystem.startRetryForImprovement(player, capturedLevel);
                         this.gameState.save();
                         this.historyOverlay.setVisible(false);
                         this.showTrialOverview();

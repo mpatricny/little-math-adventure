@@ -1,4 +1,4 @@
-import { PlayerState, CoinCurrency, DiamondInventory, DiamondType, CharacterType, Crystal, CrystalInventory, TownProgress, TrialTier, TrialHistory, TrialAttempt, TRIAL_TIER_THRESHOLDS } from '../types';
+import { PlayerState, CoinCurrency, DiamondInventory, DiamondType, CharacterType, Crystal, CrystalInventory, TownProgress } from '../types';
 import { CrystalSystem } from './CrystalSystem';
 import { ManaSystem } from './ManaSystem';
 
@@ -16,23 +16,7 @@ export function createInitialTownProgress(): TownProgress {
     };
 }
 
-// XP needed per level transition (battles needed)
-const XP_PER_LEVEL: Record<number, number> = {
-    1: 20,   // 1 battle (slime gives 20 XP)
-    2: 60,   // ~3 battles
-    3: 100,  // ~5 battles
-    4: 100,  // ~5 battles
-    5: 100,  // ~5 battles (and beyond)
-};
-
 export class ProgressionSystem {
-    /**
-     * Calculate XP needed for next level
-     */
-    static getXpForLevel(level: number): number {
-        return XP_PER_LEVEL[level] || 100;
-    }
-
     /**
      * Get total coin value
      */
@@ -95,336 +79,6 @@ export class ProgressionSystem {
         player.coins = { copper: total - amount, silver: 0, gold: 0, pouch: 0 };
         this.normalizeCoins(player);
         return true;
-    }
-
-    /**
-     * Award XP to player - caps at xpToNextLevel and sets readyToPromote flag
-     * No automatic level-up! Player must visit Guild for trial.
-     * Fail blocking: if player has a failedTrialLevel, XP caps but readyToPromote stays false.
-     * Returns { readyForTrial: true } if XP is now capped
-     */
-    static awardXp(player: PlayerState, xpAmount: number): { readyForTrial: boolean } {
-        player.xp += xpAmount;
-
-        // Check if XP reached threshold - cap it and set flag
-        if (player.xp >= player.xpToNextLevel) {
-            player.xp = player.xpToNextLevel;  // Cap at threshold (don't overflow)
-
-            // Fail blocking: if player failed a trial, don't set readyToPromote
-            // They must retry the failed trial first
-            if (player.trialHistory?.failedTrialLevel != null) {
-                return { readyForTrial: false };
-            }
-
-            player.readyToPromote = true;
-            return { readyForTrial: true };
-        }
-
-        return { readyForTrial: false };
-    }
-
-    /**
-     * Apply level-up after successful Guild trial
-     * @param player Player state
-     * @param levels Number of levels to gain (1 or 2)
-     */
-    static applyLevelUp(player: PlayerState, levels: number): { newLevel: number; hpGain: number; attackGain: number } {
-        const hpGainPerLevel = 1;  // +1 HP per level (was 5)
-        const attackGainPerLevel = 1;
-
-        const totalHpGain = hpGainPerLevel * levels;
-        const totalAttackGain = attackGainPerLevel * levels;
-
-        player.level += levels;
-        player.maxHp += totalHpGain;
-        player.hp += totalHpGain;  // Also heal on level-up
-        player.attack += totalAttackGain;
-
-        // Reset for next level
-        player.xp = 0;
-        player.xpToNextLevel = this.getXpForLevel(player.level);
-        player.readyToPromote = false;
-
-        return {
-            newLevel: player.level,
-            hpGain: totalHpGain,
-            attackGain: totalAttackGain
-        };
-    }
-
-    /**
-     * Tiered reward configuration for trial results
-     */
-    private static readonly TRIAL_TIER_REWARDS: Record<TrialTier, { hp: number; atk: number; mana: number }> = {
-        none:   { hp: 0, atk: 0, mana: 0 },
-        bronze: { hp: 1, atk: 0, mana: 0 },
-        silver: { hp: 1, atk: 1, mana: 0 },
-        gold:   { hp: 1, atk: 1, mana: 2 },
-    };
-
-    /**
-     * Determine trial tier from correct answer count
-     */
-    static getTrialTier(correctCount: number): TrialTier {
-        if (correctCount >= TRIAL_TIER_THRESHOLDS.gold) return 'gold';
-        if (correctCount >= TRIAL_TIER_THRESHOLDS.silver) return 'silver';
-        if (correctCount >= TRIAL_TIER_THRESHOLDS.bronze) return 'bronze';
-        return 'none';
-    }
-
-    /**
-     * Apply trial result with tiered rewards.
-     * Returns the gains applied.
-     */
-    static applyTrialResult(player: PlayerState, tier: TrialTier): {
-        leveledUp: boolean;
-        newLevel: number;
-        hpGain: number;
-        attackGain: number;
-        manaGain: number;
-    } {
-        const rewards = this.TRIAL_TIER_REWARDS[tier];
-
-        // Track best tier per level
-        if (!player.bestTrialTiers) player.bestTrialTiers = {};
-        const currentBest = player.bestTrialTiers[player.level];
-        const tierOrder: TrialTier[] = ['none', 'bronze', 'silver', 'gold'];
-        if (!currentBest || tierOrder.indexOf(tier) > tierOrder.indexOf(currentBest)) {
-            player.bestTrialTiers[player.level] = tier;
-        }
-
-        if (tier === 'none') {
-            // Failed - no level up, but player can retry
-            return { leveledUp: false, newLevel: player.level, hpGain: 0, attackGain: 0, manaGain: 0 };
-        }
-
-        // Apply level up
-        player.level += 1;
-        player.maxHp += rewards.hp;
-        player.hp += rewards.hp;
-        player.attack += rewards.atk;
-
-        // Mana bonus for gold
-        if (rewards.mana > 0) {
-            ManaSystem.add(player, rewards.mana);
-        }
-
-        // Reset XP for next level
-        player.xp = 0;
-        player.xpToNextLevel = this.getXpForLevel(player.level);
-        player.readyToPromote = false;
-
-        return {
-            leveledUp: true,
-            newLevel: player.level,
-            hpGain: rewards.hp,
-            attackGain: rewards.atk,
-            manaGain: rewards.mana,
-        };
-    }
-
-    /**
-     * Numeric rank for tier comparison (none=0, bronze=1, silver=2, gold=3)
-     */
-    static tierRank(tier: TrialTier): number {
-        const ranks: Record<TrialTier, number> = { none: 0, bronze: 1, silver: 2, gold: 3 };
-        return ranks[tier];
-    }
-
-    /**
-     * Initialize or get trial history for player
-     */
-    static ensureTrialHistory(player: PlayerState): TrialHistory {
-        if (!player.trialHistory) {
-            player.trialHistory = {
-                attempts: [],
-                bestTiers: {},
-                failedTrialLevel: null,
-                retryLevel: null,
-            };
-        }
-        return player.trialHistory;
-    }
-
-    /**
-     * Determine if player can start a trial and what kind.
-     * Returns status and the trial level to use.
-     */
-    static canStartTrial(player: PlayerState): {
-        canStart: boolean;
-        reason: 'ready' | 'retry_fail' | 'not_ready' | 'blocked_by_fail';
-        trialLevel: number;
-    } {
-        const history = this.ensureTrialHistory(player);
-
-        // Check for failed trial that must be retried
-        if (history.failedTrialLevel != null) {
-            // Player has a pending failed trial
-            if (player.xp >= player.xpToNextLevel) {
-                // XP is capped but blocked by fail
-                return { canStart: true, reason: 'blocked_by_fail', trialLevel: history.failedTrialLevel };
-            }
-            // XP not capped but still blocked
-            return { canStart: true, reason: 'retry_fail', trialLevel: history.failedTrialLevel };
-        }
-
-        // Check for retry for improvement
-        if (history.retryLevel != null) {
-            return { canStart: true, reason: 'ready', trialLevel: history.retryLevel };
-        }
-
-        // Normal trial
-        if (player.readyToPromote) {
-            return { canStart: true, reason: 'ready', trialLevel: player.level };
-        }
-
-        return { canStart: false, reason: 'not_ready', trialLevel: player.level };
-    }
-
-    /**
-     * Check if player can retry a trial level for tier improvement
-     */
-    static canRetryForImprovement(player: PlayerState, level: number): boolean {
-        const history = this.ensureTrialHistory(player);
-        const bestTier = history.bestTiers[level];
-        return bestTier === 'bronze' || bestTier === 'silver';
-    }
-
-    /**
-     * Set up a retry for improvement
-     */
-    static startRetryForImprovement(player: PlayerState, level: number): void {
-        const history = this.ensureTrialHistory(player);
-        history.retryLevel = level;
-    }
-
-    /**
-     * Apply trial result with full history tracking, differential rewards, and fail blocking.
-     * Replaces applyTrialResult for new flow.
-     */
-    static applyTrialResultWithHistory(
-        player: PlayerState,
-        tier: TrialTier,
-        correctCount: number,
-        wrongCount: number,
-    ): {
-        leveledUp: boolean;
-        newLevel: number;
-        hpGain: number;
-        attackGain: number;
-        manaGain: number;
-        isImprovement: boolean;
-        wasRetry: boolean;
-    } {
-        const history = this.ensureTrialHistory(player);
-        const isRetryFail = history.failedTrialLevel != null;
-        const isRetryImprove = history.retryLevel != null;
-        const isRetry = isRetryFail || isRetryImprove;
-
-        // Determine the trial level
-        let trialLevel: number;
-        if (isRetryFail) {
-            trialLevel = history.failedTrialLevel!;
-        } else if (isRetryImprove) {
-            trialLevel = history.retryLevel!;
-        } else {
-            trialLevel = player.level;
-        }
-
-        const previousBest = history.bestTiers[trialLevel] || 'none';
-        const isImprovement = this.tierRank(tier) > this.tierRank(previousBest);
-
-        // Calculate rewards (differential for retries)
-        let rewards = { hp: 0, atk: 0, mana: 0 };
-        let leveledUp = false;
-
-        if (tier === 'none') {
-            // Failed
-            if (!isRetry) {
-                // First attempt fail — set fail block
-                history.failedTrialLevel = trialLevel;
-            }
-            // If retry fail, failedTrialLevel stays set
-        } else {
-            // Passed (bronze, silver, or gold)
-            if (isRetryFail) {
-                // Retry after fail — clear fail block, grant full rewards, level up
-                history.failedTrialLevel = null;
-                rewards = { ...this.TRIAL_TIER_REWARDS[tier] };
-                leveledUp = true;
-            } else if (isRetryImprove) {
-                // Retry for improvement — only differential rewards, no level up
-                history.retryLevel = null;
-                if (isImprovement) {
-                    const oldRewards = this.TRIAL_TIER_REWARDS[previousBest];
-                    const newRewards = this.TRIAL_TIER_REWARDS[tier];
-                    rewards = {
-                        hp: Math.max(0, newRewards.hp - oldRewards.hp),
-                        atk: Math.max(0, newRewards.atk - oldRewards.atk),
-                        mana: Math.max(0, newRewards.mana - oldRewards.mana),
-                    };
-                }
-                // No level up on improvement retry
-            } else {
-                // First attempt pass — full rewards + level up
-                rewards = { ...this.TRIAL_TIER_REWARDS[tier] };
-                leveledUp = true;
-            }
-
-            // Update best tier
-            if (isImprovement) {
-                history.bestTiers[trialLevel] = tier;
-            }
-        }
-
-        // Also update legacy bestTrialTiers for compatibility
-        if (!player.bestTrialTiers) player.bestTrialTiers = {};
-        if (isImprovement) {
-            player.bestTrialTiers[trialLevel] = tier;
-        }
-
-        // Apply stat rewards
-        if (rewards.hp > 0) { player.maxHp += rewards.hp; player.hp += rewards.hp; }
-        if (rewards.atk > 0) { player.attack += rewards.atk; }
-        if (rewards.mana > 0) { ManaSystem.add(player, rewards.mana); }
-
-        // Apply level up
-        if (leveledUp) {
-            player.level += 1;
-            player.xp = 0;
-            player.xpToNextLevel = this.getXpForLevel(player.level);
-            player.readyToPromote = false;
-        }
-
-        // Record attempt
-        const attempt: TrialAttempt = {
-            level: trialLevel,
-            tier,
-            correctCount,
-            wrongCount,
-            timestamp: Date.now(),
-            isRetry,
-            rewardsGiven: { hp: rewards.hp, atk: rewards.atk, mana: rewards.mana },
-        };
-        history.attempts.push(attempt);
-
-        return {
-            leveledUp,
-            newLevel: player.level,
-            hpGain: rewards.hp,
-            attackGain: rewards.atk,
-            manaGain: rewards.mana,
-            isImprovement,
-            wasRetry: isRetry,
-        };
-    }
-
-    /**
-     * Reset trial state without leveling up (failed trial)
-     */
-    static resetTrialState(_player: PlayerState): void {
-        // Player keeps readyToPromote = true so they can retry
-        // XP stays capped
     }
 
     /**
@@ -547,8 +201,6 @@ export class ProgressionSystem {
             name: 'Hrdina',
             characterType,
             level: 1,
-            xp: 0,
-            xpToNextLevel: this.getXpForLevel(1),
             hp: 10,
             maxHp: 10,
             coins: {
@@ -569,7 +221,6 @@ export class ProgressionSystem {
             equippedArmor: null,
             equippedShield: null,
             equippedHelmet: null,
-            readyToPromote: false,
             potions: 0,
             hasPotionSubscription: false,
             pet: null,
@@ -689,38 +340,8 @@ export class ProgressionSystem {
             player.townProgress.revealedBuildings = [...player.townProgress.unlockedBuildings];
         }
 
-        // Migrate: Create trialHistory from legacy bestTrialTiers
-        if (!player.trialHistory && player.bestTrialTiers) {
-            const history: TrialHistory = {
-                attempts: [],
-                bestTiers: { ...player.bestTrialTiers },
-                failedTrialLevel: null,
-                retryLevel: null,
-            };
-            // Reconstruct approximate attempts from bestTiers
-            for (const [levelStr, tier] of Object.entries(player.bestTrialTiers)) {
-                const level = parseInt(levelStr);
-                // Estimate correct/wrong from tier
-                const estimated: Record<TrialTier, { correct: number; wrong: number }> = {
-                    gold:   { correct: 10, wrong: 0 },
-                    silver: { correct: 8, wrong: 2 },
-                    bronze: { correct: 6, wrong: 4 },
-                    none:   { correct: 0, wrong: 10 },
-                };
-                const est = estimated[tier];
-                const rewards = this.TRIAL_TIER_REWARDS[tier];
-                history.attempts.push({
-                    level,
-                    tier,
-                    correctCount: est.correct,
-                    wrongCount: est.wrong,
-                    timestamp: 0, // unknown
-                    isRetry: false,
-                    rewardsGiven: { hp: rewards.hp, atk: rewards.atk, mana: rewards.mana },
-                });
-            }
-            player.trialHistory = history;
-        } else if (!player.trialHistory) {
+        // Migrate: Ensure trialHistory exists
+        if (!player.trialHistory) {
             player.trialHistory = {
                 attempts: [],
                 bestTiers: {},

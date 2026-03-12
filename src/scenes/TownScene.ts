@@ -6,6 +6,7 @@ import { SceneBuilder } from '../systems/SceneBuilder';
 import { CrystalSystem } from '../systems/CrystalSystem';
 import { ManaSystem } from '../systems/ManaSystem';
 import { ProgressionSystem, createInitialTownProgress } from '../systems/ProgressionSystem';
+import { MasterySystem } from '../systems/MasterySystem';
 import { uiTemplateLoader } from '../systems/UiTemplateLoader';
 import { getPlayerSpriteConfig } from '../utils/characterUtils';
 import { Crystal, PlayerState, TownProgress } from '../types';
@@ -17,9 +18,9 @@ const BUILDING_UNLOCK_CONFIG: {
     condition: (p: PlayerState) => boolean;
 }[] = [
     { buildingId: 'arena-building', labelId: 'arena-label', condition: () => true },
+    { buildingId: 'shop', labelId: 'shop-label', condition: (p) => ProgressionSystem.getTotalCoinValue(p.coins) >= 3 },
     { buildingId: 'guild', labelId: 'guild-label', condition: (p) => (p.townProgress?.totalWavesCompleted ?? 0) >= 1 },
     { buildingId: 'witch', labelId: 'workshop-label', condition: (p) => (p.townProgress?.totalWavesCompleted ?? 0) >= 2 },
-    { buildingId: 'shop', labelId: 'shop-label', condition: (p) => (p.townProgress?.totalWavesCompleted ?? 0) >= 3 },
     { buildingId: 'Crystal Forge small', labelId: 'forge-label', condition: (p) => p.arena?.completedArenaLevels?.includes(1) ?? false },
 ];
 
@@ -121,12 +122,12 @@ export class TownScene extends Phaser.Scene {
             .setScrollFactor(0);
         charBtn.on('pointerdown', () => this.characterUI.toggle());
 
-        // Show guild notification if player is ready to promote OR has failed trial AND guild is unlocked
+        // Show guild notification if mastery exams are available AND guild is unlocked
         const guildNotification = this.sceneBuilder.get<Phaser.GameObjects.Container>('guild-notification');
         if (guildNotification) {
             const isGuildRevealed = player.townProgress!.revealedBuildings.includes('guild');
-            const isFailBlocked = player.trialHistory?.failedTrialLevel != null;
-            guildNotification.setVisible((player.readyToPromote || isFailBlocked) && isGuildRevealed);
+            const hasAvailableExams = MasterySystem.getInstance().getAvailableExams().length > 0;
+            guildNotification.setVisible(hasAvailableExams && isGuildRevealed);
         }
 
         // Show forest exit if Arena Level 2 is complete
@@ -622,9 +623,26 @@ export class TownScene extends Phaser.Scene {
                         // Track which arena level these waveResults belong to
                         player.arena.waveResultsArenaLevel = arenaLevel;
 
-                        // Always start from wave 0 (players must complete all waves each run)
-                        const wave = 0;
-                        console.log('[TownScene] Starting arena level', arenaLevel, 'from wave 0');
+                        // Block re-entry if this arena level is already completed
+                        if (player.arena.completedArenaLevels?.includes(arenaLevel)) {
+                            console.log('[TownScene] Arena level', arenaLevel, 'already completed, not entering');
+                            this.player.setAlpha(1);
+                            this.input.enabled = true;
+                            return;
+                        }
+
+                        // Find first wave that isn't perfectly completed (skip perfect waves)
+                        let wave = 0;
+                        if (player.arena.waveResults) {
+                            for (let i = 0; i < 5; i++) {
+                                const r = player.arena.waveResults[i];
+                                if (!r?.completed || !r?.perfectWave) {
+                                    wave = i;
+                                    break;
+                                }
+                            }
+                        }
+                        console.log('[TownScene] Starting arena level', arenaLevel, 'from wave', wave);
 
                         player.arena.isActive = true;
                         player.arena.playerHpAtStart = player.hp;

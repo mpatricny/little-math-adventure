@@ -70,7 +70,7 @@ export class MathBoardDebugScene extends Phaser.Scene {
         }).setOrigin(0.5);
 
         // Create MathBoard
-        this.mathBoard = new MathBoard(this, (damage, results) => {
+        this.mathBoard = new MathBoard(this, (damage, results, _timings) => {
             this.onMathComplete(damage, results);
         });
 

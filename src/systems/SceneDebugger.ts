@@ -2,6 +2,7 @@ import Phaser from 'phaser';
 import { SceneLayoutLoader } from './SceneLayoutLoader';
 import { SceneLayoutsFile, ElementDef } from '../types/layout';
 import { uiTemplateLoader } from './UiTemplateLoader';
+import { DebugPoolDisplay } from '../ui/DebugPoolDisplay';
 
 /**
  * Configuration for a debug element's position and scale
@@ -76,6 +77,9 @@ export class SceneDebugger {
     private onHeal?: () => void;
     private isBattleScene: boolean = false;
 
+    // Pool debug display
+    private poolDisplay: DebugPoolDisplay | null = null;
+
     // Key objects for update loop
     private cursors!: Phaser.Types.Input.Keyboard.CursorKeys;
     private keys: { [key: string]: Phaser.Input.Keyboard.Key } = {};
@@ -85,6 +89,7 @@ export class SceneDebugger {
         this.sceneName = sceneName;
         this.setupKeyboard();
         this.createOverlay();
+        this.poolDisplay = new DebugPoolDisplay(scene);
 
         // Hook into scene's update
         this.scene.events.on('update', this.update, this);
@@ -252,6 +257,9 @@ export class SceneDebugger {
         if (this.isActive) {
             this.updateDisplay();
             this.highlightSelected();
+            this.poolDisplay?.show();
+        } else {
+            this.poolDisplay?.hide();
         }
     }
 
@@ -665,6 +673,10 @@ export class SceneDebugger {
         }
         if (this.selectionBox) {
             this.selectionBox.destroy();
+        }
+        if (this.poolDisplay) {
+            this.poolDisplay.destroy();
+            this.poolDisplay = null;
         }
     }
 }

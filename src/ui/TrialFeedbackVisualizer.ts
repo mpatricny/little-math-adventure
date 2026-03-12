@@ -17,6 +17,7 @@ const BETWEEN_MOVES = 700;        // ms gap between consecutive item moves
 const COUNTER_PULSE = 400;        // ms for counter number pulse
 const FINAL_HOLD = 800;           // ms hold after last change before completion
 const STEP_PAUSE = 1200;          // ms pause between three-operand steps
+const KNOWN_TINT = 0xff6666;      // Warm red for "known" items in cross-off animation
 
 /**
  * Visual feedback for trial wrong answers.
@@ -30,6 +31,7 @@ export class TrialFeedbackVisualizer {
     private onComplete: () => void;
     private randomFrame: number;
     private counterText: Phaser.GameObjects.Text | null = null;
+    private rightCounterText: Phaser.GameObjects.Text | null = null;
 
     constructor(scene: Phaser.Scene, parent: Phaser.GameObjects.Container, onComplete: () => void) {
         this.scene = scene;
@@ -342,19 +344,222 @@ export class TrialFeedbackVisualizer {
     }
 
     /**
-     * Missing operand: visualize as regular addition/subtraction.
-     * For "3 + ? = 5": same animation as 3+2=5
-     * For "7 - ? = 4": same animation as 7-3=4
+     * Missing operand dispatcher: choose pedagogically appropriate animation.
+     * Addition: count-up (known >= unknown) or cross-off (known < unknown).
+     * Subtraction: reinterpret as standard subtraction.
      */
     private showMissingOperand(problem: MathProblem): void {
-        const { operand2: result, operator, answer: missingValue } = problem;
-        // Reinterpret: operand1 op missingValue = result
-        const fakeProblem = { ...problem, operand2: missingValue, answer: result };
-        if (operator === '+') {
-            this.showAddition(fakeProblem);
-        } else {
+        const { operand1, operand2: total, operator, answer: missingValue } = problem;
+
+        if (operator !== '+') {
+            // Subtraction: keep current behavior (reinterpret as standard subtraction)
+            const fakeProblem = { ...problem, operand2: missingValue, answer: total };
             this.showSubtraction(fakeProblem);
+            return;
         }
+
+        if (operand1 === 0) {
+            // Edge case: 0 + ? = N → fall back to standard addition (0 + N = N)
+            const fakeProblem = { ...problem, operand2: missingValue, answer: total };
+            this.showAddition(fakeProblem);
+            return;
+        }
+
+        if (operand1 >= missingValue) {
+            this.showMissingOperandCountUp(problem);
+        } else {
+            this.showMissingOperandCrossOff(problem);
+        }
+    }
+
+    /**
+     * Missing operand count-up: "Count up from what you know to the total."
+     * Used when known >= unknown (e.g., 3 + ? = 5: known=3, unknown=2).
+     * Shows left group (known), right group (total with different frame),
+     * then pops in gap items one by one, incrementing left counter until it matches right.
+     */
+    private showMissingOperandCountUp(problem: MathProblem): void {
+        const { operand1: known, operand2: total, answer: unknown } = problem;
+        const rightFrame = (this.randomFrame + 4) % HINT_ITEM_COUNT;
+
+        // Layout: [left group] GAP [gap items] GAP [right group]
+        const leftWidth = (known - 1) * ITEM_SPACING;
+        const gapWidth = unknown > 0 ? (unknown - 1) * ITEM_SPACING : 0;
+        const rightWidth = (total - 1) * ITEM_SPACING;
+        const totalWidth = leftWidth + GROUP_GAP + gapWidth + GROUP_GAP + rightWidth;
+        const startX = -totalWidth / 2;
+
+        const leftPosX = (i: number) => startX + i * ITEM_SPACING;
+        const gapPosX = (i: number) => startX + leftWidth + GROUP_GAP + i * ITEM_SPACING;
+        const rightPosX = (i: number) => startX + leftWidth + GROUP_GAP + gapWidth + GROUP_GAP + i * ITEM_SPACING;
+
+        let delay = 0;
+
+        // Phase 1: Left items appear
+        for (let i = 0; i < known; i++) {
+            const item = this.createItem(leftPosX(i), 0);
+            this.animateAppear(item, delay);
+            delay += APPEAR_STAGGER;
+        }
+
+        delay += COUNTER_INTRO;
+
+        // Phase 2: Left counter
+        const leftCenterX = (leftPosX(0) + leftPosX(known - 1)) / 2;
+        this.counterText = this.createCounter(leftCenterX, 55, known, delay);
+        delay += COUNTER_INTRO;
+
+        // Phase 3: Right items appear (different frame)
+        for (let i = 0; i < total; i++) {
+            const item = this.createItem(rightPosX(i), 0, rightFrame);
+            this.animateAppear(item, delay);
+            delay += APPEAR_STAGGER;
+        }
+
+        delay += COUNTER_INTRO;
+
+        // Phase 4: Right counter
+        const rightCenterX = (rightPosX(0) + rightPosX(total - 1)) / 2;
+        this.rightCounterText = this.createCounter(rightCenterX, 55, total, delay);
+        delay += COUNTER_INTRO;
+
+        // Edge case: unknown === 0 → counters already match
+        if (unknown === 0) {
+            delay += FINAL_HOLD;
+            this.scene.time.delayedCall(delay, () => this.onComplete());
+            return;
+        }
+
+        delay += PRE_COUNT_PAUSE;
+
+        // Phase 5: Gap items pop in one-by-one, counter increments
+        const gapItems: Phaser.GameObjects.Image[] = [];
+        for (let i = 0; i < unknown; i++) {
+            const item = this.createItem(gapPosX(i), 0);
+            gapItems.push(item);
+            this.animateAppear(item, delay);
+
+            const newCount = known + i + 1;
+            const newCenterX = (leftPosX(0) + gapPosX(i)) / 2;
+
+            this.scene.time.delayedCall(delay + APPEAR_DURATION, () => {
+                this.updateCounter(newCount, newCenterX);
+            });
+
+            delay += APPEAR_DURATION + BETWEEN_MOVES;
+        }
+
+        // Phase 6: Match highlight — right counter pulses gold
+        delay += 200;
+        this.scene.time.delayedCall(delay, () => {
+            if (this.rightCounterText) {
+                this.rightCounterText.setColor('#ffdd44');
+                this.scene.tweens.add({
+                    targets: this.rightCounterText,
+                    scale: 1.5,
+                    duration: COUNTER_PULSE / 2,
+                    yoyo: true,
+                    ease: 'Sine.easeInOut',
+                    onComplete: () => {
+                        if (this.rightCounterText) this.rightCounterText.setColor('#ffffff');
+                    },
+                });
+            }
+        });
+        delay += COUNTER_PULSE;
+
+        // Phase 7: Gap items pulse to highlight the answer
+        delay += 200;
+        for (let i = 0; i < gapItems.length; i++) {
+            this.scene.tweens.add({
+                targets: gapItems[i],
+                scale: ITEM_SCALE * 1.25,
+                duration: 300,
+                delay,
+                yoyo: true,
+                ease: 'Sine.easeInOut',
+            });
+        }
+
+        delay += FINAL_HOLD;
+        this.scene.time.delayedCall(delay, () => this.onComplete());
+    }
+
+    /**
+     * Missing operand cross-off: "Remove what you know from the total."
+     * Used when known < unknown (e.g., 1 + ? = 8: known=1, unknown=7).
+     * Shows all total items (first `known` tinted red), then tinted items
+     * fly away left-to-right, leaving the unknown count.
+     */
+    private showMissingOperandCrossOff(problem: MathProblem): void {
+        const { operand1: known, operand2: total, answer: unknown } = problem;
+
+        const posX = (i: number) => this.itemPosX(i, total);
+
+        let delay = 0;
+
+        // Phase 1: All items appear — first `known` are tinted
+        const items: Phaser.GameObjects.Image[] = [];
+        for (let i = 0; i < total; i++) {
+            const item = this.createItem(posX(i), 0);
+            if (i < known) {
+                item.setTint(KNOWN_TINT);
+            }
+            items.push(item);
+            this.animateAppear(item, delay);
+            delay += APPEAR_STAGGER;
+        }
+
+        delay += COUNTER_INTRO;
+
+        // Phase 2: Counter showing total
+        const centerX = this.groupCenterX(posX, 0, total);
+        this.counterText = this.createCounter(centerX, 55, total, delay);
+        delay += COUNTER_INTRO + PRE_COUNT_PAUSE;
+
+        // Phase 3: Tinted items fly away left-to-right
+        for (let j = 0; j < known; j++) {
+            const removedSoFar = j + 1;
+            const remaining = total - removedSoFar;
+            const firstRemainingIdx = j + 1;
+            const newCenterX = remaining > 0
+                ? this.groupCenterX(posX, firstRemainingIdx, remaining)
+                : 0;
+
+            this.scene.tweens.add({
+                targets: items[j],
+                y: -80,
+                alpha: 0,
+                scale: ITEM_SCALE * 0.4,
+                duration: MOVE_DURATION,
+                delay,
+                ease: 'Quad.easeIn',
+            });
+
+            this.scene.time.delayedCall(delay + MOVE_DURATION, () => {
+                this.updateCounter(remaining, newCenterX);
+            });
+
+            delay += MOVE_DURATION + BETWEEN_MOVES;
+        }
+
+        // Phase 4: Remaining items pulse
+        if (unknown > 0) {
+            delay += 200;
+            for (let i = known; i < total; i++) {
+                this.scene.tweens.add({
+                    targets: items[i],
+                    scale: ITEM_SCALE * 1.25,
+                    duration: 300,
+                    delay,
+                    yoyo: true,
+                    ease: 'Sine.easeInOut',
+                });
+            }
+        }
+
+        delay += FINAL_HOLD;
+        this.scene.time.delayedCall(delay, () => this.onComplete());
     }
 
     /**
@@ -407,8 +612,8 @@ export class TrialFeedbackVisualizer {
         return (posX(startIdx) + posX(startIdx + count - 1)) / 2;
     }
 
-    private createItem(x: number, y: number): Phaser.GameObjects.Image {
-        const item = this.scene.add.image(x, y, 'hint-items-sheet', this.randomFrame);
+    private createItem(x: number, y: number, frame?: number): Phaser.GameObjects.Image {
+        const item = this.scene.add.image(x, y, 'hint-items-sheet', frame ?? this.randomFrame);
         item.setScale(0).setAlpha(0);
         this.container.add(item);
         return item;
@@ -481,6 +686,7 @@ export class TrialFeedbackVisualizer {
      */
     destroy(): void {
         this.counterText = null;
+        this.rightCounterText = null;
         this.container.removeAll(true);
         this.container.destroy();
     }

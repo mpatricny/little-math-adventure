@@ -1046,7 +1046,6 @@ export class ForestRoomScene extends Phaser.Scene {
                     hp: fe.hp,
                     attack: fe.atk || 3,
                     defense: fe.defense ?? 0,
-                    xpReward: fe.xp || 10,
                     goldReward: [goldMin, goldMax],
                     difficulty: fe.difficulty || 5,
                     spriteKey: fe.spriteKey,

@@ -599,7 +599,7 @@ export class CrashSiteScene extends Phaser.Scene {
             this.cameras.main.once('camerafadeoutcomplete', () => {
                 this.scene.start('BattleScene', {
                     mode: 'tutorial',
-                    enemyId: 'slime_green',
+                    enemyId: 'slime_tutorial',
                     returnScene: 'CrashSiteScene',
                     returnData: {
                         battleWon: true,

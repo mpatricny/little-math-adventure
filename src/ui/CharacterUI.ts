@@ -11,7 +11,6 @@ export class CharacterUI {
 
     // UI Elements
     private levelText!: Phaser.GameObjects.Text;
-    private xpText!: Phaser.GameObjects.Text;
     private hpText!: Phaser.GameObjects.Text;
     private goldText!: Phaser.GameObjects.Text;
     private statusText!: Phaser.GameObjects.Text;
@@ -51,12 +50,11 @@ export class CharacterUI {
         const spacing = 35;
 
         this.levelText = this.createStatText(leftX, startY, 'ÚROVEŇ: 1');
-        this.xpText = this.createStatText(leftX, startY + spacing, 'XP: 0/100');
-        this.hpText = this.createStatText(leftX, startY + spacing * 2, 'HP: 10/10');
-        this.goldText = this.createStatText(leftX, startY + spacing * 3, 'ZLATO: 0');
-        this.statusText = this.createStatText(leftX, startY + spacing * 4, 'STAV: ZDRAVÝ');
-        this.attackText = this.createStatText(leftX, startY + spacing * 5, 'ÚTOK: 1');
-        this.defenseText = this.createStatText(leftX, startY + spacing * 6, 'OBRANA: 0');
+        this.hpText = this.createStatText(leftX, startY + spacing, 'HP: 10/10');
+        this.goldText = this.createStatText(leftX, startY + spacing * 2, 'ZLATO: 0');
+        this.statusText = this.createStatText(leftX, startY + spacing * 3, 'STAV: ZDRAVÝ');
+        this.attackText = this.createStatText(leftX, startY + spacing * 4, 'ÚTOK: 1');
+        this.defenseText = this.createStatText(leftX, startY + spacing * 5, 'OBRANA: 0');
 
         // Equipment Section (Right)
         const rightX = 80;
@@ -119,7 +117,6 @@ export class CharacterUI {
         const player = this.gameState.getPlayer();
 
         this.levelText.setText(`ÚROVEŇ: ${player.level}`);
-        this.xpText.setText(`XP: ${player.xp}/${player.xpToNextLevel}`);
         this.hpText.setText(`HP: ${player.hp}/${player.maxHp}`);
         this.goldText.setText(`ZLATO: ${ProgressionSystem.getTotalCoinValue(player.coins)}`);
         this.statusText.setText(`STAV: ${player.status === 'healthy' ? 'ZDRAVÝ' : 'ZRANĚNÝ'}`);

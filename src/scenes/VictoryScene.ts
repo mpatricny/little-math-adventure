@@ -12,7 +12,6 @@ interface VictoryData {
 
     // Rewards
     goldReward: number;
-    xpReward: number;
     enemyName?: string;
 
     // First-defeat tracking
@@ -41,7 +40,6 @@ interface VictoryData {
     arenaLevel?: number;
     nextArenaLevel?: number;
 
-    readyForTrial?: boolean;
 }
 
 export class VictoryScene extends Phaser.Scene {
@@ -101,10 +99,9 @@ export class VictoryScene extends Phaser.Scene {
         const petH = hasPet ? 115 + SECTION_GAP : 0;             // title(18) + gap(8) + sprite(80) + gap(4) + name(16) + gap(2) + hint(12) = ~140 but squished
         const crystalH = hasCrystals ? 90 + SECTION_GAP : 0;     // holders(~65) + labels(~25)
         const arenaH = isArenaComplete ? 50 + SECTION_GAP : 0;
-        const trialH = this.victoryData.readyForTrial ? 50 + SECTION_GAP : 0;
         const buttonH = 50;
 
-        const totalContentH = titleH + enemyNameH + rewardsH + petH + crystalH + arenaH + trialH + buttonH;
+        const totalContentH = titleH + enemyNameH + rewardsH + petH + crystalH + arenaH + buttonH;
         const panelHeight = Math.max(totalContentH + TOP_MARGIN + BOTTOM_MARGIN, 260);
 
         // Dark overlay
@@ -150,18 +147,8 @@ export class VictoryScene extends Phaser.Scene {
             yOffset += enemyNameH;
         }
 
-        // === REWARDS ROW (XP + Coin sprite) ===
+        // === REWARDS ROW (Coin sprite) ===
         const rewardsContainer = this.add.container(0, yOffset + 13);
-
-        if (this.victoryData.xpReward) {
-            const xpText = this.add.text(-70, 0, `XP: +${this.victoryData.xpReward}`, {
-                fontSize: '26px',
-                fontFamily: 'Arial, sans-serif',
-                color: '#44aaff',
-                fontStyle: 'bold'
-            }).setOrigin(0.5);
-            rewardsContainer.add(xpText);
-        }
 
         if (this.victoryData.goldReward) {
             // Copper coin sprite from shop spritesheet (frame 1, 241px → ~43px at 0.18)
@@ -302,29 +289,6 @@ export class VictoryScene extends Phaser.Scene {
             arenaContainer.setAlpha(0);
             content.add(arenaContainer);
             yOffset += arenaH;
-        }
-
-        // === GUILD TRIAL PROMPT ===
-        if (this.victoryData.readyForTrial) {
-            const trialContainer = this.add.container(0, yOffset);
-            const readyText = this.add.text(0, 5, 'JSI PŘIPRAVEN!', {
-                fontSize: '22px',
-                fontFamily: 'Arial, sans-serif',
-                color: '#00ff00',
-                fontStyle: 'bold',
-                stroke: '#000000',
-                strokeThickness: 3
-            }).setOrigin(0.5, 0);
-            const guildText = this.add.text(0, 32, 'JDI DO CECHU PRO ZKOUŠKU HRDINY!', {
-                fontSize: '15px',
-                fontFamily: 'Arial, sans-serif',
-                color: '#ffd700',
-                fontStyle: 'bold'
-            }).setOrigin(0.5, 0);
-            trialContainer.add([readyText, guildText]);
-            trialContainer.setAlpha(0);
-            content.add(trialContainer);
-            yOffset += trialH;
         }
 
         // === CONTINUE BUTTON ===

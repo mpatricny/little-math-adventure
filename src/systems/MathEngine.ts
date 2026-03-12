@@ -1,5 +1,6 @@
-import { MathProblem, MathStats, DifficultyConfig, MathProblemDef, ProblemStats, LevelAttackConfig, ItemDefinition, PetDefinition } from '../types';
+import { MathProblem, MathStats, DifficultyConfig, MathProblemDef, ProblemStats, LevelAttackConfig, ItemDefinition, PetDefinition, ProblemDefinition } from '../types';
 import { GameStateManager } from './GameStateManager';
+import { ProblemDatabase } from './ProblemDatabase';
 
 // Pool size limits
 const MIN_POOL_SIZE = 10;
@@ -408,41 +409,78 @@ export class MathEngine {
         const result: Array<MathProblemDef & { stats: ProblemStats }> = [];
 
         for (const [id, stats] of Object.entries(this.stats.problemStats)) {
-            // Parse ID format: "add_3_5" or "sub_7_2" or "three_4_2_1"
             const parts = id.split('_');
             if (parts.length < 3) continue;
 
             const type = parts[0];
-            let problem: MathProblemDef;
+            let problem: MathProblemDef | null = null;
 
             if (type === 'add') {
+                // add_3_5 → 3 + 5 = 8
                 const op1 = parseInt(parts[1], 10);
                 const op2 = parseInt(parts[2], 10);
                 if (isNaN(op1) || isNaN(op2)) continue;
-                problem = {
-                    id,
-                    operand1: op1,
-                    operand2: op2,
-                    operator: '+',
-                    answer: op1 + op2,
-                };
+                problem = { id, operand1: op1, operand2: op2, operator: '+', answer: op1 + op2, problemType: 'standard' };
             } else if (type === 'sub') {
+                // sub_7_2 → 7 - 2 = 5
                 const op1 = parseInt(parts[1], 10);
                 const op2 = parseInt(parts[2], 10);
                 if (isNaN(op1) || isNaN(op2)) continue;
-                problem = {
-                    id,
-                    operand1: op1,
-                    operand2: op2,
-                    operator: '-',
-                    answer: op1 - op2,
-                };
-            } else {
-                // Skip pet problems, three-operand, etc. for now
-                continue;
+                problem = { id, operand1: op1, operand2: op2, operator: '-', answer: op1 - op2, problemType: 'standard' };
+            } else if (type === 'missing') {
+                // missing_add_1_3 → 1 + ? = 3 (answer = 2)
+                // missing_sub_5_2 → 5 - ? = 2 (answer = 3)
+                if (parts.length < 4) continue;
+                const opType = parts[1]; // 'add' or 'sub'
+                const op1 = parseInt(parts[2], 10);
+                const ans = parseInt(parts[3], 10);
+                if (isNaN(op1) || isNaN(ans)) continue;
+                const operator: '+' | '-' = opType === 'sub' ? '-' : '+';
+                const missingValue = operator === '+' ? ans - op1 : op1 - ans;
+                problem = { id, operand1: op1, operand2: ans, operator, answer: missingValue, problemType: 'missing_operand' };
+            } else if (type === 'compare' && parts[1] !== 'eq') {
+                // compare_2_add_1_3 → 2 + 1 ○ 3
+                if (parts.length < 5) continue;
+                const op1 = parseInt(parts[1], 10);
+                const opType = parts[2]; // 'add' or 'sub'
+                const op2 = parseInt(parts[3], 10);
+                const op3 = parseInt(parts[4], 10);
+                if (isNaN(op1) || isNaN(op2) || isNaN(op3)) continue;
+                const operator: '+' | '-' = opType === 'sub' ? '-' : '+';
+                const lhs = operator === '+' ? op1 + op2 : op1 - op2;
+                const answer = lhs < op3 ? 0 : lhs === op3 ? 1 : 2;
+                problem = { id, operand1: op1, operand2: op2, operator, answer, operand3: op3, problemType: 'comparison' };
+            } else if (type === 'compare' && parts[1] === 'eq') {
+                // compare_eq_2_add_1_vs_3_add_4 → 2 + 1 ○ 3 + 4
+                // Format: compare_eq_{op1}_{op}_{op2}_vs_{op3}_{op3type}_{op4}
+                const vsIdx = parts.indexOf('vs');
+                if (vsIdx < 0 || vsIdx < 4 || vsIdx + 3 >= parts.length) continue;
+                const op1 = parseInt(parts[2], 10);
+                const lhsOp = parts[3]; // 'add' or 'sub'
+                const op2 = parseInt(parts[4], 10);
+                const op3 = parseInt(parts[vsIdx + 1], 10);
+                const rhsOp = parts[vsIdx + 2]; // 'add' or 'sub'
+                const op4 = parseInt(parts[vsIdx + 3], 10);
+                if (isNaN(op1) || isNaN(op2) || isNaN(op3) || isNaN(op4)) continue;
+                const operator: '+' | '-' = lhsOp === 'sub' ? '-' : '+';
+                const operator3 = rhsOp === 'sub' ? '-' : '+';
+                const lhs = operator === '+' ? op1 + op2 : op1 - op2;
+                const rhs = operator3 === '+' ? op3 + op4 : op3 - op4;
+                const answer = lhs < rhs ? 0 : lhs === rhs ? 1 : 2;
+                problem = { id, operand1: op1, operand2: op2, operator, answer, operand3: op3, operand4: op4, operator3, problemType: 'comparison_eq_vs_eq' };
+            } else if (type === 'three') {
+                // three_1_2_3 → 1 + 2 + 3 = 6
+                if (parts.length < 4) continue;
+                const op1 = parseInt(parts[1], 10);
+                const op2 = parseInt(parts[2], 10);
+                const op3 = parseInt(parts[3], 10);
+                if (isNaN(op1) || isNaN(op2) || isNaN(op3)) continue;
+                problem = { id, operand1: op1, operand2: op2, operator: '+', answer: op1 + op2 + op3, operand3: op3, problemType: 'three_operand' };
             }
 
-            result.push({ ...problem, stats });
+            if (problem) {
+                result.push({ ...problem, stats });
+            }
         }
 
         return result;
@@ -1134,5 +1172,135 @@ export class MathEngine {
     getTotalProblemsForLevel(level: number): number {
         const config = this.getAttackConfig(level);
         return config.additionCount + config.subtractionCount + config.threeOperandCount;
+    }
+
+    /**
+     * Generate a MathProblem from a mastery problem key.
+     * Bridges the mastery system's ProblemDefinition to the existing MathProblem format.
+     */
+    generateProblemFromKey(problemKey: string): MathProblem | null {
+        const db = ProblemDatabase.getInstance();
+        const def = db.getProblemByKey(problemKey);
+        if (!def) {
+            console.warn(`[MathEngine] Problem key not found: ${problemKey}`);
+            return null;
+        }
+
+        const choices = db.generateChoices(def);
+
+        switch (def.form) {
+            case 'result_unknown':
+                return this.defToResultUnknown(def, choices, problemKey);
+            case 'missing_part':
+                return this.defToMissingPart(def, choices, problemKey);
+            case 'compare_equation_vs_number':
+                return this.defToCompareEqVsNum(def, problemKey);
+            case 'compare_equation_vs_equation':
+                return this.defToCompareEqVsEq(def, problemKey);
+            default:
+                return this.defToResultUnknown(def, choices, problemKey);
+        }
+    }
+
+    /** result_unknown: a + b = ? or a + b + c = ? */
+    private defToResultUnknown(def: ProblemDefinition, choices: number[], masteryKey: string): MathProblem {
+        const id = def.operand3 !== undefined
+            ? `three_${def.operand1}_${def.operand2}_${def.operand3}`
+            : `${def.operator === '+' ? 'add' : 'sub'}_${def.operand1}_${def.operand2}`;
+
+        this.currentProblemId = id;
+
+        return {
+            id,
+            operand1: def.operand1,
+            operand2: def.operand2,
+            operand3: def.operand3,
+            operator: def.operator,
+            operator2: def.operator2,
+            answer: def.answer,
+            choices,
+            showVisualHint: def.bandId === 'A',
+            hintType: def.bandId === 'A' ? 'apples' : 'none',
+            source: 'player',
+            masteryKey,
+        };
+    }
+
+    /** missing_part: a + ? = c (operand2 stores result, answer is the missing part) */
+    private defToMissingPart(def: ProblemDefinition, choices: number[], masteryKey: string): MathProblem {
+        const id = `missing_${def.operator === '+' ? 'add' : 'sub'}_${def.operand1}_${def.answer}`;
+
+        this.currentProblemId = id;
+
+        return {
+            id,
+            operand1: def.operand1,
+            operand2: def.operand2, // The result shown in "a + ? = result"
+            operand3: def.operand3,
+            operator: def.operator,
+            operator2: def.operator2,
+            answer: def.answer, // The missing part
+            choices,
+            showVisualHint: false,
+            hintType: 'none',
+            source: 'player',
+            problemType: 'missing_operand',
+            masteryKey,
+        };
+    }
+
+    /** compare_equation_vs_number: a + b ○ c  OR  a + b - c ○ d (three-operand) */
+    private defToCompareEqVsNum(def: ProblemDefinition, masteryKey: string): MathProblem {
+        // Three-operand: operand4 holds the comparison target, operand3 is the third operand
+        // Two-operand: operand3 holds the comparison target, operand4 is undefined
+        const isThreeOperand = def.operand4 !== undefined;
+        const comparisonTarget = isThreeOperand ? def.operand4! : def.operand3!;
+
+        const id = isThreeOperand
+            ? `compare_${def.operand1}_${def.operator === '+' ? 'add' : 'sub'}_${def.operand2}_${def.operator2}_${def.operand3}_vs_${comparisonTarget}`
+            : `compare_${def.operand1}_${def.operator === '+' ? 'add' : 'sub'}_${def.operand2}_${comparisonTarget}`;
+
+        this.currentProblemId = id;
+
+        return {
+            id,
+            operand1: def.operand1,
+            operand2: def.operand2,
+            operand3: isThreeOperand ? def.operand3 : comparisonTarget,
+            operand4: isThreeOperand ? comparisonTarget : undefined,
+            operator: def.operator,
+            operator2: def.operator2,
+            answer: def.answer, // 0=<, 1==, 2=>
+            choices: [0, 1, 2],
+            showVisualHint: false,
+            hintType: 'none',
+            source: 'player',
+            problemType: 'comparison',
+            masteryKey,
+        };
+    }
+
+    /** compare_equation_vs_equation: a + b ○ c + d (NEW form) */
+    private defToCompareEqVsEq(def: ProblemDefinition, masteryKey: string): MathProblem {
+        const id = `compare_eq_${def.operand1}_${def.operator === '+' ? 'add' : 'sub'}_${def.operand2}_vs_${def.operand3}_${(def.operator3 || '+') === '+' ? 'add' : 'sub'}_${def.operand4}`;
+
+        this.currentProblemId = id;
+
+        return {
+            id,
+            operand1: def.operand1,
+            operand2: def.operand2,
+            operand3: def.operand3,
+            operand4: def.operand4,
+            operator: def.operator,
+            operator3: def.operator3,
+            answer: def.answer, // 0=<, 1==, 2=>
+            choices: [0, 1, 2],
+            showVisualHint: false,
+            hintType: 'none',
+            source: 'player',
+            problemType: 'comparison_eq_vs_eq',
+            masteryKey,
+        };
     }
 }
