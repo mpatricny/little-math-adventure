@@ -1264,6 +1264,42 @@
                     0.5
                 ],
                 "scale": 1
+            },
+            "arena_3_bg": {
+                "type": "staticImage",
+                "texture": "arena-3-bg",
+                "origin": [
+                    0.5,
+                    0.5
+                ],
+                "scale": 1
+            },
+            "arena_1_bg": {
+                "type": "staticImage",
+                "texture": "arena-1-bg",
+                "origin": [
+                    0.5,
+                    0.5
+                ],
+                "scale": 1
+            },
+            "arena_2_bg": {
+                "type": "staticImage",
+                "texture": "arena-2-bg",
+                "origin": [
+                    0.5,
+                    0.5
+                ],
+                "scale": 1
+            },
+            "mastery_battle_bg": {
+                "type": "staticImage",
+                "texture": "mastery-battle-bg",
+                "origin": [
+                    0.5,
+                    0.5
+                ],
+                "scale": 1
             }
         }
     },

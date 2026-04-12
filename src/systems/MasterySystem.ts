@@ -7,14 +7,15 @@ import {
 import { GameStateManager } from './GameStateManager';
 import { ProblemDatabase } from './ProblemDatabase';
 import { ManaSystem } from './ManaSystem';
+import { CrystalSystem } from './CrystalSystem';
+import { ProgressionSystem } from './ProgressionSystem';
 
-// Speed thresholds (milliseconds)
-const FLUENT_RT_MS = 7000;
-const MASTERY_RT_MS = 5000;
-const SWIFT_HIT_MS = 5000;
-const LIGHTNING_HIT_MS = 3000;
+import { getThresholdsForSubAtom } from './MasteryThresholds';
+
+// Non-difficulty thresholds (stay global)
 const SLOW_POOL_THRESHOLD_MS = 15000;
 const RT_IGNORE_THRESHOLD_MS = 20000; // Don't track RT above this (likely a pause)
+const COOP_AUTO_PROMOTION_RT_MS = 15000;
 
 // Problem form weights by phase
 const FORM_WEIGHTS: Record<string, Record<ProblemForm, number>> = {
@@ -35,6 +36,12 @@ const MASTERY_EXAM_REWARDS: Record<TrialTier, { hp: number; atk: number; mana: n
     gold:   { hp: 1, atk: 1, mana: 2 },
 };
 
+interface ScopedMasteryAttempt {
+    attempt: MasteryAttempt;
+    subAtomId: SubAtomId;
+    form: ProblemForm;
+}
+
 /**
  * MasterySystem: handles state machine, fight scheduling, and analytics
  * for the mastery-based progression system.
@@ -43,6 +50,7 @@ export class MasterySystem {
     private static instance: MasterySystem;
     private gameState: GameStateManager;
     private problemDb: ProblemDatabase;
+    private activeData: MasteryData | null = null;
 
     private constructor() {
         this.gameState = GameStateManager.getInstance();
@@ -61,7 +69,16 @@ export class MasterySystem {
         MasterySystem.instance = null as any;
     }
 
+    /**
+     * Set which player's mastery data to use (for co-op per-player isolation).
+     * Pass null to revert to GameStateManager default.
+     */
+    setActiveData(data: MasteryData | null): void {
+        this.activeData = data;
+    }
+
     private get data(): MasteryData {
+        if (this.activeData) return this.activeData;
         return this.gameState.getMasteryData();
     }
 
@@ -115,7 +132,7 @@ export class MasterySystem {
         return Math.min(player.attack, MAX_PROBLEMS_PER_TURN);
     }
 
-    /** Bonus damage per correct answer when player.attack exceeds max problems (5) */
+    /** Bonus damage per correct answer when player.attack exceeds max problem cap (5) */
     getAttackPowerBonus(): number {
         const player = this.gameState.getPlayer();
         return Math.max(0, player.attack - MAX_PROBLEMS_PER_TURN);
@@ -139,7 +156,16 @@ export class MasterySystem {
                 level++;
             }
         }
-        return level; // Max: 1 + 20 sub-atoms + 5 gates = 26
+
+        // Subtract placement-secured levels (band selection shouldn't boost combat stats)
+        const startBand = this.data.selectedStartBand;
+        if (startBand) {
+            const startIndex = ALL_BANDS.indexOf(startBand);
+            const placementLevels = startIndex * 5; // 4 sub-atoms + 1 gate per skipped band
+            level -= placementLevels;
+        }
+
+        return Math.max(1, level); // Max: 1 + 20 sub-atoms + 5 gates = 26 (minus placement)
     }
 
     // ========================================
@@ -231,9 +257,10 @@ export class MasterySystem {
         const sa = this.data.subAtoms[subAtomId];
         if (sa.state !== 'secure') return false;
 
+        const { fluentRT } = getThresholdsForSubAtom(subAtomId);
         return sa.successfulSolves >= 30
             && this.getLast20Accuracy(subAtomId) >= 0.85
-            && this.getMedianRT(subAtomId) <= FLUENT_RT_MS
+            && this.getMedianRT(subAtomId) <= fluentRT
             && this.getFormsWithFormAccuracy(subAtomId, 0.80) >= 2;
     }
 
@@ -242,10 +269,11 @@ export class MasterySystem {
         const sa = this.data.subAtoms[subAtomId];
         if (sa.state !== 'fluent') return false;
 
+        const { masteryRT } = getThresholdsForSubAtom(subAtomId);
         return sa.successfulSolves >= 50
             && this.getLast20Accuracy(subAtomId) >= 0.92
-            && this.getMedianRT(subAtomId) <= MASTERY_RT_MS
-            && this.getFormsWithFormAccuracyAndRT(subAtomId, 0.90, MASTERY_RT_MS) >= 2;
+            && this.getMedianRT(subAtomId) <= masteryRT
+            && this.getFormsWithFormAccuracyAndRT(subAtomId, 0.90, masteryRT) >= 2;
     }
 
     /** Check if band gate exam is available */
@@ -295,6 +323,16 @@ export class MasterySystem {
         return { hpGain: rewards.hp, attackGain: rewards.atk, manaGain: rewards.mana };
     }
 
+    /** Apply mastery-specific rewards: shard(9), 10 mana, 10 coins. No stat gains. */
+    private applyMasteryRewards(): { hpGain: number; attackGain: number; manaGain: number; shardGain: number; coinGain: number } {
+        const player = this.gameState.getPlayer();
+        const shard = CrystalSystem.generateCrystal('shard', 9);
+        CrystalSystem.addToInventory(player, shard);
+        ManaSystem.add(player, 10);
+        ProgressionSystem.awardBattleCoin(player, 10);
+        return { hpGain: 0, attackGain: 0, manaGain: 10, shardGain: 9, coinGain: 10 };
+    }
+
     /** Compute exam tier from correct count using EXAM_CONFIGS thresholds.
      *  For pass/fail exams (fluency, mastery, band_mastery), returns 'gold' on pass, 'none' on fail.
      */
@@ -313,9 +351,9 @@ export class MasterySystem {
     // ========================================
 
     /** Apply result of a sub-atom exam */
-    applyExamResult(subAtomId: SubAtomId, correctCount: number): { tier: TrialTier; stateChanged: boolean; hpGain: number; attackGain: number; manaGain: number } {
+    applyExamResult(subAtomId: SubAtomId, correctCount: number, tierOverride?: TrialTier, sessionOnly: boolean = false): { tier: TrialTier; stateChanged: boolean; hpGain: number; attackGain: number; manaGain: number } {
         const config = EXAM_CONFIGS.sub_atom;
-        const tier = this.computeTier(correctCount, config);
+        const tier = tierOverride ?? this.computeTier(correctCount, config);
         const sa = this.data.subAtoms[subAtomId];
         let stateChanged = false;
 
@@ -334,13 +372,17 @@ export class MasterySystem {
             this.onSubAtomStateChange(subAtomId);
         }
 
-        const statGains = tier !== 'none' ? this.applyStatRewards(tier) : { hpGain: 0, attackGain: 0, manaGain: 0 };
-        this.updatePlayerLevel();
+        const statGains = (!sessionOnly && tier !== 'none')
+            ? this.applyStatRewards(tier)
+            : { hpGain: 0, attackGain: 0, manaGain: 0 };
+        if (!sessionOnly) {
+            this.updatePlayerLevel();
+        }
         return { tier, stateChanged, ...statGains };
     }
 
     /** Apply result of fluency challenge */
-    applyFluencyResult(subAtomId: SubAtomId, correctCount: number): { passed: boolean; stateChanged: boolean; hpGain: number; attackGain: number; manaGain: number } {
+    applyFluencyResult(subAtomId: SubAtomId, correctCount: number, sessionOnly: boolean = false): { passed: boolean; stateChanged: boolean; hpGain: number; attackGain: number; manaGain: number } {
         const config = EXAM_CONFIGS.fluency_challenge;
         const passed = correctCount >= (config.passThreshold || 10);
         const sa = this.data.subAtoms[subAtomId];
@@ -354,13 +396,17 @@ export class MasterySystem {
             this.onSubAtomStateChange(subAtomId);
         }
 
-        const statGains = passed ? this.applyStatRewards('bronze') : { hpGain: 0, attackGain: 0, manaGain: 0 };
-        this.updatePlayerLevel();
+        const statGains = (!sessionOnly && passed)
+            ? this.applyStatRewards('bronze')
+            : { hpGain: 0, attackGain: 0, manaGain: 0 };
+        if (!sessionOnly) {
+            this.updatePlayerLevel();
+        }
         return { passed, stateChanged, ...statGains };
     }
 
     /** Apply result of mastery challenge */
-    applyMasteryResult(subAtomId: SubAtomId, correctCount: number): { passed: boolean; stateChanged: boolean; hpGain: number; attackGain: number; manaGain: number } {
+    applyMasteryResult(subAtomId: SubAtomId, correctCount: number, sessionOnly: boolean = false): { passed: boolean; stateChanged: boolean; hpGain: number; attackGain: number; manaGain: number; shardGain: number; coinGain: number } {
         const config = EXAM_CONFIGS.mastery_challenge;
         const passed = correctCount >= (config.passThreshold || 11);
         const sa = this.data.subAtoms[subAtomId];
@@ -374,15 +420,19 @@ export class MasterySystem {
             this.onSubAtomStateChange(subAtomId);
         }
 
-        const statGains = passed ? this.applyStatRewards('gold') : { hpGain: 0, attackGain: 0, manaGain: 0 };
-        this.updatePlayerLevel();
-        return { passed, stateChanged, ...statGains };
+        const masteryRewards = (!sessionOnly && passed)
+            ? this.applyMasteryRewards()
+            : { hpGain: 0, attackGain: 0, manaGain: 0, shardGain: 0, coinGain: 0 };
+        if (!sessionOnly) {
+            this.updatePlayerLevel();
+        }
+        return { passed, stateChanged, ...masteryRewards };
     }
 
     /** Apply result of band gate exam */
-    applyBandGateResult(bandId: BandId, correctCount: number): { tier: TrialTier; stateChanged: boolean; hpGain: number; attackGain: number; manaGain: number } {
+    applyBandGateResult(bandId: BandId, correctCount: number, tierOverride?: TrialTier, sessionOnly: boolean = false): { tier: TrialTier; stateChanged: boolean; hpGain: number; attackGain: number; manaGain: number } {
         const config = EXAM_CONFIGS.band_gate;
-        const tier = this.computeTier(correctCount, config);
+        const tier = tierOverride ?? this.computeTier(correctCount, config);
         const band = this.data.bands[bandId];
         let stateChanged = false;
 
@@ -396,13 +446,17 @@ export class MasterySystem {
             this.onBandStateChange(bandId);
         }
 
-        const statGains = tier !== 'none' ? this.applyStatRewards(tier) : { hpGain: 0, attackGain: 0, manaGain: 0 };
-        this.updatePlayerLevel();
+        const statGains = (!sessionOnly && tier !== 'none')
+            ? this.applyStatRewards(tier)
+            : { hpGain: 0, attackGain: 0, manaGain: 0 };
+        if (!sessionOnly) {
+            this.updatePlayerLevel();
+        }
         return { tier, stateChanged, ...statGains };
     }
 
     /** Apply result of band mastery challenge */
-    applyBandMasteryResult(bandId: BandId, correctCount: number): { passed: boolean; stateChanged: boolean; hpGain: number; attackGain: number; manaGain: number } {
+    applyBandMasteryResult(bandId: BandId, correctCount: number, sessionOnly: boolean = false): { passed: boolean; stateChanged: boolean; hpGain: number; attackGain: number; manaGain: number; shardGain: number; coinGain: number } {
         const config = EXAM_CONFIGS.band_mastery;
         const passed = correctCount >= (config.passThreshold || 18);
         const band = this.data.bands[bandId];
@@ -415,9 +469,13 @@ export class MasterySystem {
             stateChanged = true;
         }
 
-        const statGains = passed ? this.applyStatRewards('gold') : { hpGain: 0, attackGain: 0, manaGain: 0 };
-        this.updatePlayerLevel();
-        return { passed, stateChanged, ...statGains };
+        const masteryRewards = (!sessionOnly && passed)
+            ? this.applyMasteryRewards()
+            : { hpGain: 0, attackGain: 0, manaGain: 0, shardGain: 0, coinGain: 0 };
+        if (!sessionOnly) {
+            this.updatePlayerLevel();
+        }
+        return { passed, stateChanged, ...masteryRewards };
     }
 
     // ========================================
@@ -581,7 +639,7 @@ export class MasterySystem {
         data.currentPool = pool;
         data.currentPoolIndex = 0;
 
-        console.log(`[MasterySystem] Generated pool of ${pool.length} problems, frontier=${frontier}`);
+        console.log(`[MasterySystem] Generated pool of ${pool.length} problems, frontier=${frontier}, band=${band}`);
         return pool;
     }
 
@@ -595,8 +653,12 @@ export class MasterySystem {
         return this.selectReviewProblems('mastery', count, new Set());
     }
 
-    /** Expose mastery RT threshold for block quick-bonus calculation */
-    getMasteryRTThreshold(): number { return MASTERY_RT_MS; }
+    /** Expose mastery RT threshold for block quick-bonus calculation.
+     *  Scales per sub-atom difficulty when masteryKey is provided. */
+    getMasteryRTThreshold(masteryKey?: string): number {
+        const subAtomId = masteryKey?.split(':')[0];
+        return getThresholdsForSubAtom(subAtomId).masteryRT;
+    }
 
     /**
      * Draw next `count` problem keys from the current pool.
@@ -635,14 +697,18 @@ export class MasterySystem {
         }
     }
 
-    /** Get speed bonus for a response time */
-    getSpeedBonus(responseTimeMs: number): { bonusDamage: number; type: 'none' | 'swift' | 'lightning' } {
-        if (responseTimeMs <= LIGHTNING_HIT_MS) {
-            return { bonusDamage: 2, type: 'lightning' };
-        } else if (responseTimeMs <= SWIFT_HIT_MS) {
-            return { bonusDamage: 1, type: 'swift' };
+    /** Get speed bonus charges for a response time (fills the speed charge bar).
+     *  Thresholds scale per sub-atom difficulty (extracted from masteryKey). */
+    getSpeedBonus(responseTimeMs: number, masteryKey?: string): { charges: number; type: 'none' | 'swift' | 'lightning' } {
+        const subAtomId = masteryKey?.split(':')[0];
+        const thresholds = getThresholdsForSubAtom(subAtomId);
+
+        if (responseTimeMs <= thresholds.lightningHitRT) {
+            return { charges: 2, type: 'lightning' };
+        } else if (responseTimeMs <= thresholds.swiftHitRT) {
+            return { charges: 1, type: 'swift' };
         }
-        return { bonusDamage: 0, type: 'none' };
+        return { charges: 0, type: 'none' };
     }
 
     // ========================================
@@ -743,9 +809,247 @@ export class MasterySystem {
         return exams;
     }
 
+    /**
+     * Co-op auto-promotion:
+     * 1. Capture a baseline the first time a target becomes exam-eligible.
+     * 2. Require an extra exam-sized buffer of in-scope attempts after that baseline.
+     * 3. Auto-award the fixed co-op outcome when that buffer is strong enough.
+     */
+    applyCoopAutoPromotions(sessionOnly: boolean = false): Array<{ type: ExamType; targetId: SubAtomId | BandId }> {
+        const promotions: Array<{ type: ExamType; targetId: SubAtomId | BandId }> = [];
+        const candidates = this.getCoopAutoPromotionCandidates();
+
+        for (const candidate of candidates) {
+            const key = this.getCoopAutoPromotionKey(candidate.type, candidate.targetId);
+            const baseline = this.data.coopAutoPromotionBases[key];
+
+            if (!this.isCoopAutoPromotionStageRelevant(candidate.type, candidate.targetId)) {
+                delete this.data.coopAutoPromotionBases[key];
+                continue;
+            }
+
+            if (baseline === undefined) {
+                if (this.isCoopAutoPromotionEligible(candidate.type, candidate.targetId)) {
+                    this.data.coopAutoPromotionBases[key] = this.data.globalSolveSequence;
+                }
+                continue;
+            }
+
+            if (!this.isCoopAutoPromotionReady(candidate.type, candidate.targetId, baseline)) {
+                continue;
+            }
+
+            switch (candidate.type) {
+                case 'sub_atom':
+                    this.applyExamResult(candidate.targetId as SubAtomId, EXAM_CONFIGS.sub_atom.silverThreshold || 0, 'silver', sessionOnly);
+                    break;
+                case 'fluency_challenge':
+                    this.applyFluencyResult(candidate.targetId as SubAtomId, EXAM_CONFIGS.fluency_challenge.passThreshold || 0, sessionOnly);
+                    break;
+                case 'mastery_challenge':
+                    this.applyMasteryResult(candidate.targetId as SubAtomId, EXAM_CONFIGS.mastery_challenge.passThreshold || 0, sessionOnly);
+                    break;
+                case 'band_gate':
+                    this.applyBandGateResult(candidate.targetId as BandId, EXAM_CONFIGS.band_gate.silverThreshold || 0, 'silver', sessionOnly);
+                    break;
+                case 'band_mastery':
+                    this.applyBandMasteryResult(candidate.targetId as BandId, EXAM_CONFIGS.band_mastery.passThreshold || 0, sessionOnly);
+                    break;
+            }
+
+            delete this.data.coopAutoPromotionBases[key];
+            promotions.push(candidate);
+        }
+
+        return promotions;
+    }
+
+    // ========================================
+    // Struggle Detection
+    // ========================================
+
+    /**
+     * Check if the player is struggling at their current band.
+     * Returns info about suggested drop band, or null if not struggling.
+     *
+     * Criteria (ALL must be true):
+     * - Current band > A (can't drop below A)
+     * - Frontier sub-atom getLast20Accuracy() < 0.50
+     * - Frontier sub-atom successfulSolves >= 10 (enough data)
+     * - fightCount - lastStruggleOfferFight >= 5 (prevent nagging)
+     */
+    checkPlayerStruggling(): { struggling: boolean; suggestedBand: BandId } | null {
+        const currentBand = this.getCurrentBand();
+
+        // Can't drop below A
+        if (currentBand === 'A') return null;
+
+        const data = this.data;
+        const frontier = this.getFrontierSubAtom();
+        const frontierState = data.subAtoms[frontier];
+
+        // Need enough data to judge
+        if (frontierState.successfulSolves < 10) return null;
+
+        // Check accuracy
+        const accuracy = this.getLast20Accuracy(frontier);
+        if (accuracy >= 0.50) return null;
+
+        // Prevent nagging (at least 5 fights since last offer)
+        const lastOffer = data.lastStruggleOfferFight ?? 0;
+        if (data.fightCount - lastOffer < 5) return null;
+
+        // Player is struggling — suggest dropping to previous band
+        const prevIndex = ALL_BANDS.indexOf(currentBand) - 1;
+        const suggestedBand = ALL_BANDS[prevIndex];
+
+        return { struggling: true, suggestedBand };
+    }
+
     // ========================================
     // Private helpers
     // ========================================
+
+    private getCoopAutoPromotionCandidates(): Array<{ type: ExamType; targetId: SubAtomId | BandId }> {
+        const candidates: Array<{ type: ExamType; targetId: SubAtomId | BandId }> = [];
+
+        for (const band of ALL_BANDS) {
+            for (const num of ALL_SUB_ATOM_NUMBERS) {
+                const subAtomId = `${band}${num}` as SubAtomId;
+                candidates.push({ type: 'sub_atom', targetId: subAtomId });
+                candidates.push({ type: 'fluency_challenge', targetId: subAtomId });
+                candidates.push({ type: 'mastery_challenge', targetId: subAtomId });
+            }
+
+            candidates.push({ type: 'band_gate', targetId: band });
+            candidates.push({ type: 'band_mastery', targetId: band });
+        }
+
+        return candidates;
+    }
+
+    private getCoopAutoPromotionKey(type: ExamType, targetId: SubAtomId | BandId): string {
+        return `${type}:${targetId}`;
+    }
+
+    private isCoopAutoPromotionEligible(type: ExamType, targetId: SubAtomId | BandId): boolean {
+        switch (type) {
+            case 'sub_atom':
+                return this.checkExamEligibility(targetId as SubAtomId);
+            case 'fluency_challenge':
+                return this.checkFluencyEligibility(targetId as SubAtomId);
+            case 'mastery_challenge':
+                return this.checkMasteryChallengeEligibility(targetId as SubAtomId);
+            case 'band_gate':
+                return this.getBandGateEligibility(targetId as BandId);
+            case 'band_mastery':
+                return this.checkBandMasteryEligibility(targetId as BandId);
+        }
+    }
+
+    private isCoopAutoPromotionStageRelevant(type: ExamType, targetId: SubAtomId | BandId): boolean {
+        switch (type) {
+            case 'sub_atom':
+                return this.data.subAtoms[targetId as SubAtomId].state === 'training';
+            case 'fluency_challenge':
+                return this.data.subAtoms[targetId as SubAtomId].state === 'secure';
+            case 'mastery_challenge':
+                return this.data.subAtoms[targetId as SubAtomId].state === 'fluent';
+            case 'band_gate':
+                return this.data.bands[targetId as BandId].state === 'training';
+            case 'band_mastery':
+                return this.data.bands[targetId as BandId].state === 'fluent';
+        }
+    }
+
+    private isCoopAutoPromotionReady(type: ExamType, targetId: SubAtomId | BandId, baseline: number): boolean {
+        const config = EXAM_CONFIGS[type];
+        const buffer = this.getScopedAttemptsSince(type, targetId, baseline).slice(-config.itemCount);
+
+        if (buffer.length < config.itemCount) {
+            return false;
+        }
+
+        const correctCount = buffer.filter(entry => entry.attempt.correct).length;
+        const correctThreshold = config.silverThreshold ?? config.passThreshold ?? config.bronzeThreshold ?? config.itemCount;
+        if (correctCount < correctThreshold) {
+            return false;
+        }
+
+        if (this.getScopedMedianRT(buffer) > COOP_AUTO_PROMOTION_RT_MS) {
+            return false;
+        }
+
+        switch (type) {
+            case 'sub_atom':
+                return this.getDistinctCorrectForms(buffer) >= 2;
+            case 'fluency_challenge':
+                return this.getScopedFormsWithAccuracy(buffer, 0.80) >= 2;
+            case 'mastery_challenge':
+                return this.getScopedFormsWithAccuracy(buffer, 0.90) >= 2;
+            case 'band_gate':
+            case 'band_mastery':
+                return true;
+        }
+    }
+
+    private getScopedAttemptsSince(type: ExamType, targetId: SubAtomId | BandId, baseline: number): ScopedMasteryAttempt[] {
+        const attempts: ScopedMasteryAttempt[] = [];
+
+        for (const record of Object.values(this.data.problemRecords)) {
+            const inScope = type === 'band_gate' || type === 'band_mastery'
+                ? record.subAtomId[0] === targetId
+                : record.subAtomId === targetId;
+
+            if (!inScope) continue;
+
+            for (const attempt of record.attempts) {
+                if (attempt.sequenceIndex > baseline) {
+                    attempts.push({
+                        attempt,
+                        subAtomId: record.subAtomId,
+                        form: record.form,
+                    });
+                }
+            }
+        }
+
+        attempts.sort((a, b) => a.attempt.sequenceIndex - b.attempt.sequenceIndex);
+        return attempts;
+    }
+
+    private getScopedMedianRT(attempts: ScopedMasteryAttempt[]): number {
+        const correctTimes = attempts
+            .filter(entry => entry.attempt.correct && entry.attempt.responseTimeMs <= RT_IGNORE_THRESHOLD_MS)
+            .map(entry => entry.attempt.responseTimeMs);
+
+        if (correctTimes.length === 0) return Infinity;
+        return this.median(correctTimes);
+    }
+
+    private getDistinctCorrectForms(attempts: ScopedMasteryAttempt[]): number {
+        return new Set(
+            attempts
+                .filter(entry => entry.attempt.correct)
+                .map(entry => entry.form)
+        ).size;
+    }
+
+    private getScopedFormsWithAccuracy(attempts: ScopedMasteryAttempt[], threshold: number): number {
+        let count = 0;
+
+        for (const form of ALL_PROBLEM_FORMS) {
+            const formAttempts = attempts.filter(entry => entry.form === form);
+            if (formAttempts.length === 0) continue;
+
+            const correct = formAttempts.filter(entry => entry.attempt.correct).length;
+            if ((correct / formAttempts.length) >= threshold) {
+                count++;
+            }
+        }
+
+        return count;
+    }
 
     /** Check transitions that can happen automatically (without exams) */
     private checkAutomaticTransitions(subAtomId: SubAtomId): void {

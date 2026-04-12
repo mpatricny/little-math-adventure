@@ -356,9 +356,11 @@ export class SceneBuilder {
      * @param enemyCount - Number of enemies (1, 2, or 3)
      * @returns Spawn points object with player, pet, and enemies array
      */
-    getSpawnPoints(sceneName?: string, enemyCount: number = 1): {
+    getSpawnPoints(sceneName?: string, enemyCount: number = 1, coop: boolean = false): {
         player: SpawnPoint;
         pet: SpawnPoint;
+        playerB?: SpawnPoint;
+        petB?: SpawnPoint;
         enemies: SpawnPoint[];
     } | null {
         const actualSceneName = sceneName ?? (this.scene as any).scene.key;
@@ -369,14 +371,37 @@ export class SceneBuilder {
             return null;
         }
 
-        const spawnPoints = sceneDef.spawnPoints;
+        const sp = sceneDef.spawnPoints;
         const enemyCountKey = String(Math.min(3, Math.max(1, enemyCount))) as EnemyCount;
 
-        return {
-            player: { ...spawnPoints.player },
-            pet: { ...spawnPoints.pet },
-            enemies: spawnPoints.enemies[enemyCountKey]?.map(e => ({ ...e })) || []
+        // New structure: players nested under players.single / players.coop
+        const playerLayout = (coop && sp.players?.coop)
+            ? sp.players.coop
+            : sp.players?.single;
+
+        if (!playerLayout) {
+            return null;
+        }
+
+        const result: {
+            player: SpawnPoint;
+            pet: SpawnPoint;
+            playerB?: SpawnPoint;
+            petB?: SpawnPoint;
+            enemies: SpawnPoint[];
+        } = {
+            player: { ...playerLayout.player },
+            pet: { ...playerLayout.pet },
+            enemies: sp.enemies[enemyCountKey]?.map(e => ({ ...e })) || []
         };
+
+        // Include co-op spawn points if available
+        if (coop && sp.players?.coop) {
+            if (sp.players.coop.playerB) result.playerB = { ...sp.players.coop.playerB };
+            if (sp.players.coop.petB) result.petB = { ...sp.players.coop.petB };
+        }
+
+        return result;
     }
 
     /**

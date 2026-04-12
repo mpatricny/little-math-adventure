@@ -2,16 +2,21 @@ import Phaser from 'phaser';
 import { GameStateManager } from '../systems/GameStateManager';
 import { MathEngine } from '../systems/MathEngine';
 import { ManaSystem } from '../systems/ManaSystem';
-import { MathProblemDef, ProblemStats, MathProblem, TrialState, TrialProblemResult, TrialTier, ExamType, SubAtomId, BandId, EXAM_CONFIGS } from '../types';
+import { MathProblemDef, ProblemStats, MathProblem, TrialState, TrialProblemResult, TrialTier, ExamType, ExamConfig, SubAtomId, BandId, EXAM_CONFIGS } from '../types';
 import { MasterySystem } from '../systems/MasterySystem';
 import { SceneDebugger } from '../systems/SceneDebugger';
 import { SceneBuilder } from '../systems/SceneBuilder';
 import { TrialFeedbackVisualizer } from '../ui/TrialFeedbackVisualizer';
+import { formatMathProblem } from '../utils/formatMathProblem';
+import { CoopSwitchUI } from '../ui/CoopSwitchUI';
 import { ExamsOverlay } from '../ui/ExamsOverlay';
 import { MasteryMapOverlay } from '../ui/MasteryMapOverlay';
+import { ProgressionSystem } from '../systems/ProgressionSystem';
+import { CoopSessionManager } from '../systems/CoopSessionManager';
 
 const ROW_HEIGHT = 28;
 const VISIBLE_ROWS = 8;
+const MANA_COLLECTION_PLAY_COST = 3;
 
 export class GuildScene extends Phaser.Scene {
     private gameState!: GameStateManager;
@@ -55,8 +60,7 @@ export class GuildScene extends Phaser.Scene {
     private feedbackVisualizer: TrialFeedbackVisualizer | null = null;
     private resultsOverlay!: Phaser.GameObjects.Container;
     private overviewOverlay!: Phaser.GameObjects.Container;
-    private historyOverlay!: Phaser.GameObjects.Container;
-    private historyButton!: Phaser.GameObjects.Container;
+    private actionButtonsBottomY: number = 430;
 
     // Current trial level (may differ from player level on retry)
     private currentTrialLevel: number = 0;
@@ -64,7 +68,7 @@ export class GuildScene extends Phaser.Scene {
     // Mastery exam state (used when taking mastery-system exams)
     private currentMasteryExamType: ExamType | null = null;
     private currentMasteryExamTarget: SubAtomId | BandId | null = null;
-    private masteryExamStatGains: { hpGain: number; attackGain: number; manaGain: number } = { hpGain: 0, attackGain: 0, manaGain: 0 };
+    private masteryExamStatGains: { hpGain: number; attackGain: number; manaGain: number; shardGain?: number; coinGain?: number } = { hpGain: 0, attackGain: 0, manaGain: 0 };
 
     // Info overlays
     private examsOverlay!: ExamsOverlay;
@@ -83,6 +87,7 @@ export class GuildScene extends Phaser.Scene {
     private backButtonContainer!: Phaser.GameObjects.Container;
     private totalStatsPanel!: Phaser.GameObjects.Container;
     private collectButtonContainer!: Phaser.GameObjects.Container;
+    private manaCollectionButton: Phaser.GameObjects.Container | null = null;
 
     constructor() {
         super({ key: 'GuildScene' });
@@ -103,6 +108,9 @@ export class GuildScene extends Phaser.Scene {
         // Initialize SceneBuilder - this creates all elements from scenes.json
         this.sceneBuilder = new SceneBuilder(this);
         this.sceneBuilder.buildScene();
+
+        // Co-op: add player switch UI
+        new CoopSwitchUI(this, 300, 640);
 
         // Retrieve references from SceneBuilder (positions come from scenes.json)
         this.titleText = this.sceneBuilder.get('title') as Phaser.GameObjects.Text;
@@ -314,26 +322,10 @@ export class GuildScene extends Phaser.Scene {
                 this.listContainer.add(slot);
             }
 
-            // Problem text — format based on problem type
-            let problemText: string;
-            switch (problem.problemType) {
-                case 'missing_operand':
-                    problemText = `${problem.operand1} ${problem.operator} ? = ${problem.operand2}`;
-                    break;
-                case 'comparison':
-                    problemText = `${problem.operand1} ${problem.operator} ${problem.operand2} ○ ${problem.operand3}`;
-                    break;
-                case 'comparison_eq_vs_eq': {
-                    const rOp = (problem.operator3 || '+') === '-' ? '-' : '+';
-                    problemText = `${problem.operand1} ${problem.operator} ${problem.operand2} ○ ${problem.operand3} ${rOp} ${problem.operand4}`;
-                    break;
-                }
-                case 'three_operand':
-                    problemText = `${problem.operand1} + ${problem.operand2} + ${problem.operand3} = ${problem.answer}`;
-                    break;
-                default:
-                    problemText = `${problem.operand1} ${problem.operator} ${problem.operand2} = ${problem.answer}`;
-            }
+            // Problem text — question mode for comparison/missing (shows ○ and ?), answer mode for standard (shows result)
+            const reviewMode = (problem.problemType === 'comparison' || problem.problemType === 'comparison_eq_vs_eq' || problem.problemType === 'missing_operand')
+                ? 'question' : 'answer';
+            const problemText = formatMathProblem(problem, reviewMode);
             const txt = this.add.text(-120, y, problemText, {
                 fontSize: '16px',
                 fontFamily: 'Arial, sans-serif',
@@ -427,7 +419,7 @@ export class GuildScene extends Phaser.Scene {
         }
     }
 
-    private createTotalStats(x: number, y: number, collectX: number, panelDepth: number, buttonDepth: number): void {
+    private createTotalStats(x: number, y: number, _collectX: number, panelDepth: number, buttonDepth: number): void {
         const stats = this.mathEngine.getStats();
         const player = this.gameState.getPlayer();
 
@@ -435,59 +427,30 @@ export class GuildScene extends Phaser.Scene {
         const allTimeCorrect = stats.correctAnswers;
         const allTimeWrong = allTimeTotal - allTimeCorrect;
         const todayProblems = stats.dailyAttempts;
+        const manaCount = ManaSystem.getMana(player);
 
+        // === Stats panel ===
         this.totalStatsPanel = this.add.container(x, y);
         this.totalStatsPanel.setDepth(panelDepth);
-        const statsPanel = this.totalStatsPanel;
 
-        // Background
-        const bg = this.add.rectangle(0, 0, 350, 80, 0x000000, 0.85)
-            .setStrokeStyle(2, 0x5a4a3a);
-        statsPanel.add(bg);
+        const bg = this.add.rectangle(0, 0, 340, 70, 0x000000, 0.85)
+            .setStrokeStyle(1, 0x5a4a3a);
+        this.totalStatsPanel.add(bg);
 
-        // Daily stats header
-        const dailyHeader = this.add.text(-60, -25, 'DNES:', {
-            fontSize: '14px',
-            fontFamily: 'Arial, sans-serif',
-            color: '#ffd700',
-            fontStyle: 'bold'
-        }).setOrigin(0, 0.5);
-        statsPanel.add(dailyHeader);
+        // Single-line daily + all-time
+        this.totalStatsPanel.add(this.add.text(0, -18,
+            `Dnes: ${todayProblems}  |  Celkem: ${allTimeTotal}  (✓${allTimeCorrect}  ✗${allTimeWrong})`, {
+            fontSize: '12px', fontFamily: 'Arial, sans-serif', color: '#cccccc',
+        }).setOrigin(0.5));
 
-        const dailyText = this.add.text(40, -25, `${todayProblems} příkladů dnes`, {
-            fontSize: '14px',
-            fontFamily: 'Arial, sans-serif',
-            color: '#ffffff'
-        }).setOrigin(0, 0.5);
-        statsPanel.add(dailyText);
-
-        // All-time stats header
-        const allTimeHeader = this.add.text(-60, 10, 'CELKEM:', {
-            fontSize: '14px',
-            fontFamily: 'Arial, sans-serif',
-            color: '#ffd700',
-            fontStyle: 'bold'
-        }).setOrigin(0, 0.5);
-        statsPanel.add(allTimeHeader);
-
-        // All-time stats
-        const allTimeText = this.add.text(40, 10,
-            `${allTimeTotal} příkladů  ✓${allTimeCorrect}  ✗${allTimeWrong}`, {
-            fontSize: '14px',
-            fontFamily: 'Arial, sans-serif',
-            color: '#ffffff'
-        }).setOrigin(0, 0.5);
-        statsPanel.add(allTimeText);
-
-        // Mana display
-        const manaCount = ManaSystem.getMana(player);
-        const manaText = this.add.text(20, 30,
+        // Mana line
+        this.totalStatsPanel.add(this.add.text(0, 6,
             `⚡ Mana: ${manaCount}`, {
-            fontSize: '14px',
-            fontFamily: 'Arial, sans-serif',
-            color: '#44ffff'
-        }).setOrigin(0, 0.5);
-        statsPanel.add(manaText);
+            fontSize: '13px', fontFamily: 'Arial, sans-serif', color: '#44ffff',
+        }).setOrigin(0.5));
+
+        // === Action row below stats: collect + mana minigame side by side ===
+        const actionY = y + 55;
 
         // Count collectable mana
         let collectableMana = 0;
@@ -502,47 +465,28 @@ export class GuildScene extends Phaser.Scene {
             }
         }
 
-        // Collect button
-        this.collectButtonContainer = this.add.container(collectX, y);
+        // Collect mana button (left)
+        this.collectButtonContainer = this.add.container(x - 55, actionY);
         this.collectButtonContainer.setDepth(buttonDepth);
 
         if (collectableMana > 0) {
-            const btnBg = this.add.rectangle(0, 0, 140, 48, 0x2288aa)
-                .setStrokeStyle(2, 0x44aacc);
-
-            const btnText = this.add.text(0, 0, `⚡ SBÍRAT MANU (${collectableMana})`, {
-                fontSize: '14px',
-                fontFamily: 'Arial, sans-serif',
-                color: '#ffffff',
-                fontStyle: 'bold'
+            const btnBg = this.add.rectangle(0, 0, 150, 36, 0x2288aa)
+                .setStrokeStyle(1, 0x44aacc);
+            const btnText = this.add.text(0, 0, `⚡ Sbírat (${collectableMana})`, {
+                fontSize: '13px', fontFamily: 'Arial, sans-serif',
+                color: '#ffffff', fontStyle: 'bold',
             }).setOrigin(0.5);
 
-            // Add bg first, then text on top (consistent pattern)
-            this.collectButtonContainer.add(btnBg);
-            this.collectButtonContainer.add(btnText);
+            this.collectButtonContainer.add([btnBg, btnText]);
 
             btnBg.setInteractive({ useHandCursor: true })
                 .on('pointerover', () => btnBg.setFillStyle(0x3399bb))
                 .on('pointerout', () => btnBg.setFillStyle(0x2288aa))
                 .on('pointerdown', () => this.collectMana());
-
-            this.tweens.add({
-                targets: this.collectButtonContainer,
-                scaleX: 1.05,
-                scaleY: 1.05,
-                duration: 500,
-                yoyo: true,
-                repeat: -1,
-                ease: 'Sine.easeInOut'
-            });
-        } else {
-            const infoText = this.add.text(0, 0, '(5✓ = ⚡)', {
-                fontSize: '14px',
-                fontFamily: 'Arial, sans-serif',
-                color: '#888888'
-            }).setOrigin(0.5);
-            this.collectButtonContainer.add(infoText);
         }
+
+        // Mana Collection minigame button (right)
+        this.createManaCollectionButton(x + 115, actionY, buttonDepth);
     }
 
     private collectMana(): void {
@@ -581,36 +525,35 @@ export class GuildScene extends Phaser.Scene {
     }
 
     private createInfoButtons(): void {
-        // Position below the history button area
-        const btnX = 180;
-        const btnBaseY = 530;
+        const y = this.actionButtonsBottomY + 15;
 
-        // "ZKOUŠKY" button
-        this.createInfoButton(btnX, btnBaseY, 'ZKOUŠKY', () => this.examsOverlay.show());
+        // "ZKOUŠKY" programmatic button
+        this.createInfoButton(200, y, 'ZKOUŠKY', () => this.examsOverlay.show());
 
-        // "MAPA MISTROVSTVÍ" button
-        this.createInfoButton(btnX, btnBaseY + 46, 'MAPA MISTROVSTVÍ', () => this.masteryMapOverlay.show());
+        // "MISTROVSTVÍ" uses the template Mastery button from scenes.json
+        const masteryBtn = this.sceneBuilder.get<Phaser.GameObjects.Container>('masteryButton');
+        if (masteryBtn) {
+            this.sceneBuilder.bindClick('masteryButton', () => this.masteryMapOverlay.show());
+        }
     }
 
     private createInfoButton(x: number, y: number, label: string, onClick: () => void): void {
-        const container = this.add.container(x, y);
-        container.setDepth(50);
+        const container = this.add.container(x, y).setDepth(50);
 
-        const bg = this.add.rectangle(0, 0, 200, 36, 0x444466)
-            .setStrokeStyle(2, 0x6688aa);
+        const bg = this.add.rectangle(0, 0, 95, 32, 0x3a3a5a)
+            .setStrokeStyle(1, 0x5a5a7a);
         const text = this.add.text(0, 0, label, {
-            fontSize: '14px',
+            fontSize: '11px',
             fontFamily: 'Arial, sans-serif',
             color: '#aaaacc',
             fontStyle: 'bold',
         }).setOrigin(0.5);
 
-        container.add(bg);
-        container.add(text);
+        container.add([bg, text]);
 
         bg.setInteractive({ useHandCursor: true })
-            .on('pointerover', () => { bg.setFillStyle(0x555588); text.setColor('#ffffff'); })
-            .on('pointerout', () => { bg.setFillStyle(0x444466); text.setColor('#aaaacc'); })
+            .on('pointerover', () => { bg.setFillStyle(0x4a4a6a); text.setColor('#ffffff'); })
+            .on('pointerout', () => { bg.setFillStyle(0x3a3a5a); text.setColor('#aaaacc'); })
             .on('pointerdown', onClick);
     }
 
@@ -622,110 +565,191 @@ export class GuildScene extends Phaser.Scene {
     // ============ TRIAL MODE (4-phase system) ============
 
     private createTrialUI(): void {
-        const player = this.gameState.getPlayer();
+        const isCoopReadOnly = CoopSessionManager.getInstance().isCoopActive();
         const availableExams = MasterySystem.getInstance().getAvailableExams();
 
-        // Get positions from SceneBuilder
-        const trialStartButtonEl = this.sceneBuilder.get('trialStartButton') as Phaser.GameObjects.Container | undefined;
         const trialOverlayEl = this.sceneBuilder.get('trialOverlay') as Phaser.GameObjects.Container | undefined;
-        const trialDialogEl = this.sceneBuilder.get('trialDialog') as Phaser.GameObjects.Container | undefined;
-
-        const startBtnX = trialStartButtonEl?.x ?? 200;
-        const startBtnY = trialStartButtonEl?.y ?? 420;
         const overlayX = trialOverlayEl?.x ?? 640;
         const overlayY = trialOverlayEl?.y ?? 360;
-        const dialogX = trialDialogEl?.x ?? 200;
-        const dialogY = trialDialogEl?.y ?? 310;
 
-        this.trialStartButton = this.add.container(startBtnX, startBtnY);
-        this.trialStartButton.setDepth(50);
+        // === Dynamic button stacking ===
+        const btnX = 200;
+        let nextY = 380;
+        const btnSpacing = 50;
+        const btnColor = 0x2a5a2a;
+        const btnHoverColor = 0x3a7a3a;
+        const btnStrokeColor = 0x4a8a4a;
 
-        // Button appearance for mastery exams
-        const btnColor = 0x228822;
-        const btnHoverColor = 0x33aa33;
-        const btnStrokeColor = 0x44aa44;
-        const btnLabel = 'ZAČÍT ZKOUŠKU';
+        if (isCoopReadOnly) {
+            this.trialStartButton = this.add.container(btnX, nextY).setVisible(false);
 
-        const btnBg = this.add.rectangle(0, 0, 200, 60, btnColor)
-            .setStrokeStyle(3, btnStrokeColor);
-
-        const btnText = this.add.text(0, 0, btnLabel, {
-            fontSize: '17px',
-            fontFamily: 'Arial, sans-serif',
-            color: '#ffffff',
-            fontStyle: 'bold'
-        }).setOrigin(0.5);
-
-        this.trialStartButton.add(btnBg);
-        this.trialStartButton.add(btnText);
-
-        const showButton = availableExams.length > 0;
-
-        if (showButton) {
-            // Set mastery exam context for the first available exam
-            const firstExam = availableExams[0];
-            this.currentMasteryExamType = firstExam.type;
-            this.currentMasteryExamTarget = firstExam.targetId as SubAtomId | BandId;
-
-            const dialogMsg = `ZKOUŠKA K DISPOZICI:\n${firstExam.label}`;
-
-            this.add.text(dialogX, dialogY, dialogMsg, {
-                fontSize: '14px',
+            const note = this.add.text(btnX, nextY, [
+                'CO-OP REŽIM',
+                'Zkoušky a katakomby jsou zde jen pro přehled.',
+                'Postup do Plynulosti a Mistrovství se zapisuje automaticky po soubojích.',
+            ].join('\n'), {
+                fontSize: '15px',
                 fontFamily: 'Arial, sans-serif',
-                color: '#ffffff',
-                align: 'center',
-                backgroundColor: '#333333',
-                padding: { x: 10, y: 8 }
-            }).setOrigin(0.5).setDepth(50);
+                color: '#c8d6e5',
+                align: 'left',
+                lineSpacing: 5,
+                stroke: '#000000',
+                strokeThickness: 3,
+            }).setOrigin(0, 0);
 
-            btnBg.setInteractive({ useHandCursor: true })
-                .on('pointerover', () => btnBg.setFillStyle(btnHoverColor))
-                .on('pointerout', () => btnBg.setFillStyle(btnColor))
-                .on('pointerdown', () => this.showTrialOverview());
-
-            this.tweens.add({
-                targets: this.trialStartButton,
-                scaleX: 1.05,
-                scaleY: 1.05,
-                duration: 600,
-                yoyo: true,
-                repeat: -1,
-                ease: 'Sine.easeInOut'
-            });
+            nextY += note.height + 12;
         } else {
-            this.trialStartButton.setVisible(false);
+            // Exam button (sub_atom, band_gate, band_mastery)
+            const standardExam = availableExams.find(
+                e => e.type !== 'fluency_challenge' && e.type !== 'mastery_challenge'
+            );
+            if (standardExam) {
+                this.currentMasteryExamType = standardExam.type;
+                this.currentMasteryExamTarget = standardExam.targetId as SubAtomId | BandId;
+
+                this.trialStartButton = this.createActionButton(
+                    btnX, nextY, 'ZAČÍT ZKOUŠKU', btnColor, btnHoverColor, btnStrokeColor,
+                    () => this.showTrialOverview()
+                );
+                nextY += btnSpacing;
+            } else {
+                this.trialStartButton = this.add.container(btnX, nextY).setVisible(false);
+            }
+
+            // Catacomb button (fluency/mastery challenges)
+            const catacombExam = availableExams.find(
+                e => e.type === 'fluency_challenge' || e.type === 'mastery_challenge'
+            );
+            if (catacombExam) {
+                this.createActionButton(
+                    btnX, nextY, 'VSTUP DO KATAKOMB', btnColor, btnHoverColor, btnStrokeColor,
+                    () => {
+                        this.scene.start('CatacombTrialScene', {
+                            examType: catacombExam.type,
+                            subAtomId: catacombExam.targetId,
+                            returnScene: 'GuildScene',
+                        });
+                    }
+                );
+                nextY += btnSpacing;
+            }
         }
 
-        // History button (visible if there are any attempts)
-        const history = player.trialHistory || { attempts: [], bestTiers: {}, failedTrialLevel: null, retryLevel: null };
-        this.historyButton = this.add.container(startBtnX, startBtnY + 50);
-        this.historyButton.setDepth(50);
-
-        if (history.attempts.length > 0) {
-            const hBtnBg = this.add.rectangle(0, 0, 200, 36, 0x444466)
-                .setStrokeStyle(2, 0x6666aa);
-            const hBtnText = this.add.text(0, 0, 'HISTORIE ZKOUŠEK', {
-                fontSize: '14px',
-                fontFamily: 'Arial, sans-serif',
-                color: '#aaaacc',
-                fontStyle: 'bold'
-            }).setOrigin(0.5);
-            this.historyButton.add(hBtnBg);
-            this.historyButton.add(hBtnText);
-
-            hBtnBg.setInteractive({ useHandCursor: true })
-                .on('pointerover', () => { hBtnBg.setFillStyle(0x555588); hBtnText.setColor('#ffffff'); })
-                .on('pointerout', () => { hBtnBg.setFillStyle(0x444466); hBtnText.setColor('#aaaacc'); })
-                .on('pointerdown', () => this.showHistoryOverlay());
-        } else {
-            this.historyButton.setVisible(false);
-        }
+        this.actionButtonsBottomY = nextY;
 
         this.createOverviewOverlay(overlayX, overlayY);
         this.createTrialOverlay(overlayX, overlayY);
         this.createFeedbackOverlay(overlayX, overlayY);
         this.createResultsOverlay(overlayX, overlayY);
-        this.createHistoryOverlay(overlayX, overlayY);
+    }
+
+    private createActionButton(
+        x: number, y: number, label: string,
+        color: number, hoverColor: number, strokeColor: number,
+        onClick: () => void
+    ): Phaser.GameObjects.Container {
+        const container = this.add.container(x, y).setDepth(50);
+
+        const bg = this.add.rectangle(0, 0, 200, 44, color)
+            .setStrokeStyle(2, strokeColor);
+        const text = this.add.text(0, 0, label, {
+            fontSize: '15px',
+            fontFamily: 'Arial, sans-serif',
+            color: '#ffffff',
+            fontStyle: 'bold',
+        }).setOrigin(0.5);
+
+        container.add([bg, text]);
+        container.setSize(200, 44);
+
+        bg.setInteractive({ useHandCursor: true })
+            .on('pointerover', () => bg.setFillStyle(hoverColor))
+            .on('pointerout', () => bg.setFillStyle(color))
+            .on('pointerdown', onClick);
+
+        return container;
+    }
+
+    /** Unlocked once player has earned 10+ coins total (not current balance). */
+    private createManaCollectionButton(x: number, y: number, depth: number): void {
+        const coop = CoopSessionManager.getInstance();
+        const originalPlayer = coop.isCoopActive() ? coop.getActivePlayer() : 'A';
+        let canAfford: boolean;
+
+        if (coop.isCoopActive()) {
+            coop.activatePlayerA();
+            const canAffordA = ProgressionSystem.getTotalCoinValue(this.gameState.getPlayer().coins) >= MANA_COLLECTION_PLAY_COST;
+            coop.activatePlayerB();
+            const canAffordB = ProgressionSystem.getTotalCoinValue(this.gameState.getPlayer().coins) >= MANA_COLLECTION_PLAY_COST;
+
+            if (originalPlayer === 'A') {
+                coop.activatePlayerA();
+            } else {
+                coop.activatePlayerB();
+            }
+
+            canAfford = canAffordA && canAffordB;
+        } else {
+            const player = this.gameState.getPlayer();
+            const totalCoins = ProgressionSystem.getTotalCoinValue(player.coins);
+
+            // Gate: not available until player has gathered 10 coins
+            if (totalCoins < 10) return;
+            canAfford = totalCoins >= MANA_COLLECTION_PLAY_COST;
+        }
+
+        const btn = this.add.container(x, y).setDepth(depth);
+        this.manaCollectionButton = btn;
+
+        // Medieval-styled button: dark parchment with golden border and ornamental text
+        const bg = this.add.rectangle(0, 0, 170, 52, 0x2a1f14)
+            .setStrokeStyle(2, 0x8b6914);
+
+        // Inner border for ornate double-frame effect
+        const innerBorder = this.add.rectangle(0, 0, 160, 42, 0x000000, 0)
+            .setStrokeStyle(1, 0x5a4a2a);
+
+        const label = this.add.text(0, -5, '⚡ Sbírání many', {
+            fontSize: '13px',
+            fontFamily: 'Arial, sans-serif',
+            color: canAfford ? '#d4aa44' : '#665533',
+            fontStyle: 'bold',
+        }).setOrigin(0.5);
+
+        const costLabel = this.add.text(0, 14, coop.isCoopActive() ? '— 3 mince za hráče —' : '— 3 mince —', {
+            fontSize: '10px',
+            fontFamily: 'Arial, sans-serif',
+            color: canAfford ? '#8b7840' : '#554422',
+        }).setOrigin(0.5);
+
+        btn.add([bg, innerBorder, label, costLabel]);
+
+        if (canAfford) {
+            bg.setInteractive({ useHandCursor: true })
+                .on('pointerover', () => {
+                    bg.setFillStyle(0x3d2e1c);
+                    bg.setStrokeStyle(2, 0xccaa44);
+                    label.setColor('#ffe066');
+                })
+                .on('pointerout', () => {
+                    bg.setFillStyle(0x2a1f14);
+                    bg.setStrokeStyle(2, 0x8b6914);
+                    label.setColor('#d4aa44');
+                })
+                .on('pointerdown', () => {
+                    this.scene.start('ManaCollectionScene', { returnScene: 'GuildScene' });
+                });
+
+            // Subtle golden glow pulse
+            this.tweens.add({
+                targets: label,
+                alpha: 0.7,
+                duration: 1200,
+                yoyo: true,
+                repeat: -1,
+                ease: 'Sine.easeInOut',
+            });
+        }
     }
 
     // === Phase 1: Overview ===
@@ -815,13 +839,6 @@ export class GuildScene extends Phaser.Scene {
 
         this.overviewOverlay.setVisible(true);
         this.trialState.phase = 'overview';
-    }
-
-    private getDifficultyDescription(level: number): string {
-        if (level <= 2) return 'sčítání';
-        if (level <= 3) return 'sčítání a odčítání';
-        if (level <= 6) return 'sčítání, odčítání a tříoperandové';
-        return 'odčítání a tříoperandové příklady';
     }
 
     // === Phase 2: Problem display with per-problem timer ===
@@ -966,15 +983,7 @@ export class GuildScene extends Phaser.Scene {
         this.feedbackOverlay.setVisible(true);
 
         // Only show the equation — no text explanation (first-graders can barely read)
-        const { operand1, operand2, operand3, operator, operator2, answer } = problem;
-        let equationStr: string;
-        if (operand3 !== undefined && operator2) {
-            equationStr = `${operand1} ${operator} ${operand2} ${operator2} ${operand3} = ${answer}`;
-        } else if (problem.problemType === 'missing_operand') {
-            equationStr = `${operand1} ${operator} ${answer} = ${operand2}`;
-        } else {
-            equationStr = `${operand1} ${operator} ${operand2} = ${answer}`;
-        }
+        const equationStr = formatMathProblem(problem, 'answer');
 
         const correctLabel = this.add.text(0, -250, equationStr, {
             fontSize: '36px',
@@ -990,26 +999,12 @@ export class GuildScene extends Phaser.Scene {
         const visualContainer = this.add.container(0, 20);
         this.feedbackOverlay.add(visualContainer);
 
-        // Create visualizer — ROZUMÍM button appears after animation completes
-        let animationDone = false;
-        this.feedbackVisualizer = new TrialFeedbackVisualizer(this, visualContainer, () => {
-            if (animationDone) return;
-            animationDone = true;
-            // Minimum 3s viewing time before button (animations are longer now)
-            const elapsed = Date.now() - showTime;
-            const remaining = Math.max(0, 3000 - elapsed);
-            this.time.delayedCall(remaining, () => this.showUnderstandButton());
-        });
-        const showTime = Date.now();
-        this.feedbackVisualizer.show(problem);
-    }
-
-    private showUnderstandButton(): void {
+        // Show skip button immediately — changes to ROZUMÍM after animation
         const btnBg = this.add.rectangle(0, 200, 200, 50, 0x4466aa)
             .setStrokeStyle(2, 0x6688cc);
         this.feedbackOverlay.add(btnBg);
 
-        const btnText = this.add.text(0, 200, 'ROZUMÍM', {
+        const btnText = this.add.text(0, 200, 'PŘESKOČIT', {
             fontSize: '22px',
             fontFamily: 'Arial, sans-serif',
             color: '#ffffff',
@@ -1017,7 +1012,6 @@ export class GuildScene extends Phaser.Scene {
         }).setOrigin(0.5);
         this.feedbackOverlay.add(btnText);
 
-        // Animate button appearance
         btnBg.setAlpha(0);
         btnText.setAlpha(0);
         this.tweens.add({
@@ -1027,10 +1021,28 @@ export class GuildScene extends Phaser.Scene {
             ease: 'Power2',
         });
 
+        let animationDone = false;
+
         btnBg.setInteractive({ useHandCursor: true })
             .on('pointerover', () => btnBg.setFillStyle(0x5577bb))
             .on('pointerout', () => btnBg.setFillStyle(0x4466aa))
-            .on('pointerdown', () => this.closeFeedback());
+            .on('pointerdown', () => {
+                animationDone = true;
+                this.closeFeedback();
+            });
+
+        // Create visualizer — button changes to ROZUMÍM after animation completes
+        const showTime = Date.now();
+        this.feedbackVisualizer = new TrialFeedbackVisualizer(this, visualContainer, () => {
+            if (animationDone) return;
+            animationDone = true;
+            const elapsed = Date.now() - showTime;
+            const remaining = Math.max(0, 3000 - elapsed);
+            this.time.delayedCall(remaining, () => {
+                if (btnText.active) btnText.setText('ROZUMÍM');
+            });
+        });
+        this.feedbackVisualizer.show(problem);
     }
 
     private closeFeedback(): void {
@@ -1093,29 +1105,23 @@ export class GuildScene extends Phaser.Scene {
         }).setOrigin(0.5);
         this.resultsOverlay.add(score);
 
-        // Problem review list (compact, 2 columns)
+        // Problem review list (compact, 2 balanced columns)
         const results = this.trialState.results;
         const colWidth = 240;
         const rowH = 26;
         const startY = -140;
+        const half = Math.ceil(results.length / 2);
 
         for (let i = 0; i < results.length; i++) {
             const r = results[i];
-            const col = i < 5 ? -1 : 1;
-            const row = i < 5 ? i : i - 5;
+            const col = i < half ? -1 : 1;
+            const row = i < half ? i : i - half;
             const px = col * (colWidth / 2);
             const py = startY + row * rowH;
 
             const icon = r.wasCorrect ? '✓' : '✗';
             const iconColor = r.wasCorrect ? '#44ff44' : '#ff4444';
-
-            const { operand1, operand2, operand3, operator, operator2, answer } = r.problem;
-            let pStr: string;
-            if (operand3 !== undefined && operator2) {
-                pStr = `${operand1}${operator}${operand2}${operator2}${operand3}=${answer}`;
-            } else {
-                pStr = `${operand1}${operator}${operand2}=${answer}`;
-            }
+            const pStr = formatMathProblem(r.problem, 'answer');
 
             const entry = this.add.text(px, py, `${icon} ${pStr}`, {
                 fontSize: '16px',
@@ -1125,13 +1131,16 @@ export class GuildScene extends Phaser.Scene {
             this.resultsOverlay.add(entry);
         }
 
+        // Position bottom elements below the problem list
+        const listBottom = startY + half * rowH;
+
         // Show stat gains from mastery exam (already applied by applyMasteryExamResult)
         const player = this.gameState.getPlayer();
         this.gameState.save();
         this.registry.set('playerLevel', player.level);
 
         const gains = this.masteryExamStatGains;
-        const hasGains = gains.hpGain > 0 || gains.attackGain > 0 || gains.manaGain > 0;
+        const hasGains = gains.hpGain > 0 || gains.attackGain > 0 || gains.manaGain > 0 || (gains.shardGain ?? 0) > 0 || (gains.coinGain ?? 0) > 0;
 
         let rewardText: string;
         if (tier !== 'none' && hasGains) {
@@ -1139,6 +1148,8 @@ export class GuildScene extends Phaser.Scene {
             if (gains.hpGain > 0) parts.push(`HP: +${gains.hpGain}`);
             if (gains.attackGain > 0) parts.push(`ÚTOK: +${gains.attackGain}`);
             if (gains.manaGain > 0) parts.push(`MANA: +${gains.manaGain}`);
+            if ((gains.shardGain ?? 0) > 0) parts.push(`KRYSTAL: +${gains.shardGain}`);
+            if ((gains.coinGain ?? 0) > 0) parts.push(`MINCE: +${gains.coinGain}`);
             rewardText = parts.join('   ');
         } else if (tier !== 'none') {
             rewardText = `ÚROVEŇ: ${player.level}   POSTUP!`;
@@ -1147,7 +1158,7 @@ export class GuildScene extends Phaser.Scene {
         }
 
         const rewardColor = tier !== 'none' ? '#ffd700' : '#aaaaaa';
-        const rewards = this.add.text(0, 50, rewardText, {
+        const rewards = this.add.text(0, listBottom + 20, rewardText, {
             fontSize: '18px',
             fontFamily: 'Arial, sans-serif',
             color: rewardColor,
@@ -1159,7 +1170,7 @@ export class GuildScene extends Phaser.Scene {
 
         // Zyx encouragement
         const zyxMsg = this.getZyxMessage(tier);
-        const zyxText = this.add.text(0, 110, zyxMsg, {
+        const zyxText = this.add.text(0, listBottom + 70, zyxMsg, {
             fontSize: '16px',
             fontFamily: 'Arial, sans-serif',
             color: '#88ccff',
@@ -1170,11 +1181,11 @@ export class GuildScene extends Phaser.Scene {
 
 
         // Continue button
-        const closeBg = this.add.rectangle(0, 210, 220, 50, 0x444444)
+        const closeBg = this.add.rectangle(0, listBottom + 150, 220, 50, 0x444444)
             .setStrokeStyle(2, 0x666666);
         this.resultsOverlay.add(closeBg);
 
-        const closeText = this.add.text(0, 210, 'POKRAČOVAT', {
+        const closeText = this.add.text(0, listBottom + 150, 'POKRAČOVAT', {
             fontSize: '22px',
             fontFamily: 'Arial, sans-serif',
             color: '#ffffff',
@@ -1322,21 +1333,11 @@ export class GuildScene extends Phaser.Scene {
         this.trialState.phase = 'problem';
         this.problemStartTime = Date.now();
 
-        const { operand1, operand2, operand3, operand4, operator, operator2, operator3 } = this.currentTrialProblem;
-        let text: string;
-        if (this.currentTrialProblem.problemType === 'missing_operand') {
-            text = `${operand1} ${operator} ? = ${operand2}`;
-        } else if (this.currentTrialProblem.problemType === 'comparison') {
-            text = `${operand1} ${operator} ${operand2} ○ ${operand3}`;
-        } else if (this.currentTrialProblem.problemType === 'comparison_eq_vs_eq') {
-            const rightOp = (operator3 || '+') === '-' ? '-' : '+';
-            text = `${operand1} ${operator} ${operand2} ○ ${operand3} ${rightOp} ${operand4}`;
-        } else if (operand3 !== undefined && operator2) {
-            text = `${operand1} ${operator} ${operand2} ${operator2} ${operand3} = ?`;
-        } else {
-            text = `${operand1} ${operator} ${operand2} = ?`;
-        }
-        this.problemText.setText(text);
+        this.problemText.setText(formatMathProblem(this.currentTrialProblem, 'question'));
+
+        // Hide timer — no visible countdown (time is tracked internally for tier only)
+        this.timerBar.setVisible(false);
+        this.timerText.setVisible(false);
 
         // Update choices — display symbols for comparison types
         const answers = this.currentTrialProblem.choices;
@@ -1357,15 +1358,8 @@ export class GuildScene extends Phaser.Scene {
     }
 
     private onProblemTick(): void {
+        // Timer ticks internally for time tracking only — no auto-fail, no visible UI
         if (this.trialState.phase !== 'problem') return;
-
-        this.trialState.timeRemainingForProblem--;
-        this.updateTimerUI();
-
-        if (this.trialState.timeRemainingForProblem <= 0) {
-            // Time expired = wrong answer
-            this.recordTrialAnswer(null);
-        }
     }
 
     private updateTimerUI(): void {
@@ -1496,18 +1490,32 @@ export class GuildScene extends Phaser.Scene {
         }
     }
 
+    /** Compute exam tier: bronze uses all correct, silver/gold require fast answers (≤15s) */
+    private computeExamTier(correctCount: number, fastCorrectCount: number, config: ExamConfig): TrialTier {
+        if (config.goldThreshold && fastCorrectCount >= config.goldThreshold) return 'gold';
+        if (config.silverThreshold && fastCorrectCount >= config.silverThreshold) return 'silver';
+        if (config.bronzeThreshold && correctCount >= config.bronzeThreshold) return 'bronze';
+        return 'none';
+    }
+
     /** Apply the result of a mastery exam to the mastery system */
     private applyMasteryExamResult(): void {
         const masterySystem = MasterySystem.getInstance();
         const target = this.currentMasteryExamTarget!;
         const correct = this.trialState.correctCount;
 
+        // Count fast correct answers (within 15s) for silver/gold tier
+        const fastCorrect = this.trialState.results
+            .filter(r => r.wasCorrect && r.timeSpent <= 15)
+            .length;
+
         // Reset stat gains
         this.masteryExamStatGains = { hpGain: 0, attackGain: 0, manaGain: 0 };
 
         switch (this.currentMasteryExamType) {
             case 'sub_atom': {
-                const result = masterySystem.applyExamResult(target as SubAtomId, correct);
+                const tier = this.computeExamTier(correct, fastCorrect, EXAM_CONFIGS.sub_atom);
+                const result = masterySystem.applyExamResult(target as SubAtomId, correct, tier);
                 this.trialState.tier = result.tier;
                 this.masteryExamStatGains = { hpGain: result.hpGain, attackGain: result.attackGain, manaGain: result.manaGain };
                 break;
@@ -1521,11 +1529,12 @@ export class GuildScene extends Phaser.Scene {
             case 'mastery_challenge': {
                 const result = masterySystem.applyMasteryResult(target as SubAtomId, correct);
                 this.trialState.tier = result.passed ? 'gold' : 'none';
-                this.masteryExamStatGains = { hpGain: result.hpGain, attackGain: result.attackGain, manaGain: result.manaGain };
+                this.masteryExamStatGains = { hpGain: result.hpGain, attackGain: result.attackGain, manaGain: result.manaGain, shardGain: result.shardGain, coinGain: result.coinGain };
                 break;
             }
             case 'band_gate': {
-                const result = masterySystem.applyBandGateResult(target as BandId, correct);
+                const tier = this.computeExamTier(correct, fastCorrect, EXAM_CONFIGS.band_gate);
+                const result = masterySystem.applyBandGateResult(target as BandId, correct, tier);
                 this.trialState.tier = result.tier;
                 this.masteryExamStatGains = { hpGain: result.hpGain, attackGain: result.attackGain, manaGain: result.manaGain };
                 break;
@@ -1533,7 +1542,7 @@ export class GuildScene extends Phaser.Scene {
             case 'band_mastery': {
                 const result = masterySystem.applyBandMasteryResult(target as BandId, correct);
                 this.trialState.tier = result.passed ? 'gold' : 'none';
-                this.masteryExamStatGains = { hpGain: result.hpGain, attackGain: result.attackGain, manaGain: result.manaGain };
+                this.masteryExamStatGains = { hpGain: result.hpGain, attackGain: result.attackGain, manaGain: result.manaGain, shardGain: result.shardGain, coinGain: result.coinGain };
                 break;
             }
         }
@@ -1542,185 +1551,4 @@ export class GuildScene extends Phaser.Scene {
         this.gameState.save();
     }
 
-    // ============ TRIAL HISTORY OVERLAY ============
-
-    private createHistoryOverlay(x: number, y: number): void {
-        this.historyOverlay = this.add.container(x, y);
-        this.historyOverlay.setDepth(200);
-        this.historyOverlay.setVisible(false);
-    }
-
-    private showHistoryOverlay(): void {
-        this.historyOverlay.removeAll(true);
-        this.historyOverlay.setVisible(true);
-
-        const player = this.gameState.getPlayer();
-        const history = player.trialHistory || { attempts: [], bestTiers: {}, failedTrialLevel: null, retryLevel: null };
-
-        // Background
-        const bg = this.add.rectangle(0, 0, 1280, 720, 0x000000, 0.94);
-        this.historyOverlay.add(bg);
-
-        // Title
-        const title = this.add.text(0, -310, 'HISTORIE ZKOUŠEK', {
-            fontSize: '30px',
-            fontFamily: 'Arial, sans-serif',
-            color: '#ffd700',
-            fontStyle: 'bold',
-            stroke: '#000000',
-            strokeThickness: 3,
-        }).setOrigin(0.5);
-        this.historyOverlay.add(title);
-
-        // Scrollable content container
-        const contentContainer = this.add.container(0, 0);
-        this.historyOverlay.add(contentContainer);
-
-        // Group attempts by level
-        const levelMap = new Map<number, typeof history.attempts>();
-        for (const attempt of history.attempts) {
-            if (!levelMap.has(attempt.level)) {
-                levelMap.set(attempt.level, []);
-            }
-            levelMap.get(attempt.level)!.push(attempt);
-        }
-
-        // Sort levels
-        const sortedLevels = [...levelMap.keys()].sort((a, b) => a - b);
-
-        let yOffset = -240;
-        const contentItems: Phaser.GameObjects.GameObject[] = [];
-
-        for (const level of sortedLevels) {
-            const attempts = levelMap.get(level)!;
-            const bestTier = history.bestTiers[level] || 'none';
-            const tierDisplay = this.getTierDisplay(bestTier);
-            const levelDesc = this.getDifficultyDescription(level);
-
-            // Level header
-            const headerBg = this.add.rectangle(0, yOffset, 560, 32, 0x333355, 0.8)
-                .setStrokeStyle(1, 0x555577);
-            contentContainer.add(headerBg);
-            contentItems.push(headerBg);
-
-            const headerText = this.add.text(-270, yOffset, `Úroveň ${level}: ${tierDisplay.stars}  ${levelDesc}`, {
-                fontSize: '15px',
-                fontFamily: 'Arial, sans-serif',
-                color: tierDisplay.color,
-                fontStyle: 'bold',
-            }).setOrigin(0, 0.5);
-            contentContainer.add(headerText);
-            contentItems.push(headerText);
-
-            yOffset += 24;
-
-            // Individual attempts
-            for (let i = 0; i < attempts.length; i++) {
-                const a = attempts[i];
-                const tierName = this.getTierLabel(a.tier);
-                const tierColor = this.getTierDisplay(a.tier).color;
-                const retryTag = a.isRetry ? ' (opakování)' : '';
-
-                // Rewards summary
-                const rewardParts: string[] = [];
-                if (a.rewardsGiven.hp > 0) rewardParts.push(`+${a.rewardsGiven.hp} HP`);
-                if (a.rewardsGiven.atk > 0) rewardParts.push(`+${a.rewardsGiven.atk} ÚTOK`);
-                if (a.rewardsGiven.mana > 0) rewardParts.push(`+${a.rewardsGiven.mana} ⚡`);
-                const rewardStr = rewardParts.length > 0 ? `  ${rewardParts.join(' ')}` : '';
-
-                const attemptText = this.add.text(-260, yOffset,
-                    `  Pokus ${i + 1}: ${a.correctCount}/${a.correctCount + a.wrongCount}  ${tierName}${retryTag}${rewardStr}`, {
-                    fontSize: '13px',
-                    fontFamily: 'Arial, sans-serif',
-                    color: tierColor,
-                }).setOrigin(0, 0.5);
-                contentContainer.add(attemptText);
-                contentItems.push(attemptText);
-
-                yOffset += 22;
-            }
-
-            // Retry button (legacy — hidden since mastery system handles retries)
-            if (false) {
-                const retryBtnBg = this.add.rectangle(220, yOffset - 11, 100, 24, 0x446644)
-                    .setStrokeStyle(1, 0x66aa66);
-                contentContainer.add(retryBtnBg);
-                contentItems.push(retryBtnBg);
-
-                const retryBtnText = this.add.text(220, yOffset - 11, 'ZLEPŠIT', {
-                    fontSize: '12px',
-                    fontFamily: 'Arial, sans-serif',
-                    color: '#88ff88',
-                    fontStyle: 'bold',
-                }).setOrigin(0.5);
-                contentContainer.add(retryBtnText);
-                contentItems.push(retryBtnText);
-
-                const capturedLevel = level;
-                retryBtnBg.setInteractive({ useHandCursor: true })
-                    .on('pointerover', () => retryBtnBg.setFillStyle(0x558855))
-                    .on('pointerout', () => retryBtnBg.setFillStyle(0x446644))
-                    .on('pointerdown', () => {
-                        this.gameState.save();
-                        this.historyOverlay.setVisible(false);
-                        this.showTrialOverview();
-                    });
-            }
-
-            yOffset += 16; // spacing between levels
-        }
-
-        // If no attempts
-        if (sortedLevels.length === 0) {
-            const emptyText = this.add.text(0, 0, 'Zatím žádné zkoušky.', {
-                fontSize: '18px',
-                fontFamily: 'Arial, sans-serif',
-                color: '#888888',
-            }).setOrigin(0.5);
-            contentContainer.add(emptyText);
-        }
-
-        // Scrolling support
-        const totalContentHeight = yOffset + 240; // approximate total height
-        const visibleHeight = 480;
-        let scrollY = 0;
-        const maxScroll = Math.max(0, totalContentHeight - visibleHeight);
-
-        if (maxScroll > 0) {
-            bg.setInteractive();
-            bg.on('wheel', (_pointer: Phaser.Input.Pointer, _dx: number, _dy: number, dz: number) => {
-                scrollY = Phaser.Math.Clamp(scrollY + dz * 0.5, 0, maxScroll);
-                contentContainer.setY(-scrollY);
-            });
-        }
-
-        // Close button
-        const closeBg = this.add.rectangle(0, 290, 180, 44, 0x444444)
-            .setStrokeStyle(2, 0x666666);
-        this.historyOverlay.add(closeBg);
-
-        const closeText = this.add.text(0, 290, 'ZAVŘÍT', {
-            fontSize: '20px',
-            fontFamily: 'Arial, sans-serif',
-            color: '#ffffff',
-            fontStyle: 'bold',
-        }).setOrigin(0.5);
-        this.historyOverlay.add(closeText);
-
-        closeBg.setInteractive({ useHandCursor: true })
-            .on('pointerover', () => closeBg.setFillStyle(0x555555))
-            .on('pointerout', () => closeBg.setFillStyle(0x444444))
-            .on('pointerdown', () => {
-                this.historyOverlay.setVisible(false);
-            });
-    }
-
-    private getTierLabel(tier: TrialTier): string {
-        switch (tier) {
-            case 'gold':   return 'ZLATO';
-            case 'silver': return 'STŘÍBRO';
-            case 'bronze': return 'BRONZ';
-            default:       return 'NEÚSPĚCH';
-        }
-    }
 }

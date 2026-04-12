@@ -290,16 +290,18 @@ export class ProblemDatabase {
                                 break;
                             }
                             case 'compare_equation_vs_equation': {
-                                // Compare two three-operand expressions (limit to avoid explosion)
+                                // Three-operand expression vs number — effectively compare_eq_vs_num
                                 if (results.filter(r => r.form === 'compare_equation_vs_equation').length < 30) {
                                     const rightAnswer = answer + (Math.floor(a * 7 + b * 3 + c) % 3) - 1; // deterministic variation
                                     if (rightAnswer >= 0 && rightAnswer <= maxVal) {
                                         const cmpAnswer = answer < rightAnswer ? 0 : answer === rightAnswer ? 1 : 2;
-                                        const key = `${subAtomId}:${a}${op1}${b}${op2}${c}vs${rightAnswer}:compare_eq_eq`;
+                                        const key = `${subAtomId}:${a}${op1}${b}${op2}${c}vs${rightAnswer}:compare_eq_num`;
                                         if (!results.some(r => r.key === key)) {
                                             results.push({
-                                                key, bandId: band, subAtomId, form,
-                                                operand1: a, operand2: b, operand3: rightAnswer,
+                                                key, bandId: band, subAtomId,
+                                                form: 'compare_equation_vs_number',
+                                                operand1: a, operand2: b, operand3: c,
+                                                operand4: rightAnswer,
                                                 operator: op1, operator2: op2, answer: cmpAnswer,
                                             });
                                         }

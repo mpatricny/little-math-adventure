@@ -305,7 +305,7 @@
           "type": "boss",
           "enemyId": "verdant_guardian",
           "x": 900,
-          "y": 560,
+          "y": 384,
           "sprite": "spritesheet--38--sheet",
           "hidden": true,
           "appearsAfter": {

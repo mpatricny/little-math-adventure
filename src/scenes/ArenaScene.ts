@@ -6,6 +6,7 @@ import { SceneDebugger } from '../systems/SceneDebugger';
 import { SceneBuilder } from '../systems/SceneBuilder';
 import { getPlayerSpriteConfig } from '../utils/characterUtils';
 import { PauseMenu } from '../ui/PauseMenu';
+import { CoopSessionManager } from '../systems/CoopSessionManager';
 
 // Arena enemy configurations per arena level
 // Level 1: 5 waves progressing in difficulty
@@ -54,6 +55,7 @@ export class ArenaScene extends Phaser.Scene {
     // State
     private gameState!: GameStateManager;
     private enemyDefs: EnemyDefinition[] = [];
+    private baseEnemyDefs: EnemyDefinition[] = []; // Unscaled defs for passing to BattleScene
     private arenaLevel: number = 1;
     private currentWave: number = 0;
 
@@ -81,13 +83,29 @@ export class ArenaScene extends Phaser.Scene {
         // Get enemy definitions for this wave
         const allEnemies = this.cache.json.get('enemies') as EnemyDefinition[];
         const waveConfig = ARENA_WAVES[this.arenaLevel]?.[this.currentWave] || ['slime'];
-        this.enemyDefs = waveConfig.map(id => allEnemies.find(e => e.id === id) || allEnemies[0]);
+        this.baseEnemyDefs = waveConfig.map(id => allEnemies.find(e => e.id === id) || allEnemies[0]);
 
-        // Update arena state
-        player.arena.isActive = true;
-        player.arena.arenaLevel = this.arenaLevel;
-        player.arena.currentBattle = this.currentWave;
-        this.gameState.save();
+        // Co-op: adjust enemies for 2-player difficulty (for display)
+        const coop = CoopSessionManager.getInstance();
+        if (coop.isCoopActive()) {
+            this.enemyDefs = coop.getCoopEnemyDefs(this.baseEnemyDefs, false);
+        } else {
+            this.enemyDefs = [...this.baseEnemyDefs];
+        }
+        if (coop.isCoopActive()) {
+            coop.forBothPlayers(() => {
+                const p = this.gameState.getPlayer();
+                p.arena.isActive = true;
+                p.arena.arenaLevel = this.arenaLevel;
+                p.arena.currentBattle = this.currentWave;
+            });
+            coop.activatePlayerA();
+        } else {
+            player.arena.isActive = true;
+            player.arena.arenaLevel = this.arenaLevel;
+            player.arena.currentBattle = this.currentWave;
+            this.gameState.save();
+        }
 
         console.log('[ArenaScene.init] Set currentWave to:', this.currentWave);
     }
@@ -114,12 +132,42 @@ export class ArenaScene extends Phaser.Scene {
         this.startBattleButton = this.sceneBuilder.get('startBattleButton') as Phaser.GameObjects.Container;
         this.leaveButton = this.sceneBuilder.get('leaveButton') as Phaser.GameObjects.Container;
 
+        // Check if arena is fully completed
+        // In co-op: only show "completed" if BOTH players have finished the final arena level (3)
+        const coop = CoopSessionManager.getInstance();
+        const maxArenaLevel = Math.max(...Object.keys(ARENA_WAVES).map(Number));
+        let isCompleted: boolean;
+        if (coop.isCoopActive()) {
+            const playerADone = player.arena.completedArenaLevels?.includes(maxArenaLevel) ?? false;
+            coop.activatePlayerB();
+            const playerBDone = this.gameState.getPlayer().arena.completedArenaLevels?.includes(maxArenaLevel) ?? false;
+            coop.activatePlayerA();
+            isCompleted = playerADone && playerBDone;
+        } else {
+            isCompleted = player.arena.completedArenaLevels?.includes(this.arenaLevel) ?? false;
+        }
+
         // Get spawn points from scene-layouts.json for positioning
         const enemyCount = this.enemyDefs.length;
-        const spawnPoints = this.sceneBuilder.getSpawnPoints(undefined, enemyCount);
+        const spawnPoints = this.sceneBuilder.getSpawnPoints(undefined, enemyCount, coop.isCoopActive());
 
-        // Create enemy previews (idling) - pass spawn points for positioning
-        this.createEnemyPreviews(spawnPoints);
+        if (isCompleted) {
+            // Arena completed — show completion message, hide start button, no enemies
+            if (this.waveText) {
+                this.waveText.setText('ARÉNA DOKONČENA!');
+            }
+            if (this.startBattleButton) this.startBattleButton.setVisible(false);
+
+            // "Completed" badge in the center where enemies would be
+            this.add.text(640, 400, 'DOKONČENO', {
+                fontSize: '36px', fontFamily: 'Arial, sans-serif',
+                color: '#ffd700', fontStyle: 'bold',
+                stroke: '#000000', strokeThickness: 4,
+            }).setOrigin(0.5).setDepth(10);
+        } else {
+            // Create enemy previews (idling) - pass spawn points for positioning
+            this.createEnemyPreviews(spawnPoints);
+        }
 
         // Hero - use spawn points if available, otherwise fallback
         const heroX = spawnPoints?.player.x ?? 235;
@@ -135,6 +183,40 @@ export class ArenaScene extends Phaser.Scene {
         this.hero = this.add.sprite(heroX, heroY, spriteConfig.idleTexture)
             .setScale(heroScale)
             .play(spriteConfig.idleAnim);
+
+        // Co-op: show Player B's hero + pet in arena preview
+        if (coop.isCoopActive()) {
+            coop.activatePlayerB();
+            const playerB = this.gameState.getPlayer();
+            const spriteBConfig = getPlayerSpriteConfig(playerB.characterType);
+            const charDefB = charactersData?.find(c => c.id === playerB.characterType);
+            const heroScaleB = (charDefB?.scale ?? 1.0) * HERO_BASE_SCALE;
+            const heroBX = spawnPoints?.playerB?.x ?? (heroX - 100);
+            const heroBY = spawnPoints?.playerB?.y ?? (heroY + 45);
+            this.add.sprite(heroBX, heroBY, spriteBConfig.idleTexture)
+                .setScale(heroScaleB)
+                .play(spriteBConfig.idleAnim)
+                .setDepth(-1);
+
+            // Player B's pet
+            if (playerB.activePet) {
+                const petsData = this.cache.json.get('pets') as PetDefinition[];
+                const petDefB = petsData.find(p => p.id === playerB.activePet);
+                if (petDefB) {
+                    const petScaleB = (petDefB.scale ?? 1.0) * 0.5;
+                    const petBX = spawnPoints?.petB?.x ?? (heroBX - 50);
+                    const petBY = spawnPoints?.petB?.y ?? (heroBY + 30);
+                    const petBSprite = this.add.sprite(petBX, petBY, petDefB.spriteKey, 0)
+                        .setScale(petScaleB)
+                        .setFlipX(true)
+                        .setDepth(-2);
+                    const idleAnim = `${petDefB.animPrefix}-idle`;
+                    if (this.anims.exists(idleAnim)) petBSprite.play(idleAnim);
+                }
+            }
+
+            coop.activatePlayerA();
+        }
 
         // Create pet companion if player has one equipped
         this.createPetCompanion(player, spawnPoints);
@@ -443,8 +525,9 @@ export class ArenaScene extends Phaser.Scene {
             rowContainer.add(waveNum);
 
             // Enemy icons (static sprites, first frame only)
+            const displayConfig = this.getCoopAdjustedWaveConfig(waveConfig);
             const enemyIconsStartX = -100;
-            waveConfig.forEach((enemyId, enemyIdx) => {
+            displayConfig.forEach((enemyId, enemyIdx) => {
                 const enemyDef = allEnemies.find(e => e.id === enemyId);
                 if (enemyDef) {
                     // Create static image from enemy spritesheet (frame 0)
@@ -506,26 +589,47 @@ export class ArenaScene extends Phaser.Scene {
     }
 
     private startBattle(): void {
-        // Pass arena/wave data to BattleScene
+        // Pass arena/wave data to BattleScene (use base defs - BattleScene applies its own co-op scaling)
         this.scene.start('BattleScene', {
             arenaLevel: this.arenaLevel,
             wave: this.currentWave,
-            enemyDefs: this.enemyDefs,
+            enemyDefs: this.baseEnemyDefs,
             fromArena: true,
         });
     }
 
     private leaveArena(): void {
-        const player = this.gameState.getPlayer();
-
-        // Reset arena progress when leaving
-        player.arena.isActive = false;
-        player.arena.currentBattle = 0;
-
-        // Full heal when returning to town
-        ProgressionSystem.fullHeal(player);
-        this.gameState.save();
+        const coop = CoopSessionManager.getInstance();
+        if (coop.isCoopActive()) {
+            coop.forBothPlayers(() => {
+                const p = this.gameState.getPlayer();
+                p.arena.isActive = false;
+                p.arena.currentBattle = 0;
+                ProgressionSystem.fullHeal(p);
+            });
+            coop.activatePlayerA();
+        } else {
+            const player = this.gameState.getPlayer();
+            player.arena.isActive = false;
+            player.arena.currentBattle = 0;
+            ProgressionSystem.fullHeal(player);
+            this.gameState.save();
+        }
 
         this.scene.start('TownScene');
+    }
+
+    /**
+     * Adjust wave config enemy IDs for co-op display (mirrors CoopSessionManager.getCoopEnemyDefs logic)
+     */
+    private getCoopAdjustedWaveConfig(waveConfig: string[]): string[] {
+        const coop = CoopSessionManager.getInstance();
+        if (!coop.isCoopActive()) {
+            return waveConfig;
+        }
+        if (waveConfig.length === 0) {
+            return [];
+        }
+        return [...waveConfig, waveConfig[waveConfig.length - 1]];
     }
 }

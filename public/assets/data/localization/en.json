@@ -115,6 +115,27 @@
         "FMT_004": "TOTAL: {0} copper",
         "FMT_005": "LEVEL: {0}   |   CYCLE: {1}   |   {2}%"
     },
+    "band_select": {
+        "title": "CHOOSE YOUR LEVEL",
+        "description": "Where do you want to start?",
+        "band_A": "Numbers 0–5",
+        "band_B": "Numbers 0–8",
+        "band_C": "Numbers 0–10",
+        "band_D": "Numbers 0–20 (no crossing)",
+        "band_E": "Numbers 0–20 (crossing 10)",
+        "band_A_desc": "Start from the beginning",
+        "band_B_desc": "Addition and subtraction to 8",
+        "band_C_desc": "Addition and subtraction to 10",
+        "band_D_desc": "Without crossing over ten",
+        "band_E_desc": "With crossing over ten",
+        "confirm": "CONFIRM"
+    },
+    "struggle": {
+        "title": "ZYX ADVISES",
+        "message": "These numbers seem tough! Want to try easier ones?",
+        "accept": "Yes, give me easier ones",
+        "decline": "No, I want to continue"
+    },
     "forest_gate": {
         "forest_name": "VERDANT FOREST",
         "title": "🌲 FOREST ENTRANCE 🌲",

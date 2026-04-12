@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import { JourneySystem } from '../systems/JourneySystem';
 import { GameStateManager } from '../systems/GameStateManager';
+import { CoopSessionManager } from '../systems/CoopSessionManager';
 
 /**
  * Scene initialization data
@@ -661,12 +662,21 @@ export class ForestPuzzleScene extends Phaser.Scene {
 
                     // Potion refill reward (player can have max 1 potion)
                     if (bonus.potionRefill) {
-                        const player = this.gameState.getPlayer();
-                        if (player.potions === 0) {
-                            player.potions = 1;
-                            this.gameState.save();
-                            this.showBonusText('+1 🧪 Lektvar', '#88aaff', 640, 460);
+                        const coop = CoopSessionManager.getInstance();
+                        if (coop.isCoopActive()) {
+                            coop.forBothPlayers(() => {
+                                const p = this.gameState.getPlayer();
+                                if (p.potions === 0) p.potions = 1;
+                            });
+                            coop.activatePlayerA();
+                        } else {
+                            const player = this.gameState.getPlayer();
+                            if (player.potions === 0) {
+                                player.potions = 1;
+                                this.gameState.save();
+                            }
                         }
+                        this.showBonusText('+1 🧪 Lektvar', '#88aaff', 640, 460);
                     }
                 }
 

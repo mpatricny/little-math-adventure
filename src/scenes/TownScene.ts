@@ -7,9 +7,12 @@ import { CrystalSystem } from '../systems/CrystalSystem';
 import { ManaSystem } from '../systems/ManaSystem';
 import { ProgressionSystem, createInitialTownProgress } from '../systems/ProgressionSystem';
 import { MasterySystem } from '../systems/MasterySystem';
+import { PlacementInitializer } from '../systems/PlacementInitializer';
+import { LocalizationService } from '../systems/LocalizationService';
 import { uiTemplateLoader } from '../systems/UiTemplateLoader';
 import { getPlayerSpriteConfig } from '../utils/characterUtils';
-import { Crystal, PlayerState, TownProgress } from '../types';
+import { Crystal, PlayerState, TownProgress, BandId } from '../types';
+import { CoopSessionManager } from '../systems/CoopSessionManager';
 
 /** Building unlock order — condition checked against player state */
 const BUILDING_UNLOCK_CONFIG: {
@@ -19,8 +22,8 @@ const BUILDING_UNLOCK_CONFIG: {
 }[] = [
     { buildingId: 'arena-building', labelId: 'arena-label', condition: () => true },
     { buildingId: 'shop', labelId: 'shop-label', condition: (p) => ProgressionSystem.getTotalCoinValue(p.coins) >= 3 },
-    { buildingId: 'guild', labelId: 'guild-label', condition: (p) => (p.townProgress?.totalWavesCompleted ?? 0) >= 1 },
-    { buildingId: 'witch', labelId: 'workshop-label', condition: (p) => (p.townProgress?.totalWavesCompleted ?? 0) >= 2 },
+    { buildingId: 'witch', labelId: 'workshop-label', condition: (p) => (p.townProgress?.totalWavesCompleted ?? 0) >= 1 },
+    { buildingId: 'guild', labelId: 'guild-label', condition: () => MasterySystem.getInstance().getAvailableExams().length > 0 },
     { buildingId: 'Crystal Forge small', labelId: 'forge-label', condition: (p) => p.arena?.completedArenaLevels?.includes(1) ?? false },
 ];
 
@@ -29,6 +32,7 @@ export class TownScene extends Phaser.Scene {
     private characterUI!: CharacterUI;
     private debugger!: SceneDebugger;
     private player!: Phaser.GameObjects.Sprite;
+    private playerBSprite?: Phaser.GameObjects.Sprite;
     private debugArrow?: Phaser.GameObjects.Container;
     private debugPanel?: Phaser.GameObjects.Container;
     private isDebugMode: boolean = false;
@@ -43,22 +47,33 @@ export class TownScene extends Phaser.Scene {
     create(): void {
         this.sceneBuilder = new SceneBuilder(this);
 
-        // Town entry: heal player and regenerate potion
+        // Town entry: heal player(s) and regenerate potion(s)
         const gameState = GameStateManager.getInstance();
+        const coop = CoopSessionManager.getInstance();
+
+        if (coop.isCoopActive()) {
+            // Co-op: heal both players
+            coop.forBothPlayers(() => {
+                const p = gameState.getPlayer();
+                p.hp = p.maxHp;
+                p.status = 'healthy';
+                if (p.hasPotionSubscription && p.potions === 0) p.potions = 1;
+            });
+            coop.activatePlayerA(); // A is lead for town
+        } else {
+            const p = gameState.getPlayer();
+            if (p.hp < p.maxHp || p.status !== 'healthy') {
+                p.hp = p.maxHp;
+                p.status = 'healthy';
+                gameState.save();
+            }
+            if (p.hasPotionSubscription && p.potions === 0) {
+                p.potions = 1;
+                gameState.save();
+            }
+        }
+
         const player = gameState.getPlayer();
-
-        // Full heal on town entry
-        if (player.hp < player.maxHp || player.status !== 'healthy') {
-            player.hp = player.maxHp;
-            player.status = 'healthy';
-            gameState.save();
-        }
-
-        // Regenerate potion if player has subscription and used their potion
-        if (player.hasPotionSubscription && player.potions === 0) {
-            player.potions = 1;
-            gameState.save();
-        }
 
         // Register quit to menu handler
         this.sceneBuilder.registerHandler('onQuitToMenu', () => this.quitToMenu());
@@ -105,6 +120,18 @@ export class TownScene extends Phaser.Scene {
             .setDepth(5)
             .play(spriteConfig.idleAnim);
 
+        // Co-op: spawn Player B behind Player A
+        if (coop.isCoopActive()) {
+            coop.activatePlayerB();
+            const playerB = gameState.getPlayer();
+            const spriteBConfig = getPlayerSpriteConfig(playerB.characterType);
+            this.playerBSprite = this.add.sprite(playerX - 70, playerY, spriteBConfig.idleTexture)
+                .setScale(0.55)
+                .setDepth(4)
+                .play(spriteBConfig.idleAnim);
+            coop.activatePlayerA();
+        }
+
         // Override building click handlers with walk animation
         this.setupBuildingTransitions();
 
@@ -144,6 +171,13 @@ export class TownScene extends Phaser.Scene {
 
         // Show ground crystals if any
         this.showGroundCrystals();
+
+        // Check for struggling after battle return
+        const mastery = MasterySystem.getInstance();
+        const struggleResult = mastery.checkPlayerStruggling();
+        if (struggleResult?.struggling) {
+            this.showStruggleDialog(struggleResult.suggestedBand);
+        }
 
         // Setup universal debugger
         this.debugger = new SceneDebugger(this, 'TownScene');
@@ -544,6 +578,9 @@ export class TownScene extends Phaser.Scene {
         );
         this.player.play(spriteConfig.walkAnim);
 
+        // Player B follows
+        this.walkPlayerBFollow(targetX, duration);
+
         // Walk tween
         this.tweens.add({
             targets: this.player,
@@ -555,7 +592,7 @@ export class TownScene extends Phaser.Scene {
 
                 // Fade out then transition
                 this.tweens.add({
-                    targets: this.player,
+                    targets: [this.player, this.playerBSprite].filter(Boolean),
                     alpha: 0,
                     duration: 300,
                     onComplete: () => this.scene.start(targetScene)
@@ -570,8 +607,11 @@ export class TownScene extends Phaser.Scene {
     private walkToArena(targetX: number): void {
         this.input.enabled = false;
 
-        // Mark arena as visited
+        // Mark arena as visited + save building ID for return spawn position
         this.markBuildingVisited('arena-building');
+        const gameState = GameStateManager.getInstance();
+        gameState.getPlayer().lastBuildingId = 'arena-building';
+        gameState.save();
 
         const startX = this.player.x;
         const distance = Math.abs(targetX - startX);
@@ -584,6 +624,9 @@ export class TownScene extends Phaser.Scene {
         );
         this.player.play(spriteConfig.walkAnim);
 
+        // Player B follows
+        this.walkPlayerBFollow(targetX, duration);
+
         this.tweens.add({
             targets: this.player,
             x: targetX,
@@ -593,12 +636,22 @@ export class TownScene extends Phaser.Scene {
                 this.player.play(spriteConfig.idleAnim);
 
                 this.tweens.add({
-                    targets: this.player,
+                    targets: [this.player, this.playerBSprite].filter(Boolean),
                     alpha: 0,
                     duration: 300,
                     onComplete: () => {
                         const player = GameStateManager.getInstance().getPlayer();
-                        const arenaLevel = player.arena.arenaLevel || 1;
+                        let arenaLevel = player.arena.arenaLevel || 1;
+
+                        // Co-op: use the lower-level player's arena progress
+                        const coopRef = CoopSessionManager.getInstance();
+                        if (coopRef.isCoopActive()) {
+                            coopRef.activatePlayerB();
+                            const playerB = GameStateManager.getInstance().getPlayer();
+                            const levelB = playerB.arena.arenaLevel || 1;
+                            coopRef.activatePlayerA();
+                            arenaLevel = Math.min(arenaLevel, levelB);
+                        }
 
                         // Check if arena level has changed - if so, reset waveResults
                         const previousArenaLevel = player.arena.waveResultsArenaLevel;
@@ -614,24 +667,15 @@ export class TownScene extends Phaser.Scene {
                         });
 
                         // Reset waveResults when entering a DIFFERENT arena level
-                        // (waveResults are per-arena, not shared across arenas)
                         if (arenaLevelChanged || !player.arena.waveResults) {
                             player.arena.waveResults = [];
-                            console.log('[TownScene] Reset waveResults for new arena level:', arenaLevel);
                         }
 
-                        // Track which arena level these waveResults belong to
                         player.arena.waveResultsArenaLevel = arenaLevel;
 
-                        // Block re-entry if this arena level is already completed
-                        if (player.arena.completedArenaLevels?.includes(arenaLevel)) {
-                            console.log('[TownScene] Arena level', arenaLevel, 'already completed, not entering');
-                            this.player.setAlpha(1);
-                            this.input.enabled = true;
-                            return;
-                        }
+                        // Always allow arena entry — ArenaScene shows "completed" state if needed
 
-                        // Find first wave that isn't perfectly completed (skip perfect waves)
+                        // Find first wave that isn't perfectly completed
                         let wave = 0;
                         if (player.arena.waveResults) {
                             for (let i = 0; i < 5; i++) {
@@ -642,7 +686,6 @@ export class TownScene extends Phaser.Scene {
                                 }
                             }
                         }
-                        console.log('[TownScene] Starting arena level', arenaLevel, 'from wave', wave);
 
                         player.arena.isActive = true;
                         player.arena.playerHpAtStart = player.hp;
@@ -667,11 +710,41 @@ export class TownScene extends Phaser.Scene {
         const tp = player.townProgress!;
 
         // Step 1: Update unlockedBuildings (conditions met)
+        // Co-op: building is unlocked if EITHER player meets the condition
+        const coop = CoopSessionManager.getInstance();
         for (const config of BUILDING_UNLOCK_CONFIG) {
-            const conditionMet = config.condition(player);
+            let conditionMet = config.condition(player);
+
+            // Co-op keeps Guild available because the shared mana-collection mode lives there
+            if (config.buildingId === 'guild' && coop.isCoopActive()) {
+                conditionMet = true;
+            } else if (!conditionMet && coop.isCoopActive()) {
+                coop.activatePlayerB();
+                conditionMet = config.condition(GameStateManager.getInstance().getPlayer());
+                coop.activatePlayerA();
+            }
+
             if (conditionMet && !tp.unlockedBuildings.includes(config.buildingId)) {
                 tp.unlockedBuildings.push(config.buildingId);
             }
+        }
+
+        // Co-op fix: any building that's unlocked AND already visited must be
+        // in revealedBuildings — prevents "NEW" badge on already-visited buildings
+        for (const config of BUILDING_UNLOCK_CONFIG) {
+            if (tp.unlockedBuildings.includes(config.buildingId)
+                && tp.visitedBuildings.includes(config.buildingId)
+                && !tp.revealedBuildings.includes(config.buildingId)) {
+                tp.revealedBuildings.push(config.buildingId);
+            }
+        }
+
+        // Co-op keeps Guild immediately visible because it is the shared entry point
+        // for mana collection even when exam progression is read-only there.
+        if (coop.isCoopActive()
+            && tp.unlockedBuildings.includes('guild')
+            && !tp.revealedBuildings.includes('guild')) {
+            tp.revealedBuildings.push('guild');
         }
 
         // Step 2: Determine which buildings should be revealed next
@@ -902,11 +975,26 @@ export class TownScene extends Phaser.Scene {
      * Mark a building as visited — destroys Zyx guide + NEW badge
      */
     private markBuildingVisited(buildingId: string): void {
+        // Mark visited for current player
         const player = GameStateManager.getInstance().getPlayer();
         if (!player.townProgress) return;
 
         if (!player.townProgress.visitedBuildings.includes(buildingId)) {
             player.townProgress.visitedBuildings.push(buildingId);
+        }
+
+        // Co-op: also mark visited for the other player
+        const coop = CoopSessionManager.getInstance();
+        if (coop.isCoopActive()) {
+            const current = coop.getActivePlayer();
+            if (current === 'A') coop.activatePlayerB(); else coop.activatePlayerA();
+            const otherPlayer = GameStateManager.getInstance().getPlayer();
+            if (otherPlayer.townProgress && !otherPlayer.townProgress.visitedBuildings.includes(buildingId)) {
+                otherPlayer.townProgress.visitedBuildings.push(buildingId);
+            }
+            GameStateManager.getInstance().save();
+            // Restore original context
+            if (current === 'A') coop.activatePlayerA(); else coop.activatePlayerB();
         }
 
         // Destroy visual indicators
@@ -969,14 +1057,59 @@ export class TownScene extends Phaser.Scene {
         this.player.play(spriteConfig.walkAnim);
 
         const targetX = 1300;
+        const duration = (Math.abs(targetX - this.player.x) / 350) * 1000;
+
+        // Player B follows
+        this.walkPlayerBFollow(targetX, duration);
+
         this.tweens.add({
             targets: this.player,
             x: targetX,
-            duration: (Math.abs(targetX - this.player.x) / 350) * 1000,
+            duration,
             ease: 'Linear',
             onComplete: () => {
                 this.scene.start('ForestAdventureStartScene');
             }
+        });
+    }
+
+    /**
+     * Co-op: Make Player B follow Player A to a target position.
+     * Player B walks with a 200ms delay and stays offset behind A.
+     */
+    private walkPlayerBFollow(targetX: number, duration: number): void {
+        if (!this.playerBSprite) return;
+
+        const coop = CoopSessionManager.getInstance();
+        if (!coop.isCoopActive()) return;
+
+        // Get Player B's walk animation
+        coop.activatePlayerB();
+        const spriteBConfig = getPlayerSpriteConfig(
+            GameStateManager.getInstance().getPlayer().characterType
+        );
+        coop.activatePlayerA();
+
+        // Walk to the same target (building entrance) — both arrive at the same spot
+        this.playerBSprite.setFlipX(targetX < this.playerBSprite.x);
+
+        // B starts 200ms later, walks slightly faster to catch up
+        this.time.delayedCall(200, () => {
+            if (!this.playerBSprite) return;
+            this.playerBSprite.play(spriteBConfig.walkAnim);
+
+            // Slightly shorter duration so B arrives at roughly the same time as A
+            const bDuration = Math.max(duration - 200, 100);
+
+            this.tweens.add({
+                targets: this.playerBSprite,
+                x: targetX,
+                duration: bDuration,
+                ease: 'Linear',
+                onComplete: () => {
+                    this.playerBSprite?.play(spriteBConfig.idleAnim);
+                }
+            });
         });
     }
 
@@ -1136,7 +1269,117 @@ export class TownScene extends Phaser.Scene {
         }
     }
 
+    private showStruggleDialog(_suggestedBand: BandId): void {
+        const loc = LocalizationService.getInstance();
+        const gameState = GameStateManager.getInstance();
+        const data = gameState.getMasteryData();
+
+        // Dark overlay
+        const overlay = this.add.rectangle(640, 360, 1280, 720, 0x000000, 0.7)
+            .setDepth(900)
+            .setInteractive(); // block clicks through
+
+        // Dialog container
+        const dialog = this.add.container(640, 360).setDepth(1000);
+
+        // Dialog background
+        const bg = this.add.rectangle(0, 0, 500, 280, 0x2a2a3e)
+            .setStrokeStyle(3, 0x6a6a7e)
+            .setOrigin(0.5);
+        dialog.add(bg);
+
+        // Title
+        const titleText = loc.t('struggle.title') || 'ZYX ADVISES';
+        const title = this.add.text(0, -100, titleText, {
+            fontSize: '26px',
+            fontFamily: 'Arial, sans-serif',
+            color: '#ffd700',
+            fontStyle: 'bold',
+        }).setOrigin(0.5);
+        dialog.add(title);
+
+        // Message
+        const msgText = loc.t('struggle.message') || 'These numbers seem tough! Want to try easier ones?';
+        const message = this.add.text(0, -40, msgText, {
+            fontSize: '18px',
+            fontFamily: 'Arial, sans-serif',
+            color: '#ffffff',
+            wordWrap: { width: 420 },
+            align: 'center',
+        }).setOrigin(0.5);
+        dialog.add(message);
+
+        // Accept button
+        const acceptBg = this.add.rectangle(-120, 60, 200, 50, 0x2d7d2d)
+            .setStrokeStyle(2, 0x4dbd4d)
+            .setOrigin(0.5)
+            .setInteractive({ useHandCursor: true });
+        dialog.add(acceptBg);
+
+        const acceptText = loc.t('struggle.accept') || 'Yes';
+        const accept = this.add.text(-120, 60, acceptText, {
+            fontSize: '16px',
+            fontFamily: 'Arial, sans-serif',
+            color: '#ffffff',
+            fontStyle: 'bold',
+        }).setOrigin(0.5);
+        dialog.add(accept);
+
+        // Decline button
+        const declineBg = this.add.rectangle(120, 60, 200, 50, 0x7d2d2d)
+            .setStrokeStyle(2, 0xbd4d4d)
+            .setOrigin(0.5)
+            .setInteractive({ useHandCursor: true });
+        dialog.add(declineBg);
+
+        const declineText = loc.t('struggle.decline') || 'No';
+        const decline = this.add.text(120, 60, declineText, {
+            fontSize: '16px',
+            fontFamily: 'Arial, sans-serif',
+            color: '#ffffff',
+            fontStyle: 'bold',
+        }).setOrigin(0.5);
+        dialog.add(decline);
+
+        // Button hover effects
+        acceptBg.on('pointerover', () => acceptBg.setFillStyle(0x3d9d3d));
+        acceptBg.on('pointerout', () => acceptBg.setFillStyle(0x2d7d2d));
+        declineBg.on('pointerover', () => declineBg.setFillStyle(0x9d3d3d));
+        declineBg.on('pointerout', () => declineBg.setFillStyle(0x7d2d2d));
+
+        const cleanup = () => {
+            overlay.destroy();
+            dialog.destroy();
+        };
+
+        // Accept: drop one band
+        acceptBg.on('pointerdown', () => {
+            const currentBand = MasterySystem.getInstance().getCurrentBand();
+            PlacementInitializer.dropOneBand(currentBand, gameState);
+            cleanup();
+        });
+
+        // Decline: just record the fight count so we don't nag again for 5 fights
+        declineBg.on('pointerdown', () => {
+            data.lastStruggleOfferFight = data.fightCount;
+            gameState.save();
+            cleanup();
+        });
+
+        // Entrance animation
+        dialog.setScale(0.8).setAlpha(0);
+        overlay.setAlpha(0);
+        this.tweens.add({ targets: overlay, alpha: 0.7, duration: 200 });
+        this.tweens.add({ targets: dialog, scale: 1, alpha: 1, duration: 250, ease: 'Back.easeOut' });
+    }
+
     private quitToMenu(): void {
+        // End co-op session if active
+        const coop = CoopSessionManager.getInstance();
+        if (coop.isCoopActive()) {
+            coop.endSession();
+        }
+
         // Auto-save before leaving
         GameStateManager.getInstance().save();
         this.scene.start('MenuScene');

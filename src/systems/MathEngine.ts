@@ -43,17 +43,30 @@ export class MathEngine {
     private stats: MathStats;
     private levelPool: MathProblemDef[] = [];  // All problems for current level
     private currentProblemId: string | null = null;
+    private fixedLevel: number | null;
+    private autoPersist: boolean;
 
-    constructor(registry: Phaser.Data.DataManager) {
+    constructor(registry: Phaser.Data.DataManager, options?: { fixedLevel?: number; initialStats?: MathStats; autoPersist?: boolean }) {
         this.registry = registry;
         this.gameState = GameStateManager.getInstance();
-        this.stats = this.loadStats();
+        this.fixedLevel = options?.fixedLevel ?? null;
+        this.autoPersist = options?.autoPersist ?? true;
+        this.stats = options?.initialStats ?? this.loadStats();
         this.initializeLevelPool();
     }
 
     private loadStats(): MathStats {
         // Load from GameStateManager (unified save system)
         return this.gameState.getMathStats();
+    }
+
+    /**
+     * Reload stats from current GameStateManager context.
+     * Must be called before each player's math phase in co-op
+     * to prevent cross-contamination between players.
+     */
+    reloadStats(): void {
+        this.stats = this.loadStats();
     }
 
     private saveStats(): void {
@@ -63,6 +76,12 @@ export class MathEngine {
 
         // Also update registry for in-scene access
         this.registry.set('mathStats', this.stats);
+    }
+
+    private maybeSaveStats(): void {
+        if (this.autoPersist) {
+            this.saveStats();
+        }
     }
 
     /**
@@ -130,7 +149,7 @@ export class MathEngine {
      * Initialize the level pool based on player level
      */
     initializeLevelPool(): void {
-        const playerLevel = this.registry.get('playerLevel') || 1;
+        const playerLevel = this.fixedLevel ?? (this.registry.get('playerLevel') || 1);
         this.levelPool = this.generateLevelPool(playerLevel);
 
         // Initialize active pool if empty or if difficulty changed
@@ -221,7 +240,7 @@ export class MathEngine {
         }
 
         this.stats.currentPool = this.shuffle(newPool);
-        this.saveStats();
+        this.maybeSaveStats();
     }
 
     /**
@@ -258,6 +277,29 @@ export class MathEngine {
             choices,
             showVisualHint: config.showVisualHint,
             hintType: config.showVisualHint ? 'apples' : 'none',
+        };
+    }
+
+    /**
+     * Convert a specific MathProblemDef into a full MathProblem with generated choices.
+     * Used by minigames that have their own problem pool but need proper choice generation.
+     */
+    generateProblemFromDef(problemDef: MathProblemDef): MathProblem {
+        const config = this.getConfig();
+        const choices = this.generateChoices(problemDef.answer, config.maxNumber);
+
+        return {
+            id: problemDef.id,
+            operand1: problemDef.operand1,
+            operand2: problemDef.operand2,
+            operator: problemDef.operator,
+            answer: problemDef.answer,
+            choices,
+            showVisualHint: false,
+            hintType: 'none',
+            operand3: problemDef.operand3,
+            operator2: problemDef.operator2 as any,
+            problemType: problemDef.problemType as any,
         };
     }
 
@@ -324,7 +366,7 @@ export class MathEngine {
             this.stats.recentResults.shift();
         }
 
-        this.saveStats();
+        this.maybeSaveStats();
     }
 
     /**
@@ -371,14 +413,14 @@ export class MathEngine {
             this.stats.recentResults.shift();
         }
 
-        this.saveStats();
+        this.maybeSaveStats();
     }
 
     /**
      * Get the current difficulty configuration (based on player level)
      */
     private getConfig(level?: number): DifficultyConfig {
-        const playerLevel = this.registry.get('playerLevel') || 1;
+        const playerLevel = this.fixedLevel ?? (this.registry.get('playerLevel') || 1);
         const effectiveLevel = level !== undefined ? level : playerLevel;
         const idx = Math.min(effectiveLevel - 1, DIFFICULTY_CONFIGS.length - 1);
         return DIFFICULTY_CONFIGS[idx];
@@ -532,7 +574,7 @@ export class MathEngine {
         const collectable = this.getCollectableMana(problemId);
         if (collectable > 0 && this.stats.problemStats[problemId]) {
             this.stats.problemStats[problemId].manaCollected += collectable;
-            this.saveStats();
+            this.maybeSaveStats();
         }
         return collectable;
     }
@@ -944,11 +986,15 @@ export class MathEngine {
             rightSide = leftSide;
             answer = 1;
         } else {
-            // Left > Right
-            rightSide = this.randomInt(Math.max(0, leftSide - 5), leftSide - 1);
-            if (rightSide < 0) rightSide = 0;
-            if (rightSide >= leftSide) rightSide = leftSide - 1;
-            answer = 2;
+            // Left > Right — only possible if leftSide > 0
+            if (leftSide > 0) {
+                rightSide = this.randomInt(0, leftSide - 1);
+                answer = 2;
+            } else {
+                // Can't be greater than 0 with non-negative numbers — fall back to equal
+                rightSide = leftSide;
+                answer = 1;
+            }
         }
 
         const id = `compare_${operand1}_${operator === '+' ? 'add' : 'sub'}_${operand2}_${rightSide}`;

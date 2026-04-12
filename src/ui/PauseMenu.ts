@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import { GameStateManager } from '../systems/GameStateManager';
+import { CoopSessionManager } from '../systems/CoopSessionManager';
 
 /**
  * Reusable pause menu overlay component
@@ -158,6 +159,12 @@ export class PauseMenu {
      * Save game and return to menu
      */
     private quitToMenu(): void {
+        // End co-op session if active
+        const coop = CoopSessionManager.getInstance();
+        if (coop.isCoopActive()) {
+            coop.endSession();
+        }
+
         // Auto-save current state
         const gameState = GameStateManager.getInstance();
         const player = gameState.getPlayer();
@@ -165,7 +172,7 @@ export class PauseMenu {
         // If in arena, reset arena state (player loses progress but keeps items)
         if (player.arena.isActive) {
             player.arena.isActive = false;
-            player.hp = player.arena.playerHpAtStart; // Restore HP from before arena
+            player.hp = player.arena.playerHpAtStart;
         }
 
         gameState.save();

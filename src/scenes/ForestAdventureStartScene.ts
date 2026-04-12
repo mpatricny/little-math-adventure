@@ -2,6 +2,7 @@ import Phaser from 'phaser';
 import { GameStateManager } from '../systems/GameStateManager';
 import { JourneySystem, JourneyConfig } from '../systems/JourneySystem';
 import { ProgressionSystem } from '../systems/ProgressionSystem';
+import { CoopSessionManager } from '../systems/CoopSessionManager';
 import { LocalizationService } from '../systems/LocalizationService';
 import { SceneBuilder } from '../systems/SceneBuilder';
 
@@ -277,10 +278,20 @@ export class ForestAdventureStartScene extends Phaser.Scene {
     }
 
     private deductSupplyCost(): void {
-        const player = this.gameState.getPlayer();
         const cost = this.journeyConfig!.requirements.supplyCost;
-        ProgressionSystem.spendCoins(player, cost);
+        const coop = CoopSessionManager.getInstance();
 
-        this.gameState.save();
+        if (coop.isCoopActive()) {
+            // Co-op: deduct from both players
+            coop.forBothPlayers(() => {
+                const p = this.gameState.getPlayer();
+                ProgressionSystem.spendCoins(p, cost);
+            });
+            coop.activatePlayerA();
+        } else {
+            const player = this.gameState.getPlayer();
+            ProgressionSystem.spendCoins(player, cost);
+            this.gameState.save();
+        }
     }
 }

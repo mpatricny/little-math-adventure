@@ -6,6 +6,7 @@ import { ProgressionSystem } from '../systems/ProgressionSystem';
 import { SceneBuilder } from '../systems/SceneBuilder';
 import { UiElementBuilder } from '../systems/UiElementBuilder';
 import { Crystal } from '../types';
+import { CoopSwitchUI } from '../ui/CoopSwitchUI';
 
 /**
  * CrystalForgeScene - Player can merge or split crystals using math problems
@@ -65,7 +66,8 @@ export class CrystalForgeScene extends Phaser.Scene {
     private splitFragmentValue2Text!: Phaser.GameObjects.Text;
     private operationButton!: Phaser.GameObjects.Container;
     private operationButtonText!: Phaser.GameObjects.Text;
-    private manaIcons: Phaser.GameObjects.Image[] = [];  // 1-3 icons based on cost
+    private manaIcons: Phaser.GameObjects.Image[] = [];
+    private clearButton!: Phaser.GameObjects.Container;  // 1-3 icons based on cost
 
     // Crystal holders using templates (replaces programmatic slots)
     private crystalHolders: { container: Phaser.GameObjects.Container; crystal: Crystal | null }[] = [];
@@ -111,6 +113,9 @@ export class CrystalForgeScene extends Phaser.Scene {
         // Build scene from scenes.json (background, title, etc.)
         this.sceneBuilder = new SceneBuilder(this);
         this.sceneBuilder.buildScene('CrystalForgeScene');
+
+        // Co-op: add player switch UI
+        new CoopSwitchUI(this, 300, 640);
 
         // Set title text in the "Load game" UI element
         this.setupTitle();
@@ -733,6 +738,40 @@ export class CrystalForgeScene extends Phaser.Scene {
             bg.setInteractive({ useHandCursor: true })
                 .on('pointerdown', () => this.startOperation());
         }
+
+        // === Clear anvil button ("VYČISTIT") — uses same Green_button template, tinted blue ===
+        const clearBtn = this.sceneBuilder.get<Phaser.GameObjects.Container>('Clear_button');
+        if (clearBtn) {
+            this.clearButton = clearBtn;
+            this.clearButton.setPosition(this.pedestalPosition.x, this.pedestalPosition.y + 105);
+            this.clearButton.setDepth(50);
+            this.clearButton.setVisible(false);
+
+            // Set text to "VYČISTIT"
+            const clearTextObjects = this.clearButton.getData('textObjects') as Map<string, { text: Phaser.GameObjects.Text }> | undefined;
+            const clearTextInfo = clearTextObjects?.get('1768922299962-lij5d6x4j');
+            if (clearTextInfo) {
+                clearTextInfo.text.setText('VYČISTIT');
+            }
+
+            this.sceneBuilder.bindClick('Clear_button', () => this.resetForge());
+        } else {
+            // Fallback: plain button
+            this.clearButton = this.add.container(
+                this.pedestalPosition.x + 110, this.pedestalPosition.y + 35
+            ).setDepth(50);
+            const clearBg = this.add.rectangle(0, 0, 130, 40, 0x3355aa)
+                .setStrokeStyle(2, 0x5577cc);
+            const clearTxt = this.add.text(0, 0, 'VYČISTIT', {
+                fontSize: '16px', fontFamily: 'Arial, sans-serif',
+                color: '#ffffff', fontStyle: 'bold',
+            }).setOrigin(0.5);
+            this.clearButton.add([clearBg, clearTxt]);
+            this.clearButton.setSize(130, 40);
+            this.clearButton.setVisible(false);
+            clearBg.setInteractive({ useHandCursor: true })
+                .on('pointerdown', () => this.resetForge());
+        }
     }
 
     private updateOperationButtonVisibility(): void {
@@ -797,6 +836,9 @@ export class CrystalForgeScene extends Phaser.Scene {
                 break;
             }
         }
+
+        // Clear button: visible when any crystal is on the anvil
+        this.clearButton.setVisible(this.selectedCrystals.some(c => c !== null));
     }
 
     private updateForgeDisplay(): void {

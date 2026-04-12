@@ -3,6 +3,7 @@ import { SceneBuilder } from '../systems/SceneBuilder';
 import { GameStateManager } from '../systems/GameStateManager';
 import { JourneySystem } from '../systems/JourneySystem';
 import { getPlayerSpriteConfig } from '../utils/characterUtils';
+import { CoopSessionManager } from '../systems/CoopSessionManager';
 
 /**
  * Scene initialization data
@@ -70,6 +71,8 @@ export class ForestCampScene extends Phaser.Scene {
 
     // Player
     private player!: Phaser.GameObjects.Sprite;
+    private playerBSprite: Phaser.GameObjects.Sprite | null = null;
+    private playerBWalkTween: Phaser.Tweens.Tween | null = null;
     private isWalking = false;
 
     // State
@@ -200,6 +203,22 @@ export class ForestCampScene extends Phaser.Scene {
         if (this.fromDirection === 'right') {
             this.player.setFlipX(true);
         }
+
+        // Co-op: show Player B sprite behind Player A
+        const coop = CoopSessionManager.getInstance();
+        if (coop.isCoopActive()) {
+            coop.activatePlayerB();
+            const playerB = this.gameState.getPlayer();
+            const spriteBConfig = getPlayerSpriteConfig(playerB.characterType);
+            this.playerBSprite = this.add.sprite(spawnX - 30, spawnY + 10, spriteBConfig.idleTexture)
+                .setScale(0.9)
+                .setDepth(9)
+                .play(spriteBConfig.idleAnim);
+            if (this.fromDirection === 'right') {
+                this.playerBSprite.setFlipX(true);
+            }
+            coop.activatePlayerA();
+        }
     }
 
     // ═══════════════════════════════════════════════════════════════════════
@@ -256,6 +275,9 @@ export class ForestCampScene extends Phaser.Scene {
         // Play walk animation
         this.player.play(spriteConfig.walkAnim);
 
+        // Co-op: Player B follows
+        this.walkPlayerBFollow(targetX, targetY, dx, duration);
+
         this.tweens.add({
             targets: this.player,
             x: targetX,
@@ -267,6 +289,37 @@ export class ForestCampScene extends Phaser.Scene {
                 this.isWalking = false;
                 if (onComplete) onComplete();
             }
+        });
+    }
+
+    private walkPlayerBFollow(targetX: number, targetY: number, dx: number, duration: number): void {
+        if (!this.playerBSprite) return;
+
+        const coop = CoopSessionManager.getInstance();
+        if (!coop.isCoopActive()) return;
+
+        coop.activatePlayerB();
+        const spriteBConfig = getPlayerSpriteConfig(this.gameState.getPlayer().characterType);
+        coop.activatePlayerA();
+
+        this.playerBSprite.setFlipX(dx < 0);
+
+        const offsetX = dx < 0 ? 30 : -30;
+
+        this.time.delayedCall(150, () => {
+            if (!this.playerBSprite) return;
+            this.playerBSprite.play(spriteBConfig.walkAnim);
+            this.playerBWalkTween = this.tweens.add({
+                targets: this.playerBSprite,
+                x: targetX + offsetX,
+                y: targetY + 10,
+                duration: Math.max(duration - 150, 100),
+                ease: 'Linear',
+                onComplete: () => {
+                    this.playerBSprite?.play(spriteBConfig.idleAnim);
+                    this.playerBWalkTween = null;
+                }
+            });
         });
     }
 

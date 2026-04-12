@@ -375,8 +375,8 @@ export class ProgressionSystem {
             const hasArena1 = player.arena?.completedArenaLevels?.includes(1) ?? false;
             const hasArena2 = player.arena?.completedArenaLevels?.includes(2) ?? false;
 
-            if (retroWaves >= 1) player.townProgress.unlockedBuildings.push('guild');
-            if (retroWaves >= 2) player.townProgress.unlockedBuildings.push('witch');
+            if (retroWaves >= 1) player.townProgress.unlockedBuildings.push('witch');
+            if (retroWaves >= 2) player.townProgress.unlockedBuildings.push('guild');
             if (retroWaves >= 3) player.townProgress.unlockedBuildings.push('shop');
             if (hasArena1) player.townProgress.unlockedBuildings.push('Crystal Forge small');
             if (hasArena2) player.townProgress.unlockedBuildings.push('forest-exit');

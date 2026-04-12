@@ -6,6 +6,7 @@ import { ManaSystem } from '../systems/ManaSystem';
 import { SceneBuilder } from '../systems/SceneBuilder';
 import { UiElementBuilder } from '../systems/UiElementBuilder';
 import { PetDefinition, Crystal, PlayerState, CrystalTier } from '../types';
+import { CoopSwitchUI } from '../ui/CoopSwitchUI';
 
 /**
  * PythiaWorkshopScene - Graphical replacement for WitchHutScene
@@ -79,6 +80,9 @@ export class PythiaWorkshopScene extends Phaser.Scene {
         this.sceneBuilder.registerHandler('onBack', () => this.scene.start('TownScene'));
 
         this.sceneBuilder.buildScene();
+
+        // Co-op: add player switch UI
+        new CoopSwitchUI(this, 300, 640);
 
         // Create dynamic UI components
         this.createResourceDisplay();

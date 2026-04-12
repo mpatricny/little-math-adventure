@@ -4,6 +4,7 @@ import { GameStateManager } from '../systems/GameStateManager';
 import { ProgressionSystem } from '../systems/ProgressionSystem';
 import { UiElementBuilder } from '../systems/UiElementBuilder';
 import { Crystal } from '../types';
+import { CoopSessionManager } from '../systems/CoopSessionManager';
 
 interface VictoryData {
     // Navigation after dismiss
@@ -40,6 +41,14 @@ interface VictoryData {
     arenaLevel?: number;
     nextArenaLevel?: number;
 
+    // Co-op specific
+    coopMode?: boolean;
+    playerAName?: string;
+    playerBName?: string;
+    goldRewardA?: number;
+    goldRewardB?: number;
+    sharedAttackCount?: number;
+    sharedAttackCountLeveledUp?: boolean;
 }
 
 export class VictoryScene extends Phaser.Scene {
@@ -60,20 +69,28 @@ export class VictoryScene extends Phaser.Scene {
 
         // Handle arena completion
         if (data.arenaCompleted) {
-            const player = this.gameState.getPlayer();
-
-            // Mark current arena as complete, prepare for next
-            player.arena.isActive = false;
-            player.arena.currentBattle = 0;
-
-            // Advance to next arena level if available
-            if (data.nextArenaLevel && data.nextArenaLevel <= 3) {
-                player.arena.arenaLevel = data.nextArenaLevel;
+            if (data.coopMode) {
+                // Co-op: update both players' arena state
+                const coop = CoopSessionManager.getInstance();
+                coop.forBothPlayers(() => {
+                    const player = this.gameState.getPlayer();
+                    player.arena.isActive = false;
+                    player.arena.currentBattle = 0;
+                    if (data.nextArenaLevel && data.nextArenaLevel <= 3) {
+                        player.arena.arenaLevel = data.nextArenaLevel;
+                    }
+                    ProgressionSystem.fullHeal(player);
+                });
+            } else {
+                const player = this.gameState.getPlayer();
+                player.arena.isActive = false;
+                player.arena.currentBattle = 0;
+                if (data.nextArenaLevel && data.nextArenaLevel <= 3) {
+                    player.arena.arenaLevel = data.nextArenaLevel;
+                }
+                ProgressionSystem.fullHeal(player);
+                this.gameState.save();
             }
-
-            // Full heal after completing arena
-            ProgressionSystem.fullHeal(player);
-            this.gameState.save();
         }
     }
 
@@ -83,6 +100,7 @@ export class VictoryScene extends Phaser.Scene {
         const crystalDrops = this.victoryData.crystalDrops || [];
         const hasCrystals = crystalDrops.length > 0;
         const hasEnemyName = !isArenaComplete && !!this.victoryData.enemyName;
+        const hasSharedAttackBanner = !!(this.victoryData.coopMode && this.victoryData.sharedAttackCountLeveledUp);
 
         // === COMPUTE LAYOUT ===
         // Each section: height of its content + gap after it.
@@ -95,13 +113,14 @@ export class VictoryScene extends Phaser.Scene {
         // Section heights (measured from top of section to bottom of its last element)
         const titleH = 44 + SECTION_GAP;                         // 44px font
         const enemyNameH = hasEnemyName ? 20 + SECTION_GAP : 0;  // 20px font
+        const sharedAttackH = hasSharedAttackBanner ? 36 + SECTION_GAP : 0;
         const rewardsH = 45 + SECTION_GAP;                       // coin sprite ~45px at 0.18 scale
         const petH = hasPet ? 115 + SECTION_GAP : 0;             // title(18) + gap(8) + sprite(80) + gap(4) + name(16) + gap(2) + hint(12) = ~140 but squished
         const crystalH = hasCrystals ? 90 + SECTION_GAP : 0;     // holders(~65) + labels(~25)
         const arenaH = isArenaComplete ? 50 + SECTION_GAP : 0;
         const buttonH = 50;
 
-        const totalContentH = titleH + enemyNameH + rewardsH + petH + crystalH + arenaH + buttonH;
+        const totalContentH = titleH + enemyNameH + sharedAttackH + rewardsH + petH + crystalH + arenaH + buttonH;
         const panelHeight = Math.max(totalContentH + TOP_MARGIN + BOTTOM_MARGIN, 260);
 
         // Dark overlay
@@ -147,11 +166,33 @@ export class VictoryScene extends Phaser.Scene {
             yOffset += enemyNameH;
         }
 
+        // === CO-OP PLAYER NAMES ===
+        if (this.victoryData.coopMode && this.victoryData.playerAName && this.victoryData.playerBName) {
+            const coopLabel = this.add.text(0, yOffset + 5, `${this.victoryData.playerAName} & ${this.victoryData.playerBName}`, {
+                fontSize: '18px', fontFamily: 'Arial, sans-serif',
+                color: '#88ccff', fontStyle: 'bold',
+            }).setOrigin(0.5);
+            content.add(coopLabel);
+            yOffset += 28;
+        }
+
+        if (hasSharedAttackBanner) {
+            const sharedAttackBanner = this.add.text(0, yOffset + 8, `Společný útok posílil na ${this.victoryData.sharedAttackCount} příklad${this.victoryData.sharedAttackCount === 1 ? '' : this.victoryData.sharedAttackCount === 2 || this.victoryData.sharedAttackCount === 3 || this.victoryData.sharedAttackCount === 4 ? 'y' : 'ů'}!`, {
+                fontSize: '20px',
+                fontFamily: 'Arial, sans-serif',
+                color: '#aaff88',
+                fontStyle: 'bold',
+                stroke: '#000000',
+                strokeThickness: 4,
+            }).setOrigin(0.5);
+            content.add(sharedAttackBanner);
+            yOffset += sharedAttackH;
+        }
+
         // === REWARDS ROW (Coin sprite) ===
         const rewardsContainer = this.add.container(0, yOffset + 13);
 
         if (this.victoryData.goldReward) {
-            // Copper coin sprite from shop spritesheet (frame 1, 241px → ~43px at 0.18)
             const coinSprite = this.add.image(55, 0, 'shop-coins-sheet', 1)
                 .setScale(0.18).setOrigin(0.5);
             const coinAmount = this.add.text(80, 0, `+${this.victoryData.goldReward}`, {

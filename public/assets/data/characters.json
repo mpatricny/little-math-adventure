@@ -11,6 +11,6 @@
         "name": "Rytíř",
         "spriteKey": "boy-knight-walk-sheet",
         "animPrefix": "boy-knight",
-        "scale": 1.0
+        "scale": 1.35
     }
 ]

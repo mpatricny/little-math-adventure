@@ -6,6 +6,7 @@ import { ManaSystem } from '../systems/ManaSystem';
 import { SceneDebugger } from '../systems/SceneDebugger';
 import { SceneBuilder } from '../systems/SceneBuilder';
 import { LocalizationService } from '../systems/LocalizationService';
+import { CoopSwitchUI } from '../ui/CoopSwitchUI';
 
 // Coin type definitions
 interface CoinType {
@@ -98,6 +99,9 @@ export class ShopScene extends Phaser.Scene {
         this.sceneBuilder.registerHandler('onBack', () => this.scene.start('TownScene'));
 
         this.sceneBuilder.buildScene();
+
+        // Co-op: add player switch UI
+        new CoopSwitchUI(this, 300, 640);
 
         // Wire up "money mana" resource display
         this.setupResourceDisplay();

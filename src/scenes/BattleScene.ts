@@ -10,6 +10,12 @@ import { SceneDebugger } from '../systems/SceneDebugger';
 import { SceneBuilder } from '../systems/SceneBuilder';
 import { getPlayerSpriteConfig, PlayerSpriteConfig } from '../utils/characterUtils';
 import { PauseMenu } from '../ui/PauseMenu';
+import { TrialFeedbackVisualizer } from '../ui/TrialFeedbackVisualizer';
+import { formatMathProblem } from '../utils/formatMathProblem';
+import { SpeedChargeBar } from '../ui/SpeedChargeBar';
+import { TurnManager, BattleSceneCallbacks } from '../battle/TurnManager';
+import { CoopSessionManager } from '../systems/CoopSessionManager';
+import { MasteryData } from '../types';
 
 // HP Bar component attached to character
 interface HpBar {
@@ -19,7 +25,10 @@ interface HpBar {
     text: Phaser.GameObjects.Text;
 }
 
-export class BattleScene extends Phaser.Scene {
+export class BattleScene extends Phaser.Scene implements BattleSceneCallbacks {
+    // Turn management
+    private turnManager!: TurnManager;
+
     // Character containers (sprite + HP bar)
     private heroContainer!: Phaser.GameObjects.Container;
     private enemyContainers: Phaser.GameObjects.Container[] = [];
@@ -37,6 +46,10 @@ export class BattleScene extends Phaser.Scene {
     private blockTimerText!: Phaser.GameObjects.Text;
     private blockAttemptsText!: Phaser.GameObjects.Text;
     private targetIndicator!: Phaser.GameObjects.Image;
+
+    // Wrong answer feedback
+    private feedbackOverlay!: Phaser.GameObjects.Container;
+    private feedbackVisualizer: TrialFeedbackVisualizer | null = null;
 
     // Systems
     private mathEngine!: MathEngine;
@@ -80,6 +93,11 @@ export class BattleScene extends Phaser.Scene {
         enemies: { x: number; y: number }[];
     } | null = null;
 
+    // Y-based depth sorting for 2.5D visual layering
+    private static readonly ATTACK_DEPTH = 45;
+    private static readonly NAME_LABEL_DEPTH = 46;
+    private entityRestingDepths: Map<Phaser.GameObjects.Container, number> = new Map();
+
     // Pet companion
     private petContainer: Phaser.GameObjects.Container | null = null;
     private petSprite: Phaser.GameObjects.Sprite | null = null;
@@ -96,6 +114,23 @@ export class BattleScene extends Phaser.Scene {
     private activeHighlight: Phaser.GameObjects.Graphics | null = null;
     private activeHighlightTween: Phaser.Tweens.Tween | null = null;
 
+    // Co-op: Player B state
+    private currentEnemyAttackTarget: 'A' | 'B' = 'A';  // Which player the enemy is attacking
+    private isCoopMode: boolean = false;
+    private coopSession: CoopSessionManager | null = null;
+    private coopMasteryA: MasteryData | null = null;
+    private coopMasteryB: MasteryData | null = null;
+    private heroBContainer: Phaser.GameObjects.Container | null = null;
+    private heroB: Phaser.GameObjects.Sprite | null = null;
+    private heroBHpBar: HpBar | null = null;
+    private heroBSpriteConfig: PlayerSpriteConfig | null = null;
+    private coopTurnLabel: Phaser.GameObjects.Text | null = null;
+    private petBContainer: Phaser.GameObjects.Container | null = null;
+    private petBSprite: Phaser.GameObjects.Sprite | null = null;
+    private equippedPetBDef: PetDefinition | null = null;
+    private speedChargeBarB: SpeedChargeBar | null = null;
+    private playerBFallen: boolean = false;
+
     constructor() {
         super({ key: 'BattleScene' });
     }
@@ -105,6 +140,9 @@ export class BattleScene extends Phaser.Scene {
     private arenaLevel: number = 1;
     private arenaWave: number = 0;
     private waveWrongAnswerCount: number = 0;
+
+    // Speed charge bar (accumulates charges from fast answers, +1 damage per 4 charges)
+    private speedChargeBar!: SpeedChargeBar;
 
     // Enemy attack tween tracking for mid-attack pause
     private enemyAttackTweens: Phaser.Tweens.Tween[] = [];
@@ -165,6 +203,11 @@ export class BattleScene extends Phaser.Scene {
         // Get global game state
         this.gameState = GameStateManager.getInstance();
         const player = this.gameState.getPlayer();
+
+        // Detect co-op mode
+        this.coopSession = CoopSessionManager.getInstance();
+        this.isCoopMode = this.coopSession.isCoopActive();
+        this.playerBFallen = false;
 
         // Store journey mode data
         this.journeyMode = data.mode === 'journey';
@@ -301,6 +344,11 @@ export class BattleScene extends Phaser.Scene {
             this.enemyDefs = [enemy || enemies?.[0]];
         }
 
+        // Co-op: scale enemies for 2-player difficulty
+        if (this.isCoopMode && this.coopSession) {
+            this.enemyDefs = this.coopSession.getCoopEnemyDefs(this.enemyDefs, this.isBoss);
+        }
+
         // Use animPrefix if available (new format), fallback to parsing spriteKey (legacy)
         this.enemyAnimPrefixes = this.enemyDefs.map(def => {
             if (def.animPrefix) {
@@ -360,13 +408,20 @@ export class BattleScene extends Phaser.Scene {
             console.log(`[BattleScene] Using custom background: ${this.backgroundKey}`);
         } else if (this.backgroundKey) {
             console.warn(`[BattleScene] Background texture not found: ${this.backgroundKey}`);
+        } else if (this.fromArena) {
+            const arenaTextureKey = `arena-${this.arenaLevel}-bg`;
+            if (this.textures.exists(arenaTextureKey)) {
+                const bg = this.add.image(640, 360, arenaTextureKey);
+                bg.setDepth(-5);
+                bg.setDisplaySize(1280, 720);
+            }
         }
 
         const player = this.gameState.getPlayer();
 
         // Get spawn points from scene-layouts.json (preferred) or fallback to zones
         const enemyCount = this.battleState.enemies.length;
-        const spawnPoints = this.sceneBuilder.getSpawnPoints(undefined, enemyCount);
+        const spawnPoints = this.sceneBuilder.getSpawnPoints(undefined, enemyCount, this.isCoopMode);
 
         // Hero position from spawn points or fallback
         let heroX: number, heroY: number;
@@ -393,8 +448,9 @@ export class BattleScene extends Phaser.Scene {
         this.hero = this.add.sprite(0, 0, this.playerSpriteConfig.idleTexture)
             .setScale(heroScale)
             .play(this.playerSpriteConfig.idleAnim);
-        this.heroHpBar = this.createHpBar(0, -90, this.battleState.playerHp, player.maxHp, '#44cc44');
-        this.heroContainer.add([this.hero, this.heroHpBar.container]);
+        this.heroHpBar = this.createHpBar(0, -90, this.battleState.playerHp, player.maxHp, '#44cc44', true);
+        this.speedChargeBar = new SpeedChargeBar(this, 0, -115);
+        this.heroContainer.add([this.hero, this.heroHpBar.container, this.speedChargeBar.getContainer()]);
 
         // Pet position from spawn points or default relative to hero
         let petX: number, petY: number;
@@ -415,6 +471,22 @@ export class BattleScene extends Phaser.Scene {
             pet: { x: petX, y: petY },
             enemies: []
         };
+
+        // Co-op: Create Player B's hero and pet
+        this.heroBContainer = null;
+        this.heroB = null;
+        this.heroBHpBar = null;
+        this.heroBSpriteConfig = null;
+        this.petBContainer = null;
+        this.petBSprite = null;
+        this.equippedPetBDef = null;
+        this.speedChargeBarB = null;
+
+        if (this.isCoopMode && this.coopSession) {
+            this.createPlayerBHero(spawnPoints);
+            this.coopMasteryA = this.coopSession.getPlayerAMasteryData();
+            this.coopMasteryB = this.coopSession.getPlayerBMasteryData();
+        }
 
         // Create enemy containers using configured spawn points
         this.battleState.enemies.forEach((enemy, index) => {
@@ -477,6 +549,9 @@ export class BattleScene extends Phaser.Scene {
             this.enemyHpBars.push(hpBar);
         });
 
+        // Assign Y-based depths for correct 2.5D layering
+        this.assignYBasedDepths();
+
         // Create target indicator (iron sword pointing down at selected enemy)
         this.targetIndicator = this.add.image(0, 0, 'shop-swords-sheet', 1)  // frame 1 = iron sword
             .setScale(0.2)
@@ -515,6 +590,32 @@ export class BattleScene extends Phaser.Scene {
         // Create math board with multi-problem callback (but we'll use showSingle)
         this.mathBoard = new MathBoard(this, this.onMathComplete.bind(this));
 
+        // Speed charge bar callback: MathBoard delegates charge management to BattleScene
+        this.mathBoard.setSpeedChargeCallback((charges, _type) => {
+            // Don't accumulate charges during block phase — block has its own quick-block bonus
+            if (this.isBlockPhase) return 0;
+
+            // Use the correct player's speed charge bar in co-op
+            const isPlayerB = this.isCoopMode && this.coopSession?.getActivePlayer() === 'B';
+            const activeBar = (isPlayerB && this.speedChargeBarB) ? this.speedChargeBarB : this.speedChargeBar;
+            const result = activeBar.addCharges(charges);
+            if (result.bonusDamage > 0) {
+                this.showChargeBarFilledEffect(result.bonusDamage);
+            }
+            return result.bonusDamage;
+        });
+
+        // Wrong answer feedback overlay
+        this.createFeedbackOverlay();
+        this.mathBoard.setOnWrongAnswer((problem: MathProblem, onDismiss: () => void) => {
+            this.showWrongAnswerFeedback(problem, onDismiss);
+        });
+        this.events.on('shutdown', () => {
+            this.closeFeedbackOverlay();
+            // Clear mastery data override so MasterySystem reverts to GameStateManager default
+            MasterySystem.getInstance().setActiveData(null);
+        });
+
         // Get attack button from SceneBuilder (already has click handler bound via registerHandler)
         const builderAttackBtn = this.sceneBuilder.get('attackBtn');
         if (builderAttackBtn) {
@@ -525,6 +626,9 @@ export class BattleScene extends Phaser.Scene {
 
         this.createBlockUI();
         this.createPotionButton();
+
+        // Initialize TurnManager
+        this.turnManager = new TurnManager(this.battleState, this);
 
         // Setup universal debugger
         this.setupDebugger();
@@ -563,15 +667,28 @@ export class BattleScene extends Phaser.Scene {
         return animPrefix; // Return potentially modified animPrefix
     }
 
-    private createHpBar(x: number, y: number, hp: number, maxHp: number, color: string): HpBar {
+    private createHpBar(x: number, y: number, hp: number, maxHp: number, color: string, showHeartIcon: boolean = false): HpBar {
         const width = 100;
         const height = 12;
+        // Shift bar right when icon is present so icon+bar is centered as a group
+        const barOffset = showHeartIcon ? 9 : 0;
         const container = this.add.container(x, y);
 
-        const bg = this.add.rectangle(0, 0, width + 4, height + 4, 0x333333).setOrigin(0.5);
+        if (showHeartIcon) {
+            const heart = this.add.text(-width / 2 - 8 + barOffset, 0, '♥', {
+                fontSize: '16px',
+                fontFamily: 'Arial, sans-serif',
+                color: '#cc3333',
+                stroke: '#1a0808',
+                strokeThickness: 2,
+            }).setOrigin(0.5);
+            container.add(heart);
+        }
+
+        const bg = this.add.rectangle(barOffset, 0, width + 4, height + 4, 0x333333).setOrigin(0.5);
         const fillColor = color === '#44cc44' ? 0x44cc44 : 0xcc4444;
-        const fill = this.add.rectangle(-width / 2, 0, width * (hp / maxHp), height, fillColor).setOrigin(0, 0.5);
-        const text = this.add.text(0, 0, `${hp}/${maxHp}`, {
+        const fill = this.add.rectangle(-width / 2 + barOffset, 0, width * (hp / maxHp), height, fillColor).setOrigin(0, 0.5);
+        const text = this.add.text(barOffset, 0, `${hp}/${maxHp}`, {
             fontSize: '10px',
             fontFamily: 'Arial, sans-serif',
             color: '#ffffff',
@@ -632,51 +749,198 @@ export class BattleScene extends Phaser.Scene {
         }
 
         this.petContainer.add(this.petSprite);
-        this.petContainer.setDepth(-1);  // Behind hero
+    }
+
+    /**
+     * Co-op: Create Player B's hero and pet.
+     * Swaps to Player B's context, reads their data, creates sprites, swaps back.
+     */
+    private createPlayerBHero(spawnPoints: any): void {
+        if (!this.coopSession) return;
+
+        // Swap to Player B to read their data
+        this.coopSession.activatePlayerB();
+        const playerB = this.gameState.getPlayer();
+
+        // Player B spawn position
+        const heroBX = spawnPoints?.playerB?.x ?? 230;
+        const heroBY = spawnPoints?.playerB?.y ?? 520;
+
+        // Get Player B's sprite config
+        this.heroBSpriteConfig = getPlayerSpriteConfig(playerB.characterType);
+        const charactersData = this.cache.json.get('characters') as Array<{ id: string; scale?: number }>;
+        const charDefB = charactersData?.find(c => c.id === playerB.characterType);
+        const heroScale = (charDefB?.scale ?? 1.0) * 1.0;
+
+        // Store Player B's battle HP
+        this.battleState.playerBHp = playerB.hp;
+        this.battleState.playerBMaxHp = playerB.maxHp;
+        this.coopSession.playerBBattleHp = playerB.hp;
+        this.coopSession.playerBMaxHp = playerB.maxHp;
+
+        // Create Player B hero container
+        this.heroBContainer = this.add.container(heroBX, heroBY);
+        this.heroB = this.add.sprite(0, 0, this.heroBSpriteConfig.idleTexture)
+            .setScale(heroScale)
+            .play(this.heroBSpriteConfig.idleAnim);
+        this.heroBHpBar = this.createHpBar(0, -90, playerB.hp, playerB.maxHp, '#4488cc', true);
+        this.speedChargeBarB = new SpeedChargeBar(this, 0, -115);
+        this.heroBContainer.add([this.heroB, this.heroBHpBar.container, this.speedChargeBarB.getContainer()]);
+
+        // Name labels
+        const nameA = this.add.text(this.heroContainer.x, this.heroContainer.y - 130, this.gameState.getPlayer().name || 'Hráč 1', {
+            fontSize: '14px', fontFamily: 'Arial, sans-serif',
+            color: '#44cc44', fontStyle: 'bold',
+            stroke: '#000000', strokeThickness: 2,
+        }).setOrigin(0.5).setDepth(BattleScene.NAME_LABEL_DEPTH);
+        // We need Player A's name — but we're in B's context now. Read from the label we just...
+        // Actually let's set A's label after swapping back.
+
+        const nameBLabel = this.add.text(heroBX, heroBY - 130, playerB.name || 'Hráč 2', {
+            fontSize: '14px', fontFamily: 'Arial, sans-serif',
+            color: '#4488cc', fontStyle: 'bold',
+            stroke: '#000000', strokeThickness: 2,
+        }).setOrigin(0.5).setDepth(BattleScene.NAME_LABEL_DEPTH);
+
+        // Create Player B's pet — use spawn points if available, else offset from hero
+        const petBX = spawnPoints?.petB?.x ?? (heroBX - 60);
+        const petBY = spawnPoints?.petB?.y ?? (heroBY + 40);
+        this.createPlayerBPet(playerB, petBX, petBY);
+
+        // Swap back to Player A
+        this.coopSession.activatePlayerA();
+        const playerA = this.gameState.getPlayer();
+
+        // Fix Player A's name label (we created it while in B's context)
+        nameA.setText(playerA.name || 'Hráč 1');
+
+        // Also store Player A's battle HP in coop session
+        this.coopSession.playerABattleHp = this.battleState.playerHp;
+        this.coopSession.playerAMaxHp = playerA.maxHp;
+    }
+
+    /**
+     * Co-op: Create Player B's pet companion.
+     */
+    private createPlayerBPet(playerB: { activePet: string | null }, petX: number, petY: number): void {
+        this.petBContainer = null;
+        this.petBSprite = null;
+        this.equippedPetBDef = null;
+
+        if (!playerB.activePet) return;
+
+        const petsData = this.cache.json.get('pets') as PetDefinition[];
+        const petDef = petsData.find(p => p.id === playerB.activePet);
+        if (!petDef) return;
+
+        this.equippedPetBDef = petDef;
+
+        this.petBContainer = this.add.container(petX, petY);
+        const PET_BASE_SCALE = 0.5;
+        const petScale = (petDef.scale ?? 1.0) * PET_BASE_SCALE;
+
+        this.petBSprite = this.add.sprite(0, 0, petDef.spriteKey, 0)
+            .setScale(petScale)
+            .setFlipX(true);
+
+        const idleAnim = `${petDef.animPrefix}-idle`;
+        if (this.anims.exists(idleAnim)) {
+            this.petBSprite.play(idleAnim);
+        }
+
+        this.petBContainer.add(this.petBSprite);
     }
 
     /**
      * Return pet to its starting position after attack
      */
     private returnPetToPosition(startX: number, startY: number, onComplete: () => void): void {
-        if (!this.petContainer) {
+        const activePet = this.getActivePet();
+        const container = activePet.container;
+        if (!container) {
             onComplete();
             return;
         }
 
         this.tweens.add({
-            targets: this.petContainer,
+            targets: container,
             x: startX,
             y: startY,
             duration: 300,
             ease: 'Quad.easeIn',
             onComplete: () => {
-                // Reset depth
-                this.petContainer?.setDepth(-1);
+                container.setDepth(this.getRestingDepth(container));
                 onComplete();
             }
         });
     }
 
     /**
+     * Compute resting depth from Y position.
+     * Higher Y = higher depth = visually in front (2.5D perspective).
+     * Maps Y range [400..700] to depth range [1..30], below UI at 50+.
+     */
+    private computeRestingDepth(y: number): number {
+        return Phaser.Math.Clamp(Math.floor((y - 400) / 10) + 1, 1, 40);
+    }
+
+    /**
+     * Compute and assign resting depths for all battle entities based on Y position.
+     * Called once after all entities (heroes, pets, enemies) are created.
+     */
+    private assignYBasedDepths(): void {
+        this.entityRestingDepths.clear();
+
+        const entities: Phaser.GameObjects.Container[] = [this.heroContainer];
+        if (this.petContainer) entities.push(this.petContainer);
+        if (this.heroBContainer) entities.push(this.heroBContainer);
+        if (this.petBContainer) entities.push(this.petBContainer);
+        this.enemyContainers.forEach(c => entities.push(c));
+
+        for (const container of entities) {
+            const depth = this.computeRestingDepth(container.y);
+            this.entityRestingDepths.set(container, depth);
+            container.setDepth(depth);
+        }
+    }
+
+    /**
+     * Get stored resting depth for an entity container.
+     * Falls back to computing from current Y if not found.
+     */
+    private getRestingDepth(container: Phaser.GameObjects.Container): number {
+        return this.entityRestingDepths.get(container) ?? this.computeRestingDepth(container.y);
+    }
+
+    /** Get the active pet's definition, container, and sprite based on whose turn it is */
+    private getActivePet(): { def: PetDefinition | null; container: Phaser.GameObjects.Container | null; sprite: Phaser.GameObjects.Sprite | null } {
+        const isPetB = this.battleState.phase === 'pet_b_turn' || this.battleState.phase === 'pet_b_math' || this.battleState.phase === 'pet_b_attack';
+        if (isPetB) {
+            return { def: this.equippedPetBDef, container: this.petBContainer, sprite: this.petBSprite };
+        }
+        return { def: this.equippedPetDef, container: this.petContainer, sprite: this.petSprite };
+    }
+
+    /**
      * Show pet's dedicated math problem
      */
     private showPetMathProblem(): void {
-        if (!this.equippedPetDef) {
-            this.transitionToEnemyTurn();
+        const activePet = this.getActivePet();
+        if (!activePet.def) {
+            this.transitionAfterPetAction();
             return;
         }
 
         // Show active highlight on pet
-        if (this.petContainer) {
-            this.showActiveHighlight(this.petContainer.x, this.petContainer.y + 30, 'green');
+        if (activePet.container) {
+            this.showActiveHighlight(activePet.container.x, activePet.container.y + 30, 'green');
         }
 
         // Generate pet's single problem from mastery pool
-        this.petMathProblem = this.generatePetProblemFromPool(this.equippedPetDef);
+        this.petMathProblem = this.generatePetProblemFromPool(activePet.def);
 
         if (!this.petMathProblem) {
-            this.transitionToEnemyTurn();
+            this.transitionAfterPetAction();
             return;
         }
 
@@ -696,7 +960,7 @@ export class BattleScene extends Phaser.Scene {
 
             // Record to mastery system if this was a mastery problem
             if (this.petMathProblem.masteryKey) {
-                MasterySystem.getInstance().recordSolve(
+                this.getCoopSafeMasterySystem().recordSolve(
                     this.petMathProblem.masteryKey,
                     isCorrect,
                     responseTimeMs,
@@ -708,14 +972,26 @@ export class BattleScene extends Phaser.Scene {
         // Track wrong answers for arena perfect wave calculation
         if (this.fromArena && !isCorrect) {
             this.waveWrongAnswerCount++;
+            if (this.isCoopMode && this.coopSession) {
+                if (this.coopSession.getActivePlayer() === 'A') {
+                    this.coopSession.playerAWrongCount++;
+                } else {
+                    this.coopSession.playerBWrongCount++;
+                }
+            }
         }
 
+        const isPetB = this.battleState.phase === 'pet_b_math';
         if (isCorrect) {
-            this.setPhase('pet_attack');
+            this.setPhase(isPetB ? 'pet_b_attack' : 'pet_attack');
         } else {
             // Pet misses turn
             this.showPetMissMessage();
-            this.time.delayedCall(500, () => this.transitionToEnemyTurn());
+            if (isPetB) {
+                this.time.delayedCall(500, () => this.setPhase(this.turnManager.nextPhaseAfterPetBAction()));
+            } else {
+                this.time.delayedCall(500, () => this.transitionAfterPetAction());
+            }
         }
     }
 
@@ -723,9 +999,10 @@ export class BattleScene extends Phaser.Scene {
      * Show "miss" message for pet
      */
     private showPetMissMessage(): void {
-        if (!this.petContainer) return;
+        const activePet = this.getActivePet();
+        if (!activePet.container) return;
 
-        const missText = this.add.text(this.petContainer.x, this.petContainer.y - 50, 'VEDLE!', {
+        const missText = this.add.text(activePet.container.x, activePet.container.y - 50, 'VEDLE!', {
             fontSize: '24px',
             fontFamily: 'Arial, sans-serif',
             color: '#aaaaaa',
@@ -747,22 +1024,30 @@ export class BattleScene extends Phaser.Scene {
      * Execute pet's attack
      */
     private executePetAttack(): void {
-        if (!this.equippedPetDef || !this.petMathProblem) {
-            this.transitionToEnemyTurn();
+        const activePet = this.getActivePet();
+        if (!activePet.def || !this.petMathProblem) {
+            this.transitionAfterPetAction();
             return;
         }
 
-        const damage = this.petMathProblem.damageMultiplier || 1;
+        let damage = this.petMathProblem.damageMultiplier || 1;
+        // Apply catacomb mastery upgrades to catacomb pets
+        if (activePet.def.unlockedByEnemy?.startsWith('catacomb_creature_')) {
+            const bandId = activePet.def.unlockedByEnemy.slice(-1);
+            const player = this.gameState.getPlayer();
+            const upgrades = player.catacombPetUpgrades?.[bandId] ?? 0;
+            damage += upgrades;
+        }
         const targetIdx = this.petTargetIndex;
 
         // Check for spell attack effect (like Bodlina's lightning)
-        if (this.equippedPetDef.attackEffect) {
+        if (activePet.def.attackEffect) {
             this.playPetSpellAttack(targetIdx, damage, () => {
-                this.transitionToEnemyTurn();
+                this.transitionAfterPetAction();
             });
         } else {
             this.playPetMeleeAttack(targetIdx, damage, () => {
-                this.transitionToEnemyTurn();
+                this.transitionAfterPetAction();
             });
         }
     }
@@ -771,7 +1056,8 @@ export class BattleScene extends Phaser.Scene {
      * Play pet melee attack (same as original playPetAttack but with damage)
      */
     private playPetMeleeAttack(targetIdx: number, damage: number, onComplete: () => void): void {
-        if (!this.petSprite || !this.equippedPetDef || !this.petContainer) {
+        const activePet = this.getActivePet();
+        if (!activePet.sprite || !activePet.def || !activePet.container) {
             onComplete();
             return;
         }
@@ -782,9 +1068,9 @@ export class BattleScene extends Phaser.Scene {
             return;
         }
 
-        const animPrefix = this.equippedPetDef.animPrefix;
-        const startX = this.petContainer.x;
-        const startY = this.petContainer.y;
+        const animPrefix = activePet.def.animPrefix;
+        const startX = activePet.container.x;
+        const startY = activePet.container.y;
 
         // Target position - offset slightly to the left of enemy
         const targetX = enemyContainer.x - 40;
@@ -796,17 +1082,17 @@ export class BattleScene extends Phaser.Scene {
         const moveDuration = movement?.duration || 300;
 
         // Pet appears on top during attack
-        this.petContainer.setDepth(10);
+        activePet.container.setDepth(BattleScene.ATTACK_DEPTH);
 
         // Play attack animation immediately during approach
         const attackAnim = `${animPrefix}-attack`;
         if (this.anims.exists(attackAnim)) {
-            this.petSprite.play(attackAnim);
+            activePet.sprite.play(attackAnim);
         }
 
         // Move to enemy position
         this.tweens.add({
-            targets: this.petContainer,
+            targets: activePet.container,
             x: targetX,
             y: targetY,
             duration: moveDuration,
@@ -817,7 +1103,7 @@ export class BattleScene extends Phaser.Scene {
 
                 // Brief pause at enemy (100ms), then return
                 this.time.delayedCall(100, () => {
-                    this.petSprite!.play(`${animPrefix}-idle`);
+                    activePet.sprite!.play(`${animPrefix}-idle`);
                     this.returnPetToPosition(startX, startY, onComplete);
                 });
             }
@@ -828,7 +1114,8 @@ export class BattleScene extends Phaser.Scene {
      * Play pet spell attack (lightning for Bodlina)
      */
     private playPetSpellAttack(targetIdx: number, damage: number, onComplete: () => void): void {
-        if (!this.petSprite || !this.equippedPetDef || !this.petContainer) {
+        const activePet = this.getActivePet();
+        if (!activePet.sprite || !activePet.def || !activePet.container) {
             onComplete();
             return;
         }
@@ -839,21 +1126,21 @@ export class BattleScene extends Phaser.Scene {
             return;
         }
 
-        const animPrefix = this.equippedPetDef.animPrefix;
-        const attackEffect = this.equippedPetDef.attackEffect;
+        const animPrefix = activePet.def.animPrefix;
+        const attackEffect = activePet.def.attackEffect;
 
         // Play attack animation in place (pet doesn't move for spells)
         const attackAnim = `${animPrefix}-attack`;
         if (this.anims.exists(attackAnim)) {
-            this.petSprite.play(attackAnim);
+            activePet.sprite.play(attackAnim);
         }
 
         // Play effect based on type
         if (attackEffect?.type === 'lightning') {
             const tintColor = attackEffect.tint ? parseInt(attackEffect.tint, 16) : 0x44ff44;
             this.playLightningEffect(
-                this.petContainer.x,
-                this.petContainer.y - 30,
+                activePet.container.x,
+                activePet.container.y - 30,
                 enemyContainer.x,
                 enemyContainer.y,
                 tintColor,
@@ -863,7 +1150,7 @@ export class BattleScene extends Phaser.Scene {
 
                     // Return to idle
                     this.time.delayedCall(200, () => {
-                        this.petSprite!.play(`${animPrefix}-idle`);
+                        activePet.sprite!.play(`${animPrefix}-idle`);
                         onComplete();
                     });
                 }
@@ -1011,18 +1298,40 @@ export class BattleScene extends Phaser.Scene {
     /**
      * Transition to enemy turn after pet attack
      */
-    private transitionToEnemyTurn(): void {
+    private transitionAfterPetAction(): void {
         const targetIdx = this.petTargetIndex;
         const enemy = this.battleState.enemies[targetIdx];
         const enemySprite = this.enemies[targetIdx];
         const animPrefix = this.enemyAnimPrefixes[targetIdx];
 
+        // Determine next phase based on whether this is Pet A or Pet B
+        const isPetB = this.battleState.phase === 'pet_b_attack' || this.battleState.phase === 'pet_b_math';
+        const nextPhase = isPetB
+            ? this.turnManager.nextPhaseAfterPetBAction()
+            : this.turnManager.nextPhaseAfterPetAction();
+
         // Check if target enemy died from pet attack
         if (enemy.hp <= 0) {
+            const allDead = this.battleState.enemies.every(e => e.hp <= 0);
+
+            const afterDeath = () => {
+                if (allDead) {
+                    this.targetIndicator.setVisible(false);
+                    if (this.isBoss && this.currentBossPhase < this.bossPhases.length - 1) {
+                        this.triggerBossPhaseTransition();
+                    } else {
+                        this.setPhase('victory');
+                    }
+                } else {
+                    // Enemies remain — use correct pet phase routing (not always enemy_turn)
+                    this.getCurrentEnemyIndex();
+                    this.updateTargetIndicator();
+                    this.setPhase(nextPhase);
+                }
+            };
+
             if (this.isBoss && targetIdx === 0 && this.bossPhaseAnimOverrides.deathSequence?.length) {
-                this.playBossDeathSequence(targetIdx, enemySprite, () => {
-                    this.checkVictoryOrContinue();
-                });
+                this.playBossDeathSequence(targetIdx, enemySprite, afterDeath);
             } else {
                 const deathKey = (this.isBoss && targetIdx === 0) ? this.getBossAnimKey(0, 'death') : `${animPrefix}-death`;
                 enemySprite.play(deathKey);
@@ -1032,15 +1341,13 @@ export class BattleScene extends Phaser.Scene {
                             targets: this.enemyContainers[targetIdx],
                             alpha: 0,
                             duration: 500,
-                            onComplete: () => {
-                                this.checkVictoryOrContinue();
-                            }
+                            onComplete: afterDeath,
                         });
                     });
                 });
             }
         } else {
-            this.setPhase('enemy_turn');
+            this.setPhase(nextPhase);
         }
     }
 
@@ -1087,15 +1394,19 @@ export class BattleScene extends Phaser.Scene {
      * Play hero defense animation when player successfully blocks damage
      */
     private playHeroDefense(): void {
-        this.hero.play(this.playerSpriteConfig.defendAnim);
+        const isTargetB = this.isCoopMode && this.currentEnemyAttackTarget === 'B';
+        const targetHero = (isTargetB && this.heroB) ? this.heroB : this.hero;
+        const targetConfig = (isTargetB && this.heroBSpriteConfig) ? this.heroBSpriteConfig : this.playerSpriteConfig;
+
+        targetHero.play(targetConfig.defendAnim);
 
         // Blue tint for defense effect
-        this.hero.setTint(0x4488ff);
-        this.time.delayedCall(200, () => this.hero.clearTint());
+        targetHero.setTint(0x4488ff);
+        this.time.delayedCall(200, () => targetHero.clearTint());
 
         // Return to idle when animation completes
-        this.hero.once('animationcomplete', () => {
-            this.hero.play(this.playerSpriteConfig.idleAnim);
+        targetHero.once('animationcomplete', () => {
+            targetHero.play(targetConfig.idleAnim);
         });
     }
 
@@ -1178,8 +1489,8 @@ export class BattleScene extends Phaser.Scene {
     }
 
     private selectTarget(index: number): void {
-        // Only allow selecting alive enemies during player turn
-        if (this.battleState.phase !== 'player_turn') return;
+        // Only allow selecting alive enemies during a player's turn
+        if (this.battleState.phase !== 'player_turn' && this.battleState.phase !== 'player_b_turn') return;
         if (this.battleState.enemies[index].hp <= 0) return;
 
         this.battleState.selectedEnemyIndex = index;
@@ -1323,15 +1634,19 @@ export class BattleScene extends Phaser.Scene {
     }
 
     private onPetAttackClicked(): void {
-        if (this.battleState.phase !== 'pet_turn') return;
-
-        this.petAttackButton.setVisible(false);
-        this.hidePetTargetIndicator();
-        this.setPhase('pet_math');
+        if (this.battleState.phase === 'pet_turn') {
+            this.petAttackButton.setVisible(false);
+            this.hidePetTargetIndicator();
+            this.setPhase('pet_math');
+        } else if (this.battleState.phase === 'pet_b_turn') {
+            this.petAttackButton.setVisible(false);
+            this.hidePetTargetIndicator();
+            this.setPhase('pet_b_math');
+        }
     }
 
     private selectPetTarget(index: number): void {
-        if (this.battleState.phase !== 'pet_turn') return;
+        if (this.battleState.phase !== 'pet_turn' && this.battleState.phase !== 'pet_b_turn') return;
         if (this.battleState.enemies[index].hp <= 0) return;
 
         this.petTargetIndex = index;
@@ -1375,18 +1690,25 @@ export class BattleScene extends Phaser.Scene {
     }
 
     private usePotion(): void {
-        // Only allow during player_turn phase
-        if (this.battleState.phase !== 'player_turn') return;
+        const isPlayerA = this.battleState.phase === 'player_turn';
+        const isPlayerB = this.battleState.phase === 'player_b_turn';
+        if (!isPlayerA && !isPlayerB) return;
 
         const player = this.gameState.getPlayer();
         if (player.potions <= 0) return;
 
         // Use potion - heal to full
         player.potions = 0;
-        this.battleState.playerHp = player.maxHp;
 
-        // Update HP bar
-        this.updateHpBar(this.heroHpBar, this.battleState.playerHp, player.maxHp);
+        if (isPlayerB && this.heroBContainer && this.heroBHpBar) {
+            // Heal Player B
+            this.battleState.playerBHp = this.battleState.playerBMaxHp ?? player.maxHp;
+            this.updateHpBar(this.heroBHpBar, this.battleState.playerBHp, this.battleState.playerBMaxHp ?? player.maxHp);
+        } else {
+            // Heal Player A
+            this.battleState.playerHp = player.maxHp;
+            this.updateHpBar(this.heroHpBar, this.battleState.playerHp, player.maxHp);
+        }
 
         // Save state (potion used)
         this.gameState.save();
@@ -1395,7 +1717,8 @@ export class BattleScene extends Phaser.Scene {
         this.potionButton.setVisible(false);
 
         // Visual feedback
-        const healText = this.add.text(this.heroContainer.x, this.heroContainer.y - 80, 'VYLÉČEN!', {
+        const targetContainer = isPlayerB ? this.heroBContainer! : this.heroContainer;
+        const healText = this.add.text(targetContainer.x, targetContainer.y - 80, 'VYLÉČEN!', {
             fontSize: '28px',
             fontFamily: 'Arial, sans-serif',
             color: '#44ff44',
@@ -1419,96 +1742,340 @@ export class BattleScene extends Phaser.Scene {
         });
     }
 
+    /**
+     * Transition to a new battle phase. Delegates to TurnManager.
+     */
     private setPhase(phase: BattlePhase): void {
-        this.battleState.phase = phase;
+        this.turnManager.setPhase(phase);
+    }
 
-        switch (phase) {
-            case 'player_turn':
-                this.attackButton.setVisible(true);
-                // Show potion button if player has a potion
-                const playerForTurn = this.gameState.getPlayer();
-                this.potionButton.setVisible(playerForTurn.potions > 0);
-                this.hideActiveHighlight();
-                break;
+    // --- BattleSceneCallbacks implementation ---
+    // These are called by TurnManager when entering each phase.
 
-            case 'player_math':
-                this.attackButton.setVisible(false);
-                this.potionButton.setVisible(false);
-                this.showAttackProblems();
-                break;
-
-            case 'player_attack':
-                this.playHeroAttack();
-                break;
-
-            case 'player_miss':
-                this.playHeroMiss();
-                break;
-
-            case 'pet_turn':
-                // Show pet attack button for target selection
-                this.petAttackButton.setVisible(true);
-                // Hide player's target indicator
-                this.targetIndicator.setVisible(false);
-                // Show green highlight on pet
-                if (this.petContainer) {
-                    this.showActiveHighlight(this.petContainer.x, this.petContainer.y + 30, 'green');
-                }
-                // Auto-select first alive enemy (can be changed by clicking)
-                this.petTargetIndex = this.battleState.enemies.findIndex(e => e.hp > 0);
-                this.updatePetTargetIndicator();
-                break;
-
-            case 'pet_math':
-                // Show pet's dedicated math problem
-                this.showPetMathProblem();
-                break;
-
-            case 'pet_attack':
-                // Pet executes attack
-                this.executePetAttack();
-                break;
-
-            case 'enemy_turn':
-                this.hideActiveHighlight();
-                // Start enemy attacks from first alive enemy
-                this.currentAttackingEnemyIndex = this.findNextAliveEnemy(-1);
-                if (this.currentAttackingEnemyIndex >= 0) {
-                    this.time.delayedCall(500, () => this.playEnemyAttack());
-                } else {
-                    // No alive enemies (shouldn't happen, but safety)
-                    this.setPhase('player_turn');
-                }
-                break;
-
-            case 'victory':
-                this.hideActiveHighlight();
-                this.onVictory();
-                break;
-
-            case 'defeat':
-                this.hideActiveHighlight();
-                this.onDefeat();
-                break;
+    onEnterPlayerTurn(): void {
+        // Swap to Player A's context
+        if (this.isCoopMode && this.coopSession) {
+            this.coopSession.activatePlayerA();
+            // Safety: if Player A is fallen, skip directly to Player B
+            if (this.battleState.playerHp <= 0) {
+                this.setPhase('player_b_turn');
+                return;
+            }
         }
+        this.attackButton.setVisible(true);
+        const playerForTurn = this.gameState.getPlayer();
+        this.potionButton.setVisible(playerForTurn.potions > 0);
+        this.hideActiveHighlight();
+
+        // Retarget indicator to next alive enemy (fixes stuck indicator on dead enemy)
+        this.getCurrentEnemyIndex();
+        this.updateTargetIndicator();
+    }
+
+    onEnterPlayerMath(): void {
+        this.attackButton.setVisible(false);
+        this.potionButton.setVisible(false);
+        // Ensure MathEngine uses the correct player's level and stats
+        this.registry.set('playerLevel', this.gameState.getPlayer().level);
+        this.mathEngine.reloadStats();
+        this.mathEngine.initializeLevelPool();
+        if (this.isCoopMode) {
+            const p = this.gameState.getPlayer();
+            console.log(`[MATH-DEBUG] Player A math: name=${p.name}, level=${p.level}, registryLevel=${this.registry.get('playerLevel')}`);
+            this.showCoopTurnLabel(p.name || 'Hráč 1', '#44cc44');
+        }
+        this.showAttackProblems();
+    }
+
+    onEnterPlayerAttack(): void {
+        this.hideCoopTurnLabel();
+        this.playHeroAttack();
+    }
+
+    onEnterPlayerMiss(): void {
+        this.hideCoopTurnLabel();
+        this.playHeroMiss();
+    }
+
+    onEnterPetTurn(): void {
+        // Swap to Player A for A's pet
+        if (this.isCoopMode && this.coopSession) {
+            this.coopSession.activatePlayerA();
+        }
+
+        // Safety: skip if pet doesn't exist
+        if (!this.equippedPetDef || !this.petContainer) {
+            this.setPhase(this.turnManager.nextPhaseAfterPetAction());
+            return;
+        }
+
+        this.petAttackButton.setVisible(true);
+        this.targetIndicator.setVisible(false);
+        this.showActiveHighlight(this.petContainer.x, this.petContainer.y + 30, 'green');
+        this.petTargetIndex = this.battleState.enemies.findIndex(e => e.hp > 0);
+        this.updatePetTargetIndicator();
+    }
+
+    onEnterPetMath(): void {
+        // Co-op: ensure MathEngine has correct player context for pet math
+        if (this.isCoopMode) {
+            this.registry.set('playerLevel', this.gameState.getPlayer().level);
+            this.mathEngine.reloadStats();
+        }
+        this.showPetMathProblem();
+    }
+
+    onEnterPetAttack(): void {
+        this.executePetAttack();
+    }
+
+    // --- Co-op Player B callbacks ---
+
+    onEnterPlayerBTurn(): void {
+        // Swap to Player B's context
+        if (this.coopSession) this.coopSession.activatePlayerB();
+
+        this.attackButton.setVisible(true);
+        const playerB = this.gameState.getPlayer();
+        this.potionButton.setVisible(playerB.potions > 0);
+
+        // Highlight Player B's hero
+        if (this.heroBContainer) {
+            this.showActiveHighlight(this.heroBContainer.x, this.heroBContainer.y + 30, 'green');
+        }
+
+        // Retarget indicator to next alive enemy (fixes stuck indicator on dead enemy)
+        this.getCurrentEnemyIndex();
+        this.updateTargetIndicator();
+    }
+
+    onEnterPlayerBMath(): void {
+        this.attackButton.setVisible(false);
+        this.potionButton.setVisible(false);
+        // Ensure MathEngine uses Player B's level and stats (context already swapped to B)
+        this.registry.set('playerLevel', this.gameState.getPlayer().level);
+        this.mathEngine.reloadStats();
+        this.mathEngine.initializeLevelPool();
+        this.showCoopTurnLabel(this.gameState.getPlayer().name || 'Hráč 2', '#4488cc');
+        this.showAttackProblems();
+    }
+
+    onEnterPlayerBAttack(): void {
+        this.hideCoopTurnLabel();
+        this.playHeroBAttack();
+    }
+
+    onEnterPlayerBMiss(): void {
+        this.hideCoopTurnLabel();
+        this.playHeroBMiss();
+    }
+
+    onEnterPetBTurn(): void {
+        // Swap to Player B's context for pet
+        if (this.coopSession) this.coopSession.activatePlayerB();
+
+        // Safety: skip if pet B doesn't exist
+        if (!this.equippedPetBDef || !this.petBContainer) {
+            this.setPhase(this.turnManager.nextPhaseAfterPetBAction());
+            return;
+        }
+
+        this.petAttackButton.setVisible(true);
+        this.targetIndicator.setVisible(false);
+        this.showActiveHighlight(this.petBContainer.x, this.petBContainer.y + 30, 'green');
+        this.petTargetIndex = this.battleState.enemies.findIndex(e => e.hp > 0);
+        this.updatePetTargetIndicator();
+    }
+
+    onEnterPetBMath(): void {
+        // Co-op: ensure MathEngine has correct player context for Player B's pet
+        if (this.isCoopMode) {
+            this.registry.set('playerLevel', this.gameState.getPlayer().level);
+            this.mathEngine.reloadStats();
+        }
+        this.showPetMathProblem();
+    }
+
+    onEnterPetBAttack(): void {
+        this.executePetAttack();
+    }
+
+    onEnterEnemyTurn(): void {
+        this.hideActiveHighlight();
+
+        // Co-op: determine which player all enemies attack this round
+        if (this.isCoopMode && this.coopSession) {
+            this.currentEnemyAttackTarget = this.coopSession.getNextEnemyTarget();
+            // Swap to target player's context (for shield lookup during block)
+            if (this.currentEnemyAttackTarget === 'B') {
+                this.coopSession.activatePlayerB();
+            } else {
+                this.coopSession.activatePlayerA();
+            }
+        } else {
+            this.currentEnemyAttackTarget = 'A';
+        }
+
+        this.currentAttackingEnemyIndex = this.findNextAliveEnemy(-1);
+        if (this.currentAttackingEnemyIndex >= 0) {
+            this.time.delayedCall(500, () => this.playEnemyAttack());
+        } else {
+            this.turnManager.setPhase('player_turn');
+        }
+    }
+
+    onEnterVictory(): void {
+        this.hideActiveHighlight();
+        this.onVictory();
+    }
+
+    onEnterDefeat(): void {
+        this.hideActiveHighlight();
+        this.onDefeat();
+    }
+
+    // --- BattleSceneCallbacks state queries ---
+
+    hasPet(): boolean {
+        return !!(this.equippedPetDef && this.petContainer);
+    }
+
+    hasPetB(): boolean {
+        return !!(this.equippedPetBDef && this.petBContainer);
+    }
+
+    hasAliveEnemies(): boolean {
+        return this.battleState.enemies.some(e => e.hp > 0);
+    }
+
+    isPlayerDefeated(): boolean {
+        return this.battleState.playerHp <= 0;
+    }
+
+    isPlayerBDefeated(): boolean {
+        return this.playerBFallen || (this.battleState.playerBHp ?? 0) <= 0;
+    }
+
+    isCoopModeActive(): boolean {
+        return this.isCoopMode;
+    }
+
+    /**
+     * Show a floating label above the math board indicating whose turn it is.
+     * Positioned at (640, 120) — above the math board container at (640, 200).
+     */
+    private showCoopTurnLabel(name: string, color: string): void {
+        this.hideCoopTurnLabel();
+        this.coopTurnLabel = this.add.text(640, 80, `⚔ ${name}`, {
+            fontSize: '24px', fontFamily: 'Arial, sans-serif',
+            color, fontStyle: 'bold',
+            stroke: '#000000', strokeThickness: 4,
+            shadow: { offsetX: 1, offsetY: 1, color: '#000000', blur: 3, fill: true },
+        }).setOrigin(0.5).setDepth(1000);
+    }
+
+    private hideCoopTurnLabel(): void {
+        if (this.coopTurnLabel) {
+            this.coopTurnLabel.destroy();
+            this.coopTurnLabel = null;
+        }
+    }
+
+    /**
+     * Get MasterySystem with the correct player's mastery data active.
+     * In co-op, each player has their own independent MasteryData loaded at battle start.
+     * This sets which player's data the singleton reads from.
+     */
+    private getCoopSafeMasterySystem(): MasterySystem {
+        const ms = MasterySystem.getInstance();
+        if (this.isCoopMode && this.coopSession) {
+            const isB = this.coopSession.getActivePlayer() === 'B';
+            ms.setActiveData(isB ? this.coopMasteryB : this.coopMasteryA);
+        }
+        return ms;
+    }
+
+    private getAttackProblemCount(masterySystem: MasterySystem): number {
+        if (this.isCoopMode && this.coopSession) {
+            return this.coopSession.getSharedAttackCount();
+        }
+        return masterySystem.getProblemsPerTurn();
+    }
+
+    private generateFallbackAttackProblems(playerLevel: number, count: number, equippedSword: ItemDefinition | null): MathProblem[] {
+        const problems: MathProblem[] = [];
+
+        while (problems.length < count) {
+            const batch = this.mathEngine.generateAttackProblems(playerLevel, null, null)
+                .filter(problem => problem.source !== 'sword' && problem.source !== 'pet');
+
+            if (batch.length === 0) {
+                break;
+            }
+
+            problems.push(...batch);
+        }
+
+        const normalized = problems.slice(0, count);
+        if (equippedSword && equippedSword.mathProblemType) {
+            normalized.push(this.generateSwordProblem(equippedSword));
+        }
+
+        return normalized;
+    }
+
+    /** Advance the session-only co-op mastery tracks without touching slot saves. */
+    private applyCoopSessionPromotions(): Array<{ type: string; targetId: string }> {
+        if (!this.isCoopMode || !this.coopSession) return [];
+        const promotions: Array<{ type: string; targetId: string }> = [];
+        const masterySystem = MasterySystem.getInstance();
+
+        masterySystem.setActiveData(this.coopMasteryA!);
+        promotions.push(...masterySystem.applyCoopAutoPromotions(true).map(p => ({
+            type: p.type,
+            targetId: String(p.targetId),
+        })));
+
+        masterySystem.setActiveData(this.coopMasteryB!);
+        promotions.push(...masterySystem.applyCoopAutoPromotions(true).map(p => ({
+            type: p.type,
+            targetId: String(p.targetId),
+        })));
+
+        masterySystem.setActiveData(null);
+        return promotions;
+    }
+
+    private recordCoopFightEnd(): void {
+        if (!this.isCoopMode || !this.coopSession) {
+            this.getCoopSafeMasterySystem().recordFightEnd();
+            return;
+        }
+
+        const masterySystem = MasterySystem.getInstance();
+
+        this.coopSession.activatePlayerA();
+        masterySystem.setActiveData(this.coopMasteryA);
+        masterySystem.recordFightEnd();
+
+        this.coopSession.activatePlayerB();
+        masterySystem.setActiveData(this.coopMasteryB);
+        masterySystem.recordFightEnd();
+
+        masterySystem.setActiveData(null);
+        this.coopSession.activatePlayerA();
     }
 
     private onAttackClicked(): void {
         if (this.battleState.phase === 'player_turn') {
             this.setPhase('player_math');
+        } else if (this.battleState.phase === 'player_b_turn') {
+            this.setPhase('player_b_math');
         }
     }
 
     private showAttackProblems(): void {
         const player = this.gameState.getPlayer();
-
-        // Store equipped pet definition for pet turn (but don't include in player's attack problems)
-        if (player.activePet) {
-            const petsData = this.cache.json.get('pets') as PetDefinition[];
-            this.equippedPetDef = petsData.find(p => p.id === player.activePet) || null;
-        } else {
-            this.equippedPetDef = null;
-        }
 
         // Get equipped sword definition
         let equippedSword: ItemDefinition | null = null;
@@ -1517,12 +2084,14 @@ export class BattleScene extends Phaser.Scene {
             equippedSword = itemsData.find(i => i.id === player.equippedWeapon && i.type === 'weapon') || null;
         }
 
+        // Get mastery system with co-op safety (ensures correct player context)
+        const masterySystem = this.getCoopSafeMasterySystem();
+
         // Check if we're in a boss fight with phase-specific math
         if (this.isBoss && this.bossPhases[this.currentBossPhase]) {
             const phase = this.bossPhases[this.currentBossPhase];
             if (phase.mathType) {
-                // Generate boss phase-specific problems (count based on player.attack, same as normal fights)
-                const problemCount = MasterySystem.getInstance().getProblemsPerTurn();
+                const problemCount = this.getAttackProblemCount(masterySystem);
                 const problems: MathProblem[] = [];
                 for (let i = 0; i < problemCount; i++) {
                     problems.push(this.mathEngine.generateBossPhaseProblem(
@@ -1545,9 +2114,16 @@ export class BattleScene extends Phaser.Scene {
         }
 
         // Generate problems from mastery pool
-        const masterySystem = MasterySystem.getInstance();
-        const count = masterySystem.getProblemsPerTurn();
+        const count = this.getAttackProblemCount(masterySystem);
         const problemKeys = masterySystem.drawFromPool(count);
+
+        // Co-op debug: verify correct player context for problem generation
+        if (this.isCoopMode) {
+            const activePlayer = this.coopSession?.getActivePlayer() || '?';
+            const frontier = masterySystem.getFrontierSubAtom();
+            console.log(`[COOP-MATH] Player ${activePlayer} (${player.name}, lvl=${player.level}): frontier=${frontier}, count=${count}, keys=${problemKeys.slice(0, 3).join(', ')}`);
+        }
+
         const problems: MathProblem[] = [];
         for (const key of problemKeys) {
             const problem = this.mathEngine.generateProblemFromKey(key);
@@ -1558,7 +2134,7 @@ export class BattleScene extends Phaser.Scene {
 
         // Fallback: if mastery system returned no problems, use legacy generation
         if (problems.length === 0) {
-            const legacyProblems = this.mathEngine.generateAttackProblems(player.level, null, equippedSword);
+            const legacyProblems = this.generateFallbackAttackProblems(player.level, count, equippedSword);
             problems.push(...legacyProblems);
         } else {
             // Add sword bonus problem if equipped (drawn from mastery master pool)
@@ -1573,7 +2149,7 @@ export class BattleScene extends Phaser.Scene {
         this.mathBoard.show(problems);
     }
 
-    private onMathComplete(_damageDealt: number, results: boolean[], timings: number[]): void {
+    private onMathComplete(mathBoardDamage: number, results: boolean[], timings: number[]): void {
         const context = this.mathBoardContext;
         this.mathBoardContext = null;
 
@@ -1593,8 +2169,7 @@ export class BattleScene extends Phaser.Scene {
 
             // Count correct answers for blocking + mastery recording + quick-block bonus
             let correctCount = 0;
-            const masterySystem = MasterySystem.getInstance();
-            const masteryRT = masterySystem.getMasteryRTThreshold();
+            const masterySystem = this.getCoopSafeMasterySystem();
 
             results.forEach((isCorrect, index) => {
                 const problem = this.battleState.currentProblems[index];
@@ -1608,7 +2183,8 @@ export class BattleScene extends Phaser.Scene {
                 }
                 if (isCorrect) {
                     correctCount++;
-                    // Quick block bonus: +1 extra block if answered under mastery RT threshold
+                    // Quick block bonus: +1 extra block if answered under mastery RT threshold (per-problem)
+                    const masteryRT = masterySystem.getMasteryRTThreshold(problem?.masteryKey);
                     if (timings[index] && timings[index] < masteryRT) {
                         correctCount++;
                     }
@@ -1629,14 +2205,15 @@ export class BattleScene extends Phaser.Scene {
         // ---- ATTACK PHASE ---- (context === 'attack')
         this.mathBoard.hide();
 
-        // Calculate total damage with multipliers + speed bonuses
-        let totalDamage = 0;
-        const masterySystem = MasterySystem.getInstance();
+        // Record mastery data and track arena wrong answers
+        const masterySystem = this.getCoopSafeMasterySystem();
 
         results.forEach((isCorrect, index) => {
             const problem = this.battleState.currentProblems[index];
             if (problem) {
-                // Record results for stats (legacy)
+                // Record results for stats (legacy) — reload stats first in co-op
+                // to prevent cross-contamination between players
+                if (this.isCoopMode) this.mathEngine.reloadStats();
                 this.mathEngine.recordResultForProblem(problem.id, isCorrect);
 
                 // Record to mastery system (for mastery problems only)
@@ -1646,27 +2223,23 @@ export class BattleScene extends Phaser.Scene {
                     masterySystem.recordSolve(problem.masteryKey, isCorrect, responseTimeMs, ctx);
                 }
 
-                // Add damage with multiplier if correct
-                if (isCorrect) {
-                    const multiplier = problem.damageMultiplier || 1;
-                    totalDamage += multiplier;
-
-                    // Speed bonus for mastery problems
-                    if (problem.masteryKey && timings[index]) {
-                        const speedBonus = masterySystem.getSpeedBonus(timings[index]);
-                        if (speedBonus.bonusDamage > 0 && speedBonus.type !== 'none') {
-                            totalDamage += speedBonus.bonusDamage;
-                            // Show speed bonus visual (Phase 5)
-                            this.showSpeedBonusEffect(speedBonus.type, index);
-                        }
-                    }
-                } else if (this.fromArena) {
+                if (!isCorrect && this.fromArena) {
                     // Track wrong answers for arena perfect wave calculation
                     this.waveWrongAnswerCount++;
+                    // Co-op: also track per-player
+                    if (this.isCoopMode && this.coopSession) {
+                        if (this.coopSession.getActivePlayer() === 'A') {
+                            this.coopSession.playerAWrongCount++;
+                        } else {
+                            this.coopSession.playerBWrongCount++;
+                        }
+                    }
                 }
             }
         });
 
+        // Use MathBoard's damage total (includes multipliers + speed charge bar fill bonuses)
+        const totalDamage = mathBoardDamage;
         this.battleState.damageDealt = totalDamage;
 
         // Track if last answer was correct for Vengeful Strike ability
@@ -1674,16 +2247,18 @@ export class BattleScene extends Phaser.Scene {
         const anyWrong = results.some(r => !r);
         this.lastAnswerCorrect = !anyWrong && totalDamage > 0;
 
+        // Route to correct attack/miss phase based on who was solving
+        const isPlayerB = this.battleState.phase === 'player_b_math';
         if (totalDamage > 0) {
-            this.setPhase('player_attack');
+            this.setPhase(isPlayerB ? 'player_b_attack' : 'player_attack');
         } else {
-            this.setPhase('player_miss');
+            this.setPhase(isPlayerB ? 'player_b_miss' : 'player_miss');
         }
     }
 
     /** Apply attack power bonus: mark N player problems as 2× damage (N = player.attack beyond 5) */
     private applyAttackPowerBonus(problems: MathProblem[]): void {
-        const bonus = MasterySystem.getInstance().getAttackPowerBonus();
+        const bonus = this.getCoopSafeMasterySystem().getAttackPowerBonus();
         if (bonus <= 0) return;
 
         // Only boost player problems (not sword/pet), one at a time
@@ -1699,7 +2274,7 @@ export class BattleScene extends Phaser.Scene {
 
     /** Generate a sword problem from mastery master pool, with fallbacks */
     private generateSwordProblem(sword: ItemDefinition): MathProblem {
-        const masterySystem = MasterySystem.getInstance();
+        const masterySystem = this.getCoopSafeMasterySystem();
 
         // 1. Try master pool (Mastery sub-atoms)
         const masterKeys = masterySystem.drawFromMasterPool(1);
@@ -1734,7 +2309,7 @@ export class BattleScene extends Phaser.Scene {
 
     /** Generate block problems from mastery review pool (Fluent sub-atoms), with fallbacks */
     private generateBlockProblemsFromPool(count: number): MathProblem[] {
-        const masterySystem = MasterySystem.getInstance();
+        const masterySystem = this.getCoopSafeMasterySystem();
         const problems: MathProblem[] = [];
 
         // 1. Try review pool (Fluent sub-atoms)
@@ -1759,7 +2334,7 @@ export class BattleScene extends Phaser.Scene {
 
     /** Generate pet problem from mastery review pool (Fluent sub-atoms), with fallbacks */
     private generatePetProblemFromPool(pet: PetDefinition): MathProblem | null {
-        const masterySystem = MasterySystem.getInstance();
+        const masterySystem = this.getCoopSafeMasterySystem();
 
         // 1. Try review pool (Fluent sub-atoms) — same as shield block
         const reviewKeys = masterySystem.drawFromReviewPool(1);
@@ -1787,18 +2362,15 @@ export class BattleScene extends Phaser.Scene {
         return this.mathEngine.generatePetTurnProblem(pet);
     }
 
-    /** Show speed bonus visual effect (Phase 5) */
-    private showSpeedBonusEffect(type: 'swift' | 'lightning', problemIndex: number): void {
-        const text = type === 'lightning' ? 'Lightning Hit! ⚡' : 'Swift Hit! ✨';
-        const color = type === 'lightning' ? '#4488ff' : '#ffcc00';
+    /** Show effect when speed charge bar fills and grants bonus damage */
+    private showChargeBarFilledEffect(bonusDamage: number): void {
+        const heroX = this.heroContainer.x;
+        const heroY = this.heroContainer.y;
 
-        // Offset vertically when multiple bonus texts appear (one per problem)
-        const baseY = 280 + problemIndex * 40;
-
-        const bonusText = this.add.text(640, baseY, text, {
-            fontSize: '32px',
+        const effectText = this.add.text(heroX, heroY - 130, `⚡ +${bonusDamage}`, {
+            fontSize: '36px',
             fontFamily: 'Arial, sans-serif',
-            color: color,
+            color: '#ffcc00',
             fontStyle: 'bold',
             stroke: '#000000',
             strokeThickness: 4,
@@ -1806,37 +2378,29 @@ export class BattleScene extends Phaser.Scene {
 
         // Pop-in then float up and fade
         this.tweens.add({
-            targets: bonusText,
+            targets: effectText,
             scale: 1,
             alpha: 1,
             duration: 200,
             ease: 'Back.easeOut',
             onComplete: () => {
                 this.tweens.add({
-                    targets: bonusText,
-                    y: baseY - 60,
+                    targets: effectText,
+                    y: heroY - 190,
                     alpha: 0,
-                    duration: 2000,
+                    duration: 1500,
                     ease: 'Sine.easeIn',
-                    onComplete: () => bonusText.destroy(),
+                    onComplete: () => effectText.destroy(),
                 });
             },
         });
 
-        // Lightning effect: white flash on enemy
-        if (type === 'lightning' && this.battleState.enemies.length > 0) {
-            const targetEnemy = this.battleState.enemies[this.battleState.selectedEnemyIndex];
-            if (targetEnemy) {
-                // Brief white flash effect
-                const flash = this.add.rectangle(640, 360, 1280, 720, 0xffffff, 0.2)
-                    .setDepth(150);
-                this.tweens.add({
-                    targets: flash,
-                    alpha: 0,
-                    duration: 300,
-                    onComplete: () => flash.destroy(),
-                });
-            }
+        // Brief gold glow on hero
+        if (this.hero) {
+            this.hero.setTint(0xffdd88);
+            this.time.delayedCall(200, () => {
+                this.hero.clearTint();
+            });
         }
     }
 
@@ -1948,18 +2512,27 @@ export class BattleScene extends Phaser.Scene {
     }
 
     private applyDamageToPlayer(damage: number): void {
-        if (damage > 0) {
+        if (damage <= 0) return;
+
+        const isTargetB = this.isCoopMode && this.currentEnemyAttackTarget === 'B';
+
+        if (isTargetB && this.heroBHpBar && this.heroB) {
+            // Damage Player B
+            this.battleState.playerBHp = (this.battleState.playerBHp ?? 0) - damage;
+            const maxHp = this.battleState.playerBMaxHp ?? this.gameState.getPlayer().maxHp;
+            this.updateHpBar(this.heroBHpBar, Math.max(0, this.battleState.playerBHp), maxHp);
+
+            this.heroB.setTint(0xff0000);
+            this.time.delayedCall(100, () => this.heroB?.clearTint());
+        } else {
+            // Damage Player A
             this.battleState.playerHp -= damage;
             const player = this.gameState.getPlayer();
             this.updateHpBar(this.heroHpBar, this.battleState.playerHp, player.maxHp);
 
-            // Hero hurt effect
             this.hero.setTint(0xff0000);
-            this.time.delayedCall(100, () => {
-                this.hero.clearTint();
-            });
+            this.time.delayedCall(100, () => this.hero.clearTint());
         }
-        // Note: Enemy return is handled by blockPhaseResumeCallback -> returnEnemyToPosition
     }
 
     // Helper to get current target enemy index (first alive enemy)
@@ -2002,7 +2575,7 @@ export class BattleScene extends Phaser.Scene {
             // Select next alive enemy and update indicator
             this.getCurrentEnemyIndex();
             this.updateTargetIndicator();
-            this.setPhase('enemy_turn');
+            this.setPhase(this.turnManager.nextPhaseWhenEnemiesRemain());
         }
     }
 
@@ -2286,23 +2859,43 @@ export class BattleScene extends Phaser.Scene {
             duration: 500,
             ease: 'Quad.easeOut',
             onComplete: () => {
-                // Reset depth
-                this.enemyContainers[idx].setDepth(0);
+                this.enemyContainers[idx].setDepth(this.getRestingDepth(this.enemyContainers[idx]));
 
-                if (this.battleState.playerHp <= 0) {
-                    this.setPhase('defeat');
-                } else {
-                    // Check if there are more enemies to attack
-                    const nextEnemyIdx = this.findNextAliveEnemy(idx);
-                    if (nextEnemyIdx >= 0) {
-                        // More enemies to attack
-                        this.currentAttackingEnemyIndex = nextEnemyIdx;
-                        this.time.delayedCall(300, () => this.playEnemyAttack());
+                // Check if targeted player was defeated
+                const isTargetB = this.isCoopMode && this.currentEnemyAttackTarget === 'B';
+                const targetDefeated = isTargetB
+                    ? (this.battleState.playerBHp ?? 0) <= 0
+                    : this.battleState.playerHp <= 0;
+
+                if (targetDefeated) {
+                    if (this.isCoopMode && this.coopSession) {
+                        if (isTargetB) {
+                            this.playerBFallen = true;
+                            this.coopSession.playerBFallen = true;
+                            this.heroBContainer?.setAlpha(0.4);
+                        } else {
+                            this.coopSession.playerAFallen = true;
+                            this.heroContainer?.setAlpha(0.4);
+                        }
+                        const aDefeated = this.battleState.playerHp <= 0;
+                        const bDefeated = (this.battleState.playerBHp ?? 0) <= 0;
+                        if (aDefeated && bDefeated) {
+                            this.setPhase('defeat');
+                            return;
+                        }
                     } else {
-                        // All enemies have attacked, back to player turn
-                        this.battleState.turnCount++;
-                        this.setPhase('player_turn');
+                        this.setPhase('defeat');
+                        return;
                     }
+                }
+
+                const nextEnemyIdx = this.findNextAliveEnemy(idx);
+                if (nextEnemyIdx >= 0) {
+                    this.currentAttackingEnemyIndex = nextEnemyIdx;
+                    this.time.delayedCall(300, () => this.playEnemyAttack());
+                } else {
+                    this.battleState.turnCount++;
+                    this.setPhase(this.turnManager.nextPhaseAfterEnemies());
                 }
             }
         });
@@ -2322,7 +2915,7 @@ export class BattleScene extends Phaser.Scene {
         const targetY = enemyContainer.y;
 
         // Hero appears on top during attack
-        this.heroContainer.setDepth(10);
+        this.heroContainer.setDepth(BattleScene.ATTACK_DEPTH);
 
         // Start animation immediately
         this.hero.play(this.playerSpriteConfig.attackAnim);
@@ -2467,19 +3060,21 @@ export class BattleScene extends Phaser.Scene {
     }
 
     private finishHeroReturn(idx: number, enemy: BattleEnemy, enemySprite: Phaser.GameObjects.Sprite, animPrefix: string): void {
-        // Reset depth
-        this.heroContainer.setDepth(0);
+        // Reset depth to Y-based resting depth
+        this.heroContainer.setDepth(this.getRestingDepth(this.heroContainer));
 
         // Check if ANY enemy is alive (not just the target) and pet is equipped
         const anyEnemyAlive = this.battleState.enemies.some(e => e.hp > 0);
+        const nextPhase = this.turnManager.nextPhaseAfterPlayerAttack();
+
         if (anyEnemyAlive && this.equippedPetDef && this.petContainer) {
-            // If the targeted enemy died, play its death animation before pet turn
+            // If the targeted enemy died, play its death animation before next phase
             if (enemy.hp <= 0) {
                 this.playEnemyDeathAndFade(idx, enemySprite, animPrefix, () => {
-                    this.setPhase('pet_turn');
+                    this.setPhase(nextPhase);
                 });
             } else {
-                this.setPhase('pet_turn');
+                this.setPhase(nextPhase);
             }
         } else {
             this.continueAfterAttack(idx, enemy, enemySprite, animPrefix);
@@ -2505,10 +3100,26 @@ export class BattleScene extends Phaser.Scene {
 
     private continueAfterAttack(idx: number, enemy: BattleEnemy, enemySprite: Phaser.GameObjects.Sprite, animPrefix: string): void {
         if (enemy.hp <= 0) {
+            const allDead = this.battleState.enemies.every(e => e.hp <= 0);
+
+            const afterDeath = () => {
+                if (allDead) {
+                    this.targetIndicator.setVisible(false);
+                    if (this.isBoss && this.currentBossPhase < this.bossPhases.length - 1) {
+                        this.triggerBossPhaseTransition();
+                    } else {
+                        this.setPhase('victory');
+                    }
+                } else {
+                    // Enemies remain — use correct phase routing (not always enemy_turn)
+                    this.getCurrentEnemyIndex();
+                    this.updateTargetIndicator();
+                    this.setPhase(this.turnManager.nextPhaseAfterPlayerAttack());
+                }
+            };
+
             if (this.isBoss && idx === 0 && this.bossPhaseAnimOverrides.deathSequence?.length) {
-                this.playBossDeathSequence(idx, enemySprite, () => {
-                    this.checkVictoryOrContinue();
-                });
+                this.playBossDeathSequence(idx, enemySprite, afterDeath);
             } else {
                 const deathKey = (this.isBoss && idx === 0) ? this.getBossAnimKey(0, 'death') : `${animPrefix}-death`;
                 enemySprite.play(deathKey);
@@ -2518,15 +3129,14 @@ export class BattleScene extends Phaser.Scene {
                             targets: this.enemyContainers[idx],
                             alpha: 0,
                             duration: 500,
-                            onComplete: () => {
-                                this.checkVictoryOrContinue();
-                            }
+                            onComplete: afterDeath,
                         });
                     });
                 });
             }
         } else {
-            this.setPhase('enemy_turn');
+            // No pet equipped, go to next phase after player attack
+            this.setPhase(this.turnManager.nextPhaseAfterPlayerAttack());
         }
     }
 
@@ -2548,7 +3158,191 @@ export class BattleScene extends Phaser.Scene {
             duration: 800,
             onComplete: () => {
                 missText.destroy();
-                this.setPhase('enemy_turn');
+                this.setPhase(this.turnManager.nextPhaseAfterPlayerAttack());
+            }
+        });
+    }
+
+    // --- Player B attack/miss (reuses Player A's animation logic) ---
+
+    private playHeroBAttack(): void {
+        if (!this.heroBContainer || !this.heroB || !this.heroBSpriteConfig) {
+            this.setPhase(this.turnManager.nextPhaseAfterPlayerB());
+            return;
+        }
+
+        const idx = this.getCurrentEnemyIndex();
+        const enemyContainer = this.enemyContainers[idx];
+        const enemySprite = this.enemies[idx];
+        const animPrefix = this.enemyAnimPrefixes[idx];
+        const enemy = this.battleState.enemies[idx];
+
+        const startX = this.heroBContainer.x;
+        const startY = this.heroBContainer.y;
+        const targetX = enemyContainer.x - 50;
+        const targetY = enemyContainer.y;
+
+        this.heroBContainer.setDepth(BattleScene.ATTACK_DEPTH);
+
+        // Use same animation pipeline as Player A
+        this.heroB.play(this.heroBSpriteConfig.attackAnim);
+
+        const attackAnim = this.animationDefs[this.heroBSpriteConfig.attackAnim];
+        const movement = attackAnim?.movement;
+        const jumpDuration = movement?.duration || 400;
+        const jumpOffsetY = movement?.offsetY || 0;
+        const jumpEase = movement?.ease || 'Power1';
+        const returnEase = movement?.returnEase || 'Power2';
+
+        // X movement (same as Player A)
+        this.tweens.add({
+            targets: this.heroBContainer,
+            x: targetX,
+            duration: jumpDuration,
+            ease: jumpEase,
+        });
+
+        // Y movement with jump arc (same as Player A)
+        if (movement?.type === 'jump' && jumpOffsetY !== 0) {
+            this.tweens.add({
+                targets: this.heroBContainer,
+                y: startY + jumpOffsetY,
+                duration: jumpDuration / 2,
+                ease: jumpEase,
+                onComplete: () => {
+                    this.tweens.add({
+                        targets: this.heroBContainer,
+                        y: targetY,
+                        duration: jumpDuration / 2,
+                        ease: returnEase,
+                    });
+                }
+            });
+        } else {
+            this.tweens.add({
+                targets: this.heroBContainer,
+                y: targetY,
+                duration: jumpDuration,
+                ease: jumpEase,
+            });
+        }
+
+        // After reaching enemy, apply damage (same timing as Player A)
+        this.time.delayedCall(jumpDuration, () => {
+            const damage = this.battleState.damageDealt;
+            enemy.hp -= damage;
+            this.updateHpBar(this.enemyHpBars[idx], Math.max(0, enemy.hp), enemy.maxHp);
+
+            // Show damage number
+            const dmgText = this.add.text(enemyContainer.x, enemyContainer.y - 50, `-${damage}`, {
+                fontSize: '28px', fontFamily: 'Arial, sans-serif',
+                color: '#ff4444', fontStyle: 'bold',
+                stroke: '#000000', strokeThickness: 3,
+            }).setOrigin(0.5);
+            this.tweens.add({
+                targets: dmgText,
+                y: dmgText.y - 40, alpha: 0, duration: 800,
+                onComplete: () => dmgText.destroy(),
+            });
+
+            // Enemy hit effect (same as Player A)
+            const hurtAnimKey = (this.isBoss && idx === 0) ? this.getBossAnimKey(0, 'hurt') : `${animPrefix}-hurt`;
+            enemySprite.play(hurtAnimKey);
+            enemySprite.setTint(0xff0000);
+            this.time.delayedCall(100, () => {
+                if (this.isBoss && idx === 0 && this.bossPhaseAnimOverrides.tint) {
+                    enemySprite.setTint(this.bossPhaseAnimOverrides.tint);
+                } else {
+                    enemySprite.clearTint();
+                }
+            });
+            enemySprite.once('animationcomplete', () => {
+                if (enemy.hp > 0) {
+                    const idleAnimKey = (this.isBoss && idx === 0) ? this.getBossAnimKey(0, 'idle') : `${animPrefix}-idle`;
+                    enemySprite.play(idleAnimKey);
+                }
+            });
+
+            // Wait for attack animation to finish, then return (same as Player A)
+            this.heroB!.once('animationcomplete', () => {
+                this.heroB!.play(this.heroBSpriteConfig!.idleAnim);
+
+                // Return: jump arc back to start (same as Player A)
+                if (movement?.type === 'jump' && jumpOffsetY !== 0) {
+                    this.tweens.add({
+                        targets: this.heroBContainer,
+                        y: targetY + jumpOffsetY,
+                        duration: 200,
+                        ease: jumpEase,
+                        onComplete: () => {
+                            this.tweens.add({
+                                targets: this.heroBContainer,
+                                y: startY,
+                                duration: 200,
+                                ease: returnEase,
+                            });
+                        }
+                    });
+                    this.tweens.add({
+                        targets: this.heroBContainer,
+                        x: startX,
+                        duration: 400,
+                        ease: returnEase,
+                        onComplete: () => this.finishHeroBReturn(idx, enemy, enemySprite, animPrefix)
+                    });
+                } else {
+                    this.tweens.add({
+                        targets: this.heroBContainer,
+                        x: startX, y: startY,
+                        duration: 400,
+                        ease: returnEase,
+                        onComplete: () => this.finishHeroBReturn(idx, enemy, enemySprite, animPrefix),
+                    });
+                }
+            });
+        });
+    }
+
+    private finishHeroBReturn(idx: number, enemy: BattleEnemy, enemySprite: Phaser.GameObjects.Sprite, animPrefix: string): void {
+        if (this.heroBContainer) this.heroBContainer.setDepth(this.getRestingDepth(this.heroBContainer));
+
+        const anyEnemyAlive = this.battleState.enemies.some(e => e.hp > 0);
+        const nextPhase = this.turnManager.nextPhaseAfterPlayerB();
+
+        if (enemy.hp <= 0) {
+            // Enemy died — play death, then check victory or continue
+            if (anyEnemyAlive) {
+                this.playEnemyDeathAndFade(idx, enemySprite, animPrefix, () => {
+                    this.setPhase(nextPhase);
+                });
+            } else {
+                this.playEnemyDeathAndFade(idx, enemySprite, animPrefix, () => {
+                    this.checkVictoryOrContinue();
+                });
+            }
+        } else {
+            this.setPhase(nextPhase);
+        }
+    }
+
+    private playHeroBMiss(): void {
+        if (!this.heroBContainer) {
+            this.setPhase(this.turnManager.nextPhaseAfterPlayerB());
+            return;
+        }
+
+        const missText = this.add.text(this.heroBContainer.x, this.heroBContainer.y - 50, 'VEDLE!', {
+            fontSize: '28px', fontFamily: 'Arial, sans-serif',
+            color: '#aaaaaa', fontStyle: 'bold',
+            stroke: '#000000', strokeThickness: 3,
+        }).setOrigin(0.5);
+
+        this.tweens.add({
+            targets: missText,
+            y: missText.y - 40, alpha: 0, duration: 800,
+            onComplete: () => {
+                missText.destroy();
+                this.setPhase(this.turnManager.nextPhaseAfterPlayerB());
             }
         });
     }
@@ -2560,10 +3354,15 @@ export class BattleScene extends Phaser.Scene {
         const animPrefix = this.enemyAnimPrefixes[idx];
         const enemyDef = this.battleState.enemies[idx];
 
+        // Co-op: determine attack target (alternating per round, decided at enemy_turn start)
+        const targetContainer = (this.isCoopMode && this.currentEnemyAttackTarget === 'B' && this.heroBContainer)
+            ? this.heroBContainer
+            : this.heroContainer;
+
         const startX = enemyContainer.x;
         const startY = enemyContainer.y;
-        const targetX = this.heroContainer.x + 50;
-        const targetY = this.heroContainer.y;
+        const targetX = targetContainer.x + 50;
+        const targetY = targetContainer.y;
 
         // Store start position for return after attack
         this.enemyAttackStartPosition = { x: startX, y: startY };
@@ -2575,8 +3374,8 @@ export class BattleScene extends Phaser.Scene {
         const moveDuration = movement?.duration || 400;
         const moveEase = movement?.ease || 'Power1';
 
-        // Enemy appears on top
-        enemyContainer.setDepth(10);
+        // Enemy appears on top during attack
+        enemyContainer.setDepth(BattleScene.ATTACK_DEPTH);
 
         // Play attack animation immediately during approach
         const attackAnimName = (this.isBoss && idx === 0) ? this.getBossAnimKey(0, 'attack') : `${animPrefix}-attack`;
@@ -2636,8 +3435,19 @@ export class BattleScene extends Phaser.Scene {
             // Pause enemy sprite animation
             enemySprite.anims.pause();
 
-            // Pause hero sprite animation
-            this.hero.anims.pause();
+            // Pause target hero sprite animation
+            const targetHero = (this.isCoopMode && this.currentEnemyAttackTarget === 'B' && this.heroB)
+                ? this.heroB : this.hero;
+            targetHero.anims.pause();
+
+            // Swap to target player's context for shield/block
+            if (this.isCoopMode && this.coopSession) {
+                if (this.currentEnemyAttackTarget === 'B') {
+                    this.coopSession.activatePlayerB();
+                } else {
+                    this.coopSession.activatePlayerA();
+                }
+            }
 
             // Store resume callback for after block phase
             this.blockPhaseResumeCallback = () => {
@@ -2646,7 +3456,7 @@ export class BattleScene extends Phaser.Scene {
 
                 // Resume animations
                 enemySprite.anims.resume();
-                this.hero.anims.resume();
+                targetHero.anims.resume();
 
                 // After remaining movement completes, brief pause then return
                 this.time.delayedCall(moveDuration - 100, () => {
@@ -2660,11 +3470,15 @@ export class BattleScene extends Phaser.Scene {
                 });
             };
 
-            // Calculate enemy damage with Vengeful Strike ability
+            // Calculate enemy damage with phase abilities
             let damage = enemyDef.attack;
             if (this.currentPhaseAbility === 'vengeful_strike' && !this.lastAnswerCorrect) {
                 damage += 1;
                 this.showAbilityText('💢 Vengeful Strike! +1 damage');
+            }
+            if (this.currentPhaseAbility === 'last_stand' && !this.lastAnswerCorrect) {
+                damage += 1;
+                this.showAbilityText('🛡️ Last Stand! +1 damage');
             }
 
             // Start block phase
@@ -2727,31 +3541,62 @@ export class BattleScene extends Phaser.Scene {
             duration: 300,
             ease: 'Power1',
             onComplete: () => {
-                enemyContainer.setDepth(0);
+                enemyContainer.setDepth(this.getRestingDepth(enemyContainer));
 
-                // Check if player was defeated
-                if (this.battleState.playerHp <= 0) {
-                    this.setPhase('defeat');
-                } else {
-                    // Check if there are more enemies to attack
-                    const nextEnemyIdx = this.findNextAliveEnemy(idx);
-                    if (nextEnemyIdx >= 0) {
-                        // More enemies to attack
-                        this.currentAttackingEnemyIndex = nextEnemyIdx;
-                        this.time.delayedCall(300, () => this.playEnemyAttack());
+                // Check if targeted player was defeated
+                const isTargetB = this.isCoopMode && this.currentEnemyAttackTarget === 'B';
+                const targetDefeated = isTargetB
+                    ? (this.battleState.playerBHp ?? 0) <= 0
+                    : this.battleState.playerHp <= 0;
+
+                if (targetDefeated) {
+                    if (this.isCoopMode) {
+                        // Mark fallen player, dim their sprite
+                        if (isTargetB) {
+                            this.playerBFallen = true;
+                            this.heroBContainer?.setAlpha(0.4);
+                        } else {
+                            // Player A fell — mark as fallen (skip A's turns going forward)
+                            // For now, still check if BOTH are defeated
+                        }
+
+                        // Check if BOTH players are defeated
+                        const aDefeated = this.battleState.playerHp <= 0;
+                        const bDefeated = (this.battleState.playerBHp ?? 0) <= 0;
+                        if (aDefeated && bDefeated) {
+                            this.setPhase('defeat');
+                            return;
+                        }
+                        // One still alive — continue
                     } else {
-                        // All enemies have attacked, back to player turn
-                        this.battleState.turnCount++;
-                        this.setPhase('player_turn');
+                        // Solo: defeat
+                        this.setPhase('defeat');
+                        return;
                     }
+                }
+
+                // Check if there are more enemies to attack
+                const nextEnemyIdx = this.findNextAliveEnemy(idx);
+                if (nextEnemyIdx >= 0) {
+                    this.currentAttackingEnemyIndex = nextEnemyIdx;
+                    this.time.delayedCall(300, () => this.playEnemyAttack());
+                } else {
+                    // All enemies have attacked — next round
+                    this.battleState.turnCount++;
+                    this.setPhase(this.turnManager.nextPhaseAfterEnemies());
                 }
             }
         });
     }
 
     private onVictory(): void {
+        if (this.isCoopMode && this.coopSession) {
+            this.onCoopVictory();
+            return;
+        }
+
         // Record fight end for mastery system (updates fightsSinceSeen counters)
-        MasterySystem.getInstance().recordFightEnd();
+        this.getCoopSafeMasterySystem().recordFightEnd();
 
         // Victory fanfare
         const victoryText = this.add.text(640, 300, 'VÍTĚZSTVÍ!', {
@@ -3076,6 +3921,216 @@ export class BattleScene extends Phaser.Scene {
     }
 
     /**
+     * Co-op victory: calculate and apply rewards for both players.
+     * Each player gets full coins, crystals based on their own improvement history.
+     */
+    private onCoopVictory(): void {
+        const coop = this.coopSession!;
+        const primaryEnemy = this.enemyDefs[0];
+        const petsData = this.cache.json.get('pets') as PetDefinition[];
+        const casualProgress = coop.recordCoopVictory();
+
+        // Calculate coins once (same for both players)
+        let totalCoins = 0;
+        this.enemyDefs.forEach(def => {
+            totalCoins += Phaser.Math.Between(def.goldReward[0], def.goldReward[1]);
+        });
+
+        // Perfect wave requires BOTH players zero mistakes
+        const isPerfect = this.waveWrongAnswerCount === 0;
+
+        // Victory fanfare
+        const victoryText = this.add.text(640, 300, 'VÍTĚZSTVÍ!', {
+            fontSize: '64px', fontFamily: 'Arial, sans-serif',
+            color: '#ffd700', fontStyle: 'bold',
+            stroke: '#000000', strokeThickness: 6,
+        }).setOrigin(0.5).setAlpha(0).setScale(0.5);
+        this.tweens.add({ targets: victoryText, alpha: 1, scale: 1, duration: 500, ease: 'Back.out' });
+
+        // Helper: apply rewards for a single player (called in their context)
+        const applyPlayerRewards = (): { crystalDrops: Crystal[]; crystalLabels: string[]; crystalOverflow: boolean; unlockedPet: any } => {
+            const player = this.gameState.getPlayer();
+            const crystalDrops: Crystal[] = [];
+            const crystalLabels: string[] = [];
+            let crystalOverflow = false;
+            let unlockedPetData: any = null;
+
+            // Award coins
+            ProgressionSystem.awardBattleCoin(player, totalCoins);
+
+            // Persist HP (use co-op tracked HP)
+            if (coop.getActivePlayer() === 'A') {
+                player.hp = Math.max(0, this.battleState.playerHp);
+            } else {
+                player.hp = Math.max(0, this.battleState.playerBHp ?? player.hp);
+            }
+
+            // Arena crystals
+            if (this.fromArena) {
+                if (!player.arena.waveResults) player.arena.waveResults = [];
+                const prevResult = player.arena.waveResults[this.arenaWave];
+                const wasCompletedBefore = prevResult?.completed || false;
+                const wasPerfectBefore = prevResult?.perfectWave || false;
+
+                let crystalsToAward = 0;
+                if (!wasCompletedBefore) {
+                    crystalsToAward += 1;
+                    if (!player.townProgress) player.townProgress = createInitialTownProgress();
+                    player.townProgress.totalWavesCompleted += 1;
+                }
+                if (isPerfect && !wasPerfectBefore) {
+                    crystalsToAward += 1;
+                }
+
+                player.arena.waveResults[this.arenaWave] = {
+                    completed: true,
+                    perfectWave: isPerfect || wasPerfectBefore,
+                    crystalsEarned: (prevResult?.crystalsEarned || 0) + crystalsToAward
+                };
+
+                if (this.arenaWave < 4) {
+                    if (!wasCompletedBefore) {
+                        const c = CrystalSystem.generateCrystal('shard', 1);
+                        if (CrystalSystem.addToInventory(player, c)) { crystalDrops.push(c); crystalLabels.push('Za první porážku'); }
+                        else { CrystalSystem.addToGroundDrops(player, [c]); crystalOverflow = true; }
+                    }
+                    if (isPerfect && !wasPerfectBefore) {
+                        const c = CrystalSystem.generateCrystal('shard', 1);
+                        if (CrystalSystem.addToInventory(player, c)) { crystalDrops.push(c); crystalLabels.push('Za bezchybný souboj!'); }
+                        else { CrystalSystem.addToGroundDrops(player, [c]); crystalOverflow = true; }
+                    }
+                }
+            }
+
+            // Pet unlocks — both players get the unlock
+            this.enemyDefs.forEach(def => {
+                if (!player.unlockedPets.includes(def.id)) {
+                    player.unlockedPets.push(def.id);
+                    const pet = petsData.find(p => p.unlockedByEnemy === def.id);
+                    if (pet && !unlockedPetData) {
+                        unlockedPetData = { name: pet.name, spriteKey: pet.spriteKey, animPrefix: pet.animPrefix };
+                    }
+                }
+            });
+
+            // Non-arena crystal rewards (first defeat + perfect)
+            if (!this.fromArena) {
+                const isFirstDefeat = !player.unlockedPets.includes(primaryEnemy.id + '_defeated');
+                player.perfectDefeats ??= [];
+                const wasPerfectBefore = player.perfectDefeats.includes(primaryEnemy.id);
+
+                if (isFirstDefeat) {
+                    player.unlockedPets.push(primaryEnemy.id + '_defeated');
+                    const c = CrystalSystem.generateCrystal('shard', 1);
+                    if (CrystalSystem.addToInventory(player, c)) { crystalDrops.push(c); crystalLabels.push('Za první porážku'); }
+                    else { CrystalSystem.addToGroundDrops(player, [c]); crystalOverflow = true; }
+                }
+                if (isPerfect && !wasPerfectBefore) {
+                    const c = CrystalSystem.generateCrystal('shard', 1);
+                    if (CrystalSystem.addToInventory(player, c)) { crystalDrops.push(c); crystalLabels.push('Za bezchybný souboj!'); }
+                    else { CrystalSystem.addToGroundDrops(player, [c]); crystalOverflow = true; }
+                    player.perfectDefeats.push(primaryEnemy.id);
+                }
+            }
+
+            // Arena wave-5 completion rewards
+            if (this.fromArena && this.arenaWave >= 4) {
+                const completionCrystal = CrystalSystem.generateCrystal('shard', Phaser.Math.Between(4, 6));
+                if (CrystalSystem.addToInventory(player, completionCrystal)) {
+                    crystalDrops.push(completionCrystal);
+                    crystalLabels.push('Za dokončení arény');
+                } else {
+                    CrystalSystem.addToGroundDrops(player, [completionCrystal]);
+                    crystalOverflow = true;
+                }
+
+                if (!player.arena.completedArenaLevels) player.arena.completedArenaLevels = [];
+                if (!player.arena.completedArenaLevels.includes(this.arenaLevel)) {
+                    player.arena.completedArenaLevels.push(this.arenaLevel);
+                    const arenaBonus: Record<number, number> = { 1: 15, 2: 30, 3: 45 };
+                    ProgressionSystem.awardBattleCoin(player, arenaBonus[this.arenaLevel] ?? 15);
+                    const arenaUnlockKey = `arena_level_${this.arenaLevel}`;
+                    if (!player.unlockedPets.includes(arenaUnlockKey)) {
+                        player.unlockedPets.push(arenaUnlockKey);
+                    }
+                }
+
+                // Arena 2 special porcupine crystal
+                if (this.arenaLevel === 2) {
+                    const specialCrystal = CrystalSystem.generateCrystal('special_porcupine' as CrystalTier, 1);
+                    if (CrystalSystem.addToInventory(player, specialCrystal)) {
+                        crystalDrops.push(specialCrystal);
+                        crystalLabels.push('Speciální krystal');
+                    } else {
+                        CrystalSystem.addToGroundDrops(player, [specialCrystal]);
+                        crystalOverflow = true;
+                    }
+                }
+            }
+
+            // Record fight end for mastery
+            this.getCoopSafeMasterySystem().recordFightEnd();
+            this.gameState.save();
+
+            return { crystalDrops, crystalLabels, crystalOverflow, unlockedPet: unlockedPetData };
+        };
+
+        this.time.delayedCall(2000, () => {
+            // Apply rewards for Player A
+            coop.activatePlayerA();
+            const rewardsA = applyPlayerRewards();
+
+            // Apply rewards for Player B
+            coop.activatePlayerB();
+            const rewardsB = applyPlayerRewards();
+
+            // Advance the session-only co-op mastery tracks
+            this.applyCoopSessionPromotions();
+
+            // Switch back to A for VictoryScene display
+            coop.activatePlayerA();
+
+            // Build combined VictoryScene data
+            const playerAName = (() => { coop.activatePlayerA(); return this.gameState.getPlayer().name; })();
+            const playerBName = (() => { coop.activatePlayerB(); const n = this.gameState.getPlayer().name; coop.activatePlayerA(); return n; })();
+
+            const victoryData: any = {
+                returnScene: this.fromArena ? 'ArenaScene' : this.returnScene,
+                returnData: this.fromArena ? { arenaLevel: this.arenaLevel, wave: this.arenaWave + 1, fromBattle: true } : { battleWon: true, ...this.returnData },
+                goldReward: totalCoins,
+                isFirstDefeat: false,
+                isPerfectDefeat: isPerfect,
+                wasPerfectBefore: false,
+                unlockedPet: rewardsA.unlockedPet || rewardsB.unlockedPet,
+                enemySpriteKey: primaryEnemy.spriteKey,
+                enemyAnimPrefix: primaryEnemy.animPrefix,
+                crystalDrops: [...rewardsA.crystalDrops, ...rewardsB.crystalDrops],
+                crystalLabels: [...rewardsA.crystalLabels, ...rewardsB.crystalLabels],
+                crystalOverflow: rewardsA.crystalOverflow || rewardsB.crystalOverflow,
+                // Co-op specific
+                coopMode: true,
+                playerAName,
+                playerBName,
+                goldRewardA: totalCoins,
+                goldRewardB: totalCoins,
+                sharedAttackCount: casualProgress.sharedAttackCount,
+                sharedAttackCountLeveledUp: casualProgress.leveledUp,
+            };
+
+            // Handle arena completion / next wave routing
+            if (this.fromArena && this.arenaWave >= 4) {
+                victoryData.arenaCompleted = true;
+                victoryData.arenaLevel = this.arenaLevel;
+                victoryData.nextArenaLevel = this.arenaLevel + 1;
+                victoryData.returnScene = 'TownScene';
+                victoryData.returnData = {};
+            }
+
+            this.scene.start('VictoryScene', victoryData);
+        });
+    }
+
+    /**
      * Show crystal drop notification after arena wave
      */
     private showCrystalDropNotification(crystals: Crystal[], overflow: boolean): void {
@@ -3126,7 +4181,10 @@ export class BattleScene extends Phaser.Scene {
 
     private onDefeat(): void {
         // Record fight end for mastery system
-        MasterySystem.getInstance().recordFightEnd();
+        this.recordCoopFightEnd();
+
+        // Advance co-op session mastery before defeat handling
+        this.applyCoopSessionPromotions();
 
         // Defeat text
         const defeatText = this.add.text(640, 300, 'PORÁŽKA...', {
@@ -3146,16 +4204,159 @@ export class BattleScene extends Phaser.Scene {
             ease: 'Back.out'
         });
 
-        // Penalty
-        const player = this.gameState.getPlayer();
-        player.hp = 1; // Survive with 1 HP
-        player.status = 'přizabitý'; // Injured status
-        this.gameState.save();
+        // Penalty — apply to both players in co-op
+        if (this.isCoopMode && this.coopSession) {
+            this.coopSession.forBothPlayers(() => {
+                const p = this.gameState.getPlayer();
+                p.hp = 1;
+                p.status = 'přizabitý';
+            });
+        } else {
+            const player = this.gameState.getPlayer();
+            player.hp = 1;
+            player.status = 'přizabitý';
+            this.gameState.save();
+        }
 
         this.time.delayedCall(3000, () => {
             // For journey mode, return to map (will handle fail state)
             // Otherwise return to town
             this.scene.start(this.journeyMode ? 'ForestMapScene' : 'TownScene');
         });
+    }
+
+    // === Wrong Answer Feedback ===
+
+    private createFeedbackOverlay(): void {
+        this.feedbackOverlay = this.add.container(640, 360);
+        this.feedbackOverlay.setDepth(250);
+        this.feedbackOverlay.setVisible(false);
+
+        // Dark semi-transparent backdrop
+        const backdrop = this.add.rectangle(0, 0, 1280, 720, 0x000000, 0.7);
+        this.feedbackOverlay.add(backdrop);
+
+        // Parchment-style panel
+        const panelW = 620;
+        const panelH = 480;
+        const panel = this.add.rectangle(0, 0, panelW, panelH, 0x3b2a1a, 0.95);
+        panel.setStrokeStyle(4, 0x8b6914);
+        this.feedbackOverlay.add(panel);
+
+        // Inner border for depth
+        const innerBorder = this.add.rectangle(0, 0, panelW - 16, panelH - 16);
+        innerBorder.setStrokeStyle(2, 0x5c4a2a);
+        innerBorder.setFillStyle(0x2a1e0f, 0.5);
+        this.feedbackOverlay.add(innerBorder);
+
+        // Corner ornaments
+        const cornerSize = 12;
+        const corners = [
+            { x: -panelW / 2 + 12, y: -panelH / 2 + 12 },
+            { x: panelW / 2 - 12, y: -panelH / 2 + 12 },
+            { x: -panelW / 2 + 12, y: panelH / 2 - 12 },
+            { x: panelW / 2 - 12, y: panelH / 2 - 12 },
+        ];
+        for (const c of corners) {
+            const diamond = this.add.rectangle(c.x, c.y, cornerSize, cornerSize, 0xc9a84c);
+            diamond.setAngle(45);
+            this.feedbackOverlay.add(diamond);
+        }
+    }
+
+    private showWrongAnswerFeedback(problem: MathProblem, onDismiss: () => void): void {
+        // Clear previous feedback content (keep static panel elements: backdrop, panel, inner border, 4 corner diamonds)
+        const staticCount = 7;
+        while (this.feedbackOverlay.length > staticCount) {
+            this.feedbackOverlay.removeAt(staticCount, true);
+        }
+        if (this.feedbackVisualizer) {
+            this.feedbackVisualizer.destroy();
+            this.feedbackVisualizer = null;
+        }
+
+        this.feedbackOverlay.setVisible(true);
+
+        // Build equation string showing the correct answer
+        const equationStr = formatMathProblem(problem, 'answer');
+
+        const correctLabel = this.add.text(0, -160, equationStr, {
+            fontSize: '38px',
+            fontFamily: 'Georgia, "Times New Roman", serif',
+            color: '#e8d44d',
+            fontStyle: 'bold',
+            stroke: '#1a0e00',
+            strokeThickness: 5,
+        }).setOrigin(0.5);
+        this.feedbackOverlay.add(correctLabel);
+
+        // Decorative line under equation
+        const lineW = Math.min(correctLabel.width + 40, 400);
+        const decoLine = this.add.rectangle(0, -132, lineW, 2, 0x8b6914, 0.6);
+        this.feedbackOverlay.add(decoLine);
+
+        const visualContainer = this.add.container(0, 40);
+        this.feedbackOverlay.add(visualContainer);
+
+        // Show skip button immediately — changes to ROZUMÍM after animation
+        const btnBg = this.add.rectangle(0, 220, 210, 48, 0x5a3a1a)
+            .setStrokeStyle(2, 0xc9a84c);
+        this.feedbackOverlay.add(btnBg);
+
+        const btnText = this.add.text(0, 220, 'PŘESKOČIT', {
+            fontSize: '20px',
+            fontFamily: 'Georgia, "Times New Roman", serif',
+            color: '#e8d44d',
+            fontStyle: 'bold',
+            stroke: '#1a0e00',
+            strokeThickness: 2,
+        }).setOrigin(0.5);
+        this.feedbackOverlay.add(btnText);
+
+        btnBg.setAlpha(0);
+        btnText.setAlpha(0);
+        this.tweens.add({
+            targets: [btnBg, btnText],
+            alpha: 1,
+            duration: 300,
+            ease: 'Power2',
+        });
+
+        let animationDone = false;
+
+        btnBg.setInteractive({ useHandCursor: true })
+            .on('pointerover', () => {
+                btnBg.setFillStyle(0x6b4a2a);
+                btnText.setColor('#ffe066');
+            })
+            .on('pointerout', () => {
+                btnBg.setFillStyle(0x5a3a1a);
+                btnText.setColor('#e8d44d');
+            })
+            .on('pointerdown', () => {
+                animationDone = true;
+                this.closeFeedbackOverlay();
+                onDismiss();
+            });
+
+        const showTime = Date.now();
+        this.feedbackVisualizer = new TrialFeedbackVisualizer(this, visualContainer, () => {
+            if (animationDone) return;
+            animationDone = true;
+            const elapsed = Date.now() - showTime;
+            const remaining = Math.max(0, 3000 - elapsed);
+            this.time.delayedCall(remaining, () => {
+                if (btnText.active) btnText.setText('ROZUMÍM');
+            });
+        });
+        this.feedbackVisualizer.show(problem);
+    }
+
+    private closeFeedbackOverlay(): void {
+        this.feedbackOverlay.setVisible(false);
+        if (this.feedbackVisualizer) {
+            this.feedbackVisualizer.destroy();
+            this.feedbackVisualizer = null;
+        }
     }
 }

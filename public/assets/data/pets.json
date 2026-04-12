@@ -75,5 +75,65 @@
             "type": "lightning",
             "tint": "0x44ff44"
         }
+    },
+    {
+        "id": "pet_catacomb_A",
+        "name": "Vlk Katakomb",
+        "spriteKey": "wolves-only-transparent-sheet",
+        "animPrefix": "wolf",
+        "unlockedByEnemy": "catacomb_creature_A",
+        "requiredAmulet": { "tier": "shard", "value": 5 },
+        "mathProblemType": "addition",
+        "mathProblemMax": 5,
+        "damageMultiplier": 1,
+        "scale": 0.5
+    },
+    {
+        "id": "pet_catacomb_B",
+        "name": "Vlk Katakomb",
+        "spriteKey": "wolves-only-transparent-sheet",
+        "animPrefix": "wolf",
+        "unlockedByEnemy": "catacomb_creature_B",
+        "requiredAmulet": { "tier": "shard", "value": 8 },
+        "mathProblemType": "subtraction",
+        "mathProblemMax": 8,
+        "damageMultiplier": 1,
+        "scale": 0.5
+    },
+    {
+        "id": "pet_catacomb_C",
+        "name": "Vlk Katakomb",
+        "spriteKey": "wolves-only-transparent-sheet",
+        "animPrefix": "wolf",
+        "unlockedByEnemy": "catacomb_creature_C",
+        "requiredAmulet": { "tier": "fragment", "value": 10 },
+        "mathProblemType": "addition",
+        "mathProblemMax": 10,
+        "damageMultiplier": 2,
+        "scale": 0.5
+    },
+    {
+        "id": "pet_catacomb_D",
+        "name": "Vlk Katakomb",
+        "spriteKey": "wolves-only-transparent-sheet",
+        "animPrefix": "wolf",
+        "unlockedByEnemy": "catacomb_creature_D",
+        "requiredAmulet": { "tier": "fragment", "value": 15 },
+        "mathProblemType": "subtraction",
+        "mathProblemMax": 15,
+        "damageMultiplier": 2,
+        "scale": 0.5
+    },
+    {
+        "id": "pet_catacomb_E",
+        "name": "Vlk Katakomb",
+        "spriteKey": "wolves-only-transparent-sheet",
+        "animPrefix": "wolf",
+        "unlockedByEnemy": "catacomb_creature_E",
+        "requiredAmulet": { "tier": "prism", "value": 20 },
+        "mathProblemType": "multiplication",
+        "mathProblemMax": 12,
+        "damageMultiplier": 3,
+        "scale": 0.5
     }
 ]

@@ -60,15 +60,26 @@ export interface SpawnPoint {
 export type EnemyCount = '1' | '2' | '3';
 
 /**
- * Spawn points configuration for battle scenes
+ * Player layout for a specific mode (single or coop)
+ */
+export interface PlayerLayout {
+    player: SpawnPoint;
+    pet: SpawnPoint;
+    playerB?: SpawnPoint;
+    petB?: SpawnPoint;
+}
+
+/**
+ * Spawn points configuration for battle scenes.
+ * New structure: players are nested under players.single / players.coop,
+ * enemies are shared between modes.
  */
 export interface SpawnPoints {
-    /** Player spawn position */
-    player: SpawnPoint;
-
-    /** Pet spawn position */
-    pet: SpawnPoint;
-
+    mode?: 'single' | 'coop';
+    players: {
+        single: PlayerLayout;
+        coop?: PlayerLayout;
+    };
     /** Enemy spawn positions for different enemy counts */
     enemies: Record<EnemyCount, SpawnPoint[]>;
 }

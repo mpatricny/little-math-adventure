@@ -3,6 +3,7 @@ import { SaveSystem } from '../systems/SaveSystem';
 import { SceneDebugger } from '../systems/SceneDebugger';
 import { SceneBuilder } from '../systems/SceneBuilder';
 import { isTouchDevice, requestFullscreen } from '../utils/mobileSetup';
+import { CoopSessionManager } from '../systems/CoopSessionManager';
 
 export class MenuScene extends Phaser.Scene {
     private debugger!: SceneDebugger;
@@ -13,6 +14,12 @@ export class MenuScene extends Phaser.Scene {
     }
 
     create(): void {
+        // Safety: always end co-op session when returning to menu
+        const coop = CoopSessionManager.getInstance();
+        if (coop.isCoopActive()) {
+            coop.endSession();
+        }
+
         // Run migration for old save format (only affects first run after update)
         SaveSystem.migrateOldSave();
 
@@ -39,6 +46,10 @@ export class MenuScene extends Phaser.Scene {
 
         this.sceneBuilder.registerHandler('onTestScene', () => {
             this.scene.start('AssetFactoryTestScene');
+        });
+
+        this.sceneBuilder.registerHandler('onCoop', () => {
+            this.scene.start('CoopSetupScene');
         });
 
         // Build the scene from JSON

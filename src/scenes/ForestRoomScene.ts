@@ -2,6 +2,7 @@ import Phaser from 'phaser';
 import { GameStateManager } from '../systems/GameStateManager';
 import { JourneySystem } from '../systems/JourneySystem';
 import { getPlayerSpriteConfig } from '../utils/characterUtils';
+import { CoopSessionManager } from '../systems/CoopSessionManager';
 
 /**
  * Room object definition from forest-rooms.json
@@ -102,6 +103,7 @@ export class ForestRoomScene extends Phaser.Scene {
     private currentRoom!: RoomConfig;
 
     private player!: Phaser.GameObjects.Sprite;
+    private playerBSprite: Phaser.GameObjects.Sprite | null = null;
     private objectSprites: Map<string, Phaser.GameObjects.Container> = new Map();
     private exitZones: Phaser.GameObjects.Zone[] = [];
 
@@ -330,6 +332,22 @@ export class ForestRoomScene extends Phaser.Scene {
         if (this.fromDirection === 'right') {
             this.player.setFlipX(true);
         }
+
+        // Co-op: show Player B sprite behind Player A
+        const coop = CoopSessionManager.getInstance();
+        if (coop.isCoopActive()) {
+            coop.activatePlayerB();
+            const playerB = this.gameState.getPlayer();
+            const spriteBConfig = getPlayerSpriteConfig(playerB.characterType);
+            this.playerBSprite = this.add.sprite(spawnX - 30, spawnY + 10, spriteBConfig.idleTexture)
+                .setScale(0.9)
+                .setDepth(9)
+                .play(spriteBConfig.idleAnim);
+            if (this.fromDirection === 'right') {
+                this.playerBSprite.setFlipX(true);
+            }
+            coop.activatePlayerA();
+        }
     }
 
     private createObjects(): void {
@@ -507,22 +525,7 @@ export class ForestRoomScene extends Phaser.Scene {
             }
         });
 
-        if (obj.type === 'enemy' || obj.type === 'boss') {
-            // Subtle diffused glow for enemies/bosses - scale looks weird on characters
-            const sprite = container.getAt(0) as Phaser.GameObjects.Sprite;
-            container.on('pointerover', () => {
-                if (sprite?.preFX) {
-                    sprite.setData('glowFx', sprite.preFX.addGlow(0xffaa44, 8, 0, false, 0.05, 24));
-                }
-            });
-            container.on('pointerout', () => {
-                const fx = sprite?.getData('glowFx');
-                if (fx && sprite?.preFX) {
-                    sprite.preFX.remove(fx);
-                    sprite.setData('glowFx', null);
-                }
-            });
-        } else {
+        if (obj.type !== 'enemy' && obj.type !== 'boss') {
             // Scale effect for non-enemy objects (chests, rest points, etc.)
             container.on('pointerover', () => {
                 this.tweens.add({
@@ -830,6 +833,9 @@ export class ForestRoomScene extends Phaser.Scene {
         // Play walk animation
         this.player.play(spriteConfig.walkAnim);
 
+        // Co-op: Player B follows
+        this.walkPlayerBFollow(targetX, targetY, dx, duration);
+
         const tween = this.tweens.add({
             targets: this.player,
             x: targetX,
@@ -841,6 +847,7 @@ export class ForestRoomScene extends Phaser.Scene {
                 const aggroEnemy = this.checkAggroProximity();
                 if (aggroEnemy) {
                     tween.stop();
+                    this.stopPlayerBWalk();
                     this.player.play(spriteConfig.idleAnim);
                     this.isWalking = false;
                     this.input.enabled = true;
@@ -860,6 +867,55 @@ export class ForestRoomScene extends Phaser.Scene {
                 this.checkExitZones();
             }
         });
+    }
+
+    private playerBWalkTween: Phaser.Tweens.Tween | null = null;
+
+    private walkPlayerBFollow(targetX: number, targetY: number, dx: number, duration: number): void {
+        if (!this.playerBSprite) return;
+
+        const coop = CoopSessionManager.getInstance();
+        if (!coop.isCoopActive()) return;
+
+        coop.activatePlayerB();
+        const spriteBConfig = getPlayerSpriteConfig(this.gameState.getPlayer().characterType);
+        coop.activatePlayerA();
+
+        this.playerBSprite.setFlipX(dx < 0);
+
+        // Player B follows slightly behind
+        const offsetX = dx < 0 ? 30 : -30;
+
+        this.time.delayedCall(150, () => {
+            if (!this.playerBSprite) return;
+            this.playerBSprite.play(spriteBConfig.walkAnim);
+            this.playerBWalkTween = this.tweens.add({
+                targets: this.playerBSprite,
+                x: targetX + offsetX,
+                y: targetY + 10,
+                duration: Math.max(duration - 150, 100),
+                ease: 'Linear',
+                onComplete: () => {
+                    this.playerBSprite?.play(spriteBConfig.idleAnim);
+                    this.playerBWalkTween = null;
+                }
+            });
+        });
+    }
+
+    private stopPlayerBWalk(): void {
+        if (!this.playerBSprite) return;
+        if (this.playerBWalkTween) {
+            this.playerBWalkTween.stop();
+            this.playerBWalkTween = null;
+        }
+        const coop = CoopSessionManager.getInstance();
+        if (coop.isCoopActive()) {
+            coop.activatePlayerB();
+            const spriteBConfig = getPlayerSpriteConfig(this.gameState.getPlayer().characterType);
+            coop.activatePlayerA();
+            this.playerBSprite.play(spriteBConfig.idleAnim);
+        }
     }
 
     /**

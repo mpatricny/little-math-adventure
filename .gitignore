@@ -10,4 +10,16 @@ dist
 
 # Local settings
 .claude/settings.local.json
+.mcp.json
 
+# Local automation/debug artifacts
+.playwright-mcp/
+after-*.png
+click-attempt.png
+crash-site.png
+game-loaded.png
+game-started.png
+nova-hra-attempt3.png
+reloaded.png
+slot1.png
+test-scene-result.png

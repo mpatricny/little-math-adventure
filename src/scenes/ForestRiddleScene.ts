@@ -4,6 +4,7 @@ import { JourneySystem } from '../systems/JourneySystem';
 import { GameStateManager } from '../systems/GameStateManager';
 import { ManaSystem } from '../systems/ManaSystem';
 import { getPlayerSpriteConfig } from '../utils/characterUtils';
+import { CoopSessionManager } from '../systems/CoopSessionManager';
 
 /**
  * Scene initialization data
@@ -166,6 +167,8 @@ export class ForestRiddleScene extends Phaser.Scene {
 
     // Player
     private player!: Phaser.GameObjects.Sprite;
+    private playerBSprite: Phaser.GameObjects.Sprite | null = null;
+    private playerBWalkTween: Phaser.Tweens.Tween | null = null;
     private isWalking = false;
     private hasCrossedBridge = false;  // Once crossed, no going back
 
@@ -414,6 +417,22 @@ export class ForestRiddleScene extends Phaser.Scene {
         // Flip based on entry direction
         if (this.fromDirection === 'right') {
             this.player.setFlipX(true);
+        }
+
+        // Co-op: show Player B sprite behind Player A
+        const coop = CoopSessionManager.getInstance();
+        if (coop.isCoopActive()) {
+            coop.activatePlayerB();
+            const playerB = GameStateManager.getInstance().getPlayer();
+            const spriteBConfig = getPlayerSpriteConfig(playerB.characterType);
+            this.playerBSprite = this.add.sprite(spawnX - 30, this.getPathY(spawnX - 30), spriteBConfig.idleTexture)
+                .setScale(0.9)
+                .setDepth(9)
+                .play(spriteBConfig.idleAnim);
+            if (this.fromDirection === 'right') {
+                this.playerBSprite.setFlipX(true);
+            }
+            coop.activatePlayerA();
         }
     }
 
@@ -1286,6 +1305,9 @@ export class ForestRiddleScene extends Phaser.Scene {
         // Play walk animation
         this.player.play(spriteConfig.walkAnim);
 
+        // Co-op: Player B follows along the path
+        this.walkPlayerBFollow(targetX, dx, duration);
+
         // Only tween X - Y follows the path curve via onUpdate
         const tween = this.tweens.add({
             targets: this.player,
@@ -1296,9 +1318,15 @@ export class ForestRiddleScene extends Phaser.Scene {
                 // Continuously update Y based on current X position to follow the path
                 this.player.y = this.getPathY(this.player.x);
 
+                // Update Player B Y to follow the same path
+                if (this.playerBSprite) {
+                    this.playerBSprite.y = this.getPathY(this.playerBSprite.x);
+                }
+
                 // Check mushroom aggro during movement
                 if (this.checkMushroomAggro()) {
                     tween.stop();
+                    this.stopPlayerBWalk();
                     this.player.play(spriteConfig.idleAnim);
                     this.isWalking = false;
                     this.startMushroomBattle();
@@ -1313,6 +1341,51 @@ export class ForestRiddleScene extends Phaser.Scene {
                 }
             }
         });
+    }
+
+    private walkPlayerBFollow(targetX: number, dx: number, duration: number): void {
+        if (!this.playerBSprite) return;
+
+        const coop = CoopSessionManager.getInstance();
+        if (!coop.isCoopActive()) return;
+
+        coop.activatePlayerB();
+        const spriteBConfig = getPlayerSpriteConfig(GameStateManager.getInstance().getPlayer().characterType);
+        coop.activatePlayerA();
+
+        this.playerBSprite.setFlipX(dx < 0);
+
+        const offsetX = dx < 0 ? 30 : -30;
+
+        this.time.delayedCall(150, () => {
+            if (!this.playerBSprite) return;
+            this.playerBSprite.play(spriteBConfig.walkAnim);
+            this.playerBWalkTween = this.tweens.add({
+                targets: this.playerBSprite,
+                x: targetX + offsetX,
+                duration: Math.max(duration - 150, 100),
+                ease: 'Linear',
+                onComplete: () => {
+                    this.playerBSprite?.play(spriteBConfig.idleAnim);
+                    this.playerBWalkTween = null;
+                }
+            });
+        });
+    }
+
+    private stopPlayerBWalk(): void {
+        if (!this.playerBSprite) return;
+        if (this.playerBWalkTween) {
+            this.playerBWalkTween.stop();
+            this.playerBWalkTween = null;
+        }
+        const coop = CoopSessionManager.getInstance();
+        if (coop.isCoopActive()) {
+            coop.activatePlayerB();
+            const spriteBConfig = getPlayerSpriteConfig(GameStateManager.getInstance().getPlayer().characterType);
+            coop.activatePlayerA();
+            this.playerBSprite.play(spriteBConfig.idleAnim);
+        }
     }
 
     /**

@@ -115,6 +115,27 @@
         "FMT_004": "CELKEM: {0} měďáků",
         "FMT_005": "ÚROVEŇ: {0}   |   CYKLUS: {1}   |   {2}%"
     },
+    "band_select": {
+        "title": "VYBER SI ÚROVEŇ",
+        "description": "Kde chceš začít?",
+        "band_A": "Čísla 0–5",
+        "band_B": "Čísla 0–8",
+        "band_C": "Čísla 0–10",
+        "band_D": "Čísla 0–20 (bez přechodu)",
+        "band_E": "Čísla 0–20 (přes desítku)",
+        "band_A_desc": "Začni od začátku",
+        "band_B_desc": "Sčítání a odčítání do 8",
+        "band_C_desc": "Sčítání a odčítání do 10",
+        "band_D_desc": "Bez přechodu přes desítku",
+        "band_E_desc": "S přechodem přes desítku",
+        "confirm": "POTVRDIT"
+    },
+    "struggle": {
+        "title": "ZYX RADÍ",
+        "message": "Tato čísla jsou náročná! Chceš zkusit jednodušší?",
+        "accept": "Ano, chci jednodušší",
+        "decline": "Ne, chci pokračovat"
+    },
     "forest_gate": {
         "forest_name": "LES VERDANT",
         "title": "🌲 VSTUP DO LESA 🌲",

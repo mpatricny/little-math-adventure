@@ -333,6 +333,16 @@
           "events": {
             "click": "onTestScene"
           }
+        },
+        {
+          "id": "btnCoop",
+          "asset": "ui.buttons.attack-button",
+          "x": 640,
+          "y": 540,
+          "text": "Co-op",
+          "events": {
+            "click": "onCoop"
+          }
         }
       ]
     },
@@ -348,7 +358,6 @@
           "x": 640,
           "y": 360,
           "depth": -10,
-          "scale": 1,
           "visible": true
         },
         {
@@ -380,11 +389,10 @@
           "asset": "ui.buttons.attack-button",
           "x": 640,
           "y": 660,
+          "depth": 50,
           "events": {
             "click": "onAttack"
           },
-          "depth": 50,
-          "scale": 1,
           "visible": true
         },
         {
@@ -392,49 +400,88 @@
           "asset": "ui.containers.empty",
           "x": 480,
           "y": 660,
-          "depth": 0,
-          "scale": 1,
           "visible": true
         }
       ],
       "spawnPoints": {
-        "player": {
-          "x": 300,
-          "y": 480
-        },
-        "pet": {
-          "x": 371,
-          "y": 609
+        "mode": "coop",
+        "players": {
+          "single": {
+            "player": {
+              "x": 267,
+              "y": 478
+            },
+            "pet": {
+              "x": 373,
+              "y": 564
+            }
+          },
+          "coop": {
+            "player": {
+              "x": 239,
+              "y": 445
+            },
+            "playerB": {
+              "x": 340,
+              "y": 539
+            },
+            "pet": {
+              "x": 429,
+              "y": 466
+            },
+            "petB": {
+              "x": 444,
+              "y": 584
+            }
+          }
         },
         "enemies": {
           "1": [
             {
-              "x": 900,
-              "y": 480
+              "x": 899,
+              "y": 484
             }
           ],
           "2": [
             {
-              "x": 873,
-              "y": 472
+              "x": 839,
+              "y": 444
             },
             {
-              "x": 970,
-              "y": 560
+              "x": 932,
+              "y": 525
             }
           ],
           "3": [
             {
               "x": 772,
-              "y": 462
+              "y": 437
             },
             {
-              "x": 845,
-              "y": 574
+              "x": 822,
+              "y": 523
             },
             {
-              "x": 982,
-              "y": 503
+              "x": 981,
+              "y": 475
+            }
+          ],
+          "4": [
+            {
+              "x": 750,
+              "y": 420
+            },
+            {
+              "x": 830,
+              "y": 510
+            },
+            {
+              "x": 950,
+              "y": 440
+            },
+            {
+              "x": 1000,
+              "y": 530
             }
           ]
         }
@@ -470,8 +517,8 @@
         {
           "id": "witch",
           "asset": "environments.buildings.witch-hut",
-          "x": 382,
-          "y": 665,
+          "x": 815,
+          "y": 674,
           "scale": 0.224,
           "visible": true
         },
@@ -486,8 +533,8 @@
         {
           "id": "shop",
           "asset": "environments.buildings.shop",
-          "x": 815,
-          "y": 674,
+          "x": 382,
+          "y": 665,
           "scale": 0.184,
           "visible": true
         },
@@ -537,8 +584,8 @@
         {
           "id": "workshop-label",
           "asset": "ui.labels.building-label",
-          "x": 382,
-          "y": 425,
+          "x": 817,
+          "y": 446,
           "depth": 10,
           "text": "$buildings.BLD_001",
           "visible": true
@@ -564,8 +611,8 @@
         {
           "id": "shop-label",
           "asset": "ui.labels.building-label",
-          "x": 817,
-          "y": 446,
+          "x": 382,
+          "y": 425,
           "depth": 10,
           "text": "$buildings.BLD_004",
           "visible": true
@@ -995,6 +1042,17 @@
           "visible": true
         },
         {
+          "id": "masteryButton",
+          "asset": "Masery button",
+          "x": 250,
+          "y": 500,
+          "scale": 0.45,
+          "depth": 50,
+          "uiElement": {
+            "templateId": "1773681235506-t2v74fsf7"
+          }
+        },
+        {
           "id": "trialDialog",
           "asset": "ui.labels.title-label",
           "x": 203,
@@ -1165,10 +1223,13 @@
         },
         {
           "id": "backButton",
-          "asset": "ui.buttons.back-button",
-          "x": 100,
-          "y": 637,
+          "asset": "Back button",
+          "x": 74,
+          "y": 639,
           "depth": 50,
+          "uiElement": {
+            "templateId": "1768730825297-e6lnuaoyj"
+          },
           "events": {
             "click": "enterScene:TownScene"
           },
@@ -1280,13 +1341,35 @@
         }
       ],
       "spawnPoints": {
-        "player": {
-          "x": 216,
-          "y": 563
-        },
-        "pet": {
-          "x": 325,
-          "y": 650
+        "players": {
+          "single": {
+            "player": {
+              "x": 216,
+              "y": 563
+            },
+            "pet": {
+              "x": 325,
+              "y": 650
+            }
+          },
+          "coop": {
+            "player": {
+              "x": 318,
+              "y": 516
+            },
+            "playerB": {
+              "x": 176,
+              "y": 572
+            },
+            "pet": {
+              "x": 423,
+              "y": 598
+            },
+            "petB": {
+              "x": 276,
+              "y": 659
+            }
+          }
         },
         "enemies": {
           "1": [
@@ -1297,29 +1380,30 @@
           ],
           "2": [
             {
-              "x": 771,
-              "y": 452
+              "x": 728,
+              "y": 447
             },
             {
-              "x": 1001,
-              "y": 445
+              "x": 985,
+              "y": 440
             }
           ],
           "3": [
             {
-              "x": 887,
-              "y": 449
+              "x": 853,
+              "y": 446
             },
             {
-              "x": 414,
-              "y": 359
+              "x": 645,
+              "y": 433
             },
             {
-              "x": 1068,
-              "y": 460
+              "x": 1026,
+              "y": 436
             }
           ]
-        }
+        },
+        "mode": "coop"
       }
     },
     "TestingTownScene": {
@@ -2183,6 +2267,16 @@
           }
         },
         {
+          "id": "Clear_button",
+          "asset": "Green_button",
+          "x": 319,
+          "y": -89,
+          "scale": 0.75,
+          "uiElement": {
+            "templateId": "1768922130266-28htorb5x"
+          }
+        },
+        {
           "id": "Load game",
           "asset": "Load game",
           "x": 645,
@@ -2382,6 +2476,70 @@
       ],
       "ui": [],
       "zones": []
+    },
+    "BandSelectScene": {
+      "viewport": {
+        "width": 1280,
+        "height": 720
+      },
+      "elements": [],
+      "ui": []
+    },
+    "CatacombTrialScene": {
+      "viewport": {
+        "width": 1280,
+        "height": 720
+      },
+      "elements": [],
+      "spawnPoints": {
+        "creature": {
+          "x": 900,
+          "y": 400
+        }
+      }
+    },
+    "ManaCollectionScene": {
+      "viewport": {
+        "width": 1280,
+        "height": 720
+      },
+      "elements": [
+        {
+          "id": "title",
+          "asset": "ui.containers.empty",
+          "x": 640,
+          "y": 35,
+          "depth": 10
+        },
+        {
+          "id": "livesDisplay",
+          "asset": "ui.containers.empty",
+          "x": 100,
+          "y": 45,
+          "depth": 10
+        },
+        {
+          "id": "manaDisplay",
+          "asset": "ui.containers.empty",
+          "x": 1100,
+          "y": 45,
+          "depth": 10
+        },
+        {
+          "id": "resolveButton",
+          "asset": "ui.containers.empty",
+          "x": 600,
+          "y": 620,
+          "depth": 20
+        },
+        {
+          "id": "problemText",
+          "asset": "ui.containers.empty",
+          "x": 600,
+          "y": 0,
+          "depth": 15
+        }
+      ]
     }
   }
 }

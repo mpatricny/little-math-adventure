@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import { MathProblem } from '../types';
+import { formatMathProblem } from '../utils/formatMathProblem';
 import { MasterySystem } from '../systems/MasterySystem';
 
 // Visual hint configuration
@@ -68,6 +69,7 @@ export class MathBoard {
     private completionTimer: Phaser.Time.TimerEvent | null = null; // Track pending onComplete callback
     private advanceTimer: Phaser.Time.TimerEvent | null = null; // Track 400ms delay between problems
     private onWrongAnswer?: (problem: MathProblem, onDismiss: () => void) => void; // Optional wrong answer callback
+    private speedChargeCallback?: (charges: number, type: 'swift' | 'lightning') => number; // Returns bonus damage from bar fills
 
     // Multi-problem state
     private problems: MathProblem[] = [];
@@ -98,6 +100,11 @@ export class MathBoard {
     /** Set optional callback for wrong answers (shows explanation popup) */
     setOnWrongAnswer(callback: (problem: MathProblem, onDismiss: () => void) => void): void {
         this.onWrongAnswer = callback;
+    }
+
+    /** Set callback for speed charge bar integration. Callback receives charges + type, returns bonus damage from bar fills. */
+    setSpeedChargeCallback(cb: (charges: number, type: 'swift' | 'lightning') => number): void {
+        this.speedChargeCallback = cb;
     }
 
     /**
@@ -247,42 +254,7 @@ export class MathBoard {
         const rowContainer = this.scene.add.container(rowX, rowY);
 
         // Problem text (left side) - smaller for two-column mode
-        // Display × for multiplication operator
-        const displayOperator = problem.operator === '*' ? '×' : problem.operator;
-
-        // Format problem string based on problem type
-        let problemString: string;
-        if (problem.problemType === 'missing_operand') {
-            // Missing operand: "5 + ? = 8" (operand2 stores the result)
-            // Three-operand variant: "4 + ? - 5 = 4" (operand3 + operator2 present)
-            if (problem.operand3 !== undefined && problem.operator2) {
-                const displayOp2 = problem.operator2 === '*' ? '×' : problem.operator2;
-                problemString = `${problem.operand1} ${displayOperator} ? ${displayOp2} ${problem.operand3} = ${problem.operand2}`;
-            } else {
-                problemString = `${problem.operand1} ${displayOperator} ? = ${problem.operand2}`;
-            }
-        } else if (problem.problemType === 'comparison_eq_vs_eq') {
-            // Equation vs equation: "3 + 2 ○ 4 - 1"
-            const rightOp = problem.operator3 === '-' ? '-' : '+';
-            problemString = `${problem.operand1} ${displayOperator} ${problem.operand2} ○ ${problem.operand3} ${rightOp} ${problem.operand4}`;
-        } else if (problem.problemType === 'comparison') {
-            if (problem.operand4 !== undefined && problem.operator2) {
-                // Three-operand comparison: "1 + 3 - 2 ○ 2" (operand4 is the comparison target)
-                const displayOp2 = problem.operator2 === '*' ? '×' : problem.operator2;
-                problemString = `${problem.operand1} ${displayOperator} ${problem.operand2} ${displayOp2} ${problem.operand3} ○ ${problem.operand4}`;
-            } else {
-                // Two-operand comparison: "7 + 2 ○ 10" (operand3 stores the right side)
-                problemString = `${problem.operand1} ${displayOperator} ${problem.operand2} ○ ${problem.operand3}`;
-            }
-        } else {
-            // Standard: "5 + 3 = ?"
-            problemString = `${problem.operand1} ${displayOperator} ${problem.operand2}`;
-            if (problem.operand3 !== undefined && problem.operator2) {
-                const displayOperator2 = problem.operator2 === '*' ? '×' : problem.operator2;
-                problemString += ` ${displayOperator2} ${problem.operand3}`;
-            }
-            problemString += ' = ?';
-        }
+        const problemString = formatMathProblem(problem, 'question');
 
         // Use smaller font for long problem strings (three-operand missing_part)
         const isLongString = problemString.length > 14;
@@ -685,6 +657,9 @@ export class MathBoard {
         const btn = row.buttons[buttonIndex];
         const bg = btn.getData('bg') as Phaser.GameObjects.Image;
 
+        // Track charge bar bonus for animation below
+        let chargeBonusDamage = 0;
+
         // Visual feedback
         if (isCorrect) {
             bg.setTint(0x88ff88);  // Green tint
@@ -694,19 +669,24 @@ export class MathBoard {
             const multiplier = row.problem.damageMultiplier || 1;
             let totalHit = multiplier;
 
-            // Speed bonus for mastery problems
+            // Speed charge bar: fast answers add charges, bar fill grants +1 damage
             let speedLabel = '';
             if (row.problem.masteryKey && responseTimeMs > 0) {
-                const speedBonus = MasterySystem.getInstance().getSpeedBonus(responseTimeMs);
-                if (speedBonus.bonusDamage > 0 && speedBonus.type !== 'none') {
-                    totalHit += speedBonus.bonusDamage;
-                    speedLabel = speedBonus.type === 'lightning' ? ' ⚡' : ' ✨';
+                const speedBonus = MasterySystem.getInstance().getSpeedBonus(responseTimeMs, row.problem.masteryKey);
+                if (speedBonus.charges > 0 && speedBonus.type !== 'none') {
+                    speedLabel = speedBonus.type === 'lightning' ? ' ⚡⚡' : ' ⚡';
+                    if (this.speedChargeCallback) {
+                        chargeBonusDamage = this.speedChargeCallback(speedBonus.charges, speedBonus.type);
+                    }
                 }
             }
 
+            totalHit += chargeBonusDamage;
             this.damageDealt += totalHit;
             // Show hit detail on status icon
-            if (totalHit > 1) {
+            if (chargeBonusDamage > 0) {
+                row.statusIcon.setText(`✓${speedLabel} +${chargeBonusDamage}`);
+            } else if (totalHit > 1) {
                 row.statusIcon.setText(`✓ ×${totalHit}${speedLabel}`);
             } else if (speedLabel) {
                 row.statusIcon.setText(`✓${speedLabel}`);
@@ -738,12 +718,19 @@ export class MathBoard {
 
         // Animate damage text on correct
         if (isCorrect) {
+            // Bigger bounce + gold flash when charge bar filled
             this.scene.tweens.add({
                 targets: this.damageText,
-                scale: 1.3,
-                duration: 100,
+                scale: chargeBonusDamage > 0 ? 1.5 : 1.3,
+                duration: chargeBonusDamage > 0 ? 150 : 100,
                 yoyo: true,
             });
+            if (chargeBonusDamage > 0) {
+                this.damageText.setColor('#ffcc00');
+                this.scene.time.delayedCall(300, () => {
+                    this.damageText.setColor('#ffffff');
+                });
+            }
         }
 
         // If wrong and onWrongAnswer is set, show explanation instead of auto-advancing

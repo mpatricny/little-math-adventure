@@ -1,5 +1,6 @@
 import { GameStateManager } from './GameStateManager';
 import { ProgressionSystem } from './ProgressionSystem';
+import { CoopSessionManager } from './CoopSessionManager';
 
 /**
  * Journey encounter types
@@ -70,7 +71,8 @@ export interface JourneyState {
     lastSavePoint: {
         stage: number;
         encounter: number;
-        hp: number;  // Player HP at save point
+        hp: number;  // Player A HP at save point
+        hpB?: number; // Player B HP at save point (co-op)
         room?: string;  // Room ID at save point (for room-based journeys)
     } | null;
     completed: boolean;
@@ -314,12 +316,21 @@ export class JourneySystem {
     applyHeal(percent: number): void {
         if (!this.currentJourney) return;
 
-        const player = this.gameState.getPlayer();
-        const healAmount = Math.floor(player.maxHp * (percent / 100));
-        player.hp = Math.min(player.maxHp, player.hp + healAmount);
-
-        // Save game to persist the healing
-        this.gameState.save();
+        const coop = CoopSessionManager.getInstance();
+        if (coop.isCoopActive()) {
+            // Co-op: heal both players
+            coop.forBothPlayers(() => {
+                const p = this.gameState.getPlayer();
+                const healAmount = Math.floor(p.maxHp * (percent / 100));
+                p.hp = Math.min(p.maxHp, p.hp + healAmount);
+            });
+            coop.activatePlayerA();
+        } else {
+            const player = this.gameState.getPlayer();
+            const healAmount = Math.floor(player.maxHp * (percent / 100));
+            player.hp = Math.min(player.maxHp, player.hp + healAmount);
+            this.gameState.save();
+        }
     }
 
     /**
@@ -627,10 +638,21 @@ export class JourneySystem {
         if (!this.currentJourney) return;
 
         const player = this.gameState.getPlayer();
+        const coop = CoopSessionManager.getInstance();
+
+        // Store Player B's HP if in co-op
+        let hpB: number | undefined;
+        if (coop.isCoopActive()) {
+            coop.activatePlayerB();
+            hpB = this.gameState.getPlayer().hp;
+            coop.activatePlayerA();
+        }
+
         this.currentJourney.lastSavePoint = {
             stage: this.currentJourney.currentStage,
             encounter: this.currentJourney.currentEncounter,
             hp: player.hp,
+            hpB,
             room: this.currentJourney.currentRoom
         };
 
@@ -652,10 +674,21 @@ export class JourneySystem {
             this.currentJourney.currentRoom = savePoint.room;
         }
 
-        // Restore HP
-        const player = this.gameState.getPlayer();
-        player.hp = savePoint.hp;
-        this.gameState.save();
+        // Restore HP (both players in co-op)
+        const coop = CoopSessionManager.getInstance();
+        if (coop.isCoopActive() && savePoint.hpB !== undefined) {
+            coop.activatePlayerA();
+            this.gameState.getPlayer().hp = savePoint.hp;
+            this.gameState.save();
+            coop.activatePlayerB();
+            this.gameState.getPlayer().hp = savePoint.hpB;
+            this.gameState.save();
+            coop.activatePlayerA();
+        } else {
+            const player = this.gameState.getPlayer();
+            player.hp = savePoint.hp;
+            this.gameState.save();
+        }
 
         // Clear failed state
         this.currentJourney.failed = false;

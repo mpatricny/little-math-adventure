@@ -124,6 +124,8 @@ export interface PlayerState {
     storyProgress?: StoryProgress;     // Track story milestones for visual storytelling
     // === TOWN PROGRESS ===
     townProgress?: TownProgress;       // Track building unlocks and progressive town growth
+    // === CATACOMB TRIALS ===
+    catacombPetUpgrades?: Record<string, number>;  // BandId → mastery upgrade count (0-4)
 }
 
 // ===== GUILD TRIAL SYSTEM =====
@@ -259,9 +261,16 @@ export type BattlePhase =
     | 'player_math'
     | 'player_attack'
     | 'player_miss'
-    | 'pet_turn'           // Pet's turn after player
+    | 'player_b_turn'      // Co-op: Player B's turn
+    | 'player_b_math'      // Co-op: Player B's math board
+    | 'player_b_attack'    // Co-op: Player B's attack
+    | 'player_b_miss'      // Co-op: Player B's miss
+    | 'pet_turn'           // Pet's turn after player (Player A's pet)
     | 'pet_math'           // Pet's math board
     | 'pet_attack'         // Pet executes attack
+    | 'pet_b_turn'         // Co-op: Player B's pet turn
+    | 'pet_b_math'         // Co-op: Player B's pet math
+    | 'pet_b_attack'       // Co-op: Player B's pet attack
     | 'enemy_turn'
     | 'enemy_attack'
     | 'player_defend'
@@ -293,8 +302,11 @@ export interface BattleEnemy {
 export interface BattleState {
     phase: BattlePhase;
     playerHp: number;
+    playerBHp?: number;               // Co-op: Player B's HP
+    playerBMaxHp?: number;            // Co-op: Player B's max HP
     enemies: BattleEnemy[];           // Array for multi-enemy support
     selectedEnemyIndex: number;       // Which enemy is targeted
+    selectedEnemyIndexB?: number;     // Co-op: Player B's target
     currentProblems: MathProblem[];   // Array of problems for current attack
     currentProblemIndex: number;      // Which problem is being solved
     damageDealt: number;              // Damage accumulated this turn
@@ -476,6 +488,9 @@ export interface MasteryData {
     currentPool: string[];        // current 10-problem pool (rolling, persists across fights)
     currentPoolIndex: number;     // next problem to draw from currentPool
     lastPoolProblems: string[];   // problems from previous pool (for dedup)
+    lastStruggleOfferFight: number;   // fightCount when last struggle offer was shown
+    coopAutoPromotionBases: Record<string, number>; // exam/challenge target key -> baseline solve sequence
+    selectedStartBand?: BandId;       // band chosen at game start (optional for old saves)
 }
 
 /** Definition of a single problem in the mastery database */
@@ -512,3 +527,15 @@ export const EXAM_CONFIGS: Record<ExamType, ExamConfig> = {
     band_gate: { type: 'band_gate', itemCount: 16, timePerItem: 15, bronzeThreshold: 11, silverThreshold: 13, goldThreshold: 15 },
     band_mastery: { type: 'band_mastery', itemCount: 20, timePerItem: 15, passThreshold: 18 },
 };
+
+// ===== CATACOMB TRIAL SYSTEM =====
+export interface CatacombTrialConfig {
+    examType: 'fluency_challenge' | 'mastery_challenge';
+    subAtomId: SubAtomId;
+    creatureHp: number;      // 12
+    playerLives: number;     // 3 (fluency) or 2 (mastery)
+    chargeTime: number;      // 15 seconds
+    enemyId: string;         // creature enemy ID (per-band)
+    backgroundKey: string;   // catacomb bg texture
+    bandId: BandId;
+}

@@ -125,6 +125,36 @@ export class GameStateManager {
     }
 
     /**
+     * Synchronous slot swap for co-op context switching.
+     * Unlike loadSlot(), this is fully synchronous — the caller is
+     * responsible for calling MasterySystem.destroyInstance() directly.
+     *
+     * Saves current state before loading the target slot.
+     * Returns true if successful, false if slot is empty.
+     */
+    swapToSlot(slotIndex: number): boolean {
+        // Save current state first (preserve save integrity invariant)
+        this.save();
+
+        const saveData = SaveSystem.load(slotIndex);
+        if (!saveData) {
+            return false;
+        }
+
+        this.activeSlotIndex = slotIndex;
+        SaveSystem.setActiveSlot(slotIndex);
+
+        this.player = saveData.player;
+        if (!this.player.characterType) {
+            this.player.characterType = 'girl_knight';
+        }
+        this.player = ProgressionSystem.migratePlayerState(this.player);
+        this.mathStats = this.migrateMathStats(saveData.mathStats);
+
+        return true;
+    }
+
+    /**
      * Check if a slot is currently loaded
      */
     isSlotLoaded(): boolean {
@@ -203,6 +233,10 @@ export class GameStateManager {
             return this.createInitialMathStats();
         }
 
+        const masteryData = stats.masteryData
+            ? this.migrateExistingMasteryData(stats.masteryData)
+            : this.migrateMasteryData(stats);
+
         // Migrate problemStats to include manaCollected if missing
         // Also migrate old diamondsCollected → manaCollected
         const migratedProblemStats: Record<string, ProblemStats> = {};
@@ -231,7 +265,7 @@ export class GameStateManager {
             poolCycle: stats.poolCycle || 0,
             dailyAttempts: stats.dailyAttempts || 0,
             lastAttemptDate: stats.lastAttemptDate || '',
-            masteryData: stats.masteryData || this.migrateMasteryData(stats),
+            masteryData,
         };
     }
 
@@ -244,10 +278,17 @@ export class GameStateManager {
         const estimatedLevel = Math.min(10, Math.max(1, Math.floor(totalCorrect / 20) + 1));
 
         if (estimatedLevel > 1 && Object.keys(stats.problemStats || {}).length > 0) {
-            return MasteryMigration.migrateFromLevel(estimatedLevel, stats);
+            return this.migrateExistingMasteryData(MasteryMigration.migrateFromLevel(estimatedLevel, stats));
         }
 
         return this.createInitialMasteryData();
+    }
+
+    private migrateExistingMasteryData(data: MasteryData): MasteryData {
+        return {
+            ...data,
+            coopAutoPromotionBases: data.coopAutoPromotionBases || {},
+        };
     }
 
     /**
@@ -290,6 +331,8 @@ export class GameStateManager {
             currentPool: [],
             currentPoolIndex: 0,
             lastPoolProblems: [],
+            lastStruggleOfferFight: 0,
+            coopAutoPromotionBases: {},
         };
     }
 
