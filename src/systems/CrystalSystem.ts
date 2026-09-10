@@ -1,5 +1,6 @@
 import { Crystal, CrystalTier, CrystalInventory, PlayerState } from '../types';
 import Phaser from 'phaser';
+import { DailyProgressSystem } from './DailyProgressSystem';
 
 /**
  * Configuration for each crystal tier
@@ -86,6 +87,7 @@ export class CrystalSystem {
             return false; // Full inventory
         }
         player.crystals!.crystals.push(crystal);
+        DailyProgressSystem.recordCrystal(player);
         return true;
     }
 

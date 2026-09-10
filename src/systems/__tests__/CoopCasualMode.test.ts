@@ -309,7 +309,7 @@ describe('CoopSessionManager casual progression', () => {
         expect(bossDefs[0].hp).toBe(7);
     });
 
-    it('creates independent session mastery tracks that restart at sub-atom 1 of each player band', () => {
+    it('creates independent co-op tracks from each player\'s real frontier', () => {
         const gameState = GameStateManager.getInstance();
 
         gameState.reset('girl_knight', 'PlayerA', 0);
@@ -337,18 +337,143 @@ describe('CoopSessionManager casual progression', () => {
 
         masterySystem.setActiveData(coopMasteryA);
         expect(masterySystem.getCurrentBand()).toBe('E');
-        expect(masterySystem.getFrontierSubAtom()).toBe('E1');
+        expect(masterySystem.getFrontierSubAtom()).toBe('E3');
 
         masterySystem.setActiveData(coopMasteryB);
         expect(masterySystem.getCurrentBand()).toBe('A');
-        expect(masterySystem.getFrontierSubAtom()).toBe('A1');
+        expect(masterySystem.getFrontierSubAtom()).toBe('A2');
 
         masterySystem.setActiveData(null);
         expect(gameState.getMasteryData().subAtoms.E3.state).toBe('training');
         expect(gameState.getMasteryData().subAtoms.E1.state).toBe('secure');
     });
 
-    it('builds each mana lane pool from that player frontier sub-atom using result-unknown problems', () => {
+    it('persists co-op promotions and derived levels to the correct save slots', () => {
+        const gameState = GameStateManager.getInstance();
+
+        gameState.reset('girl_knight', 'PlayerA', 0);
+        gameState.getMathStats().masteryData = createMasteryData();
+        gameState.save();
+
+        gameState.reset('girl_knight', 'PlayerB', 1);
+        gameState.getMathStats().masteryData = createMasteryData();
+        gameState.save();
+
+        const coop = CoopSessionManager.getInstance();
+        expect(coop.startSession(0, 1)).toBe(true);
+
+        const masteryA = coop.getPlayerAMasteryData()!;
+        addAttempts(masteryA, 'A1', 'result_unknown', Array.from({ length: 10 }, () => ({ correct: true, rt: 4000 })));
+        addAttempts(masteryA, 'A1', 'missing_part', Array.from({ length: 10 }, () => ({ correct: true, rt: 4200 })));
+        expect(coop.applyAndPersistMasteryProgress()).toEqual([]);
+
+        addAttempts(masteryA, 'A1', 'result_unknown', Array.from({ length: 5 }, () => ({ correct: true, rt: 8000 })));
+        addAttempts(masteryA, 'A1', 'missing_part', Array.from({ length: 5 }, () => ({ correct: true, rt: 9000 })));
+        expect(coop.applyAndPersistMasteryProgress()).toContainEqual({
+            player: 'A',
+            type: 'sub_atom',
+            targetId: 'A1',
+        });
+
+        expect(gameState.loadSlot(0)).toBe(true);
+        expect(gameState.getMasteryData().subAtoms.A1.state).toBe('secure');
+        expect(gameState.getPlayer().level).toBe(2);
+
+        expect(gameState.loadSlot(1)).toBe(true);
+        expect(gameState.getMasteryData().subAtoms.A1.state).toBe('training');
+        expect(gameState.getPlayer().level).toBe(1);
+    });
+
+    it('keeps attack, defense and pet counters on the active profile across hotseat swaps', async () => {
+        const gameState = GameStateManager.getInstance();
+        gameState.reset('girl_knight', 'PlayerA', 0);
+        gameState.save();
+        gameState.reset('girl_knight', 'PlayerB', 1);
+        gameState.save();
+        const coop = CoopSessionManager.getInstance();
+        expect(coop.startSession(0, 1)).toBe(true);
+        // Let loadSlot's asynchronous level refresh finish, as it does before gameplay.
+        await new Promise(resolve => setTimeout(resolve, 0));
+        const engine = new MathEngine(createRegistryStub({ playerLevel: 1 }) as any);
+        engine.recordResultForProblem('attack-a', true);
+        coop.activatePlayerB();
+        engine.recordResultForProblem('attack-b', true);
+        coop.activatePlayerA();
+        engine.recordResultForProblem('block-a', false);
+        coop.activatePlayerB();
+        engine.recordResultForProblem('pet-b', true);
+        coop.endSession();
+
+        gameState.loadSlot(0);
+        expect(gameState.getMathStats()).toMatchObject({ totalAttempts: 2, dailyAttempts: 2, correctAnswers: 1 });
+        expect(Object.keys(gameState.getMathStats().problemStats)).toEqual(['attack-a', 'block-a']);
+        gameState.loadSlot(1);
+        expect(gameState.getMathStats()).toMatchObject({ totalAttempts: 2, dailyAttempts: 2, correctAnswers: 2 });
+        expect(Object.keys(gameState.getMathStats().problemStats)).toEqual(['attack-b', 'pet-b']);
+    });
+
+    it('checkpoints both players learning before battle completion without mixing their daily history', async () => {
+        const { SaveSystem } = await import('../SaveSystem');
+        const { DailyProgressSystem } = await import('../DailyProgressSystem');
+        const gameState = GameStateManager.getInstance();
+        gameState.reset('girl_knight', 'PlayerA', 0);
+        gameState.save();
+        gameState.reset('girl_knight', 'PlayerB', 1);
+        gameState.save();
+        const coop = CoopSessionManager.getInstance();
+        expect(coop.startSession(0, 1)).toBe(true);
+        await new Promise(resolve => setTimeout(resolve, 0));
+        const mastery = MasterySystem.getInstance();
+        const key = ProblemDatabase.getInstance().getProblemsForForm('A1', 'result_unknown')[0].key;
+        for (const player of ['A', 'B'] as const) {
+            if (player === 'A') coop.activatePlayerA();
+            else coop.activatePlayerB();
+            mastery.setActiveData(player === 'A' ? coop.getPlayerAMasteryData() : coop.getPlayerBMasteryData());
+            mastery.recordSolve(key, player === 'A', 2000, 'battle');
+            coop.persistActiveMasteryProgress();
+            expect(coop.getActivePlayer()).toBe(player);
+        }
+        for (const slot of [0, 1]) {
+            const saved = SaveSystem.load(slot)!;
+            expect(saved.mathStats.masteryData!.globalSolveSequence).toBe(1);
+            expect(saved.mathStats.masteryData!.subAtoms.A1.successfulSolves).toBe(slot === 0 ? 1 : 0);
+            expect(DailyProgressSystem.getRecentDays(saved.player, saved.mathStats, 1)[0])
+                .toMatchObject({ attempts: 1, correct: slot === 0 ? 1 : 0, wrong: slot === 0 ? 0 : 1 });
+        }
+    });
+
+    it('unlocks the saved exam from real co-op answers and preserves it after a restart', async () => {
+        const { SUB_ATOM_EXAM_REQUIREMENTS } = await import('../ExamProgress');
+        const gameState = GameStateManager.getInstance();
+        gameState.reset('girl_knight', 'PlayerA', 0);
+        gameState.save();
+        gameState.reset('girl_knight', 'PlayerB', 1);
+        gameState.save();
+        const coop = CoopSessionManager.getInstance();
+        expect(coop.startSession(0, 1)).toBe(true);
+        await new Promise(resolve => setTimeout(resolve, 0));
+        const mastery = MasterySystem.getInstance();
+        const keys = ['result_unknown', 'missing_part'].map(form =>
+            ProblemDatabase.getInstance().getProblemsForForm('A1', form as ProblemForm)[0].key);
+        for (const player of ['A', 'B'] as const) {
+            if (player === 'B') coop.activatePlayerB();
+            mastery.setActiveData(player === 'A' ? coop.getPlayerAMasteryData() : coop.getPlayerBMasteryData());
+            for (let i = 0; i < SUB_ATOM_EXAM_REQUIREMENTS.successfulSolves; i++) {
+                mastery.recordSolve(keys[i % keys.length], true, 2000, 'battle');
+            }
+            coop.persistActiveMasteryProgress();
+        }
+        coop.endSession();
+        for (const slot of [0, 1]) {
+            gameState.loadSlot(slot);
+            await new Promise(resolve => setTimeout(resolve, 0));
+            expect(MasterySystem.getInstance().checkExamEligibility('A1')).toBe(true);
+            expect(gameState.getMasteryData().subAtoms.A1.successfulSolves)
+                .toBe(SUB_ATOM_EXAM_REQUIREMENTS.successfulSolves);
+        }
+    });
+
+    it('keeps each mana lane pool on simple two-operand addition or subtraction', () => {
         const masteryA = createMasteryData();
         const masteryB = createMasteryData();
         setCurrentBand(masteryA, 'E', 3);
@@ -370,8 +495,15 @@ describe('CoopSessionManager casual progression', () => {
 
         expect(poolA).toHaveLength(20);
         expect(poolB).toHaveLength(20);
-        expect(poolA.every(problem => problem.masteryKey?.startsWith('E3:') && problem.masteryKey.endsWith(':result_unknown'))).toBe(true);
+        expect(poolA.every(problem => /^E[12]:/.test(problem.masteryKey ?? '') && problem.masteryKey?.endsWith(':result_unknown'))).toBe(true);
         expect(poolB.every(problem => problem.masteryKey?.startsWith('A1:') && problem.masteryKey.endsWith(':result_unknown'))).toBe(true);
+        expect([...poolA, ...poolB].every(problem =>
+            (problem.operator === '+' || problem.operator === '-')
+            && problem.operator2 === undefined
+            && problem.operator3 === undefined
+            && problem.operand3 === undefined
+            && problem.operand4 === undefined
+        )).toBe(true);
         expect(poolA.every(problem => !hasZero(problem))).toBe(true);
         expect(poolB.every(problem => !hasZero(problem))).toBe(true);
     });
@@ -478,8 +610,8 @@ describe('MasterySystem co-op auto-promotion', () => {
         expect(masterySystem.applyCoopAutoPromotions()).toEqual([]);
         expect(data.coopAutoPromotionBases['band_gate:A']).toBe(0);
 
-        addAttempts(data, 'A1', 'result_unknown', Array.from({ length: 13 }, () => ({ correct: true, rt: 9000 })));
-        addAttempts(data, 'A2', 'missing_part', Array.from({ length: 3 }, () => ({ correct: false, rt: 10000 })));
+        addAttempts(data, 'A1', 'result_unknown', Array.from({ length: 10 }, () => ({ correct: true, rt: 9000 })));
+        addAttempts(data, 'A2', 'missing_part', Array.from({ length: 2 }, () => ({ correct: false, rt: 10000 })));
 
         const promotions = masterySystem.applyCoopAutoPromotions();
         expect(promotions).toContainEqual({ type: 'band_gate', targetId: 'A' });

@@ -3,6 +3,7 @@ import { GameStateManager } from '../systems/GameStateManager';
 import { SceneDebugger } from '../systems/SceneDebugger';
 import { SceneBuilder } from '../systems/SceneBuilder';
 import { getPlayerSpriteConfig } from '../utils/characterUtils';
+import { WalkingSceneHud } from '../ui/WalkingSceneHud';
 
 export class TestingTownScene extends Phaser.Scene {
     private sceneBuilder!: SceneBuilder;
@@ -30,6 +31,12 @@ export class TestingTownScene extends Phaser.Scene {
 
         // Setup building transitions (only witch is enterable)
         this.setupBuildingTransitions();
+
+        const legacyBack = this.sceneBuilder.get('btnBackToTown') as
+            | (Phaser.GameObjects.GameObject & Phaser.GameObjects.Components.Visible)
+            | undefined;
+        legacyBack?.setVisible(false);
+        new WalkingSceneHud(this);
 
         // Setup universal debugger
         this.debugger = new SceneDebugger(this, 'TestingTownScene');

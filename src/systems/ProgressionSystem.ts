@@ -1,6 +1,10 @@
+import { migrateCatacombPets } from './CatacombPetProgress';
 import { PlayerState, CoinCurrency, DiamondInventory, DiamondType, CharacterType, Crystal, CrystalInventory, TownProgress } from '../types';
 import { CrystalSystem } from './CrystalSystem';
 import { ManaSystem } from './ManaSystem';
+import { ensureArenaEncounterProgress, legacyArenaEncounterId } from './ArenaProgressSystem';
+import { PreparationSystem } from './PreparationSystem';
+import { DailyProgressSystem } from './DailyProgressSystem';
 
 /**
  * Create initial TownProgress for a new player.
@@ -67,6 +71,7 @@ export class ProgressionSystem {
     static awardBattleCoin(player: PlayerState, count: number = 1): void {
         player.coins.copper += count;
         this.normalizeCoins(player);
+        DailyProgressSystem.recordCoins(player, count);
     }
 
     /**
@@ -156,12 +161,19 @@ export class ProgressionSystem {
      * Reset arena state
      */
     static resetArena(player: PlayerState): void {
+        ensureArenaEncounterProgress(player);
+        const previousArena = player.arena;
         player.arena = {
             isActive: false,
-            arenaLevel: player.arena.arenaLevel,
+            arenaLevel: previousArena.arenaLevel,
             currentBattle: 0,
             playerHpAtStart: player.hp,
-            completedArenaLevels: player.arena.completedArenaLevels || []
+            completedArenaLevels: previousArena.completedArenaLevels || [],
+            waveResults: previousArena.waveResults,
+            waveResultsArenaLevel: previousArena.waveResultsArenaLevel,
+            arenaProgressVersion: previousArena.arenaProgressVersion,
+            currentEncounterId: legacyArenaEncounterId(previousArena.arenaLevel, 0),
+            encounterResults: previousArena.encounterResults,
         };
     }
 
@@ -169,12 +181,19 @@ export class ProgressionSystem {
      * Start arena run
      */
     static startArena(player: PlayerState): void {
+        ensureArenaEncounterProgress(player);
+        const previousArena = player.arena;
         player.arena = {
             isActive: true,
-            arenaLevel: player.arena.arenaLevel,
+            arenaLevel: previousArena.arenaLevel,
             currentBattle: 0,
             playerHpAtStart: player.hp,
-            completedArenaLevels: player.arena.completedArenaLevels || []
+            completedArenaLevels: previousArena.completedArenaLevels || [],
+            waveResults: previousArena.waveResults,
+            waveResultsArenaLevel: previousArena.waveResultsArenaLevel,
+            arenaProgressVersion: previousArena.arenaProgressVersion,
+            currentEncounterId: legacyArenaEncounterId(previousArena.arenaLevel, 0),
+            encounterResults: previousArena.encounterResults,
         };
     }
 
@@ -190,6 +209,10 @@ export class ProgressionSystem {
             player.arena.isActive = false;
             return false; // Arena complete
         }
+        player.arena.currentEncounterId = legacyArenaEncounterId(
+            player.arena.arenaLevel,
+            player.arena.currentBattle,
+        );
         return true; // More battles
     }
 
@@ -221,6 +244,7 @@ export class ProgressionSystem {
             equippedArmor: null,
             equippedShield: null,
             equippedHelmet: null,
+            preparation: PreparationSystem.createInitialState(),
             potions: 0,
             hasPotionSubscription: false,
             pet: null,
@@ -232,7 +256,12 @@ export class ProgressionSystem {
                 arenaLevel: 1,
                 currentBattle: 0,
                 playerHpAtStart: 10,
-                completedArenaLevels: []
+                completedArenaLevels: [],
+                waveResults: [],
+                waveResultsArenaLevel: 1,
+                arenaProgressVersion: 2,
+                currentEncounterId: 'arena-1-wave-1',
+                encounterResults: {},
             },
             // === CRYSTAL & MANA SYSTEM ===
             crystals: CrystalSystem.createInitialInventory(),
@@ -285,6 +314,7 @@ export class ProgressionSystem {
      * Called when loading old saves
      */
     static migratePlayerState(player: PlayerState): PlayerState {
+        migrateCatacombPets(player);
         // Migrate: Add crystals if missing
         if (!player.crystals) {
             player.crystals = this.createInitialCrystals();
@@ -307,6 +337,9 @@ export class ProgressionSystem {
         if (!player.defeatedBosses) {
             player.defeatedBosses = [];
         }
+
+        // Migrate and normalize optional preparation state from older saves.
+        PreparationSystem.getState(player);
 
         // Migrate: Convert ancient `gold: number` to `coins: CoinCurrency`
         if (!player.coins || typeof player.coins === 'number') {
@@ -333,6 +366,9 @@ export class ProgressionSystem {
         // Migrate: Add waveResults to arena state if missing
         if (player.arena && !player.arena.waveResults) {
             player.arena.waveResults = [];
+        }
+        if (player.arena) {
+            ensureArenaEncounterProgress(player);
         }
 
         // Migrate: Add revealedBuildings if missing (existing save with townProgress but no revealedBuildings)

@@ -11,50 +11,11 @@
 import {
   AccuracyProfile,
   PlayerState,
-  EnemyStats,
-  ENEMIES,
   GAME_BALANCE,
 } from './types';
 import { simulateBattle } from './BattleSimulator';
-
-/**
- * Arena wave configuration from ArenaScene.ts
- * Each arena level has 5 waves, each wave can have multiple enemies
- */
-export const ARENA_WAVES: Record<number, string[][]> = {
-  1: [
-    ['slime_green'],                    // Wave 1: 1 slime
-    ['purple_demon'],                    // Wave 2: 1 purple demon
-    ['slime_green', 'slime_green'],      // Wave 3: 2 slimes
-    ['purple_demon', 'slime_green'],     // Wave 4: 1 purple demon + 1 slime
-    ['purple_demon', 'purple_demon'],    // Wave 5: 2 purple demons
-  ],
-  2: [
-    ['pink_beast'],
-    ['pink_beast', 'slime_green'],
-    ['pink_beast', 'pink_beast'],
-    ['leafy'],
-    ['leafy', 'slime_green'],
-  ],
-  3: [
-    ['leafy'],
-    ['leafy', 'pink_beast'],
-    ['leafy', 'leafy'],
-    ['purple_demon', 'leafy'],
-    ['purple_demon', 'purple_demon', 'slime_green'],
-  ],
-};
-
-/**
- * Maps enemy IDs to stats
- */
-function getEnemyById(id: string): EnemyStats {
-  const enemy = ENEMIES.find(e => e.id === id);
-  if (enemy) return enemy;
-
-  // Fallback to slime
-  return ENEMIES[0];
-}
+import type { EncounterMode } from '../types/encounters';
+import { resolveProductionArena } from './ProductionEncounterAdapter';
 
 /**
  * Result of a single arena attempt (may be partial if player retreats)
@@ -89,6 +50,9 @@ export interface ArenaAttemptResult {
 }
 
 export interface ArenaSimulatorConfig {
+  /** Encounter roster mode. Omitted values retain the historical solo behavior. */
+  mode?: EncounterMode;
+
   /** HP threshold to retreat (% of max HP). Default: 0.2 (20%) */
   retreatThreshold: number;
 
@@ -103,6 +67,7 @@ export interface ArenaSimulatorConfig {
 }
 
 const DEFAULT_CONFIG: ArenaSimulatorConfig = {
+  mode: 'solo',
   retreatThreshold: 0.2,
   hasPotion: false,
   potionUseThreshold: 0.3,
@@ -120,7 +85,7 @@ export function simulateArenaAttempt(
   accuracy: AccuracyProfile,
   config: ArenaSimulatorConfig = DEFAULT_CONFIG
 ): ArenaAttemptResult {
-  const waves = ARENA_WAVES[arenaLevel] ?? ARENA_WAVES[1];
+  const waves = resolveProductionArena(arenaLevel, config.mode ?? 'solo');
 
   let playerHP = player.hp;
   let wavesCompleted = 0;
@@ -137,10 +102,10 @@ export function simulateArenaAttempt(
   }
 
   for (let waveIndex = 0; waveIndex < waves.length; waveIndex++) {
-    const waveEnemies = waves[waveIndex];
+    const waveEnemies = waves[waveIndex].enemies;
 
     if (config.debug) {
-      console.log(`\n--- Wave ${waveIndex + 1}/5: ${waveEnemies.join(', ')} ---`);
+      console.log(`\n--- Wave ${waveIndex + 1}/${waves.length}: ${waveEnemies.map((enemy) => enemy.id).join(', ')} ---`);
     }
 
     // Check if should retreat before this wave
@@ -166,9 +131,7 @@ export function simulateArenaAttempt(
     }
 
     // Fight each enemy in the wave (sequentially)
-    for (const enemyId of waveEnemies) {
-      const enemy = getEnemyById(enemyId);
-
+    for (const enemy of waveEnemies) {
       // Create a temporary player state for the battle
       const tempPlayer = { ...player, hp: playerHP };
 
@@ -221,7 +184,7 @@ export function simulateArenaAttempt(
 
   if (config.debug) {
     console.log(`\n=== Arena ${completed ? 'COMPLETED' : 'RETREATED'} ===`);
-    console.log(`Waves: ${wavesCompleted}/5, XP: ${xpEarned}, Coins: ${coinsEarned}`);
+    console.log(`Waves: ${wavesCompleted}/${waves.length}, XP: ${xpEarned}, Coins: ${coinsEarned}`);
   }
 
   return {
@@ -240,12 +203,20 @@ export function simulateArenaAttempt(
 /**
  * Calculates total enemy HP for an arena level
  */
-export function calculateArenaStats(arenaLevel: number): {
+export interface ArenaStatsConfig {
+  /** Encounter roster mode. Defaults to solo for backward compatibility. */
+  mode?: EncounterMode;
+}
+
+export function calculateArenaStats(
+  arenaLevel: number,
+  config: ArenaStatsConfig = {},
+): {
   totalHP: number;
   totalATK: number;
   waveDetails: { wave: number; enemies: string[]; hp: number; atk: number }[];
 } {
-  const waves = ARENA_WAVES[arenaLevel] ?? ARENA_WAVES[1];
+  const waves = resolveProductionArena(arenaLevel, config.mode ?? 'solo');
   let totalHP = 0;
   let totalATK = 0;
   const waveDetails: { wave: number; enemies: string[]; hp: number; atk: number }[] = [];
@@ -254,8 +225,7 @@ export function calculateArenaStats(arenaLevel: number): {
     let waveHP = 0;
     let waveATK = 0;
 
-    for (const enemyId of waves[i]) {
-      const enemy = getEnemyById(enemyId);
+    for (const enemy of waves[i].enemies) {
       waveHP += enemy.hp;
       waveATK += enemy.atk;
     }
@@ -265,7 +235,7 @@ export function calculateArenaStats(arenaLevel: number): {
 
     waveDetails.push({
       wave: i + 1,
-      enemies: waves[i],
+      enemies: waves[i].enemies.map((enemy) => enemy.id),
       hp: waveHP,
       atk: waveATK,
     });
@@ -280,14 +250,15 @@ export function calculateArenaStats(arenaLevel: number): {
 export function estimateArenaDifficulty(
   player: PlayerState,
   arenaLevel: number,
-  accuracy: AccuracyProfile
+  accuracy: AccuracyProfile,
+  config: ArenaStatsConfig = {},
 ): {
   canComplete: boolean;
   estimatedWaves: number;
   estimatedDamageTaken: number;
   recommendedLevel: number;
 } {
-  const stats = calculateArenaStats(arenaLevel);
+  const stats = calculateArenaStats(arenaLevel, config);
 
   // Estimate damage per turn from player
   const problemsPerTurn = GAME_BALANCE.problemsPerTurn[player.level] ?? 4;

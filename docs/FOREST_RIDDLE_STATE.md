@@ -4,7 +4,11 @@ This document describes the complex state management in `ForestRiddleScene.ts`, 
 
 ## Scene Overview
 
-ForestRiddleScene is a puzzle room where the player must fill in missing numbers (4 and 12) in a sequence (2, ?, 6, 8, 10, ?, 14). After solving, a mushroom enemy appears that must be defeated before proceeding.
+ForestRiddleScene serves both `forest_riddle` and `ancient_bridge`. Every generated puzzle has seven sequence positions: five numbered fixed stones at indices 0, 2, 3, 4, 6 and two gaps at indices 1 and 5. Both gaps must be filled before validation/unlocking. After solving, a mushroom enemy appears if the room defines one.
+
+`bridgePuzzle()` generates complete counting rows or repeating pairs/triples. Counting rows may reach 10 even for a player whose arithmetic is only up to 5 (explicit user-approved exception for this puzzle). Repeating cycles use familiar numbers; every cycle value must remain visible on at least one fixed stone. Never shorten the row, erase stone labels, or remove a gap to meet a numeric or diversity constraint. Ask the user before changing gameplay requirements when such constraints conflict.
+
+Payload revision `layoutVersion: 2` invalidates the old shortened, single-gap instances together with their interaction state. World completion remains in JourneySystem and is not cleared. New instances preserve their payload and `state.placed` across scene transitions; this is not a persistent checkpoint of the entire forest journey after an application reload.
 
 ## State Flags
 
@@ -88,11 +92,12 @@ if (!this.puzzleSolved) {
 ```
 
 The `placeCorrectRocksInSolvedState()` method:
-1. Keeps rocks 0 and 1 (values 4 and 12 - the correct answers)
-2. Positions them at the drop zone locations
-3. Scales them down (0.7) like when placed during gameplay
-4. Updates their text to show correct values
-5. Destroys rocks 2, 3, 4 (distractors with values 3, 7, 5)
+1. Matches generated answer values to separate unused gaps, consuming one physical rock per gap.
+2. Positions both rocks at the scene-editor gap hosts and sets each slot's `currentValue`.
+3. Scales them uniformly to 0.7 and displays their generated numbers.
+4. Destroys all unused rocks.
+
+Duplicate answers are valid. For `1, ?, 1, 2, 1, ?, 1`, two distinct rocks displaying `2` must occupy two distinct gaps. Never use `indexOf(value)` alone to match them. Partial restoration similarly selects an unused rock (`placedInSlot === null`) for each saved value. A rejected attempt clears saved placements immediately; completing the puzzle settles both placed rocks at their gap coordinates before stopping their snap animations.
 
 ## Battle Transition Flow
 
@@ -155,9 +160,9 @@ The `placeCorrectRocksInSolvedState()` method:
 | Distractor rocks (3,7,5) | scenes.json + SceneBuilder | Draggable, floating | **Destroyed** |
 | Mushroom | Programmatic | Not visible | Visible (if not defeated) |
 
-## Rock Configuration
+## Historical Rock Configuration (illustration only)
 
-The floating rocks are defined in `scenes.json` and mapped to values in `ForestRiddleScene.ts`:
+The floating-rock hosts remain in `scenes.json`. The following values describe the former hardcoded example, not the current runtime contract:
 
 | Index | Element ID | Value | Type | Drop Zone |
 |-------|------------|-------|------|-----------|
@@ -179,7 +184,7 @@ private floatingRockIds = [
 private floatingRockValues = [4, 12, 3, 7, 5];
 ```
 
-**Key insight**: Rocks at indices 0-1 are correct answers, indices 2-4 are distractors. This ordering is used by `placeCorrectRocksInSolvedState()` to know which rocks to keep vs destroy.
+**Current contract**: `bridgePuzzle().floatingRockValues` contains a shuffled multiset of two answer rocks and three distractors. No index has a permanently assigned answer role. Completion and restoration must consume separate rocks even when the values are equal.
 
 ## JourneySystem Persistence
 

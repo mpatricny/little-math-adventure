@@ -1,3 +1,7 @@
+import { sfx } from '../audio/AudioDirector';
+import { acquirePuzzle, recordPuzzleAnswer } from '../systems/puzzles/PuzzleService';
+import { wordRiddle } from '../systems/puzzles/WordPuzzles';
+import type { PuzzleInstance } from '../types/puzzles';
 import Phaser from 'phaser';
 import { JourneySystem } from '../systems/JourneySystem';
 
@@ -24,6 +28,7 @@ export class LetterLockPuzzleScene extends Phaser.Scene {
     private journeySystem = JourneySystem.getInstance();
 
     // Puzzle configuration
+    private puzzleInstance!: PuzzleInstance<ReturnType<typeof wordRiddle>>;
     private riddle = '';
     private answer = '';
     private reward?: { gold?: number; diamonds?: number };
@@ -38,7 +43,6 @@ export class LetterLockPuzzleScene extends Phaser.Scene {
 
     // Czech-friendly alphabet (simplified - no diacritics for easier typing)
     private readonly ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
-    private readonly OPTIONS_PER_WHEEL = 5;
 
     // State
     private isSolved = false;
@@ -48,13 +52,16 @@ export class LetterLockPuzzleScene extends Phaser.Scene {
     }
 
     init(data: SceneData): void {
-        this.riddle = data.riddle || data.riddleEn || 'Solve the riddle!';
-        this.answer = (data.answer || 'TEST').toUpperCase();
+        this.puzzleInstance = acquirePuzzle(this.journeySystem.getPuzzleStore(), `${data.roomId}:${data.objectId}:word`, 'word_riddle', wordRiddle);
+        this.riddle = this.puzzleInstance.payload.riddle;
+        this.answer = this.puzzleInstance.payload.answer;
         this.reward = data.reward;
         this.objectId = data.objectId;
         this.roomId = data.roomId;
         this.parentScene = data.parentScene;
         this.isSolved = false;
+        this.wheels = [];
+        this.currentLetters = [];
     }
 
     create(): void {
@@ -71,6 +78,8 @@ export class LetterLockPuzzleScene extends Phaser.Scene {
 
         // Initialize letters randomly
         this.initializeLetters();
+        this.puzzleInstance.state.wheelOptions = this.wheelOptions;
+        this.puzzleInstance.state.wheelIndices = this.wheels.map(wheel => wheel.optionIndex);
     }
 
     private createPanel(): void {
@@ -172,7 +181,8 @@ export class LetterLockPuzzleScene extends Phaser.Scene {
 
         for (let i = 0; i < this.answer.length; i++) {
             const correctLetter = this.answer[i];
-            const options = this.generateWheelOptions(correctLetter);
+            const savedOptions = this.puzzleInstance.state.wheelOptions as string[][] | undefined;
+            const options = savedOptions?.[i] ?? this.generateWheelOptions(correctLetter);
             this.wheelOptions.push(options);
         }
 
@@ -180,9 +190,8 @@ export class LetterLockPuzzleScene extends Phaser.Scene {
         this.wheels.forEach((wheel, index) => {
             const options = this.wheelOptions[index];
             // Start at a random position that's NOT the correct letter
-            let startIndex = Math.floor(Math.random() * options.length);
-            // Make sure we don't start on the correct answer (index 0)
-            if (startIndex === 0) startIndex = 1;
+            const savedIndices = this.puzzleInstance.state.wheelIndices as number[] | undefined;
+            const startIndex = savedIndices?.[index] ?? Math.floor(Math.random() * options.length);
 
             wheel.optionIndex = startIndex;
             wheel.letter = options[startIndex];
@@ -206,7 +215,7 @@ export class LetterLockPuzzleScene extends Phaser.Scene {
             [availableLetters[i], availableLetters[j]] = [availableLetters[j], availableLetters[i]];
         }
 
-        options.push(...availableLetters.slice(0, this.OPTIONS_PER_WHEEL - 1));
+        options.push(...availableLetters.slice(0, this.puzzleInstance.profile.tier + 1));
 
         // Shuffle all options so correct isn't always first
         for (let i = options.length - 1; i > 0; i--) {
@@ -219,6 +228,7 @@ export class LetterLockPuzzleScene extends Phaser.Scene {
 
     private rotateWheel(index: number, direction: 1 | -1): void {
         if (this.isSolved) return;
+        sfx(this, 'lock.turn');
 
         const wheel = this.wheels[index];
         const options = this.wheelOptions[index];
@@ -229,6 +239,7 @@ export class LetterLockPuzzleScene extends Phaser.Scene {
 
         // Update state
         wheel.optionIndex = newOptionIndex;
+        (this.puzzleInstance.state.wheelIndices as number[])[index] = newOptionIndex;
         wheel.letter = newLetter;
         this.currentLetters[index] = newLetter;
 
@@ -292,6 +303,7 @@ export class LetterLockPuzzleScene extends Phaser.Scene {
         if (this.isSolved) return;
 
         const playerAnswer = this.currentLetters.join('');
+        recordPuzzleAnswer(this.puzzleInstance, playerAnswer === this.answer);
 
         if (playerAnswer === this.answer) {
             this.handleSuccess();
@@ -301,6 +313,7 @@ export class LetterLockPuzzleScene extends Phaser.Scene {
     }
 
     private handleSuccess(): void {
+        sfx(this, 'lock.open');
         this.isSolved = true;
 
         // Mark as completed in journey system
@@ -383,6 +396,7 @@ export class LetterLockPuzzleScene extends Phaser.Scene {
     }
 
     private handleWrongAnswer(): void {
+        sfx(this, 'math.retry');
         // Visual feedback - red flash and shake
         this.wheels.forEach((wheel, i) => {
             const originalColor = wheel.text.style.color;

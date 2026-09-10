@@ -1,0 +1,420 @@
+{
+  "schemaVersion": 1,
+  "startRoom": "sp_shallows",
+  "rooms": {
+    "sp_post_wreck": {
+      "name": "Vrak poštovní lodi",
+      "layout": "UnderwaterPostWreck",
+      "background": "underwater-post-wreck-bg",
+      "exits": [
+        {
+          "id": "garden",
+          "host": "exitGardenHost",
+          "label": "DO ZAHRADY",
+          "target": "sp_reed_garden",
+          "entry": "canal",
+          "passage": "garden-wreck-arch"
+        },
+        {
+          "id": "canal",
+          "host": "exitCanalHost",
+          "label": "DO KANÁLU",
+          "target": "sp_sunken_canal",
+          "entry": "garden",
+          "passage": "canal-wreck-arch"
+        },
+        {
+          "id": "hold",
+          "host": "exitHoldHost",
+          "label": "PODPALUBÍ",
+          "target": "sp_wreck_hold",
+          "entry": "wreck",
+          "requiresEncounter": "silverpond-wreck-watch",
+          "passage": "wreck-timber-door"
+        }
+      ],
+      "encounter": {
+        "id": "silverpond-wreck-watch",
+        "host": "guardianHost"
+      },
+      "chest": {
+        "id": "wreck-satchel",
+        "host": "chestHost",
+        "coins": 8,
+        "mana": 4,
+        "lock": "none",
+        "requiresEncounter": "silverpond-wreck-watch"
+      }
+    },
+    "sp_wreck_hold": {
+      "name": "Podpalubí poštovní lodi",
+      "layout": "UnderwaterWreckHold",
+      "background": "underwater-wreck-hold-bg",
+      "exits": [
+        {
+          "id": "wreck",
+          "host": "exitWreckHost",
+          "label": "K VRAKU",
+          "target": "sp_post_wreck",
+          "entry": "hold",
+          "passage": "wreck-timber-door"
+        }
+      ],
+      "chest": {
+        "id": "postal-strongbox",
+        "host": "chestHost",
+        "coins": 18,
+        "mana": 10,
+        "lock": "word",
+        "postal": true,
+        "requiresEncounter": "silverpond-wreck-watch"
+      }
+    },
+    "sp_shallows": {
+      "name": "Mělčina pod molem",
+      "layout": "UnderwaterShallows",
+      "background": "underwater-shallows-bg",
+      "exits": [
+        {
+          "id": "surface",
+          "host": "exitLeftHost",
+          "label": "↑ NA POVRCH",
+          "target": "surface",
+          "entry": "surface"
+        },
+        {
+          "id": "bell",
+          "host": "exitRightHost",
+          "label": "KE ZVONICI →",
+          "target": "sp_bell_hub",
+          "entry": "shallows",
+          "requiresEncounter": "silverpond-shallows-guardian"
+        }
+      ],
+      "encounter": {
+        "id": "silverpond-shallows-guardian",
+        "host": "guardianHost"
+      },
+      "chest": {
+        "id": "shallows-chest",
+        "host": "chestHost",
+        "coins": 5,
+        "mana": 3
+      }
+    },
+    "sp_bell_hub": {
+      "name": "Zatopená zvonice",
+      "layout": "UnderwaterBellHub",
+      "background": "underwater-bell-bg",
+      "exits": [
+        {
+          "id": "shallows",
+          "host": "exitLeftHost",
+          "label": "← K MĚLČINĚ",
+          "target": "sp_shallows",
+          "entry": "bell"
+        },
+        {
+          "id": "garden",
+          "host": "exitGardenHost",
+          "label": "ZAHRADA",
+          "target": "sp_reed_garden",
+          "entry": "bell",
+          "requiresBell": true
+        },
+        {
+          "id": "canal",
+          "host": "branchRightHost",
+          "label": "KANÁL",
+          "target": "sp_sunken_canal",
+          "entry": "bell",
+          "requiresBell": true
+        },
+        {
+          "id": "depths",
+          "host": "exitDepthsHost",
+          "label": "DO HLUBIN",
+          "target": "sp_depth_gate",
+          "entry": "bell",
+          "passage": "bell-depth-arch",
+          "requiresSeals": true
+        }
+      ],
+      "puzzle": {
+        "host": "bellHost",
+        "requiredNotes": 3
+      },
+      "arrivals": [
+        {
+          "id": "shrine_return",
+          "host": "arrivalShellHost",
+          "from": "sp_shell_shrine",
+          "passage": "shrine-bell-current",
+          "requiresMechanism": "shrine-memory"
+        },
+        {
+          "id": "chamber_return",
+          "host": "arrivalCurrentHost",
+          "from": "sp_current_chamber",
+          "passage": "chamber-bell-current",
+          "requiresMechanism": "chamber-routes"
+        }
+      ],
+      "rest": {
+        "host": "restHost",
+        "entry": "shallows"
+      }
+    },
+    "sp_reed_garden": {
+      "name": "Rákosová zahrada",
+      "layout": "UnderwaterReedGarden",
+      "background": "underwater-reed-garden-bg",
+      "exits": [
+        {
+          "id": "bell",
+          "host": "exitLeftHost",
+          "label": "KE ZVONICI",
+          "target": "sp_bell_hub",
+          "entry": "garden"
+        },
+        {
+          "id": "canal",
+          "host": "exitRightHost",
+          "label": "K VRAKU",
+          "target": "sp_post_wreck",
+          "entry": "garden",
+          "requiresShortcut": true,
+          "passage": "garden-wreck-arch"
+        },
+        {
+          "id": "shrine",
+          "host": "exitShrineHost",
+          "label": "SVATYNĚ",
+          "target": "sp_shell_shrine",
+          "entry": "garden",
+          "requiresMechanism": "garden-current",
+          "passage": "garden-shell-arch"
+        }
+      ],
+      "encounter": {
+        "id": "silverpond-garden-patrol",
+        "host": "guardianHost"
+      },
+      "mechanism": {
+        "id": "garden-current",
+        "host": "mechanismHost",
+        "kind": "current",
+        "mana": 5
+      }
+    },
+    "sp_sunken_canal": {
+      "name": "Zatopený kanál",
+      "layout": "UnderwaterSunkenCanal",
+      "background": "underwater-sunken-canal-bg",
+      "exits": [
+        {
+          "id": "bell",
+          "host": "exitLeftHost",
+          "label": "KE ZVONICI",
+          "target": "sp_bell_hub",
+          "entry": "canal"
+        },
+        {
+          "id": "garden",
+          "host": "exitRightHost",
+          "label": "K VRAKU",
+          "target": "sp_post_wreck",
+          "entry": "canal",
+          "requiresShortcut": true,
+          "passage": "canal-wreck-arch"
+        },
+        {
+          "id": "chamber",
+          "host": "exitChamberHost",
+          "label": "KOMORA PROUDŮ",
+          "target": "sp_current_chamber",
+          "entry": "canal",
+          "requiresMechanism": "canal-pump",
+          "passage": "canal-pipe-arch"
+        },
+        {
+          "id": "grotto",
+          "host": "exitGrottoHost",
+          "label": "SVĚTELNÁ JESKYNĚ",
+          "target": "sp_glow_grotto",
+          "entry": "canal",
+          "passage": "canal-grotto-arch"
+        }
+      ],
+      "encounter": {
+        "id": "silverpond-canal-blockade",
+        "host": "guardianHost"
+      },
+      "mechanism": {
+        "id": "canal-pump",
+        "host": "mechanismHost",
+        "kind": "pump",
+        "mana": 0
+      },
+      "chest": {
+        "id": "canal-cache",
+        "host": "chestHost",
+        "coins": 8,
+        "mana": 4,
+        "lock": "word"
+      }
+    },
+    "sp_shell_shrine": {
+      "name": "Lasturová svatyně",
+      "layout": "UnderwaterShellShrine",
+      "background": "underwater-shell-shrine-bg",
+      "exits": [
+        {
+          "id": "garden",
+          "host": "exitLeftHost",
+          "label": "DO ZAHRADY",
+          "target": "sp_reed_garden",
+          "entry": "shrine",
+          "passage": "garden-shell-arch"
+        },
+        {
+          "id": "bell-shortcut",
+          "host": "exitReturnHost",
+          "label": "KE ZVONICI",
+          "target": "sp_bell_hub",
+          "entry": "shrine_return",
+          "requiresMechanism": "shrine-memory",
+          "passage": "shrine-bell-current",
+          "oneWay": true
+        }
+      ],
+      "mechanism": {
+        "id": "shrine-memory",
+        "host": "mechanismHost",
+        "kind": "reverse",
+        "stages": 3,
+        "seal": "shell",
+        "mana": 5
+      }
+    },
+    "sp_current_chamber": {
+      "name": "Komora proudů",
+      "layout": "UnderwaterCurrentChamber",
+      "background": "underwater-current-chamber-bg",
+      "exits": [
+        {
+          "id": "canal",
+          "host": "exitLeftHost",
+          "label": "DO KANÁLU",
+          "target": "sp_sunken_canal",
+          "entry": "chamber",
+          "passage": "canal-pipe-arch"
+        },
+        {
+          "id": "bell-shortcut",
+          "host": "exitReturnHost",
+          "label": "KE ZVONICI",
+          "target": "sp_bell_hub",
+          "entry": "chamber_return",
+          "requiresMechanism": "chamber-routes",
+          "passage": "chamber-bell-current",
+          "oneWay": true
+        }
+      ],
+      "encounter": {
+        "id": "silverpond-chamber-keepers",
+        "host": "guardianHost"
+      },
+      "mechanism": {
+        "id": "chamber-routes",
+        "host": "mechanismHost",
+        "kind": "routing",
+        "seal": "current",
+        "mana": 5
+      }
+    },
+    "sp_glow_grotto": {
+      "name": "Světélkující jeskyně",
+      "layout": "UnderwaterGlowGrotto",
+      "background": "underwater-glow-grotto-bg",
+      "exits": [
+        {
+          "id": "canal",
+          "host": "exitCanalHost",
+          "label": "DO KANÁLU",
+          "target": "sp_sunken_canal",
+          "entry": "grotto",
+          "passage": "canal-grotto-arch"
+        }
+      ],
+      "encounter": {
+        "id": "silverpond-grotto-keeper",
+        "host": "guardianHost"
+      },
+      "mechanism": {
+        "id": "grotto-light",
+        "host": "mechanismHost",
+        "kind": "light",
+        "mana": 0
+      }
+    },
+    "sp_depth_gate": {
+      "name": "Brána hlubin",
+      "layout": "UnderwaterDepthGate",
+      "background": "underwater-depth-gate-bg",
+      "exits": [
+        {
+          "id": "bell",
+          "host": "exitBellHost",
+          "label": "KE ZVONICI",
+          "target": "sp_bell_hub",
+          "entry": "depths",
+          "passage": "bell-depth-arch"
+        },
+        {
+          "id": "heart",
+          "host": "exitHeartHost",
+          "label": "DO SRDCE JEZERA",
+          "target": "sp_lake_heart",
+          "entry": "gate",
+          "passage": "depth-heart-fissure",
+          "requiresEncounter": "silverpond-depth-watch",
+          "descent": true
+        }
+      ],
+      "encounter": {
+        "id": "silverpond-depth-watch",
+        "host": "guardianHost"
+      },
+      "rest": {
+        "host": "restHost",
+        "entry": "heart",
+        "requiresEncounter": "silverpond-depth-watch"
+      }
+    },
+    "sp_lake_heart": {
+      "name": "Srdce jezera",
+      "layout": "UnderwaterLakeHeart",
+      "background": "underwater-lake-heart-bg",
+      "exits": [
+        {
+          "id": "gate",
+          "host": "exitGateHost",
+          "label": "ZPĚT K BRÁNĚ",
+          "target": "sp_depth_gate",
+          "entry": "heart",
+          "passage": "depth-heart-fissure"
+        }
+      ],
+      "encounter": {
+        "id": "silverpond-depth-guardian",
+        "host": "guardianHost"
+      },
+      "finale": {
+        "crystalHost": "depthCrystalHost",
+        "guardianHost": "calmGuardianHost",
+        "guardianArrivalHost": "calmGuardianArrivalHost"
+      }
+    }
+  }
+}

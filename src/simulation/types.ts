@@ -86,6 +86,7 @@ export interface EnemyStats {
   name: string;
   hp: number;
   atk: number;
+  defense: number;
   xp: number;
   coinMin: number;
   coinMax: number;
@@ -166,10 +167,10 @@ export const GAME_BALANCE = {
 };
 
 export const ENEMIES: EnemyStats[] = [
-  { id: 'slime_green', name: 'Slime', hp: 3, atk: 1, xp: 20, coinMin: 5, coinMax: 15, difficulty: 1 },
-  { id: 'purple_demon', name: 'Purple Demon', hp: 4, atk: 2, xp: 40, coinMin: 15, coinMax: 35, difficulty: 2 },
-  { id: 'pink_beast', name: 'Pink Beast', hp: 10, atk: 2, xp: 70, coinMin: 30, coinMax: 55, difficulty: 3 },
-  { id: 'leafy', name: 'Leafy', hp: 15, atk: 3, xp: 100, coinMin: 50, coinMax: 80, difficulty: 4 },
+  { id: 'slime_green', name: 'Slime', hp: 3, atk: 1, defense: 0, xp: 20, coinMin: 5, coinMax: 15, difficulty: 1 },
+  { id: 'purple_demon', name: 'Purple Demon', hp: 4, atk: 2, defense: 0, xp: 40, coinMin: 15, coinMax: 35, difficulty: 2 },
+  { id: 'pink_beast', name: 'Pink Beast', hp: 10, atk: 2, defense: 1, xp: 70, coinMin: 30, coinMax: 55, difficulty: 3 },
+  { id: 'leafy', name: 'Leafy', hp: 15, atk: 3, defense: 3, xp: 100, coinMin: 50, coinMax: 80, difficulty: 4 },
 ];
 
 export const WEAPONS: WeaponStats[] = [
@@ -388,6 +389,8 @@ export type JourneyEncounterType = 'battle' | 'puzzle' | 'rest' | 'chest' | 'bos
 
 export interface JourneyEncounter {
   type: JourneyEncounterType;
+  encounterId?: string;
+  /** @deprecated Legacy simulator fixtures; production uses encounterId. */
   enemyId?: string;
   puzzleDifficulty?: number;
   healPercent?: number;

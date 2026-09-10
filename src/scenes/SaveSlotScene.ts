@@ -2,6 +2,7 @@ import Phaser from 'phaser';
 import { SceneBuilder } from '../systems/SceneBuilder';
 import { SaveSystem } from '../systems/SaveSystem';
 import { GameStateManager } from '../systems/GameStateManager';
+import { getPlayerResumeScene } from '../systems/SilverpondProgressSystem';
 import { SaveSlotMeta, CharacterType } from '../types';
 
 /**
@@ -216,10 +217,10 @@ export class SaveSlotScene extends Phaser.Scene {
             // Go to CharacterSelectNewScene with slot index
             this.scene.start('CharacterSelectNewScene', { slotIndex: this.currentSlotIndex });
         } else {
-            // Load slot and go to TownScene
+            // Load slot and resume in the furthest reached town.
             const gameState = GameStateManager.getInstance();
             gameState.loadSlot(this.currentSlotIndex);
-            this.scene.start('TownScene');
+            this.scene.start(getPlayerResumeScene(gameState.getPlayer()));
         }
     }
 

@@ -1,14 +1,16 @@
+import { sfx } from '../audio/AudioDirector';
 import Phaser from 'phaser';
 import { MathEngine } from '../systems/MathEngine';
-import { ManaSystem } from '../systems/ManaSystem';
 import { GameStateManager } from '../systems/GameStateManager';
 import { CoopSessionManager } from '../systems/CoopSessionManager';
+import { MasterySystem } from '../systems/MasterySystem';
 import { ProblemDatabase } from '../systems/ProblemDatabase';
 import { ALL_BANDS, ALL_SUB_ATOM_NUMBERS, BandId, MasteryData, MathProblem, MathProblemDef, PlayerState, ProblemDefinition, ProblemStats, SubAtomId } from '../types';
 import { formatMathProblem } from '../utils/formatMathProblem';
 
 const ROW_COUNT = 8;
 const MAX_LIVES = 3;
+export const MANA_REWARD_INTERVAL = 5;
 
 interface AnswerSlot {
     value: number;
@@ -43,6 +45,7 @@ export interface PlayerLaneConfig {
     buttonY: number;
     playerLabel: string;
     playerIdentifier: 'A' | 'B';
+    rewardMode?: 'individual' | 'shared';
     resolveKey?: string;
     fontScale?: number;
 }
@@ -51,13 +54,12 @@ export interface LaneResults {
     correctCount: number;
     problemCount: number;
     wrongCount: number;
-    manaEarnedThreshold: number;
 }
 
 export interface LanePersistenceContext {
     playerState?: PlayerState;
+    masteryData?: MasteryData;
     persistProgress?: () => void;
-    sharedManaRewards?: boolean;
 }
 
 export class ManaPlayerLane {
@@ -68,8 +70,8 @@ export class ManaPlayerLane {
     private gameState: GameStateManager;
     private onLaneDead: () => void;
     private playerState: PlayerState | null;
+    private masteryData: MasteryData | null;
     private persistProgress: (() => void) | null;
-    private sharedManaRewards: boolean;
 
     // Derived constants
     private rowHeight: number;
@@ -82,9 +84,9 @@ export class ManaPlayerLane {
     private problemCount: number = 0;
     private correctCount: number = 0;
     private wrongCount: number = 0;
-    private manaEarnedThreshold: number = 0;
     private isGameActive: boolean = false;
     private isResolving: boolean = false;
+    private problemStartedAt: number = 0;
 
     // Pool
     private manaPool: PoolProblem[];
@@ -124,8 +126,8 @@ export class ManaPlayerLane {
         this.manaPool = manaPool;
         this.onLaneDead = onLaneDead;
         this.playerState = persistence?.playerState ?? null;
+        this.masteryData = persistence?.masteryData ?? null;
         this.persistProgress = persistence?.persistProgress ?? null;
-        this.sharedManaRewards = persistence?.sharedManaRewards ?? false;
 
         this.rowHeight = (config.channelBottom - config.channelTop) / ROW_COUNT;
         this.problemStartY = config.channelTop - 60;
@@ -151,7 +153,7 @@ export class ManaPlayerLane {
         }
 
         const levelProblems = mathEngine.getLevelProblemsWithStats()
-            .filter(p => !p.problemType || p.problemType === 'standard')
+            .filter(problem => ManaPlayerLane.isSimpleTwoOperand(problem))
             .filter(p => p.answer >= 0)
             .filter(problem => !ManaPlayerLane.hasZero(problem))
             .map(problem => ({
@@ -163,33 +165,15 @@ export class ManaPlayerLane {
             return [];
         }
 
-        const thresholds = [5, 10, 20];
-        const scored = levelProblems.map(problem => {
-            let nextThreshold = Infinity;
-            for (let i = 0; i < thresholds.length; i++) {
-                if (problem.stats.manaCollected <= i) {
-                    nextThreshold = thresholds[i];
-                    break;
-                }
+        const rankedProblems = [...levelProblems].sort((a, b) => {
+            if (a.stats.wrongCount !== b.stats.wrongCount) {
+                return b.stats.wrongCount - a.stats.wrongCount;
             }
-            const distance = nextThreshold === Infinity
-                ? Infinity
-                : Math.max(0, nextThreshold - problem.stats.correctCount);
-            const priority = distance === Infinity ? 999 : distance;
-            return { problem, priority };
+            if (a.stats.correctCount !== b.stats.correctCount) {
+                return a.stats.correctCount - b.stats.correctCount;
+            }
+            return a.id.localeCompare(b.id);
         });
-
-        scored.sort((a, b) => {
-            if (a.priority !== b.priority) {
-                return a.priority - b.priority;
-            }
-            if (a.problem.stats.wrongCount !== b.problem.stats.wrongCount) {
-                return b.problem.stats.wrongCount - a.problem.stats.wrongCount;
-            }
-            return a.problem.stats.correctCount - b.problem.stats.correctCount;
-        });
-
-        const rankedProblems = scored.map(entry => entry.problem);
         const pool: PoolProblem[] = [];
 
         while (pool.length < ManaPlayerLane.FIXED_POOL_SIZE) {
@@ -209,8 +193,12 @@ export class ManaPlayerLane {
     }
 
     private static buildFrontierSubAtomPool(subAtomId: SubAtomId): PoolProblem[] {
-        const sourceProblems = ProblemDatabase.getInstance()
-            .getProblemsForForm(subAtomId, 'result_unknown')
+        const sourceSubAtoms = subAtomId.endsWith('3')
+            ? ([`${subAtomId[0]}1`, `${subAtomId[0]}2`] as SubAtomId[])
+            : [subAtomId];
+        const sourceProblems = sourceSubAtoms
+            .flatMap(sourceSubAtom => ProblemDatabase.getInstance().getProblemsForForm(sourceSubAtom, 'result_unknown'))
+            .filter(problem => ManaPlayerLane.isSimpleTwoOperand(problem))
             .filter(problem => !ManaPlayerLane.hasZero(problem));
         if (sourceProblems.length === 0) {
             return [];
@@ -241,6 +229,22 @@ export class ManaPlayerLane {
         }
 
         return pool;
+    }
+
+    private static isSimpleTwoOperand(problem: {
+        operator?: string;
+        operator2?: string;
+        operator3?: string;
+        operand3?: number;
+        operand4?: number;
+        problemType?: string;
+    }): boolean {
+        return (problem.operator === '+' || problem.operator === '-')
+            && problem.operator2 === undefined
+            && problem.operator3 === undefined
+            && problem.operand3 === undefined
+            && problem.operand4 === undefined
+            && (!problem.problemType || problem.problemType === 'standard');
     }
 
     private static rankFrontierProblems(sourceProblems: ProblemDefinition[], subAtomId: SubAtomId): ProblemDefinition[] {
@@ -366,7 +370,8 @@ export class ManaPlayerLane {
             this.heartTexts.push(heart);
         }
 
-        this.manaDisplayText = this.scene.add.text(manaX, manaY, 'Mana: ⚡ 0', {
+        const initialManaLabel = this.config.rewardMode === 'shared' ? 'Mana: společná' : 'Mana: ⚡ 0';
+        this.manaDisplayText = this.scene.add.text(manaX, manaY, initialManaLabel, {
             fontSize: `${Math.round(18 * this.fontScale)}px`,
             fontFamily: 'Arial, sans-serif',
             color: '#88ccaa',
@@ -499,7 +504,6 @@ export class ManaPlayerLane {
             correctCount: this.correctCount,
             problemCount: this.problemCount,
             wrongCount: this.wrongCount,
-            manaEarnedThreshold: this.manaEarnedThreshold,
         };
     }
 
@@ -570,6 +574,7 @@ export class ManaPlayerLane {
         if (!this.currentProblem) {
             return;
         }
+        this.problemStartedAt = Date.now();
 
         this.createAnswerSlots(this.currentProblem.answer, this.currentProblem.choices);
 
@@ -707,6 +712,7 @@ export class ManaPlayerLane {
     // ============ CORRECT / WRONG / MISSED ============
 
     private onCorrectAnswer(highlightBar: Phaser.GameObjects.Rectangle): void {
+        sfx(this.scene, 'mana.collect');
         highlightBar.setFillStyle(0x228822, 0.4);
 
         for (const s of this.answerSlots) {
@@ -715,26 +721,12 @@ export class ManaPlayerLane {
             }
         }
 
-        let collectedMana = 0;
         this.withPlayerContext(() => {
-            this.mathEngine.recordResultForProblem(this.currentProblem!.id, true);
-            if (!this.sharedManaRewards) {
-                const collectableMana = this.mathEngine.getCollectableMana(this.currentProblem!.id);
-                if (collectableMana > 0) {
-                    collectedMana = this.mathEngine.collectManaForProblem(this.currentProblem!.id);
-                    ManaSystem.add(this.getPlayerState(), collectedMana);
-                    this.manaEarnedThreshold += collectedMana;
-                }
-            }
-            this.persistProgressIfNeeded(collectedMana > 0);
+            this.recordCurrentProblemResult(true);
         });
 
         this.correctCount++;
         this.problemCount++;
-
-        if (collectedMana > 0) {
-            this.showManaCollectedFeedback(collectedMana);
-        }
 
         this.showFeedbackText('SPRÁVNĚ!', '#44ff44', this.config.problemX, this.problemText.y - 40);
         this.updateManaDisplay();
@@ -769,8 +761,7 @@ export class ManaPlayerLane {
         }
 
         this.withPlayerContext(() => {
-            this.mathEngine.recordResultForProblem(this.currentProblem!.id, false);
-            this.persistProgressIfNeeded();
+            this.recordCurrentProblemResult(false);
         });
         this.wrongCount++;
         this.problemCount++;
@@ -822,7 +813,13 @@ export class ManaPlayerLane {
     }
 
     private updateManaDisplay(): void {
-        this.manaDisplayText.setText(`Mana: ⚡ ${this.manaEarnedThreshold}`);
+        if (this.config.rewardMode === 'shared') {
+            this.manaDisplayText.setText('Mana: společná');
+            return;
+        }
+
+        const earnedMana = Math.floor(this.correctCount / MANA_REWARD_INTERVAL);
+        this.manaDisplayText.setText(`Mana: ⚡ ${earnedMana}`);
     }
 
     private showFeedbackText(text: string, color: string, x: number, y: number): void {
@@ -841,28 +838,6 @@ export class ManaPlayerLane {
             alpha: 0,
             scale: 1.3,
             duration: 1000,
-            ease: 'Power2',
-            onComplete: () => feedback.destroy(),
-        });
-    }
-
-    private showManaCollectedFeedback(amount: number): void {
-        const feedbackY = this.config.channelTop + 120;
-        const feedback = this.scene.add.text(this.config.problemX, feedbackY, `⚡ +${amount} MANA!`, {
-            fontSize: `${Math.round(28 * this.fontScale)}px`,
-            fontFamily: 'Arial, sans-serif',
-            color: '#44ffff',
-            fontStyle: 'bold',
-            stroke: '#000000',
-            strokeThickness: 4,
-        }).setOrigin(0.5).setDepth(60);
-
-        this.scene.tweens.add({
-            targets: feedback,
-            y: feedbackY - 60,
-            alpha: 0,
-            scale: 1.5,
-            duration: 1500,
             ease: 'Power2',
             onComplete: () => feedback.destroy(),
         });
@@ -899,8 +874,31 @@ export class ManaPlayerLane {
         }
     }
 
-    private getPlayerState(): PlayerState {
-        return this.playerState ?? this.gameState.getPlayer();
+    private recordCurrentProblemResult(isCorrect: boolean): void {
+        if (!isCorrect) sfx(this.scene, 'math.retry');
+        const problem = this.currentProblem;
+        if (!problem) return;
+
+        this.mathEngine.recordResultForProblem(problem.id, isCorrect);
+
+        if (problem.masteryKey) {
+            const masterySystem = MasterySystem.getInstance();
+            try {
+                masterySystem.setActiveData(this.masteryData);
+                masterySystem.recordSolve(
+                    problem.masteryKey,
+                    isCorrect,
+                    Math.max(0, Date.now() - this.problemStartedAt),
+                    'mana_collection',
+                );
+            } finally {
+                masterySystem.setActiveData(null);
+            }
+        }
+
+        // Mastery attempts power Daily Progress, so they must be saved even when
+        // the answer did not award mana or mutate another player resource.
+        this.persistProgressIfNeeded(Boolean(problem.masteryKey));
     }
 
     private persistProgressIfNeeded(playerDirty: boolean = false): void {

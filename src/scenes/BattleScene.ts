@@ -1,29 +1,59 @@
+import { sfx, voice, gameAudio } from '../audio/AudioDirector';
+import { getCatacombFoxBonus } from '../systems/CatacombPetProgress';
 import Phaser from 'phaser';
-import { BattleState, BattlePhase, BattleEnemy, EnemyDefinition, ItemDefinition, PetDefinition, MathProblem, Crystal, CrystalTier } from '../types';
+import { BattleState, BattlePhase, BattleEnemy, EnemyDefinition, ItemDefinition, PetDefinition, MathProblem, Crystal, PlayerState, PreparationKind } from '../types';
 import { MathEngine } from '../systems/MathEngine';
-import { MathBoard } from '../ui/MathBoard';
+import { MathBoard, MathBoardRemoteSnapshot } from '../ui/MathBoard';
 import { MasterySystem } from '../systems/MasterySystem';
 import { GameStateManager } from '../systems/GameStateManager';
 import { ProgressionSystem, createInitialTownProgress } from '../systems/ProgressionSystem';
 import { CrystalSystem } from '../systems/CrystalSystem';
+import { awardArenaRewardMana } from '../systems/ArenaRewardSystem';
 import { SceneDebugger } from '../systems/SceneDebugger';
 import { SceneBuilder } from '../systems/SceneBuilder';
 import { getPlayerSpriteConfig, PlayerSpriteConfig } from '../utils/characterUtils';
-import { PauseMenu } from '../ui/PauseMenu';
+import { PauseMenu, PauseMenuLayout } from '../ui/PauseMenu';
 import { TrialFeedbackVisualizer } from '../ui/TrialFeedbackVisualizer';
 import { formatMathProblem } from '../utils/formatMathProblem';
 import { SpeedChargeBar } from '../ui/SpeedChargeBar';
+import { BattleActorStatusHud } from '../ui/BattleActorStatusHud';
+import { BattleActionDock, BattleHudPoint } from '../ui/BattleActionDock';
+import { BattlePreparationHud } from '../ui/BattlePreparationHud';
 import { TurnManager, BattleSceneCallbacks } from '../battle/TurnManager';
 import { CoopSessionManager } from '../systems/CoopSessionManager';
 import { MasteryData } from '../types';
-
-// HP Bar component attached to character
-interface HpBar {
-    container: Phaser.GameObjects.Container;
-    bg: Phaser.GameObjects.Rectangle;
-    fill: Phaser.GameObjects.Rectangle;
-    text: Phaser.GameObjects.Text;
-}
+import { RemoteInputService } from '../remote/RemoteInputService';
+import { RemoteAction, RemoteCommand } from '../remote/types';
+import { createEncounterCatalog, EncounterCatalog } from '../systems/EncounterCatalog';
+import type {
+    ArenaCompletionReward,
+    ArenaEncounter,
+    BossPhaseDefinition,
+    ResolvedArenaWave,
+    ResolvedJourneyEncounter,
+} from '../types/encounters';
+import {
+    getArenaEncounterResult,
+    setArenaEncounterResult,
+} from '../systems/ArenaProgressSystem';
+import {
+    findNextArenaWaveForChoice,
+    getArenaChoiceKind,
+    type ArenaChoiceKind,
+} from '../systems/ArenaChoiceSystem';
+import { PREPARATION_CONFIG, PreparationSystem } from '../systems/PreparationSystem';
+import { resolveEnemyBattlePresentation } from '../systems/EnemyPresentationSystem';
+import {
+    damageBonusWouldHelp,
+    resolveDamageAfterDefense,
+} from '../systems/CombatDamageSystem';
+import { applyAttackPowerDistribution as applyConfiguredAttackPower } from '../systems/CombatAttackSystem';
+import { JourneySystem } from '../systems/JourneySystem';
+import { completeForestGuardianJourneyProgress } from '../systems/ForestCrystalProgression';
+import { completeUnderwaterEncounter, hasUnderwaterBlessing } from '../systems/UnderwaterProgressSystem';
+import { resolveTidalWave } from '../systems/UnderwaterTidalWave';
+import { UnderwaterBossHud } from '../ui/UnderwaterBossHud';
+import { StorySystem } from '../systems/StorySystem';
 
 export class BattleScene extends Phaser.Scene implements BattleSceneCallbacks {
     // Turn management
@@ -34,8 +64,8 @@ export class BattleScene extends Phaser.Scene implements BattleSceneCallbacks {
     private enemyContainers: Phaser.GameObjects.Container[] = [];
     private hero!: Phaser.GameObjects.Sprite;
     private enemies: Phaser.GameObjects.Sprite[] = [];
-    private heroHpBar!: HpBar;
-    private enemyHpBars: HpBar[] = [];
+    private heroHpBar!: BattleActorStatusHud;
+    private enemyHpBars: BattleActorStatusHud[] = [];
 
     // UI Components
     private mathBoard!: MathBoard;
@@ -46,6 +76,8 @@ export class BattleScene extends Phaser.Scene implements BattleSceneCallbacks {
     private blockTimerText!: Phaser.GameObjects.Text;
     private blockAttemptsText!: Phaser.GameObjects.Text;
     private targetIndicator!: Phaser.GameObjects.Image;
+    private battleActionDock!: BattleActionDock;
+    private battleActionDockFrame: Phaser.GameObjects.Image | null = null;
 
     // Wrong answer feedback
     private feedbackOverlay!: Phaser.GameObjects.Container;
@@ -85,6 +117,9 @@ export class BattleScene extends Phaser.Scene implements BattleSceneCallbacks {
 
     // Pause menu
     private pauseMenu!: PauseMenu;
+    private remoteInput = RemoteInputService.getInstance();
+    private unsubscribeRemoteCommand: (() => void) | null = null;
+    private remoteFeedbackDismiss: (() => void) | null = null;
 
     // Cached spawn points for battle positioning
     private cachedSpawnPoints: {
@@ -95,7 +130,6 @@ export class BattleScene extends Phaser.Scene implements BattleSceneCallbacks {
 
     // Y-based depth sorting for 2.5D visual layering
     private static readonly ATTACK_DEPTH = 45;
-    private static readonly NAME_LABEL_DEPTH = 46;
     private entityRestingDepths: Map<Phaser.GameObjects.Container, number> = new Map();
 
     // Pet companion
@@ -122,13 +156,15 @@ export class BattleScene extends Phaser.Scene implements BattleSceneCallbacks {
     private coopMasteryB: MasteryData | null = null;
     private heroBContainer: Phaser.GameObjects.Container | null = null;
     private heroB: Phaser.GameObjects.Sprite | null = null;
-    private heroBHpBar: HpBar | null = null;
+    private heroBHpBar: BattleActorStatusHud | null = null;
     private heroBSpriteConfig: PlayerSpriteConfig | null = null;
     private coopTurnLabel: Phaser.GameObjects.Text | null = null;
     private petBContainer: Phaser.GameObjects.Container | null = null;
     private petBSprite: Phaser.GameObjects.Sprite | null = null;
     private equippedPetBDef: PetDefinition | null = null;
     private speedChargeBarB: SpeedChargeBar | null = null;
+    private preparationIndicatorA: BattlePreparationHud | null = null;
+    private preparationIndicatorB: BattlePreparationHud | null = null;
     private playerBFallen: boolean = false;
 
     constructor() {
@@ -140,6 +176,15 @@ export class BattleScene extends Phaser.Scene implements BattleSceneCallbacks {
     private arenaLevel: number = 1;
     private arenaWave: number = 0;
     private waveWrongAnswerCount: number = 0;
+    private encounterCatalog: EncounterCatalog | null = null;
+    private arenaDefinition: ArenaEncounter | null = null;
+    private resolvedEncounter: ResolvedArenaWave | null = null;
+    private resolvedJourneyEncounter: ResolvedJourneyEncounter | null = null;
+    private encounterId: string | null = null;
+    private arenaChoiceId: string | null = null;
+    private arenaChoiceKind: ArenaChoiceKind | null = null;
+    private arenaExitScene: string = 'TownScene';
+    private arenaStory: 'silverpond-lake-fairy' | null = null;
 
     // Speed charge bar (accumulates charges from fast answers, +1 damage per 4 charges)
     private speedChargeBar!: SpeedChargeBar;
@@ -154,24 +199,14 @@ export class BattleScene extends Phaser.Scene implements BattleSceneCallbacks {
     private returnScene: string = 'TownScene';
     private returnData: Record<string, unknown> = {};
     private backgroundKey: string | null = null;
+    private mockMode: boolean = false;
+    private storyVictory: 'forest-crystal' | null = null;
+    private ritualBossAttackReduction: number = 0;
+    private mockProblemCursor: number = 0;
 
     // Boss battle data
     private isBoss: boolean = false;
-    private bossPhases: {
-        hp: number;
-        atk: number;
-        name: string;
-        nameCs: string;
-        mathType?: string;
-        mathDifficulty?: number;
-        ability?: string | null;
-        healPercent?: number;
-        transitionAnim?: string;
-        idleAnim?: string;
-        attackAnim?: string;
-        tint?: string;
-        deathSequence?: string[];
-    }[] = [];
+    private bossPhases: BossPhaseDefinition[] = [];
     private currentBossPhase: number = 0;
     private bossPhaseHealPlayer: number = 0;
 
@@ -187,6 +222,10 @@ export class BattleScene extends Phaser.Scene implements BattleSceneCallbacks {
     private currentPhaseAbility: string | null = null;
     private lastAnswerCorrect: boolean = true;
     private lastStandTriggered: boolean = false;
+    private depthBossHud?: UnderwaterBossHud;
+    private tidalAttacks = { A: 0, B: 0 };
+    private tidalBlessing = { A: false, B: false };
+    private depthPlayerMaxHp = 0;
 
     init(data: { 
         enemyId?: string; 
@@ -194,19 +233,30 @@ export class BattleScene extends Phaser.Scene implements BattleSceneCallbacks {
         fromArena?: boolean; 
         arenaLevel?: number; 
         wave?: number;
+        encounterId?: string;
+        arenaChoiceId?: string | null;
+        arenaExitScene?: string;
+        arenaStory?: 'silverpond-lake-fairy';
         mode?: string;
         returnScene?: string;
         returnData?: Record<string, unknown>;
         backgroundKey?: string;
         enemy?: string;
+        mockMode?: boolean;
+        storyVictory?: 'forest-crystal';
+        ritualBossAttackReduction?: number;
     }): void {
         // Get global game state
         this.gameState = GameStateManager.getInstance();
         const player = this.gameState.getPlayer();
+        this.mockMode = data.mockMode === true;
+        this.storyVictory = data.storyVictory ?? null;
+        this.ritualBossAttackReduction = Math.max(0, data.ritualBossAttackReduction ?? 0);
+        this.mockProblemCursor = 0;
 
         // Detect co-op mode
         this.coopSession = CoopSessionManager.getInstance();
-        this.isCoopMode = this.coopSession.isCoopActive();
+        this.isCoopMode = !this.mockMode && this.coopSession.isCoopActive();
         this.playerBFallen = false;
 
         // Store journey mode data
@@ -216,10 +266,19 @@ export class BattleScene extends Phaser.Scene implements BattleSceneCallbacks {
         this.backgroundKey = data.backgroundKey || null;
 
         // Store arena data if coming from arena
-        this.fromArena = data.fromArena || false;
-        this.arenaLevel = data.arenaLevel || 1;
-        this.arenaWave = data.wave || 0;
+        this.fromArena = data.fromArena === true;
+        this.arenaLevel = data.arenaLevel ?? 1;
+        this.arenaWave = data.wave ?? 0;
         this.waveWrongAnswerCount = 0;
+        this.encounterCatalog = null;
+        this.arenaDefinition = null;
+        this.resolvedEncounter = null;
+        this.resolvedJourneyEncounter = null;
+        this.encounterId = data.encounterId ?? null;
+        this.arenaChoiceId = data.arenaChoiceId ?? null;
+        this.arenaChoiceKind = getArenaChoiceKind(this.arenaChoiceId);
+        this.arenaExitScene = data.arenaExitScene ?? 'TownScene';
+        this.arenaStory = data.arenaStory ?? null;
 
         // Reset boss state (in case previous battle was a boss)
         this.isBoss = false;
@@ -227,125 +286,73 @@ export class BattleScene extends Phaser.Scene implements BattleSceneCallbacks {
         this.currentBossPhase = 0;
         this.bossPhaseHealPlayer = 0;
         this.bossPhaseAnimOverrides = {};
+        this.currentPhaseAbility = null;
+        this.lastAnswerCorrect = true;
+        this.lastStandTriggered = false;
 
-        // Get enemy data - either from arena or single enemy
-        if (data.enemyDefs && data.enemyDefs.length > 0) {
+        this.depthBossHud = undefined;
+        this.tidalAttacks = { A: 0, B: 0 };
+        this.tidalBlessing = { A: false, B: false };
+
+        const enemies = this.cache.json.get('enemies') as EnemyDefinition[];
+        this.encounterCatalog = createEncounterCatalog(this.cache.json.get('encounters'), {
+            core: enemies,
+        });
+
+        // Every arena battle resolves from encounters.json. Legacy callers may
+        // still provide arenaLevel + wave, but never their own enemy roster.
+        if (this.fromArena) {
+            const wave = this.encounterId
+                ? this.encounterCatalog.getWaveById(this.encounterId)
+                : this.encounterCatalog.getWave(this.arenaLevel, this.arenaWave);
+            const arena = this.encounterId
+                ? this.encounterCatalog.getArenaLevels()
+                    .map(level => this.encounterCatalog!.getArena(level))
+                    .find(candidate => candidate.waves.some(candidateWave => candidateWave.id === wave.id))
+                : this.encounterCatalog.getArena(this.arenaLevel);
+            if (!arena) {
+                throw new Error(`Encounter ${wave.id} is not part of an arena`);
+            }
+
+            this.encounterId = wave.id;
+            this.arenaDefinition = arena;
+            this.arenaLevel = arena.level;
+            this.arenaWave = wave.index;
+            this.resolvedEncounter = this.encounterCatalog.resolveArenaWave({
+                arenaLevel: arena.level,
+                waveIndex: wave.index,
+                mode: this.isCoopMode ? 'coop' : 'solo',
+            });
+            this.enemyDefs = this.resolvedEncounter.enemies;
+        } else if (this.encounterId) {
+            this.resolvedJourneyEncounter = this.encounterCatalog.resolveJourneyEncounter(
+                this.encounterId,
+                this.isCoopMode ? 'coop' : 'solo',
+            );
+            this.enemyDefs = this.resolvedJourneyEncounter.enemies;
+            const boss = this.resolvedJourneyEncounter.boss;
+            if (boss) {
+                this.isBoss = true;
+                this.bossPhases = [...boss.phases];
+                this.bossPhaseHealPlayer = boss.phaseHealPlayer;
+                const firstPhase = this.bossPhases[0];
+                this.currentPhaseAbility = firstPhase.ability || null;
+                this.applyBossPhaseOverrides(firstPhase);
+                console.log(
+                    `[BattleScene] Encounter boss ${this.encounterId}: ${this.bossPhases.length} phases, starting ${firstPhase.nameCs}`,
+                );
+            }
+        // Non-arena battles may still supply pre-resolved or single-enemy data.
+        } else if (data.enemyDefs && data.enemyDefs.length > 0) {
             this.enemyDefs = data.enemyDefs;
         } else {
             const enemyId = data.enemyId || data.enemy || 'slime_green';
-            const useForestEnemy = data.useForestEnemy === true;
-
-            // When launched from forest, check forest enemies first (they have full boss phase data)
-            // Otherwise, check main enemies list first for backward compatibility
-            const enemies = this.cache.json.get('enemies') as EnemyDefinition[];
-            let enemy: EnemyDefinition | undefined;
-
-            if (!useForestEnemy) {
-                enemy = enemies?.find(e => e.id === enemyId);
-            }
-
-            // Try forest enemies
-            if (!enemy && this.cache.json.has('forestEnemies')) {
-                interface ForestEnemy {
-                    id: string;
-                    name: string;
-                    nameCs?: string;
-                    hp: number;
-                    atk?: number;
-                    xp?: number;
-                    goldMin?: number;
-                    goldMax?: number;
-                    spriteKey: string;
-                    animPrefix?: string;
-                    scale?: number;
-                    battleOffsetY?: number;
-                    // Boss properties
-                    isBoss?: boolean;
-                    phases?: {
-                        hp: number;
-                        atk: number;
-                        name: string;
-                        nameCs: string;
-                        mathType?: string;
-                        mathDifficulty?: number;
-                        ability?: string | null;
-                        healPercent?: number;
-                        transitionAnim?: string;
-                        idleAnim?: string;
-                        attackAnim?: string;
-                        tint?: string;
-                        deathSequence?: string[];
-                    }[];
-                    phaseHealPlayer?: number;
-                }
-                const forestData = this.cache.json.get('forestEnemies') as { enemies: Record<string, ForestEnemy> };
-                const forestEnemy = forestData?.enemies?.[enemyId];
-                if (forestEnemy) {
-                    // Check if this is a boss with phases
-                    if (forestEnemy.isBoss && forestEnemy.phases && forestEnemy.phases.length > 0) {
-                        this.isBoss = true;
-                        this.bossPhases = forestEnemy.phases;
-                        this.currentBossPhase = 0;
-                        this.bossPhaseHealPlayer = forestEnemy.phaseHealPlayer || 0;
-
-                        // Initialize boss ability tracking for first phase
-                        const phase1 = forestEnemy.phases[0];
-                        this.currentPhaseAbility = phase1.ability || null;
-                        this.lastAnswerCorrect = true;
-                        this.lastStandTriggered = false;
-
-                        // Apply phase 1 animation overrides
-                        this.applyBossPhaseOverrides(phase1);
-
-                        console.log(`[BattleScene] Boss battle! ${forestEnemy.phases.length} phases. Starting phase: ${phase1.nameCs}, ability: ${this.currentPhaseAbility}`);
-
-                        const goldMin = forestEnemy.goldMin || 5;
-                        const goldMax = forestEnemy.goldMax || goldMin + 5;
-                        enemy = {
-                            id: forestEnemy.id,
-                            name: `${forestEnemy.nameCs || forestEnemy.name} - ${phase1.nameCs}`,
-                            hp: phase1.hp,
-                            attack: phase1.atk,
-                            defense: 0,
-                            xp: forestEnemy.xp || 10,
-                            goldReward: [goldMin, goldMax],
-                            spriteKey: forestEnemy.spriteKey,
-                            animPrefix: forestEnemy.animPrefix || forestEnemy.spriteKey?.replace('-sheet', '') || 'slime',
-                            scale: forestEnemy.scale,
-                            battleOffsetY: forestEnemy.battleOffsetY
-                        } as unknown as EnemyDefinition;
-                    } else {
-                        // Regular forest enemy
-                        const goldMin = forestEnemy.goldMin || 5;
-                        const goldMax = forestEnemy.goldMax || goldMin + 5;
-                        enemy = {
-                            id: forestEnemy.id,
-                            name: forestEnemy.nameCs || forestEnemy.name,
-                            hp: forestEnemy.hp,
-                            attack: forestEnemy.atk || 3,
-                            defense: 0,
-                            xp: forestEnemy.xp || 10,
-                            goldReward: [goldMin, goldMax],
-                            spriteKey: forestEnemy.spriteKey,
-                            animPrefix: forestEnemy.animPrefix || forestEnemy.spriteKey?.replace('-sheet', '') || 'slime',
-                            scale: forestEnemy.scale,
-                            battleOffsetY: forestEnemy.battleOffsetY
-                        } as unknown as EnemyDefinition;
-                    }
-                }
-            }
-
-            // If useForestEnemy was set but enemy wasn't in forest data, fall back to main enemies
-            if (!enemy && useForestEnemy) {
-                enemy = enemies?.find(e => e.id === enemyId);
-            }
-
-            // Fallback to first enemy if still not found
+            const enemy = enemies?.find(e => e.id === enemyId);
             this.enemyDefs = [enemy || enemies?.[0]];
         }
 
         // Co-op: scale enemies for 2-player difficulty
-        if (this.isCoopMode && this.coopSession) {
+        if (!this.resolvedEncounter && !this.resolvedJourneyEncounter && this.isCoopMode && this.coopSession) {
             this.enemyDefs = this.coopSession.getCoopEnemyDefs(this.enemyDefs, this.isBoss);
         }
 
@@ -366,14 +373,14 @@ export class BattleScene extends Phaser.Scene implements BattleSceneCallbacks {
             spriteKey: def.spriteKey,
             hp: def.hp,
             maxHp: def.hp,
-            attack: def.attack,
+            attack: Math.max(0, def.attack - (index === 0 ? this.ritualBossAttackReduction : 0)),
             defense: def.defense,
         }));
 
         // Initialize battle state
         this.battleState = {
             phase: 'start',
-            playerHp: player.hp,
+            playerHp: this.mockMode ? player.maxHp : player.hp,
             enemies: battleEnemies,
             selectedEnemyIndex: 0,
             currentProblems: [],
@@ -416,12 +423,16 @@ export class BattleScene extends Phaser.Scene implements BattleSceneCallbacks {
                 bg.setDisplaySize(1280, 720);
             }
         }
+        if (this.mockMode) {
+            this.cameras.main.fadeIn(260, 0, 0, 0);
+        }
 
         const player = this.gameState.getPlayer();
 
         // Get spawn points from scene-layouts.json (preferred) or fallback to zones
         const enemyCount = this.battleState.enemies.length;
         const spawnPoints = this.sceneBuilder.getSpawnPoints(undefined, enemyCount, this.isCoopMode);
+        const referenceSpawnPoints = this.sceneBuilder.getSpawnPoints(undefined, 3, true);
 
         // Hero position from spawn points or fallback
         let heroX: number, heroY: number;
@@ -443,14 +454,28 @@ export class BattleScene extends Phaser.Scene implements BattleSceneCallbacks {
         const HERO_BASE_SCALE = 1.0;
         const heroScale = (characterDef?.scale ?? 1.0) * HERO_BASE_SCALE;
 
-        // Create hero container with sprite and HP bar
+        // Create the hero independently from the UI-layer status plate. The
+        // plate follows this container during attacks and knockback.
         this.heroContainer = this.add.container(heroX, heroY);
         this.hero = this.add.sprite(0, 0, this.playerSpriteConfig.idleTexture)
             .setScale(heroScale)
             .play(this.playerSpriteConfig.idleAnim);
-        this.heroHpBar = this.createHpBar(0, -90, this.battleState.playerHp, player.maxHp, '#44cc44', true);
-        this.speedChargeBar = new SpeedChargeBar(this, 0, -115);
-        this.heroContainer.add([this.hero, this.heroHpBar.container, this.speedChargeBar.getContainer()]);
+        this.heroContainer.add(this.hero);
+        const referencePlayer = referenceSpawnPoints?.player ?? { x: 239, y: 445 };
+        this.heroHpBar = this.createActorStatusHud(
+            'battlePlayerStatusHostA',
+            this.heroContainer,
+            this.hero,
+            referencePlayer,
+            this.battleState.playerHp,
+            player.maxHp,
+            0x50d95b,
+            'player',
+            true,
+            0xffb52c,
+            200,
+        );
+        this.speedChargeBar = this.heroHpBar.speedChargeBar!;
 
         // Pet position from spawn points or default relative to hero
         let petX: number, petY: number;
@@ -481,12 +506,16 @@ export class BattleScene extends Phaser.Scene implements BattleSceneCallbacks {
         this.petBSprite = null;
         this.equippedPetBDef = null;
         this.speedChargeBarB = null;
+        this.preparationIndicatorA = null;
+        this.preparationIndicatorB = null;
 
         if (this.isCoopMode && this.coopSession) {
-            this.createPlayerBHero(spawnPoints);
+            this.createPlayerBHero(spawnPoints, referenceSpawnPoints);
             this.coopMasteryA = this.coopSession.getPlayerAMasteryData();
             this.coopMasteryB = this.coopSession.getPlayerBMasteryData();
         }
+
+        this.createPreparationIndicators();
 
         // Create enemy containers using configured spawn points
         this.battleState.enemies.forEach((enemy, index) => {
@@ -517,22 +546,32 @@ export class BattleScene extends Phaser.Scene implements BattleSceneCallbacks {
             animPrefix = this.ensureEnemyAnimations(def.spriteKey, animPrefix);
             this.enemyAnimPrefixes[index] = animPrefix; // Update stored prefix
 
-            // Get enemy scale from definition
-            const ENEMY_BASE_SCALE = 1.0;
-            const enemyScale = (def.scale ?? 1.0) * ENEMY_BASE_SCALE;
+            const presentation = resolveEnemyBattlePresentation(def, { x, y });
 
             // Use the texture that actually exists (might be fallback)
             const actualSpriteKey = this.textures.exists(def.spriteKey) ? def.spriteKey : 'slime-sheet';
 
-            const offsetY = def.battleOffsetY || 0;
-            const container = this.add.container(x, y + offsetY);
+            const container = this.add.container(presentation.x, presentation.y);
             const idleAnimKey = (this.isBoss && index === 0) ? this.getBossAnimKey(0, 'idle') : `${animPrefix}-idle`;
-            const sprite = this.add.sprite(0, 0, actualSpriteKey).setScale(enemyScale).play(idleAnimKey);
-            const hpBarY = -(sprite.displayHeight / 2) - 15;
-            const hpBar = this.createHpBar(0, hpBarY, enemy.hp, enemy.maxHp, '#cc4444');
-            container.add([sprite, hpBar.container]);
-            container.setData('hpBarY', hpBarY);
+            const sprite = this.add.sprite(0, 0, actualSpriteKey).setScale(presentation.scale).play(idleAnimKey);
+            sprite.setData('frameTopInset', def.frameTopInset ?? 0);
+            container.add(sprite);
             container.setData('origFrameW', sprite.width);
+
+            const referenceEnemy = referenceSpawnPoints?.enemies[index] ?? { x, y };
+            const hpBar = this.createActorStatusHud(
+                `battleEnemyStatusHost${index + 1}`,
+                container,
+                sprite,
+                referenceEnemy,
+                enemy.hp,
+                enemy.maxHp,
+                0xf05b64,
+                'enemy',
+                false,
+                undefined,
+                200,
+            );
 
             // Make enemy clickable to select as target (for both player and pet turns)
             sprite.setInteractive({ useHandCursor: true });
@@ -549,37 +588,37 @@ export class BattleScene extends Phaser.Scene implements BattleSceneCallbacks {
             this.enemyHpBars.push(hpBar);
         });
 
+        // Scene-editor hosts represent every supported layout. Remove the
+        // variants that are inactive in this concrete battle so they never
+        // leak through as empty decorative frames.
+        if (!this.isCoopMode) {
+            this.sceneBuilder.get('battlePlayerStatusHostB')?.destroy();
+        }
+        for (let index = enemyCount; index < 4; index++) {
+            this.sceneBuilder.get(`battleEnemyStatusHost${index + 1}`)?.destroy();
+        }
+
         // Assign Y-based depths for correct 2.5D layering
         this.assignYBasedDepths();
 
-        // Create target indicator (iron sword pointing down at selected enemy)
-        this.targetIndicator = this.add.image(0, 0, 'shop-swords-sheet', 1)  // frame 1 = iron sword
-            .setScale(0.2)
-            .setAngle(180)  // upside down, pointing down
-            .setDepth(50);
-
-        // Add bobbing animation
-        this.tweens.add({
-            targets: this.targetIndicator,
-            y: '-=8',
-            duration: 400,
-            yoyo: true,
-            repeat: -1,
-            ease: 'Sine.inOut'
-        });
+        // The approved sword marker remains bound to the selected status plate.
+        const markerHost = this.sceneBuilder.get<Phaser.GameObjects.Image>('battleTargetSwordHost');
+        this.targetIndicator = markerHost ?? this.add.image(0, 0, 'prep-sword-normal-v2');
+        this.targetIndicator
+            .setDisplaySize(markerHost?.displayWidth || 58, markerHost?.displayHeight || 58)
+            .setAngle(markerHost?.angle ?? 135)
+            .setDepth(markerHost?.depth ?? 83);
+        this.events.on(Phaser.Scenes.Events.POST_UPDATE, this.followTargetIndicator, this);
 
         this.updateTargetIndicator();
 
         // Create pet target indicator (green-tinted sword for pet's target)
-        this.petTargetIndicator = this.add.image(0, 0, 'shop-swords-sheet', 1)
-            .setScale(0.18)
-            .setAngle(180)
-            .setTint(0x44ff44)  // Green tint for pet
-            .setDepth(50)
+        this.petTargetIndicator = this.add.image(0, 0, 'prep-sword-active-v2')
+            .setDisplaySize(52, 52)
+            .setAngle(135)
+            .setTint(0x8cff79)
+            .setDepth(83)
             .setVisible(false);
-
-        // Create pet attack button (same position as attack button, shown during pet_turn)
-        this.createPetAttackButton();
 
         // Set player level in registry for MathEngine's adaptive difficulty
         this.registry.set('playerLevel', player.level);
@@ -589,6 +628,12 @@ export class BattleScene extends Phaser.Scene implements BattleSceneCallbacks {
 
         // Create math board with multi-problem callback (but we'll use showSingle)
         this.mathBoard = new MathBoard(this, this.onMathComplete.bind(this));
+        this.mathBoard.setActiveProblemChangedCallback((snapshot) => {
+            this.publishRemoteMathState(snapshot);
+        });
+        this.unsubscribeRemoteCommand = this.remoteInput.onCommand((command) => {
+            this.handleRemoteCommand(command);
+        });
 
         // Speed charge bar callback: MathBoard delegates charge management to BattleScene
         this.mathBoard.setSpeedChargeCallback((charges, _type) => {
@@ -612,20 +657,29 @@ export class BattleScene extends Phaser.Scene implements BattleSceneCallbacks {
         });
         this.events.on('shutdown', () => {
             this.closeFeedbackOverlay();
+            this.events.off(Phaser.Scenes.Events.POST_UPDATE, this.followTargetIndicator, this);
+            this.unsubscribeRemoteCommand?.();
+            this.unsubscribeRemoteCommand = null;
             // Clear mastery data override so MasterySystem reverts to GameStateManager default
             MasterySystem.getInstance().setActiveData(null);
         });
 
-        // Get attack button from SceneBuilder (already has click handler bound via registerHandler)
-        const builderAttackBtn = this.sceneBuilder.get('attackBtn');
-        if (builderAttackBtn) {
-            this.attackButton = builderAttackBtn as Phaser.GameObjects.Container;
-        } else {
-            this.createAttackButton();
-        }
-
+        this.createBattleActionDock();
         this.createBlockUI();
-        this.createPotionButton();
+
+        if (this.resolvedJourneyEncounter?.boss?.tidalWave) {
+            this.depthBossHud = new UnderwaterBossHud(this);
+            this.depthPlayerMaxHp = player.maxHp;
+            this.tidalBlessing.A = hasUnderwaterBlessing(player);
+            if (this.isCoopMode && this.coopSession) {
+                this.coopSession.activatePlayerB();
+                this.tidalBlessing.B = hasUnderwaterBlessing(this.gameState.getPlayer());
+                this.coopSession.activatePlayerA();
+            }
+            this.refreshDepthBossHud();
+            this.events.on(Phaser.Scenes.Events.POST_UPDATE, this.syncDepthBossHud, this);
+            this.events.once('shutdown', () => this.events.off(Phaser.Scenes.Events.POST_UPDATE, this.syncDepthBossHud, this));
+        }
 
         // Initialize TurnManager
         this.turnManager = new TurnManager(this.battleState, this);
@@ -667,51 +721,139 @@ export class BattleScene extends Phaser.Scene implements BattleSceneCallbacks {
         return animPrefix; // Return potentially modified animPrefix
     }
 
-    private createHpBar(x: number, y: number, hp: number, maxHp: number, color: string, showHeartIcon: boolean = false): HpBar {
-        const width = 100;
-        const height = 12;
-        // Shift bar right when icon is present so icon+bar is centered as a group
-        const barOffset = showHeartIcon ? 9 : 0;
-        const container = this.add.container(x, y);
+    private createActorStatusHud(
+        hostId: string,
+        anchor: Phaser.GameObjects.Container,
+        sprite: Phaser.GameObjects.Sprite,
+        referencePoint: { x: number; y: number },
+        hp: number,
+        maxHp: number,
+        color: number,
+        kind: 'player' | 'enemy',
+        showSpeed: boolean,
+        speedTint: number | undefined,
+        referenceDisplayHeight: number,
+    ): BattleActorStatusHud {
+        const authoredHost = this.sceneBuilder.get<Phaser.GameObjects.GameObject & {
+            x: number;
+            y: number;
+            depth: number;
+            displayWidth?: number;
+            displayHeight?: number;
+        }>(hostId);
+        const defaultOffsetY = kind === 'enemy'
+            ? -121
+            : hostId.endsWith('B') ? -169 : -133;
+        const x = authoredHost?.x ?? referencePoint.x;
+        const y = authoredHost?.y ?? referencePoint.y + defaultOffsetY;
+        const depth = authoredHost?.depth ?? 80;
+        const frameWidth = authoredHost?.displayWidth || (kind === 'player' ? 150 : 118);
+        const frameHeight = authoredHost?.displayHeight || (kind === 'player' ? 34 : 28);
+        authoredHost?.destroy();
 
-        if (showHeartIcon) {
-            const heart = this.add.text(-width / 2 - 8 + barOffset, 0, '♥', {
-                fontSize: '16px',
-                fontFamily: 'Arial, sans-serif',
-                color: '#cc3333',
-                stroke: '#1a0808',
-                strokeThickness: 2,
-            }).setOrigin(0.5);
-            container.add(heart);
-        }
-
-        const bg = this.add.rectangle(barOffset, 0, width + 4, height + 4, 0x333333).setOrigin(0.5);
-        const fillColor = color === '#44cc44' ? 0x44cc44 : 0xcc4444;
-        const fill = this.add.rectangle(-width / 2 + barOffset, 0, width * (hp / maxHp), height, fillColor).setOrigin(0, 0.5);
-        const text = this.add.text(barOffset, 0, `${hp}/${maxHp}`, {
-            fontSize: '10px',
-            fontFamily: 'Arial, sans-serif',
-            color: '#ffffff',
-        }).setOrigin(0.5);
-
-        container.add([bg, fill, text]);
-        return { container, bg, fill, text };
+        return new BattleActorStatusHud(this, {
+            anchor,
+            sprite,
+            x,
+            y,
+            depth,
+            offsetX: x - referencePoint.x,
+            offsetY: y - referencePoint.y,
+            referenceDisplayHeight,
+            kind,
+            hp,
+            maxHp,
+            color,
+            showSpeed,
+            speedTint,
+            frameWidth,
+            frameHeight,
+            trackWidth: kind === 'player' ? 115 : 86,
+            trackHeight: kind === 'player' ? 9 : 7,
+            name: hostId,
+        });
     }
 
-    private updateHpBar(hpBar: HpBar, hp: number, maxHp: number): void {
-        const width = 100;
-        const percent = Math.max(0, hp / maxHp);
-        hpBar.fill.setSize(width * percent, 12);
-        hpBar.text.setText(`${Math.max(0, hp)}/${maxHp}`);
+    private updateHpBar(hpBar: BattleActorStatusHud, hp: number, maxHp: number): void {
+        hpBar.setHp(hp, maxHp);
+    }
 
-        // Color based on health percentage
-        if (percent > 0.5) {
-            hpBar.fill.setFillStyle(0x44cc44);
-        } else if (percent > 0.25) {
-            hpBar.fill.setFillStyle(0xcccc44);
-        } else {
-            hpBar.fill.setFillStyle(0xcc4444);
-        }
+    private consumeHudPoint(id: string, fallback: BattleHudPoint): BattleHudPoint {
+        const authored = this.sceneBuilder.get<Phaser.GameObjects.GameObject & {
+            x: number;
+            y: number;
+            depth: number;
+            displayWidth?: number;
+            displayHeight?: number;
+            angle?: number;
+            scaleX?: number;
+        }>(id);
+        const point: BattleHudPoint = {
+            x: authored?.x ?? fallback.x,
+            y: authored?.y ?? fallback.y,
+            depth: authored?.depth ?? fallback.depth,
+            width: authored?.displayWidth || fallback.width,
+            height: authored?.displayHeight || fallback.height,
+            rotation: authored?.angle ?? fallback.rotation,
+        };
+        authored?.destroy();
+        return point;
+    }
+
+    private createBattleActionDock(): void {
+        this.battleActionDockFrame = this.sceneBuilder.get<Phaser.GameObjects.Image>('battleActionDockFrame') ?? null;
+        const layout = {
+            potion: this.consumeHudPoint('battlePotionActionHost', {
+                x: 499, y: 664, depth: 83, width: 50, height: 50,
+            }),
+            potionBadge: this.consumeHudPoint('battlePotionBadgeHost', {
+                x: 534, y: 677, depth: 84, width: 32, height: 32,
+            }),
+            attack: this.consumeHudPoint('battleSwordActionHost', {
+                x: 640, y: 648, depth: 84, width: 84, height: 84,
+            }),
+            pet: this.consumeHudPoint('battlePetActionHost', {
+                x: 782, y: 660, depth: 83, width: 60, height: 60,
+            }),
+            petBadge: this.consumeHudPoint('battlePetBadgeHost', {
+                x: 822, y: 677, depth: 84, width: 32, height: 32,
+            }),
+        };
+        this.battleActionDock = new BattleActionDock(this, layout, {
+            onAttack: () => this.onAttackClicked(),
+            onPotion: () => this.usePotion(),
+            onPet: () => this.onPetAttackClicked(),
+        });
+        this.attackButton = this.battleActionDock.attackRoot;
+        this.potionButton = this.battleActionDock.potionRoot;
+        this.petAttackButton = this.battleActionDock.petRoot;
+        this.renderBattleActionDock();
+    }
+
+    private renderBattleActionDock(): void {
+        if (!this.battleActionDock || !this.battleState) return;
+        const phase = this.battleState.phase;
+        const visible = phase !== 'victory' && phase !== 'defeat';
+        const isPlayerTurn = phase === 'player_turn' || phase === 'player_b_turn';
+        const isPetTurn = phase === 'pet_turn' || phase === 'pet_b_turn';
+        const activeB = phase.includes('_b_')
+            || (this.isCoopMode && this.coopSession?.getActivePlayer() === 'B');
+        const petDef = activeB ? this.equippedPetBDef : this.equippedPetDef;
+        const petSprite = activeB ? this.petBSprite : this.petSprite;
+        const player = this.gameState.getPlayer();
+
+        this.battleActionDockFrame?.setVisible(visible);
+        this.battleActionDock.render({
+            visible,
+            attackEnabled: isPlayerTurn,
+            attackEmphasized: isPlayerTurn,
+            potionEnabled: isPlayerTurn && !this.mockMode && player.potions > 0,
+            potionCount: this.mockMode ? 0 : player.potions,
+            petEnabled: isPetTurn,
+            petTexture: petDef?.spriteKey ?? null,
+            petFrame: petSprite?.frame?.name ?? 0,
+            petDamage: petDef?.damageMultiplier ?? 0,
+        });
     }
 
     private createPetCompanion(player: { activePet: string | null }, petX: number, petY: number): void {
@@ -720,6 +862,7 @@ export class BattleScene extends Phaser.Scene implements BattleSceneCallbacks {
         this.petSprite = null;
         this.equippedPetDef = null;
 
+        if (this.mockMode) return;
         if (!player.activePet) return;
 
         // Get pet definition
@@ -755,7 +898,7 @@ export class BattleScene extends Phaser.Scene implements BattleSceneCallbacks {
      * Co-op: Create Player B's hero and pet.
      * Swaps to Player B's context, reads their data, creates sprites, swaps back.
      */
-    private createPlayerBHero(spawnPoints: any): void {
+    private createPlayerBHero(spawnPoints: any, referenceSpawnPoints: any): void {
         if (!this.coopSession) return;
 
         // Swap to Player B to read their data
@@ -783,24 +926,22 @@ export class BattleScene extends Phaser.Scene implements BattleSceneCallbacks {
         this.heroB = this.add.sprite(0, 0, this.heroBSpriteConfig.idleTexture)
             .setScale(heroScale)
             .play(this.heroBSpriteConfig.idleAnim);
-        this.heroBHpBar = this.createHpBar(0, -90, playerB.hp, playerB.maxHp, '#4488cc', true);
-        this.speedChargeBarB = new SpeedChargeBar(this, 0, -115);
-        this.heroBContainer.add([this.heroB, this.heroBHpBar.container, this.speedChargeBarB.getContainer()]);
-
-        // Name labels
-        const nameA = this.add.text(this.heroContainer.x, this.heroContainer.y - 130, this.gameState.getPlayer().name || 'Hráč 1', {
-            fontSize: '14px', fontFamily: 'Arial, sans-serif',
-            color: '#44cc44', fontStyle: 'bold',
-            stroke: '#000000', strokeThickness: 2,
-        }).setOrigin(0.5).setDepth(BattleScene.NAME_LABEL_DEPTH);
-        // We need Player A's name — but we're in B's context now. Read from the label we just...
-        // Actually let's set A's label after swapping back.
-
-        const nameBLabel = this.add.text(heroBX, heroBY - 130, playerB.name || 'Hráč 2', {
-            fontSize: '14px', fontFamily: 'Arial, sans-serif',
-            color: '#4488cc', fontStyle: 'bold',
-            stroke: '#000000', strokeThickness: 2,
-        }).setOrigin(0.5).setDepth(BattleScene.NAME_LABEL_DEPTH);
+        this.heroBContainer.add(this.heroB);
+        const referencePlayerB = referenceSpawnPoints?.playerB ?? { x: 340, y: 539 };
+        this.heroBHpBar = this.createActorStatusHud(
+            'battlePlayerStatusHostB',
+            this.heroBContainer,
+            this.heroB,
+            referencePlayerB,
+            playerB.hp,
+            playerB.maxHp,
+            0x57cfea,
+            'player',
+            true,
+            0x72ddff,
+            270,
+        );
+        this.speedChargeBarB = this.heroBHpBar.speedChargeBar;
 
         // Create Player B's pet — use spawn points if available, else offset from hero
         const petBX = spawnPoints?.petB?.x ?? (heroBX - 60);
@@ -811,12 +952,95 @@ export class BattleScene extends Phaser.Scene implements BattleSceneCallbacks {
         this.coopSession.activatePlayerA();
         const playerA = this.gameState.getPlayer();
 
-        // Fix Player A's name label (we created it while in B's context)
-        nameA.setText(playerA.name || 'Hráč 1');
-
         // Also store Player A's battle HP in coop session
         this.coopSession.playerABattleHp = this.battleState.playerHp;
         this.coopSession.playerAMaxHp = playerA.maxHp;
+    }
+
+    private createPreparationIndicators(): void {
+        const host = this.consumeHudPoint('battlePreparationHost', {
+            x: 96,
+            y: 640,
+            depth: 80,
+            width: 112,
+            height: 116,
+        });
+        this.preparationIndicatorA = new BattlePreparationHud(this, {
+            ...host,
+            name: 'battlePreparationStatusA',
+        });
+        this.renderPreparationIndicator(this.preparationIndicatorA, this.gameState.getPlayer());
+
+        if (!this.isCoopMode || !this.coopSession) return;
+
+        this.preparationIndicatorB = new BattlePreparationHud(this, {
+            ...host,
+            name: 'battlePreparationStatusB',
+        });
+
+        this.coopSession.activatePlayerB();
+        this.renderPreparationIndicator(this.preparationIndicatorB, this.gameState.getPlayer());
+        this.coopSession.activatePlayerA();
+        this.syncPreparationIndicatorVisibility();
+    }
+
+    private renderPreparationIndicator(
+        indicator: BattlePreparationHud | null,
+        player: PlayerState,
+    ): void {
+        if (!indicator) return;
+        const state = PreparationSystem.getState(player);
+        indicator.setState(state.kind, state.charges, false);
+    }
+
+    private refreshActivePreparationIndicator(): void {
+        const activeIndicator = this.isCoopMode && this.coopSession?.getActivePlayer() === 'B'
+            ? this.preparationIndicatorB
+            : this.preparationIndicatorA;
+        this.renderPreparationIndicator(activeIndicator, this.gameState.getPlayer());
+        this.syncPreparationIndicatorVisibility();
+    }
+
+    private syncPreparationIndicatorVisibility(): void {
+        const activeB = this.isCoopMode && this.coopSession?.getActivePlayer() === 'B';
+        this.preparationIndicatorA?.setVisible(!activeB);
+        this.preparationIndicatorB?.setVisible(Boolean(activeB));
+    }
+
+    private showPreparationEffect(kind: PreparationKind, bonus: number): void {
+        const isSword = kind === 'sword';
+        const effectText = this.add.text(
+            640,
+            135,
+            isSword ? `OSTRÝ MEČ  +${bonus}` : `NABITÝ ŠTÍT  +${bonus}`,
+            {
+                fontSize: '27px',
+                fontFamily: 'Palatino Linotype, Book Antiqua, Georgia, serif',
+                color: isSword ? '#ffd37a' : '#71e5ff',
+                fontStyle: 'bold',
+                stroke: '#1a1008',
+                strokeThickness: 5,
+            },
+        ).setOrigin(0.5).setDepth(210).setAlpha(0).setScale(0.72);
+
+        this.tweens.add({
+            targets: effectText,
+            alpha: 1,
+            scale: 1,
+            y: 115,
+            duration: 240,
+            ease: 'Back.easeOut',
+            onComplete: () => {
+                this.tweens.add({
+                    targets: effectText,
+                    alpha: 0,
+                    y: 85,
+                    duration: 650,
+                    delay: 420,
+                    onComplete: () => effectText.destroy(),
+                });
+            },
+        });
     }
 
     /**
@@ -955,7 +1179,7 @@ export class BattleScene extends Phaser.Scene implements BattleSceneCallbacks {
         this.mathBoard.hide();
         this.hideActiveHighlight();
 
-        if (this.petMathProblem) {
+        if (this.petMathProblem && !this.mockMode) {
             this.mathEngine.recordResultForProblem(this.petMathProblem.id, isCorrect);
 
             // Record to mastery system if this was a mastery problem
@@ -967,6 +1191,7 @@ export class BattleScene extends Phaser.Scene implements BattleSceneCallbacks {
                     'battle_pet'
                 );
             }
+            if (this.isCoopMode) this.coopSession?.persistActiveMasteryProgress();
         }
 
         // Track wrong answers for arena perfect wave calculation
@@ -1033,10 +1258,7 @@ export class BattleScene extends Phaser.Scene implements BattleSceneCallbacks {
         let damage = this.petMathProblem.damageMultiplier || 1;
         // Apply catacomb mastery upgrades to catacomb pets
         if (activePet.def.unlockedByEnemy?.startsWith('catacomb_creature_')) {
-            const bandId = activePet.def.unlockedByEnemy.slice(-1);
-            const player = this.gameState.getPlayer();
-            const upgrades = player.catacombPetUpgrades?.[bandId] ?? 0;
-            damage += upgrades;
+            damage += getCatacombFoxBonus(this.gameState.getPlayer());
         }
         const targetIdx = this.petTargetIndex;
 
@@ -1238,13 +1460,15 @@ export class BattleScene extends Phaser.Scene implements BattleSceneCallbacks {
     /**
      * Apply damage from pet to enemy
      */
-    private applyPetDamageToEnemy(targetIdx: number, damage: number): void {
+    private applyPetDamageToEnemy(targetIdx: number, rawDamage: number): void {
         const enemy = this.battleState.enemies[targetIdx];
         const enemyContainer = this.enemyContainers[targetIdx];
         const enemySprite = this.enemies[targetIdx];
         const animPrefix = this.enemyAnimPrefixes[targetIdx];
+        const damage = resolveDamageAfterDefense(rawDamage, enemy.defense).damage;
 
         enemy.hp -= damage;
+        if (damage > 0) sfx(this, 'combat.hit');
 
         // Check for Last Stand ability (boss survives with 1 HP once)
         if (this.isBoss && enemy.hp <= 0 &&
@@ -1414,18 +1638,52 @@ export class BattleScene extends Phaser.Scene implements BattleSceneCallbacks {
         this.debugger = new SceneDebugger(this, 'BattleScene');
 
         // Create pause menu (ESC key to toggle)
-        this.pauseMenu = new PauseMenu(this);
+        this.pauseMenu = new PauseMenu(this, undefined, {
+            variant: 'medieval',
+            showTvPairing: true,
+            showFullscreen: true,
+            layout: this.consumePauseMenuLayout(),
+        });
 
         // Visible pause button (for mobile + desktop convenience)
-        const pauseEl = this.sceneBuilder.get('pauseButton') as Phaser.GameObjects.Container | undefined;
-        const pauseBtn = this.add.text(
-            pauseEl?.x ?? 1240, pauseEl?.y ?? 30, '\u23f8',
-            { fontSize: '36px', color: '#ffffff' }
-        ).setOrigin(0.5)
-            .setInteractive({ useHandCursor: true })
-            .setDepth(pauseEl?.depth ?? 500)
+        const builtPause = this.sceneBuilder.get('pauseButton');
+        let pauseBtn: Phaser.GameObjects.Image;
+        if (builtPause instanceof Phaser.GameObjects.Image) {
+            pauseBtn = builtPause;
+        } else {
+            const x = (builtPause as any)?.x ?? 1225;
+            const y = (builtPause as any)?.y ?? 54;
+            const depth = (builtPause as any)?.depth ?? 95;
+            builtPause?.destroy();
+            pauseBtn = this.add.image(x, y, 'battle-hud-pause-v1')
+                .setDisplaySize(96, 99)
+                .setDepth(depth);
+        }
+        const hoverHost = this.consumeHudPoint('battlePauseHoverHost', {
+            x: pauseBtn.x,
+            y: pauseBtn.y,
+            depth: pauseBtn.depth - 1,
+            width: 82,
+            height: 82,
+        });
+        const hoverRadius = Math.min(hoverHost.width ?? 82, hoverHost.height ?? 82) / 2;
+        const hoverRing = this.add.circle(hoverHost.x, hoverHost.y, hoverRadius, 0xffd271, 0)
+            .setStrokeStyle(3, 0xffedaa, 1)
+            .setAlpha(0)
+            .setDepth(hoverHost.depth)
+            .setBlendMode(Phaser.BlendModes.ADD)
             .setScrollFactor(0);
-        pauseBtn.on('pointerdown', () => this.pauseMenu.toggle());
+        pauseBtn.setInteractive({ useHandCursor: true }).setScrollFactor(0);
+        pauseBtn.on('pointerover', () => hoverRing.setAlpha(0.5));
+        pauseBtn.on('pointerout', () => {
+            hoverRing.setAlpha(0);
+            pauseBtn.setAlpha(1);
+        });
+        pauseBtn.on('pointerdown', () => pauseBtn.setAlpha(0.76));
+        pauseBtn.on('pointerup', () => {
+            pauseBtn.setAlpha(1);
+            this.pauseMenu.toggle();
+        });
 
         // Register containers (sprite + HP bar move together)
         this.debugger.register('hero', this.heroContainer);
@@ -1443,6 +1701,46 @@ export class BattleScene extends Phaser.Scene implements BattleSceneCallbacks {
 
         // Additional battle debug keys (not handled by SceneDebugger)
         this.input.keyboard?.on('keydown-K', () => this.debugKillEnemy());
+    }
+
+    private consumePauseMenuLayout(): PauseMenuLayout {
+        const consume = (
+            id: string,
+            fallback: { x: number; y: number; depth: number; width: number; height: number },
+        ) => {
+            const host = this.consumeHudPoint(id, fallback);
+            return {
+                x: host.x,
+                y: host.y,
+                depth: host.depth,
+                width: host.width ?? fallback.width,
+                height: host.height ?? fallback.height,
+            };
+        };
+
+        return {
+            overlay: consume('battlePauseOverlayHost', {
+                x: 640, y: 360, depth: 9998, width: 1280, height: 720,
+            }),
+            panel: consume('battlePausePanelHost', {
+                x: 640, y: 360, depth: 9999, width: 430, height: 460,
+            }),
+            title: consume('battlePauseTitleHost', {
+                x: 640, y: 180, depth: 10000, width: 320, height: 50,
+            }),
+            resumeButton: consume('battlePauseResumeHost', {
+                x: 640, y: 260, depth: 10000, width: 300, height: 52,
+            }),
+            fullscreenButton: consume('battlePauseFullscreenHost', {
+                x: 640, y: 330, depth: 10000, width: 300, height: 52,
+            }),
+            tvButton: consume('battlePauseTvHost', {
+                x: 640, y: 400, depth: 10000, width: 300, height: 52,
+            }),
+            quitButton: consume('battlePauseQuitHost', {
+                x: 640, y: 470, depth: 10000, width: 300, height: 52,
+            }),
+        };
     }
 
     private debugInstantWin(): void {
@@ -1495,142 +1793,81 @@ export class BattleScene extends Phaser.Scene implements BattleSceneCallbacks {
 
         this.battleState.selectedEnemyIndex = index;
         this.updateTargetIndicator();
+        this.publishRemoteBattleTurnState('Tvůj tah', 'Vyber cíl a spusť útok.');
     }
 
     private updateTargetIndicator(): void {
         const idx = this.battleState.selectedEnemyIndex;
-        const container = this.enemyContainers[idx];
-
-        // Position sword above the enemy's health bar
-        const indicatorY = container.y + (container.getData('hpBarY') ?? -80) - 25;
-        this.targetIndicator.setPosition(container.x, indicatorY);
+        this.enemyHpBars.forEach((bar, index) => bar.setSelected(index === idx));
 
         // Hide indicator if target is dead
         if (this.battleState.enemies[idx].hp <= 0) {
             this.targetIndicator.setVisible(false);
         } else {
             this.targetIndicator.setVisible(true);
+            this.followTargetIndicator();
         }
+    }
+
+    private followTargetIndicator(): void {
+        if (!this.targetIndicator?.visible || !this.battleState) return;
+        const idx = this.battleState.selectedEnemyIndex;
+        const status = this.enemyHpBars[idx];
+        if (!status || this.battleState.enemies[idx]?.hp <= 0) return;
+        const bob = Math.sin(this.time.now / 150) * 4;
+        this.targetIndicator.setPosition(
+            status.root.x,
+            status.getTopY() - this.targetIndicator.displayHeight / 2 - 3 + bob,
+        );
     }
 
     private createBlockUI(): void {
-        // Centered for 1280x720
-        this.blockUI = this.add.container(640, 80);
+        const host = this.consumeHudPoint('battleBlockBannerHost', {
+            x: 640,
+            y: 82,
+            depth: 90,
+            width: 380,
+            height: 72,
+        });
+        this.blockUI = this.add.container(host.x, host.y);
         this.blockUI.setVisible(false);
-        this.blockUI.setDepth(90);
+        this.blockUI.setDepth(host.depth);
 
-        const bg = this.add.rectangle(0, 0, 340, 70, 0x000000, 0.8)
-            .setStrokeStyle(2, 0x4488ff);
-        this.blockUI.add(bg);
+        const bg = this.add.graphics();
+        bg.fillStyle(0x17110d, 0.96);
+        bg.fillRoundedRect(-190, -36, 380, 72, 18);
+        bg.lineStyle(4, 0x80542d, 1);
+        bg.strokeRoundedRect(-190, -36, 380, 72, 18);
+        bg.lineStyle(1, 0xd49b54, 0.85);
+        bg.strokeRoundedRect(-182, -28, 364, 56, 13);
+        const shield = this.add.image(-155, 0, 'prep-shield-active-v2')
+            .setDisplaySize(54, 54);
+        this.blockUI.add([bg, shield]);
 
-        this.blockDamageText = this.add.text(0, -20, 'ÚTOK: 5 DMG', {
-            fontSize: '16px',
-            fontFamily: 'Arial, sans-serif',
-            color: '#ff6666',
+        this.blockDamageText = this.add.text(-108, -13, 'ÚTOK: 5 DMG', {
+            fontSize: '17px',
+            fontFamily: 'Palatino Linotype, Book Antiqua, Georgia, serif',
+            color: '#ff9a86',
             fontStyle: 'bold',
-        }).setOrigin(0.5);
+            stroke: '#221108',
+            strokeThickness: 3,
+        }).setOrigin(0, 0.5);
         this.blockUI.add(this.blockDamageText);
 
-        this.blockTimerText = this.add.text(-100, 10, 'ČAS: 10S', {
-            fontSize: '14px',
-            fontFamily: 'Arial, sans-serif',
-            color: '#ffffff',
+        this.blockTimerText = this.add.text(-108, 14, 'ČAS: 10S', {
+            fontSize: '13px',
+            fontFamily: 'Palatino Linotype, Book Antiqua, Georgia, serif',
+            color: '#f6d8a1',
         }).setOrigin(0, 0.5);
         this.blockUI.add(this.blockTimerText);
 
-        this.blockAttemptsText = this.add.text(30, 10, 'BLOKUJI: 0 DMG', {
-            fontSize: '14px',
-            fontFamily: 'Arial, sans-serif',
-            color: '#aaffaa',
+        this.blockAttemptsText = this.add.text(18, 14, 'BLOKUJI: 0 DMG', {
+            fontSize: '13px',
+            fontFamily: 'Palatino Linotype, Book Antiqua, Georgia, serif',
+            color: '#9cf4ff',
+            fontStyle: 'bold',
         }).setOrigin(0, 0.5);
         this.blockUI.add(this.blockAttemptsText);
-    }
-
-    private createAttackButton(): void {
-        // Centered for 1280x720
-        const button = this.add.rectangle(640, 660, 150, 50, 0x44aa44)
-            .setInteractive({ useHandCursor: true });
-
-        const text = this.add.text(640, 660, 'ÚTOK', {
-            fontSize: '24px',
-            fontFamily: 'Arial, sans-serif',
-            color: '#ffffff',
-            fontStyle: 'bold',
-        }).setOrigin(0.5);
-
-        this.attackButton = this.add.container(0, 0, [button, text]);
-
-        button.on('pointerdown', () => this.onAttackClicked());
-        button.on('pointerover', () => button.setFillStyle(0x55bb55));
-        button.on('pointerout', () => button.setFillStyle(0x44aa44));
-    }
-
-    private createPotionButton(): void {
-        const player = this.gameState.getPlayer();
-
-        // Get position from sceneBuilder (fallback to left of attack button)
-        const potionBtnEl = this.sceneBuilder.get('potionBtn');
-        const btnX = potionBtnEl?.x ?? 480;
-        const btnY = potionBtnEl?.y ?? 660;
-        const btnDepth = this.sceneBuilder.getLayoutOverride('potionBtn')?.depth ?? 50;
-
-        this.potionButton = this.add.container(btnX, btnY);
-        this.potionButton.setDepth(btnDepth);
-
-        const hasPotion = player.potions > 0;
-        const btnColor = hasPotion ? 0x8844aa : 0x444444;
-
-        const bg = this.add.rectangle(0, 0, 100, 50, btnColor)
-            .setStrokeStyle(2, 0xffffff);
-
-        // Potion icon
-        const icon = this.add.text(-25, 0, '🧪', {
-            fontSize: '24px'
-        }).setOrigin(0.5);
-
-        // Count text
-        const countText = this.add.text(20, 0, hasPotion ? '1' : '0', {
-            fontSize: '20px',
-            fontFamily: 'Arial, sans-serif',
-            color: hasPotion ? '#ffffff' : '#666666',
-            fontStyle: 'bold'
-        }).setOrigin(0.5);
-
-        this.potionButton.add([bg, icon, countText]);
-
-        if (hasPotion) {
-            bg.setInteractive({ useHandCursor: true })
-                .on('pointerover', () => bg.setFillStyle(0xaa66cc))
-                .on('pointerout', () => bg.setFillStyle(0x8844aa))
-                .on('pointerdown', () => this.usePotion());
-        }
-
-        // Hide initially - show during player_turn
-        this.potionButton.setVisible(false);
-    }
-
-    private createPetAttackButton(): void {
-        // Same position as attack button - centered at 640, 660
-        this.petAttackButton = this.add.container(640, 660);
-        this.petAttackButton.setDepth(50);
-
-        const petBtnBg = this.add.rectangle(0, 0, 150, 50, 0x44aa44)  // Green background
-            .setStrokeStyle(2, 0xffffff)
-            .setInteractive({ useHandCursor: true });
-
-        const petBtnText = this.add.text(0, 0, '🐾 ÚTOK', {
-            fontSize: '22px',
-            fontFamily: 'Arial, sans-serif',
-            color: '#ffffff',
-            fontStyle: 'bold',
-        }).setOrigin(0.5);
-
-        this.petAttackButton.add([petBtnBg, petBtnText]);
-        this.petAttackButton.setVisible(false);
-
-        petBtnBg.on('pointerdown', () => this.onPetAttackClicked());
-        petBtnBg.on('pointerover', () => petBtnBg.setFillStyle(0x55bb55));
-        petBtnBg.on('pointerout', () => petBtnBg.setFillStyle(0x44aa44));
     }
 
     private onPetAttackClicked(): void {
@@ -1651,20 +1888,21 @@ export class BattleScene extends Phaser.Scene implements BattleSceneCallbacks {
 
         this.petTargetIndex = index;
         this.updatePetTargetIndicator();
+        this.publishRemoteBattleTurnState('Tah mazlíčka', 'Vyber cíl a spusť útok mazlíčka.');
     }
 
     private updatePetTargetIndicator(): void {
         const idx = this.petTargetIndex;
         const container = this.enemyContainers[idx];
+        const status = this.enemyHpBars[idx];
 
-        if (!container || this.battleState.enemies[idx].hp <= 0) {
+        if (!container || !status || this.battleState.enemies[idx].hp <= 0) {
             this.hidePetTargetIndicator();
             return;
         }
 
-        // Position above enemy (same height as player indicator)
-        const baseY = container.y + (container.getData('hpBarY') ?? -80) - 25;
-        this.petTargetIndicator?.setPosition(container.x, baseY);
+        const baseY = status.getTopY() - (this.petTargetIndicator?.displayHeight ?? 52) / 2 - 3;
+        this.petTargetIndicator?.setPosition(status.root.x, baseY);
         this.petTargetIndicator?.setVisible(true);
 
         // Restart bobbing tween with absolute position
@@ -1710,11 +1948,11 @@ export class BattleScene extends Phaser.Scene implements BattleSceneCallbacks {
             this.updateHpBar(this.heroHpBar, this.battleState.playerHp, player.maxHp);
         }
 
+        sfx(this, 'item.potion');
         // Save state (potion used)
         this.gameState.save();
-
-        // Hide potion button (no more potions)
-        this.potionButton.setVisible(false);
+        this.renderBattleActionDock();
+        this.publishRemoteBattleTurnState(isPlayerB ? 'Tah hráče 2' : 'Tvůj tah', 'Lektvar použit.');
 
         // Visual feedback
         const targetContainer = isPlayerB ? this.heroBContainer! : this.heroContainer;
@@ -1736,9 +1974,10 @@ export class BattleScene extends Phaser.Scene implements BattleSceneCallbacks {
         });
 
         // Green flash on hero
-        this.hero.setTint(0x44ff44);
+        const healedHero = isPlayerB && this.heroB ? this.heroB : this.hero;
+        healedHero.setTint(0x44ff44);
         this.time.delayedCall(200, () => {
-            this.hero.clearTint();
+            healedHero.clearTint();
         });
     }
 
@@ -1747,12 +1986,15 @@ export class BattleScene extends Phaser.Scene implements BattleSceneCallbacks {
      */
     private setPhase(phase: BattlePhase): void {
         this.turnManager.setPhase(phase);
+        this.syncPreparationIndicatorVisibility();
+        this.renderBattleActionDock();
     }
 
     // --- BattleSceneCallbacks implementation ---
     // These are called by TurnManager when entering each phase.
 
     onEnterPlayerTurn(): void {
+        voice(this, 'vo.battle.intro', true);
         // Swap to Player A's context
         if (this.isCoopMode && this.coopSession) {
             this.coopSession.activatePlayerA();
@@ -1764,21 +2006,25 @@ export class BattleScene extends Phaser.Scene implements BattleSceneCallbacks {
         }
         this.attackButton.setVisible(true);
         const playerForTurn = this.gameState.getPlayer();
-        this.potionButton.setVisible(playerForTurn.potions > 0);
+        this.potionButton.setVisible(!this.mockMode && playerForTurn.potions > 0);
         this.hideActiveHighlight();
 
         // Retarget indicator to next alive enemy (fixes stuck indicator on dead enemy)
         this.getCurrentEnemyIndex();
         this.updateTargetIndicator();
+        this.publishRemoteBattleTurnState('Tvůj tah', 'Vyber cíl a spusť útok.');
     }
 
     onEnterPlayerMath(): void {
+        gameAudio().stopVoice();
         this.attackButton.setVisible(false);
         this.potionButton.setVisible(false);
         // Ensure MathEngine uses the correct player's level and stats
         this.registry.set('playerLevel', this.gameState.getPlayer().level);
-        this.mathEngine.reloadStats();
-        this.mathEngine.initializeLevelPool();
+        if (!this.mockMode) {
+            this.mathEngine.reloadStats();
+            this.mathEngine.initializeLevelPool();
+        }
         if (this.isCoopMode) {
             const p = this.gameState.getPlayer();
             console.log(`[MATH-DEBUG] Player A math: name=${p.name}, level=${p.level}, registryLevel=${this.registry.get('playerLevel')}`);
@@ -1789,15 +2035,19 @@ export class BattleScene extends Phaser.Scene implements BattleSceneCallbacks {
 
     onEnterPlayerAttack(): void {
         this.hideCoopTurnLabel();
+        this.publishRemoteWaitingState('Útok', 'Sleduj TV obrazovku.');
         this.playHeroAttack();
     }
 
     onEnterPlayerMiss(): void {
         this.hideCoopTurnLabel();
+        this.publishRemoteWaitingState('Vedle', 'Sleduj TV obrazovku.');
         this.playHeroMiss();
     }
 
     onEnterPetTurn(): void {
+        const petId = this.equippedPetDef?.id ?? '';
+        sfx(this, petId.includes('slime') ? 'creature.slime' : petId.includes('catacomb') ? 'creature.fox' : 'creature.forest');
         // Swap to Player A for A's pet
         if (this.isCoopMode && this.coopSession) {
             this.coopSession.activatePlayerA();
@@ -1814,6 +2064,7 @@ export class BattleScene extends Phaser.Scene implements BattleSceneCallbacks {
         this.showActiveHighlight(this.petContainer.x, this.petContainer.y + 30, 'green');
         this.petTargetIndex = this.battleState.enemies.findIndex(e => e.hp > 0);
         this.updatePetTargetIndicator();
+        this.publishRemoteBattleTurnState('Tah mazlíčka', 'Vyber cíl a spusť útok mazlíčka.');
     }
 
     onEnterPetMath(): void {
@@ -1826,6 +2077,8 @@ export class BattleScene extends Phaser.Scene implements BattleSceneCallbacks {
     }
 
     onEnterPetAttack(): void {
+        sfx(this, 'combat.spell');
+        this.publishRemoteWaitingState('Mazlíček útočí', 'Sleduj TV obrazovku.');
         this.executePetAttack();
     }
 
@@ -1837,7 +2090,7 @@ export class BattleScene extends Phaser.Scene implements BattleSceneCallbacks {
 
         this.attackButton.setVisible(true);
         const playerB = this.gameState.getPlayer();
-        this.potionButton.setVisible(playerB.potions > 0);
+        this.potionButton.setVisible(!this.mockMode && playerB.potions > 0);
 
         // Highlight Player B's hero
         if (this.heroBContainer) {
@@ -1847,6 +2100,7 @@ export class BattleScene extends Phaser.Scene implements BattleSceneCallbacks {
         // Retarget indicator to next alive enemy (fixes stuck indicator on dead enemy)
         this.getCurrentEnemyIndex();
         this.updateTargetIndicator();
+        this.publishRemoteBattleTurnState('Tah hráče 2', 'Vyber cíl a spusť útok.');
     }
 
     onEnterPlayerBMath(): void {
@@ -1862,11 +2116,13 @@ export class BattleScene extends Phaser.Scene implements BattleSceneCallbacks {
 
     onEnterPlayerBAttack(): void {
         this.hideCoopTurnLabel();
+        this.publishRemoteWaitingState('Útok hráče 2', 'Sleduj TV obrazovku.');
         this.playHeroBAttack();
     }
 
     onEnterPlayerBMiss(): void {
         this.hideCoopTurnLabel();
+        this.publishRemoteWaitingState('Hráč 2 minul', 'Sleduj TV obrazovku.');
         this.playHeroBMiss();
     }
 
@@ -1885,6 +2141,7 @@ export class BattleScene extends Phaser.Scene implements BattleSceneCallbacks {
         this.showActiveHighlight(this.petBContainer.x, this.petBContainer.y + 30, 'green');
         this.petTargetIndex = this.battleState.enemies.findIndex(e => e.hp > 0);
         this.updatePetTargetIndicator();
+        this.publishRemoteBattleTurnState('Tah mazlíčka hráče 2', 'Vyber cíl a spusť útok.');
     }
 
     onEnterPetBMath(): void {
@@ -1897,11 +2154,14 @@ export class BattleScene extends Phaser.Scene implements BattleSceneCallbacks {
     }
 
     onEnterPetBAttack(): void {
+        sfx(this, 'combat.spell');
+        this.publishRemoteWaitingState('Mazlíček útočí', 'Sleduj TV obrazovku.');
         this.executePetAttack();
     }
 
     onEnterEnemyTurn(): void {
         this.hideActiveHighlight();
+        this.publishRemoteWaitingState('Útok nepřítele', 'Sleduj TV obrazovku.');
 
         // Co-op: determine which player all enemies attack this round
         if (this.isCoopMode && this.coopSession) {
@@ -1920,17 +2180,25 @@ export class BattleScene extends Phaser.Scene implements BattleSceneCallbacks {
         if (this.currentAttackingEnemyIndex >= 0) {
             this.time.delayedCall(500, () => this.playEnemyAttack());
         } else {
-            this.turnManager.setPhase('player_turn');
+            this.setPhase('player_turn');
         }
     }
 
     onEnterVictory(): void {
+        gameAudio().stopVoice();
+        // The 2.48 s victory tail continues across the existing 2 s scene transition.
+        sfx(gameAudio(), 'reward.victory');
+        this.time.delayedCall(600, () => voice(this, 'vo.common.complete', true));
         this.hideActiveHighlight();
+        this.publishRemoteWaitingState('Vítězství', 'Sleduj TV obrazovku.');
         this.onVictory();
     }
 
     onEnterDefeat(): void {
+        gameAudio().stopVoice();
+        sfx(this, 'combat.retreat');
         this.hideActiveHighlight();
+        this.publishRemoteWaitingState('Porážka', 'Sleduj TV obrazovku.');
         this.onDefeat();
     }
 
@@ -1958,6 +2226,125 @@ export class BattleScene extends Phaser.Scene implements BattleSceneCallbacks {
 
     isCoopModeActive(): boolean {
         return this.isCoopMode;
+    }
+
+    private isRemoteSessionActive(): boolean {
+        return this.remoteInput.getRoom() !== null;
+    }
+
+    private handleRemoteCommand(command: RemoteCommand): void {
+        if (!this.isRemoteSessionActive()) return;
+
+        switch (command.type) {
+            case 'attack':
+                if (this.battleState.phase === 'pet_turn' || this.battleState.phase === 'pet_b_turn') {
+                    this.onPetAttackClicked();
+                } else {
+                    this.onAttackClicked();
+                }
+                break;
+            case 'answerChoice':
+                this.mathBoard.submitChoice(command.index);
+                break;
+            case 'selectEnemy':
+                if (this.battleState.phase === 'pet_turn' || this.battleState.phase === 'pet_b_turn') {
+                    this.selectPetTarget(command.index);
+                } else {
+                    this.selectTarget(command.index);
+                }
+                break;
+            case 'usePotion':
+                this.usePotion();
+                break;
+            case 'continue':
+                this.remoteFeedbackDismiss?.();
+                break;
+            case 'back':
+                this.scene.start('TvPairingScene');
+                break;
+            case 'startTrainingBattle':
+                break;
+        }
+    }
+
+    private publishRemoteBattleTurnState(title: string, subtitle?: string): void {
+        if (!this.isRemoteSessionActive()) return;
+
+        const activePetTurn = this.battleState.phase === 'pet_turn' || this.battleState.phase === 'pet_b_turn';
+        const selectedIndex = activePetTurn ? this.petTargetIndex : this.battleState.selectedEnemyIndex;
+        const enemies = this.battleState.enemies.map((enemy, index) => ({
+            index,
+            name: enemy.name,
+            hp: enemy.hp,
+            maxHp: enemy.maxHp,
+            selected: index === selectedIndex,
+        }));
+
+        const actions: RemoteAction[] = [
+            {
+                id: 'attack',
+                label: activePetTurn ? 'Mazlíček útočí' : 'ÚTOK',
+                command: { type: 'attack' },
+            },
+        ];
+
+        if (!activePetTurn && this.gameState.getPlayer().potions > 0) {
+            actions.push({
+                id: 'usePotion',
+                label: 'Použít lektvar',
+                command: { type: 'usePotion' },
+            });
+        }
+
+        this.remoteInput.publishState({
+            screen: 'battleTurn',
+            title,
+            subtitle,
+            enemies,
+            actions,
+        });
+    }
+
+    private publishRemoteMathState(snapshot: MathBoardRemoteSnapshot | null): void {
+        if (!this.isRemoteSessionActive()) return;
+
+        if (!snapshot) {
+            this.publishRemoteWaitingState('Sleduj TV', 'Čekám na další herní krok.');
+            return;
+        }
+
+        this.remoteInput.publishState({
+            screen: 'math',
+            title: this.mathBoardContext === 'block' ? 'Blokuj útok' : 'Vyber odpověď',
+            subtitle: this.coopSession?.getActivePlayer() === 'B' ? 'Hráč 2' : undefined,
+            problem: snapshot.problem,
+            choices: snapshot.choices,
+        });
+    }
+
+    private publishRemoteFeedbackState(title: string, subtitle?: string, actionLabel = 'Pokračovat'): void {
+        if (!this.isRemoteSessionActive()) return;
+        this.remoteInput.publishState({
+            screen: 'feedback',
+            title,
+            subtitle,
+            actions: [
+                {
+                    id: 'continue',
+                    label: actionLabel,
+                    command: { type: 'continue' },
+                },
+            ],
+        });
+    }
+
+    private publishRemoteWaitingState(title: string, subtitle?: string): void {
+        if (!this.isRemoteSessionActive()) return;
+        this.remoteInput.publishState({
+            screen: 'waiting',
+            title,
+            subtitle,
+        });
     }
 
     /**
@@ -2024,26 +2411,13 @@ export class BattleScene extends Phaser.Scene implements BattleSceneCallbacks {
         return normalized;
     }
 
-    /** Advance the session-only co-op mastery tracks without touching slot saves. */
+    /** Advance and persist each co-op player's real mastery track. */
     private applyCoopSessionPromotions(): Array<{ type: string; targetId: string }> {
         if (!this.isCoopMode || !this.coopSession) return [];
-        const promotions: Array<{ type: string; targetId: string }> = [];
-        const masterySystem = MasterySystem.getInstance();
-
-        masterySystem.setActiveData(this.coopMasteryA!);
-        promotions.push(...masterySystem.applyCoopAutoPromotions(true).map(p => ({
-            type: p.type,
-            targetId: String(p.targetId),
-        })));
-
-        masterySystem.setActiveData(this.coopMasteryB!);
-        promotions.push(...masterySystem.applyCoopAutoPromotions(true).map(p => ({
-            type: p.type,
-            targetId: String(p.targetId),
-        })));
-
-        masterySystem.setActiveData(null);
-        return promotions;
+        return this.coopSession.applyAndPersistMasteryProgress().map(promotion => ({
+            type: promotion.type,
+            targetId: String(promotion.targetId),
+        }));
     }
 
     private recordCoopFightEnd(): void {
@@ -2067,6 +2441,7 @@ export class BattleScene extends Phaser.Scene implements BattleSceneCallbacks {
     }
 
     private onAttackClicked(): void {
+        gameAudio().cancel(this);
         if (this.battleState.phase === 'player_turn') {
             this.setPhase('player_math');
         } else if (this.battleState.phase === 'player_b_turn') {
@@ -2075,6 +2450,14 @@ export class BattleScene extends Phaser.Scene implements BattleSceneCallbacks {
     }
 
     private showAttackProblems(): void {
+        if (this.mockMode) {
+            const problems = this.createMockProblems(2);
+            this.battleState.currentProblems = problems;
+            this.mathBoardContext = 'attack';
+            this.mathBoard.show(problems);
+            return;
+        }
+
         const player = this.gameState.getPlayer();
 
         // Get equipped sword definition
@@ -2105,7 +2488,7 @@ export class BattleScene extends Phaser.Scene implements BattleSceneCallbacks {
                     problems.push(this.generateSwordProblem(equippedSword));
                 }
 
-                this.applyAttackPowerBonus(problems);
+                this.applyAttackPowerDistribution(problems);
                 this.battleState.currentProblems = problems;
                 this.mathBoardContext = 'attack';
                 this.mathBoard.show(problems);
@@ -2143,10 +2526,35 @@ export class BattleScene extends Phaser.Scene implements BattleSceneCallbacks {
             }
         }
 
-        this.applyAttackPowerBonus(problems);
+        this.applyAttackPowerDistribution(problems);
         this.battleState.currentProblems = problems;
         this.mathBoardContext = 'attack';
         this.mathBoard.show(problems);
+    }
+
+    private createMockProblems(count: number): MathProblem[] {
+        const bank: Array<Pick<MathProblem, 'operand1' | 'operand2' | 'operator' | 'answer' | 'choices'>> = [
+            { operand1: 8, operand2: 7, operator: '+', answer: 15, choices: [14, 15, 16] },
+            { operand1: 13, operand2: 5, operator: '-', answer: 8, choices: [7, 8, 9] },
+            { operand1: 4, operand2: 3, operator: '*', answer: 12, choices: [10, 11, 12] },
+            { operand1: 9, operand2: 6, operator: '+', answer: 15, choices: [13, 14, 15] },
+            { operand1: 17, operand2: 8, operator: '-', answer: 9, choices: [8, 9, 10] },
+            { operand1: 5, operand2: 3, operator: '*', answer: 15, choices: [12, 15, 18] },
+        ];
+
+        const startIndex = this.mockProblemCursor;
+        this.mockProblemCursor += count;
+        return Array.from({ length: count }, (_, offset) => {
+            const bankIndex = (startIndex + offset) % bank.length;
+            const source = bank[bankIndex];
+            return {
+                id: `guardian_mock_${startIndex + offset}`,
+                ...source,
+                showVisualHint: false,
+                hintType: 'none' as const,
+                source: 'player' as const,
+            };
+        });
     }
 
     private onMathComplete(mathBoardDamage: number, results: boolean[], timings: number[]): void {
@@ -2173,7 +2581,7 @@ export class BattleScene extends Phaser.Scene implements BattleSceneCallbacks {
 
             results.forEach((isCorrect, index) => {
                 const problem = this.battleState.currentProblems[index];
-                if (problem) {
+                if (problem && !this.mockMode) {
                     this.mathEngine.recordResultForProblem(problem.id, isCorrect);
                     // Mastery recording: feeds into [retry]/[slow] pools
                     if (problem.masteryKey) {
@@ -2190,6 +2598,22 @@ export class BattleScene extends Phaser.Scene implements BattleSceneCallbacks {
                     }
                 }
             });
+
+            // A shield charge is smart protection: consume it only if it
+            // actually prevents damage that the player's answers did not.
+            if (this.isCoopMode && !this.mockMode) this.coopSession?.persistActiveMasteryProgress();
+            const unblockedDamage = Math.max(0, this.pendingDamage - correctCount);
+            if (!this.mockMode && unblockedDamage > 0) {
+                const preparedBlock = PreparationSystem.consume(this.gameState.getPlayer(), 'shield');
+                if (preparedBlock.applied) {
+                    correctCount += Math.min(preparedBlock.bonus, unblockedDamage);
+                    this.gameState.save();
+                    this.refreshActivePreparationIndicator();
+                    this.showPreparationEffect('shield', preparedBlock.bonus);
+                    sfx(this, 'prep.consume');
+                }
+            }
+
             this.blockCorrectCount = correctCount;
             this.blockAttemptsMade = results.length;
 
@@ -2213,11 +2637,13 @@ export class BattleScene extends Phaser.Scene implements BattleSceneCallbacks {
             if (problem) {
                 // Record results for stats (legacy) — reload stats first in co-op
                 // to prevent cross-contamination between players
-                if (this.isCoopMode) this.mathEngine.reloadStats();
-                this.mathEngine.recordResultForProblem(problem.id, isCorrect);
+                if (!this.mockMode) {
+                    if (this.isCoopMode) this.mathEngine.reloadStats();
+                    this.mathEngine.recordResultForProblem(problem.id, isCorrect);
+                }
 
                 // Record to mastery system (for mastery problems only)
-                if (problem.masteryKey) {
+                if (!this.mockMode && problem.masteryKey) {
                     const responseTimeMs = timings[index] || 0;
                     const ctx = problem.source === 'sword' ? 'battle_sword' : 'battle';
                     masterySystem.recordSolve(problem.masteryKey, isCorrect, responseTimeMs, ctx);
@@ -2239,7 +2665,31 @@ export class BattleScene extends Phaser.Scene implements BattleSceneCallbacks {
         });
 
         // Use MathBoard's damage total (includes multipliers + speed charge bar fill bonuses)
-        const totalDamage = mathBoardDamage;
+        if (this.isCoopMode && !this.mockMode) this.coopSession?.persistActiveMasteryProgress();
+        let totalDamage = mathBoardDamage;
+        if (totalDamage > 0) {
+            const player = this.gameState.getPlayer();
+            const preparation = PreparationSystem.getState(player);
+            const target = this.battleState.enemies[this.getCurrentEnemyIndex()];
+            const swordBonus = PREPARATION_CONFIG.effects.sword.damagePerCharge;
+            const preparationWouldHelp = !this.mockMode
+                && preparation.kind === 'sword'
+                && preparation.charges > 0
+                && damageBonusWouldHelp(
+                    totalDamage,
+                    swordBonus,
+                    target.defense,
+                );
+
+            if (preparationWouldHelp) {
+                const preparedHit = PreparationSystem.consume(player, 'sword');
+                totalDamage += preparedHit.bonus;
+                this.gameState.save();
+                this.refreshActivePreparationIndicator();
+                this.showPreparationEffect('sword', preparedHit.bonus);
+                sfx(this, 'prep.consume');
+            }
+        }
         this.battleState.damageDealt = totalDamage;
 
         // Track if last answer was correct for Vengeful Strike ability
@@ -2256,20 +2706,13 @@ export class BattleScene extends Phaser.Scene implements BattleSceneCallbacks {
         }
     }
 
-    /** Apply attack power bonus: mark N player problems as 2× damage (N = player.attack beyond 5) */
-    private applyAttackPowerBonus(problems: MathProblem[]): void {
-        const bonus = this.getCoopSafeMasterySystem().getAttackPowerBonus();
-        if (bonus <= 0) return;
-
-        // Only boost player problems (not sword/pet), one at a time
-        let applied = 0;
-        for (const problem of problems) {
-            if (applied >= bonus) break;
-            if (problem.source !== 'sword' && problem.source !== 'pet' && (!problem.damageMultiplier || problem.damageMultiplier === 1)) {
-                problem.damageMultiplier = 2;
-                applied++;
-            }
-        }
+    /** Compress solo attack power into three problems; preserve co-op for now. */
+    private applyAttackPowerDistribution(problems: MathProblem[]): void {
+        applyConfiguredAttackPower(
+            problems,
+            this.gameState.getPlayer().attack,
+            this.isCoopMode ? 'coop' : 'solo',
+        );
     }
 
     /** Generate a sword problem from mastery master pool, with fallbacks */
@@ -2309,6 +2752,8 @@ export class BattleScene extends Phaser.Scene implements BattleSceneCallbacks {
 
     /** Generate block problems from mastery review pool (Fluent sub-atoms), with fallbacks */
     private generateBlockProblemsFromPool(count: number): MathProblem[] {
+        if (this.mockMode) return this.createMockProblems(count);
+
         const masterySystem = this.getCoopSafeMasterySystem();
         const problems: MathProblem[] = [];
 
@@ -2475,6 +2920,7 @@ export class BattleScene extends Phaser.Scene implements BattleSceneCallbacks {
         // Play defense animation if player blocked at least 1 damage
         if (damageBlocked > 0) {
             this.playHeroDefense();
+            sfx(this, 'combat.block');
         }
 
         // Show block result only if player actually blocked something
@@ -2513,6 +2959,7 @@ export class BattleScene extends Phaser.Scene implements BattleSceneCallbacks {
 
     private applyDamageToPlayer(damage: number): void {
         if (damage <= 0) return;
+        sfx(this, 'combat.hit');
 
         const isTargetB = this.isCoopMode && this.currentEnemyAttackTarget === 'B';
 
@@ -2650,6 +3097,7 @@ export class BattleScene extends Phaser.Scene implements BattleSceneCallbacks {
      * Trigger boss phase transition
      */
     private triggerBossPhaseTransition(): void {
+        sfx(this, 'combat.phase');
         // Get the current (just defeated) phase's healPercent before advancing
         const currentPhase = this.bossPhases[this.currentBossPhase];
         const healPercent = currentPhase?.healPercent ?? 0;
@@ -2658,6 +3106,7 @@ export class BattleScene extends Phaser.Scene implements BattleSceneCallbacks {
 
         // Advance to next phase
         this.currentBossPhase++;
+        this.tidalAttacks = { A: 0, B: 0 };
         const nextPhase = this.bossPhases[this.currentBossPhase];
 
         // Setup ability tracking for the new phase
@@ -2691,6 +3140,30 @@ export class BattleScene extends Phaser.Scene implements BattleSceneCallbacks {
         healAmount: number,
         healPercent: number
     ): void {
+        if (this.depthBossHud) {
+            this.depthBossHud.transition(nextPhase, healPercent, () => {
+                if (this.battleState.playerHp > 0) this.battleState.playerHp = Math.min(this.depthPlayerMaxHp,
+                    this.battleState.playerHp + Math.floor(this.depthPlayerMaxHp * healPercent / 100));
+                this.updateHpBar(this.heroHpBar, this.battleState.playerHp, this.depthPlayerMaxHp);
+                // Heal each living participant from their own max HP, without switching the active profile.
+                if (this.heroBHpBar && (this.battleState.playerBHp ?? 0) > 0) {
+                    const max = this.battleState.playerBMaxHp!;
+                    this.battleState.playerBHp = Math.min(max, this.battleState.playerBHp! + Math.floor(max * healPercent / 100));
+                    this.updateHpBar(this.heroBHpBar, this.battleState.playerBHp, max);
+                }
+                const boss = this.battleState.enemies[0];
+                boss.hp = boss.maxHp = nextPhase.hp;
+                boss.attack = nextPhase.attack; boss.defense = nextPhase.defense;
+                boss.name = `${this.enemyDefs[0].name} - ${nextPhase.nameCs}`;
+                this.updateHpBar(this.enemyHpBars[0], boss.hp, boss.maxHp);
+                this.applyBossPhaseOverrides(nextPhase);
+                this.enemies[0].play(this.getBossAnimKey(0, 'idle'));
+                this.refreshDepthBossHud();
+                this.targetIndicator.setVisible(true); this.updateTargetIndicator();
+                this.setPhase('enemy_turn');
+            });
+            return;
+        }
         // Show phase transition overlay
         const overlay = this.add.rectangle(640, 360, 1280, 720, 0x000000, 0.7).setDepth(100);
 
@@ -2780,7 +3253,8 @@ export class BattleScene extends Phaser.Scene implements BattleSceneCallbacks {
             const boss = this.battleState.enemies[0];
             boss.hp = nextPhase.hp;
             boss.maxHp = nextPhase.hp;
-            boss.attack = nextPhase.atk;
+            boss.attack = Math.max(0, nextPhase.attack - this.ritualBossAttackReduction);
+            boss.defense = nextPhase.defense;
             boss.name = `${this.enemyDefs[0].name.split(' - ')[0]} - ${nextPhase.nameCs}`;
 
             // Update HP bar
@@ -2902,6 +3376,7 @@ export class BattleScene extends Phaser.Scene implements BattleSceneCallbacks {
     }
 
     private playHeroAttack(): void {
+        sfx(this, 'combat.swing');
         const idx = this.getCurrentEnemyIndex();
         const enemyContainer = this.enemyContainers[idx];
         const enemySprite = this.enemies[idx];
@@ -2966,9 +3441,13 @@ export class BattleScene extends Phaser.Scene implements BattleSceneCallbacks {
         // After reaching enemy position, apply damage
         this.time.delayedCall(jumpDuration, () => {
             // Apply damage (damageDealt from math problems)
-            const damage = this.battleState.damageDealt;
             const enemy = this.battleState.enemies[idx];
+            const damage = resolveDamageAfterDefense(
+                this.battleState.damageDealt,
+                enemy.defense,
+            ).damage;
             enemy.hp -= damage;
+        if (damage > 0) sfx(this, 'combat.hit');
 
             // Check for Last Stand ability (boss survives with 1 HP once)
             if (this.isBoss && enemy.hp <= 0 &&
@@ -3082,6 +3561,7 @@ export class BattleScene extends Phaser.Scene implements BattleSceneCallbacks {
     }
 
     private playEnemyDeathAndFade(idx: number, enemySprite: Phaser.GameObjects.Sprite, animPrefix: string, onComplete: () => void): void {
+        sfx(this, 'combat.release');
         if (this.isBoss && idx === 0 && this.bossPhaseAnimOverrides.deathSequence?.length) {
             this.playBossDeathSequence(idx, enemySprite, onComplete);
         } else {
@@ -3166,6 +3646,7 @@ export class BattleScene extends Phaser.Scene implements BattleSceneCallbacks {
     // --- Player B attack/miss (reuses Player A's animation logic) ---
 
     private playHeroBAttack(): void {
+        sfx(this, 'combat.swing');
         if (!this.heroBContainer || !this.heroB || !this.heroBSpriteConfig) {
             this.setPhase(this.turnManager.nextPhaseAfterPlayerB());
             return;
@@ -3229,8 +3710,12 @@ export class BattleScene extends Phaser.Scene implements BattleSceneCallbacks {
 
         // After reaching enemy, apply damage (same timing as Player A)
         this.time.delayedCall(jumpDuration, () => {
-            const damage = this.battleState.damageDealt;
+            const damage = resolveDamageAfterDefense(
+                this.battleState.damageDealt,
+                enemy.defense,
+            ).damage;
             enemy.hp -= damage;
+        if (damage > 0) sfx(this, 'combat.hit');
             this.updateHpBar(this.enemyHpBars[idx], Math.max(0, enemy.hp), enemy.maxHp);
 
             // Show damage number
@@ -3347,7 +3832,21 @@ export class BattleScene extends Phaser.Scene implements BattleSceneCallbacks {
         });
     }
 
+    private syncDepthBossHud(): void {
+        this.depthBossHud?.setVisible(!this.mathBoard.getContainer().visible);
+    }
+
+    private refreshDepthBossHud(): void {
+        const config = this.resolvedJourneyEncounter?.boss?.tidalWave;
+        const targets: ('A' | 'B')[] = this.isCoopMode ? ['A', 'B'] : ['A'];
+        const nextWave = config && this.currentPhaseAbility === 'tidal_wave'
+            ? targets.filter(target => resolveTidalWave(config, this.tidalAttacks[target] + 1, false).wave) : [];
+        const warning = nextWave.length ? `Příště silná vlna${this.isCoopMode ? `: ${nextWave.join(' + ')}` : ''}` : '';
+        this.depthBossHud?.update(this.currentBossPhase, this.bossPhases.length, warning);
+    }
+
     private playEnemyAttack(): void {
+        sfx(this, 'combat.swing');
         const idx = this.currentAttackingEnemyIndex;
         const enemyContainer = this.enemyContainers[idx];
         const enemySprite = this.enemies[idx];
@@ -3460,13 +3959,17 @@ export class BattleScene extends Phaser.Scene implements BattleSceneCallbacks {
 
                 // After remaining movement completes, brief pause then return
                 this.time.delayedCall(moveDuration - 100, () => {
-                    // Brief pause at hero (100ms), then return to idle and go back
-                    this.time.delayedCall(100, () => {
+                    const returnAfterAttack = () => {
                         const returnIdleKey = (this.isBoss && idx === 0) ? this.getBossAnimKey(0, 'idle') : `${animPrefix}-idle`;
                         enemySprite.play(returnIdleKey);
-                        // Return enemy to start position
                         this.returnEnemyToPosition(idx);
-                    });
+                    };
+                    // Video-sourced attacks can outlast the approach. Opt in per animation;
+                    // leave legacy enemy timing unchanged and respect block/pause/resume.
+                    if (attackAnim?.holdUntilComplete && enemySprite.anims.isPlaying
+                        && enemySprite.anims.currentAnim?.key === attackAnimName) {
+                        enemySprite.once(`animationcomplete-${attackAnimName}`, returnAfterAttack);
+                    } else this.time.delayedCall(100, returnAfterAttack);
                 });
             };
 
@@ -3482,6 +3985,14 @@ export class BattleScene extends Phaser.Scene implements BattleSceneCallbacks {
             }
 
             // Start block phase
+            const tidal = this.resolvedJourneyEncounter?.boss?.tidalWave;
+            if (this.currentPhaseAbility === 'tidal_wave' && tidal) {
+                const target = this.isCoopMode ? this.currentEnemyAttackTarget : 'A';
+                const wave = resolveTidalWave(tidal, ++this.tidalAttacks[target], this.tidalBlessing[target]);
+                damage += wave.bonusDamage;
+                if (wave.blessingUsed) this.tidalBlessing[target] = false;
+                this.refreshDepthBossHud();
+            }
             this.startBlockPhase(damage);
         });
     }
@@ -3589,7 +4100,196 @@ export class BattleScene extends Phaser.Scene implements BattleSceneCallbacks {
         });
     }
 
+    private getEncounterIdForWave(waveIndex: number): string {
+        const encounterId = this.arenaDefinition?.waves[waveIndex]?.id;
+        if (!encounterId) {
+            throw new Error(`Arena ${this.arenaLevel} has no wave at index ${waveIndex}`);
+        }
+        return encounterId;
+    }
+
+    private isArenaCompletionWave(): boolean {
+        if (!this.arenaDefinition || !this.encounterId) {
+            throw new Error('Arena completion requested without a resolved encounter');
+        }
+        return this.arenaDefinition.metadata.completionEncounterId === this.encounterId;
+    }
+
+    private getNextArenaLevel(): number | undefined {
+        const nextArenaId = this.arenaDefinition?.metadata.nextArenaId;
+        if (!nextArenaId || !this.encounterCatalog) return undefined;
+        return this.encounterCatalog.getArenaById(nextArenaId).level;
+    }
+
+    private getNextCityArenaLevel(): number | undefined {
+        const nextArenaId = this.arenaDefinition?.metadata.nextArenaId;
+        if (!nextArenaId || !this.encounterCatalog) return undefined;
+        return this.encounterCatalog.getArenaById(nextArenaId).cityArenaLevel;
+    }
+
+    private getArenaCompletionReward(): ArenaCompletionReward {
+        if (!this.arenaDefinition) {
+            throw new Error('Arena completion bonus requested without an encounter definition');
+        }
+        return this.arenaDefinition.metadata.completionBonus;
+    }
+
+    private countArenaRewardCrystals(reward: ArenaCompletionReward): number {
+        return reward.crystals.reduce((total, crystal) => total + crystal.count, 0);
+    }
+
+    private awardArenaReward(
+        player: PlayerState,
+        reward: ArenaCompletionReward,
+        crystalDrops: Crystal[],
+        crystalLabels: string[],
+        label: string,
+    ): boolean {
+        if (reward.coins > 0) {
+            ProgressionSystem.awardBattleCoin(player, reward.coins);
+        }
+        awardArenaRewardMana(player, reward);
+
+        let overflow = false;
+        for (const definition of reward.crystals) {
+            for (let count = 0; count < definition.count; count += 1) {
+                const value = Phaser.Math.Between(definition.valueMin, definition.valueMax);
+                const crystal = CrystalSystem.generateCrystal(definition.tier, value);
+                if (CrystalSystem.addToInventory(player, crystal)) {
+                    crystalDrops.push(crystal);
+                    crystalLabels.push(
+                        definition.tier === 'special_porcupine'
+                            ? 'Speciální krystal'
+                            : label,
+                    );
+                } else {
+                    CrystalSystem.addToGroundDrops(player, [crystal]);
+                    overflow = true;
+                }
+            }
+        }
+        return overflow;
+    }
+
+    private getArenaProgressPlayers(): PlayerState[] {
+        const players = [this.gameState.getPlayer()];
+        if (this.isCoopMode && this.coopSession) {
+            this.coopSession.activatePlayerB();
+            players.push(this.gameState.getPlayer());
+            this.coopSession.activatePlayerA();
+        }
+        return players;
+    }
+
+    private getNextArenaWaveForCurrentChoice(players: readonly PlayerState[]): number | null {
+        if (!this.encounterCatalog) {
+            throw new Error('Arena routing requested without an encounter catalog');
+        }
+        return findNextArenaWaveForChoice(
+            this.encounterCatalog,
+            players,
+            this.arenaLevel,
+            this.arenaWave,
+            this.arenaChoiceKind,
+        );
+    }
+
+    private finishArenaRunWithoutCompletion(): void {
+        if (this.isCoopMode && this.coopSession) {
+            this.coopSession.forBothPlayers(() => {
+                const player = this.gameState.getPlayer();
+                player.arena.isActive = false;
+                player.arena.currentBattle = 0;
+            });
+            this.coopSession.activatePlayerA();
+            return;
+        }
+
+        const player = this.gameState.getPlayer();
+        player.arena.isActive = false;
+        player.arena.currentBattle = 0;
+        this.gameState.save();
+    }
+
+    /** Roll rewards from policy metadata so a virtual co-op enemy never changes combat geometry. */
+    private rollBattleCoinReward(): number {
+        if (this.resolvedEncounter) {
+            const coreEnemies = this.cache.json.get('enemies') as EnemyDefinition[];
+            const coreById = new Map(coreEnemies.map(enemy => [enemy.id, enemy]));
+            return this.resolvedEncounter.rewardMetadata.sources.reduce((total, source) => {
+                const enemy = coreById.get(source.enemyId);
+                if (!enemy) {
+                    throw new Error(`Reward source references missing enemy ${source.enemyId}`);
+                }
+                return total + Phaser.Math.Between(enemy.goldReward[0], enemy.goldReward[1]);
+            }, 0);
+        }
+
+        return this.enemyDefs.reduce((total, def) => (
+            total + Phaser.Math.Between(def.goldReward[0], def.goldReward[1])
+        ), 0);
+    }
+
+    private finishMockBattle(result: 'victory' | 'defeat'): void {
+        this.mathBoard?.hide();
+        this.attackButton?.setVisible(false);
+        this.potionButton?.setVisible(false);
+
+        const victory = result === 'victory';
+        const resultText = this.add.text(640, 300, victory ? 'VÍTĚZSTVÍ!' : 'PORÁŽKA...', {
+            fontSize: '64px',
+            fontFamily: 'Arial, sans-serif',
+            color: victory ? '#ffd700' : '#ff4444',
+            fontStyle: 'bold',
+            stroke: '#000000',
+            strokeThickness: 6,
+        }).setOrigin(0.5).setDepth(300).setAlpha(0).setScale(0.5);
+
+        this.tweens.add({
+            targets: resultText,
+            alpha: 1,
+            scale: 1,
+            duration: 500,
+            ease: 'Back.out',
+        });
+
+        this.time.delayedCall(1900, () => {
+            if (victory && this.storyVictory === 'forest-crystal') {
+                this.scene.start('ForestCrystalRewardScene', {
+                    testMode: true,
+                    goldReward: 0,
+                });
+                return;
+            }
+
+            this.scene.start(this.returnScene, {
+                ...this.returnData,
+                mockBattleResult: result,
+            });
+        });
+    }
+
+    private completeForestGuardianJourney(): void {
+        if (
+            this.mockMode
+            || !this.journeyMode
+            || this.storyVictory !== 'forest-crystal'
+        ) {
+            return;
+        }
+
+        completeForestGuardianJourneyProgress(
+            JourneySystem.getInstance(),
+            this.returnData
+        );
+    }
+
     private onVictory(): void {
+        if (this.mockMode) {
+            this.finishMockBattle('victory');
+            return;
+        }
+
         if (this.isCoopMode && this.coopSession) {
             this.onCoopVictory();
             return;
@@ -3618,15 +4318,15 @@ export class BattleScene extends Phaser.Scene implements BattleSceneCallbacks {
 
         // Calculate rewards
         const player = this.gameState.getPlayer();
+        // Capture this before recording any result/unlock from the completed wave.
+        // Completion-only drops are awarded once per profile, while wave
+        // completion/perfect improvements remain independently awardable.
+        const isFirstArenaCompletion = this.fromArena
+            && this.isArenaCompletionWave()
+            && !player.arena.completedArenaLevels?.includes(this.arenaLevel);
 
         // Calculate total coins from all defeated enemies
-        let totalCoins = 0;
-        this.enemyDefs.forEach(def => {
-            // goldReward is [min, max], for fixed values they're equal
-            const minReward = def.goldReward[0];
-            const maxReward = def.goldReward[1];
-            totalCoins += Phaser.Math.Between(minReward, maxReward);
-        });
+        const totalCoins = this.rollBattleCoinReward();
 
         // Update player state - award coins
         ProgressionSystem.awardBattleCoin(player, totalCoins);  // Award coins from all enemies
@@ -3640,41 +4340,52 @@ export class BattleScene extends Phaser.Scene implements BattleSceneCallbacks {
         if (this.fromArena) {
             // Determine if this was a perfect wave (no wrong answers)
             const isPerfect = this.waveWrongAnswerCount === 0;
-
-            // Initialize waveResults array if needed
-            if (!player.arena.waveResults) {
-                player.arena.waveResults = [];
-            }
+            const encounterId = this.encounterId ?? this.getEncounterIdForWave(this.arenaWave);
 
             // Get previous best result for this wave (if any)
-            const prevResult = player.arena.waveResults[this.arenaWave];
+            const prevResult = getArenaEncounterResult(
+                player,
+                this.arenaLevel,
+                this.arenaWave,
+                encounterId,
+            );
             const wasCompletedBefore = prevResult?.completed || false;
             const wasPerfectBefore = prevResult?.perfectWave || false;
+            const waveCompletionBonus = this.arenaDefinition.waves[this.arenaWave].completionBonus;
 
             // Calculate crystal reward based on IMPROVEMENT only:
-            // - First completion: +1 base crystal
-            // - First perfect: +1 bonus crystal
+            // amounts and tiers come from encounters.json.
             let crystalsToAward = 0;
             if (!wasCompletedBefore) {
-                crystalsToAward += 1;  // Base crystal for first completion
+                crystalsToAward += this.countArenaRewardCrystals(
+                    waveCompletionBonus.firstCompletion,
+                );
 
                 // Track town progression - only on first-time wave completions
                 if (!player.townProgress) player.townProgress = createInitialTownProgress();
                 player.townProgress.totalWavesCompleted += 1;
             }
             if (isPerfect && !wasPerfectBefore) {
-                crystalsToAward += 1;  // Bonus crystal for achieving perfect
+                crystalsToAward += this.countArenaRewardCrystals(
+                    waveCompletionBonus.firstPerfect,
+                );
             }
 
             // Update wave result - store BEST result (perfectWave = true if ever achieved)
             const newPerfectStatus = isPerfect || wasPerfectBefore;
             const totalCrystalsEarned = (prevResult?.crystalsEarned || 0) + crystalsToAward;
 
-            player.arena.waveResults[this.arenaWave] = {
+            const savedResult = setArenaEncounterResult(
+                player,
+                this.arenaLevel,
+                this.arenaWave,
+                encounterId,
+                {
                 completed: true,
                 perfectWave: newPerfectStatus,
                 crystalsEarned: totalCrystalsEarned
-            };
+                },
+            );
 
             // Debug: Log what we're saving
             console.log('[BattleScene] Wave result:', {
@@ -3684,51 +4395,40 @@ export class BattleScene extends Phaser.Scene implements BattleSceneCallbacks {
                 wasPerfectBefore,
                 crystalsToAward,
                 totalCrystalsEarned,
-                waveResults: JSON.stringify(player.arena.waveResults)
+                encounterId,
+                savedResult,
+                waveResults: JSON.stringify(player.arena.waveResults),
+                encounterResults: JSON.stringify(player.arena.encounterResults),
             });
 
-            // Wave crystal drops (after each wave except the last)
-            // Generate SEPARATE crystals for base and perfect rewards
-            if (this.arenaWave < 4) {
-                if (!wasCompletedBefore) {
-                    const baseCrystal = CrystalSystem.generateCrystal('shard', 1);
-                    const added = CrystalSystem.addToInventory(player, baseCrystal);
-                    if (added) { crystalDrops.push(baseCrystal); crystalLabels.push('Za první porážku'); }
-                    else { CrystalSystem.addToGroundDrops(player, [baseCrystal]); crystalOverflow = true; }
-                }
-                if (isPerfect && !wasPerfectBefore) {
-                    const perfectCrystal = CrystalSystem.generateCrystal('shard', 1);
-                    const added = CrystalSystem.addToInventory(player, perfectCrystal);
-                    if (added) { crystalDrops.push(perfectCrystal); crystalLabels.push('Za bezchybný souboj!'); }
-                    else { CrystalSystem.addToGroundDrops(player, [perfectCrystal]); crystalOverflow = true; }
-                }
+            if (!wasCompletedBefore) {
+                crystalOverflow = this.awardArenaReward(
+                    player,
+                    waveCompletionBonus.firstCompletion,
+                    crystalDrops,
+                    crystalLabels,
+                    'Za první dokončení vlny',
+                ) || crystalOverflow;
+            }
+            if (isPerfect && !wasPerfectBefore) {
+                crystalOverflow = this.awardArenaReward(
+                    player,
+                    waveCompletionBonus.firstPerfect,
+                    crystalDrops,
+                    crystalLabels,
+                    'Za bezchybný souboj!',
+                ) || crystalOverflow;
             }
 
-            // Arena completion crystal (wave 5, index 4)
-            if (this.arenaWave >= 4) {
-                // Completion bonus crystal
-                const completionCrystal = CrystalSystem.generateCrystal('shard', Phaser.Math.Between(4, 6));
-                const added = CrystalSystem.addToInventory(player, completionCrystal);
-                if (added) {
-                    crystalDrops.push(completionCrystal);
-                    crystalLabels.push('Za dokončení arény');
-                } else {
-                    CrystalSystem.addToGroundDrops(player, [completionCrystal]);
-                    crystalOverflow = true;
-                }
-
-                // Arena 2 special: only the special porcupine crystal for pet_porcupine2 binding
-                if (this.arenaLevel === 2) {
-                    const specialCrystal = CrystalSystem.generateCrystal('special_porcupine' as CrystalTier, 1);
-                    const addedSpecial = CrystalSystem.addToInventory(player, specialCrystal);
-                    if (addedSpecial) {
-                        crystalDrops.push(specialCrystal);
-                        crystalLabels.push('Speciální krystal');
-                    } else {
-                        CrystalSystem.addToGroundDrops(player, [specialCrystal]);
-                        crystalOverflow = true;
-                    }
-                }
+            // Extra reward for the completion encounter of this arena level.
+            if (this.isArenaCompletionWave() && isFirstArenaCompletion) {
+                crystalOverflow = this.awardArenaReward(
+                    player,
+                    this.getArenaCompletionReward(),
+                    crystalDrops,
+                    crystalLabels,
+                    'Za dokončení arény',
+                ) || crystalOverflow;
             }
 
         }
@@ -3782,6 +4482,10 @@ export class BattleScene extends Phaser.Scene implements BattleSceneCallbacks {
             }
         }
 
+        // Commit exploration completion with rewards, not after the victory screen.
+        if (this.returnScene === 'UnderwaterRoomScene' && this.encounterId) {
+            completeUnderwaterEncounter(player, this.encounterId);
+        }
         // Save game
         this.gameState.save();
 
@@ -3793,20 +4497,27 @@ export class BattleScene extends Phaser.Scene implements BattleSceneCallbacks {
                 arenaLevel: this.arenaLevel,
                 arenaWave: this.arenaWave
             });
+            if (this.storyVictory === 'forest-crystal') {
+                this.completeForestGuardianJourney();
+                this.scene.start('ForestCrystalRewardScene', {
+                    testMode: false,
+                    goldReward: totalCoins,
+                    crystalDrops,
+                    crystalLabels,
+                    crystalOverflow,
+                });
+                return;
+            }
+
             if (this.fromArena) {
-                // Check if this was the last wave (wave 5, index 4)
-                if (this.arenaWave >= 4) {
+                // Completion is identified by encounter metadata, not a hardcoded array index.
+                if (this.isArenaCompletionWave()) {
                     // Track arena level completion
                     if (!player.arena.completedArenaLevels) {
                         player.arena.completedArenaLevels = [];
                     }
                     if (!player.arena.completedArenaLevels.includes(this.arenaLevel)) {
                         player.arena.completedArenaLevels.push(this.arenaLevel);
-
-                        // Award arena completion coin bonus
-                        const arenaBonus: Record<number, number> = { 1: 15, 2: 30, 3: 45 };
-                        const bonus = arenaBonus[this.arenaLevel] ?? 15;
-                        ProgressionSystem.awardBattleCoin(player, bonus);
 
                         // Always add arena_level_X unlock key when completing arena X
                         const arenaUnlockKey = `arena_level_${this.arenaLevel}`;
@@ -3832,10 +4543,23 @@ export class BattleScene extends Phaser.Scene implements BattleSceneCallbacks {
                         this.gameState.save();
                     }
 
-                    // Arena completed! Go to VictoryScene
+                    const grantsLakeFairyReward = this.arenaStory === 'silverpond-lake-fairy'
+                        && this.arenaDefinition?.cityId === 'silverpond'
+                        && this.arenaDefinition.cityArenaLevel === 3
+                        && isFirstArenaCompletion;
+                    if (grantsLakeFairyReward) {
+                        StorySystem.getInstance().completeLakeFairyQuest();
+                    }
+
+                    // Arena completed! Go to VictoryScene, then show the story
+                    // reward before returning to the Silverpond hub.
                     this.scene.start('VictoryScene', {
-                        returnScene: 'TownScene',
-                        returnData: {},
+                        returnScene: grantsLakeFairyReward
+                            ? 'SilverpondFairyRewardScene'
+                            : this.arenaExitScene,
+                        returnData: grantsLakeFairyReward
+                            ? { returnScene: this.arenaExitScene }
+                            : {},
                         goldReward: totalCoins,
                         isFirstDefeat,
                         isPerfectDefeat,
@@ -3848,26 +4572,22 @@ export class BattleScene extends Phaser.Scene implements BattleSceneCallbacks {
                         crystalOverflow,
                         arenaCompleted: true,
                         arenaLevel: this.arenaLevel,
-                        nextArenaLevel: this.arenaLevel + 1
+                        cityArenaLevel: this.arenaDefinition.cityArenaLevel,
+                        nextArenaLevel: this.getNextArenaLevel(),
+                        nextCityArenaLevel: this.getNextCityArenaLevel(),
                     });
                 } else {
-                    // Find next wave that isn't already perfected (skip perfect waves)
-                    let nextWave: number | null = null;
-                    for (let i = this.arenaWave + 1; i < 5; i++) {
-                        const r = player.arena.waveResults?.[i];
-                        if (!r?.completed || !r?.perfectWave) {
-                            nextWave = i;
-                            break;
-                        }
-                    }
+                    const nextWave = this.getNextArenaWaveForCurrentChoice([player]);
 
                     if (nextWave !== null) {
-                        // More waves to play — advance to next non-perfect wave
+                        // Continue only within the goal the player explicitly selected.
                         this.scene.start('VictoryScene', {
-                            returnScene: 'ArenaScene',
+                            returnScene: this.returnScene,
                             returnData: {
                                 arenaLevel: this.arenaLevel,
                                 wave: nextWave,
+                                encounterId: this.getEncounterIdForWave(nextWave),
+                                arenaChoiceId: this.arenaChoiceId,
                                 fromBattle: true
                             },
                             goldReward: totalCoins,
@@ -3882,9 +4602,10 @@ export class BattleScene extends Phaser.Scene implements BattleSceneCallbacks {
                             crystalOverflow
                         });
                     } else {
-                        // All remaining waves already perfect — arena run complete, return to town
+                        // The selected progression/practice goal is done; do not force other waves.
+                        this.finishArenaRunWithoutCompletion();
                         this.scene.start('VictoryScene', {
-                            returnScene: 'TownScene',
+                            returnScene: this.arenaExitScene,
                             returnData: {},
                             goldReward: totalCoins,
                             isFirstDefeat,
@@ -3931,10 +4652,7 @@ export class BattleScene extends Phaser.Scene implements BattleSceneCallbacks {
         const casualProgress = coop.recordCoopVictory();
 
         // Calculate coins once (same for both players)
-        let totalCoins = 0;
-        this.enemyDefs.forEach(def => {
-            totalCoins += Phaser.Math.Between(def.goldReward[0], def.goldReward[1]);
-        });
+        const totalCoins = this.rollBattleCoinReward();
 
         // Perfect wave requires BOTH players zero mistakes
         const isPerfect = this.waveWrongAnswerCount === 0;
@@ -3954,6 +4672,12 @@ export class BattleScene extends Phaser.Scene implements BattleSceneCallbacks {
             const crystalLabels: string[] = [];
             let crystalOverflow = false;
             let unlockedPetData: any = null;
+            // This helper runs once in each co-op profile context. Capture the
+            // first-completion state before setArenaEncounterResult or arena
+            // unlock bookkeeping mutates that profile.
+            const isFirstArenaCompletion = this.fromArena
+                && this.isArenaCompletionWave()
+                && !player.arena.completedArenaLevels?.includes(this.arenaLevel);
 
             // Award coins
             ProgressionSystem.awardBattleCoin(player, totalCoins);
@@ -3967,38 +4691,60 @@ export class BattleScene extends Phaser.Scene implements BattleSceneCallbacks {
 
             // Arena crystals
             if (this.fromArena) {
-                if (!player.arena.waveResults) player.arena.waveResults = [];
-                const prevResult = player.arena.waveResults[this.arenaWave];
+                const encounterId = this.encounterId ?? this.getEncounterIdForWave(this.arenaWave);
+                const prevResult = getArenaEncounterResult(
+                    player,
+                    this.arenaLevel,
+                    this.arenaWave,
+                    encounterId,
+                );
                 const wasCompletedBefore = prevResult?.completed || false;
                 const wasPerfectBefore = prevResult?.perfectWave || false;
+                const waveCompletionBonus = this.arenaDefinition.waves[this.arenaWave].completionBonus;
 
                 let crystalsToAward = 0;
                 if (!wasCompletedBefore) {
-                    crystalsToAward += 1;
+                    crystalsToAward += this.countArenaRewardCrystals(
+                        waveCompletionBonus.firstCompletion,
+                    );
                     if (!player.townProgress) player.townProgress = createInitialTownProgress();
                     player.townProgress.totalWavesCompleted += 1;
                 }
                 if (isPerfect && !wasPerfectBefore) {
-                    crystalsToAward += 1;
+                    crystalsToAward += this.countArenaRewardCrystals(
+                        waveCompletionBonus.firstPerfect,
+                    );
                 }
 
-                player.arena.waveResults[this.arenaWave] = {
-                    completed: true,
-                    perfectWave: isPerfect || wasPerfectBefore,
-                    crystalsEarned: (prevResult?.crystalsEarned || 0) + crystalsToAward
-                };
+                setArenaEncounterResult(
+                    player,
+                    this.arenaLevel,
+                    this.arenaWave,
+                    encounterId,
+                    {
+                        completed: true,
+                        perfectWave: isPerfect || wasPerfectBefore,
+                        crystalsEarned: (prevResult?.crystalsEarned || 0) + crystalsToAward,
+                    },
+                );
 
-                if (this.arenaWave < 4) {
-                    if (!wasCompletedBefore) {
-                        const c = CrystalSystem.generateCrystal('shard', 1);
-                        if (CrystalSystem.addToInventory(player, c)) { crystalDrops.push(c); crystalLabels.push('Za první porážku'); }
-                        else { CrystalSystem.addToGroundDrops(player, [c]); crystalOverflow = true; }
-                    }
-                    if (isPerfect && !wasPerfectBefore) {
-                        const c = CrystalSystem.generateCrystal('shard', 1);
-                        if (CrystalSystem.addToInventory(player, c)) { crystalDrops.push(c); crystalLabels.push('Za bezchybný souboj!'); }
-                        else { CrystalSystem.addToGroundDrops(player, [c]); crystalOverflow = true; }
-                    }
+                if (!wasCompletedBefore) {
+                    crystalOverflow = this.awardArenaReward(
+                        player,
+                        waveCompletionBonus.firstCompletion,
+                        crystalDrops,
+                        crystalLabels,
+                        'Za první dokončení vlny',
+                    ) || crystalOverflow;
+                }
+                if (isPerfect && !wasPerfectBefore) {
+                    crystalOverflow = this.awardArenaReward(
+                        player,
+                        waveCompletionBonus.firstPerfect,
+                        crystalDrops,
+                        crystalLabels,
+                        'Za bezchybný souboj!',
+                    ) || crystalOverflow;
                 }
             }
 
@@ -4034,40 +4780,29 @@ export class BattleScene extends Phaser.Scene implements BattleSceneCallbacks {
             }
 
             // Arena wave-5 completion rewards
-            if (this.fromArena && this.arenaWave >= 4) {
-                const completionCrystal = CrystalSystem.generateCrystal('shard', Phaser.Math.Between(4, 6));
-                if (CrystalSystem.addToInventory(player, completionCrystal)) {
-                    crystalDrops.push(completionCrystal);
-                    crystalLabels.push('Za dokončení arény');
-                } else {
-                    CrystalSystem.addToGroundDrops(player, [completionCrystal]);
-                    crystalOverflow = true;
-                }
-
+            if (this.fromArena && this.isArenaCompletionWave()) {
                 if (!player.arena.completedArenaLevels) player.arena.completedArenaLevels = [];
-                if (!player.arena.completedArenaLevels.includes(this.arenaLevel)) {
+
+                if (isFirstArenaCompletion) {
+                    crystalOverflow = this.awardArenaReward(
+                        player,
+                        this.getArenaCompletionReward(),
+                        crystalDrops,
+                        crystalLabels,
+                        'Za dokončení arény',
+                    ) || crystalOverflow;
+
                     player.arena.completedArenaLevels.push(this.arenaLevel);
-                    const arenaBonus: Record<number, number> = { 1: 15, 2: 30, 3: 45 };
-                    ProgressionSystem.awardBattleCoin(player, arenaBonus[this.arenaLevel] ?? 15);
                     const arenaUnlockKey = `arena_level_${this.arenaLevel}`;
                     if (!player.unlockedPets.includes(arenaUnlockKey)) {
                         player.unlockedPets.push(arenaUnlockKey);
                     }
                 }
-
-                // Arena 2 special porcupine crystal
-                if (this.arenaLevel === 2) {
-                    const specialCrystal = CrystalSystem.generateCrystal('special_porcupine' as CrystalTier, 1);
-                    if (CrystalSystem.addToInventory(player, specialCrystal)) {
-                        crystalDrops.push(specialCrystal);
-                        crystalLabels.push('Speciální krystal');
-                    } else {
-                        CrystalSystem.addToGroundDrops(player, [specialCrystal]);
-                        crystalOverflow = true;
-                    }
-                }
             }
 
+            if (this.returnScene === 'UnderwaterRoomScene' && this.encounterId) {
+                completeUnderwaterEncounter(player, this.encounterId);
+            }
             // Record fight end for mastery
             this.getCoopSafeMasterySystem().recordFightEnd();
             this.gameState.save();
@@ -4084,19 +4819,34 @@ export class BattleScene extends Phaser.Scene implements BattleSceneCallbacks {
             coop.activatePlayerB();
             const rewardsB = applyPlayerRewards();
 
-            // Advance the session-only co-op mastery tracks
+            // Advance and save both players' learning tracks.
             this.applyCoopSessionPromotions();
 
             // Switch back to A for VictoryScene display
             coop.activatePlayerA();
 
             // Build combined VictoryScene data
+            const arenaCompleted = this.fromArena && this.isArenaCompletionWave();
             const playerAName = (() => { coop.activatePlayerA(); return this.gameState.getPlayer().name; })();
             const playerBName = (() => { coop.activatePlayerB(); const n = this.gameState.getPlayer().name; coop.activatePlayerA(); return n; })();
+            const nextArenaWave = this.fromArena && !arenaCompleted
+                ? this.getNextArenaWaveForCurrentChoice(this.getArenaProgressPlayers())
+                : null;
+            if (this.fromArena && !arenaCompleted && nextArenaWave === null) {
+                this.finishArenaRunWithoutCompletion();
+            }
 
             const victoryData: any = {
-                returnScene: this.fromArena ? 'ArenaScene' : this.returnScene,
-                returnData: this.fromArena ? { arenaLevel: this.arenaLevel, wave: this.arenaWave + 1, fromBattle: true } : { battleWon: true, ...this.returnData },
+                returnScene: arenaCompleted || (this.fromArena && nextArenaWave === null)
+                    ? this.arenaExitScene
+                    : this.returnScene,
+                returnData: arenaCompleted || (this.fromArena && nextArenaWave === null) ? {} : (this.fromArena ? {
+                    arenaLevel: this.arenaLevel,
+                    wave: nextArenaWave,
+                    encounterId: this.getEncounterIdForWave(nextArenaWave!),
+                    arenaChoiceId: this.arenaChoiceId,
+                    fromBattle: true,
+                } : { battleWon: true, ...this.returnData }),
                 goldReward: totalCoins,
                 isFirstDefeat: false,
                 isPerfectDefeat: isPerfect,
@@ -4118,11 +4868,13 @@ export class BattleScene extends Phaser.Scene implements BattleSceneCallbacks {
             };
 
             // Handle arena completion / next wave routing
-            if (this.fromArena && this.arenaWave >= 4) {
+            if (arenaCompleted) {
                 victoryData.arenaCompleted = true;
                 victoryData.arenaLevel = this.arenaLevel;
-                victoryData.nextArenaLevel = this.arenaLevel + 1;
-                victoryData.returnScene = 'TownScene';
+                victoryData.cityArenaLevel = this.arenaDefinition?.cityArenaLevel;
+                victoryData.nextArenaLevel = this.getNextArenaLevel();
+                victoryData.nextCityArenaLevel = this.getNextCityArenaLevel();
+                victoryData.returnScene = this.arenaExitScene;
                 victoryData.returnData = {};
             }
 
@@ -4180,6 +4932,11 @@ export class BattleScene extends Phaser.Scene implements BattleSceneCallbacks {
     }
 
     private onDefeat(): void {
+        if (this.mockMode) {
+            this.finishMockBattle('defeat');
+            return;
+        }
+
         // Record fight end for mastery system
         this.recordCoopFightEnd();
 
@@ -4218,11 +4975,42 @@ export class BattleScene extends Phaser.Scene implements BattleSceneCallbacks {
             this.gameState.save();
         }
 
-        this.time.delayedCall(3000, () => {
-            // For journey mode, return to map (will handle fail state)
-            // Otherwise return to town
-            this.scene.start(this.journeyMode ? 'ForestMapScene' : 'TownScene');
-        });
+        let leavingDefeat = false;
+        const leaveDefeat = () => {
+            if (leavingDefeat) return;
+            leavingDefeat = true;
+            this.remoteFeedbackDismiss = null;
+
+            if (this.isRemoteSessionActive()) {
+                this.scene.start('TvPairingScene');
+                return;
+            }
+
+            if (this.returnScene === 'UnderwaterRoomScene') {
+                this.scene.start(this.returnScene, { ...this.returnData, battleLost: true });
+                return;
+            }
+            // For journey mode, return to map. Arena variants return to their
+            // own town instead of always falling back to Mathoria.
+            this.scene.start(
+                this.journeyMode
+                    ? 'ForestMapScene'
+                    : this.fromArena
+                        ? this.arenaExitScene
+                        : 'TownScene',
+            );
+        };
+
+        if (this.isRemoteSessionActive()) {
+            this.remoteFeedbackDismiss = leaveDefeat;
+            this.publishRemoteFeedbackState(
+                'Porážka',
+                'Hrdina se zotaví a může boj zkusit znovu.',
+                'Zpět do TV menu',
+            );
+        }
+
+        this.time.delayedCall(3000, leaveDefeat);
     }
 
     // === Wrong Answer Feedback ===
@@ -4265,6 +5053,7 @@ export class BattleScene extends Phaser.Scene implements BattleSceneCallbacks {
     }
 
     private showWrongAnswerFeedback(problem: MathProblem, onDismiss: () => void): void {
+        voice(this, 'vo.common.retry', true);
         // Clear previous feedback content (keep static panel elements: backdrop, panel, inner border, 4 corner diamonds)
         const staticCount = 7;
         while (this.feedbackOverlay.length > staticCount) {
@@ -4279,6 +5068,7 @@ export class BattleScene extends Phaser.Scene implements BattleSceneCallbacks {
 
         // Build equation string showing the correct answer
         const equationStr = formatMathProblem(problem, 'answer');
+        this.publishRemoteFeedbackState('Špatná odpověď', equationStr);
 
         const correctLabel = this.add.text(0, -160, equationStr, {
             fontSize: '38px',
@@ -4323,6 +5113,16 @@ export class BattleScene extends Phaser.Scene implements BattleSceneCallbacks {
         });
 
         let animationDone = false;
+        let dismissed = false;
+        const dismiss = () => {
+            if (dismissed) return;
+            dismissed = true;
+            animationDone = true;
+            this.remoteFeedbackDismiss = null;
+            this.closeFeedbackOverlay();
+            onDismiss();
+        };
+        this.remoteFeedbackDismiss = dismiss;
 
         btnBg.setInteractive({ useHandCursor: true })
             .on('pointerover', () => {
@@ -4334,9 +5134,7 @@ export class BattleScene extends Phaser.Scene implements BattleSceneCallbacks {
                 btnText.setColor('#e8d44d');
             })
             .on('pointerdown', () => {
-                animationDone = true;
-                this.closeFeedbackOverlay();
-                onDismiss();
+                dismiss();
             });
 
         const showTime = Date.now();
@@ -4353,6 +5151,8 @@ export class BattleScene extends Phaser.Scene implements BattleSceneCallbacks {
     }
 
     private closeFeedbackOverlay(): void {
+        gameAudio().cancel(this);
+        this.remoteFeedbackDismiss = null;
         this.feedbackOverlay.setVisible(false);
         if (this.feedbackVisualizer) {
             this.feedbackVisualizer.destroy();

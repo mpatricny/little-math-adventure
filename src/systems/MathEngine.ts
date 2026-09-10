@@ -334,6 +334,9 @@ export class MathEngine {
      * Record the result of a problem with explicit problem ID
      */
     recordResultForProblem(problemId: string, isCorrect: boolean): void {
+        // Hotseat may have switched profiles since this engine last drew a problem.
+        // Independent mana lanes keep their own stats and disable autoPersist.
+        if (this.autoPersist) this.reloadStats();
         this.checkDailyReset();
         this.stats.dailyAttempts++;
         this.stats.totalAttempts++;
@@ -373,6 +376,7 @@ export class MathEngine {
      * Record the result of a problem and update stats (uses currentProblemId)
      */
     recordResult(isCorrect: boolean): void {
+        if (this.autoPersist) this.reloadStats();
         this.checkDailyReset();
         this.stats.dailyAttempts++;
         this.stats.totalAttempts++;
@@ -533,62 +537,6 @@ export class MathEngine {
      */
     getAllProblemStats(): Map<string, ProblemStats> {
         return new Map(Object.entries(this.stats.problemStats));
-    }
-
-    /**
-     * Calculate how many mana points are available to collect for a problem
-     * Thresholds: 5, 10, 20 correct answers = 3 mana total per problem
-     */
-    getCollectableMana(problemId: string): number {
-        const stats = this.stats.problemStats[problemId];
-        if (!stats) return 0;
-
-        const thresholds = [5, 10, 20];
-        let available = 0;
-
-        thresholds.forEach((threshold, index) => {
-            if (stats.correctCount >= threshold && stats.manaCollected <= index) {
-                available++;
-            }
-        });
-
-        return available;
-    }
-
-    /**
-     * Get total collectable mana across all problems
-     */
-    getTotalCollectableMana(): number {
-        let total = 0;
-        for (const problemId in this.stats.problemStats) {
-            total += this.getCollectableMana(problemId);
-        }
-        return total;
-    }
-
-    /**
-     * Collect mana for a specific problem (marks them as collected)
-     * Returns the amount of mana collected
-     */
-    collectManaForProblem(problemId: string): number {
-        const collectable = this.getCollectableMana(problemId);
-        if (collectable > 0 && this.stats.problemStats[problemId]) {
-            this.stats.problemStats[problemId].manaCollected += collectable;
-            this.maybeSaveStats();
-        }
-        return collectable;
-    }
-
-    /**
-     * Collect all available mana across all problems
-     * Returns the total amount of mana collected
-     */
-    collectAllMana(): number {
-        let totalCollected = 0;
-        for (const problemId in this.stats.problemStats) {
-            totalCollected += this.collectManaForProblem(problemId);
-        }
-        return totalCollected;
     }
 
     /**

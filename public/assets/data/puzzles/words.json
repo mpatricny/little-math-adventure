@@ -1,0 +1,30 @@
+{
+  "riddles": [
+    {"id":"table","answer":"STUL","riddle":"Má desku a čtyři nohy. Jíš u něj, ale on nechodí. Co je to?"},
+    {"id":"fish","answer":"RYBA","riddle":"Dýchá žábrami, má ploutve a žije ve vodě. Co je to?"},
+    {"id":"goat","answer":"KOZA","riddle":"Má rohy, mečí a často nosí pod bradou vousy. Které zvíře to je?"},
+    {"id":"sheep","answer":"OVCE","riddle":"Bečí a na těle jí roste vlna. Které zvíře to je?"},
+    {"id":"dragon","answer":"DRAK","riddle":"Pohádkový tvor má křídla a někdy chrlí oheň. Co je to?"},
+    {"id":"train","answer":"VLAK","riddle":"Lokomotiva táhne vagóny po kolejích. Jak se jmenuje celá souprava?"},
+    {"id":"bridge","answer":"MOST","riddle":"Spojuje dva břehy a umožní ti přejít řeku suchou nohou. Co je to?"},
+    {"id":"mountain","answer":"HORA","riddle":"Je vyšší než kopec. Na její vrchol stoupají horolezci. Co je to?"},
+    {"id":"water","answer":"VODA","riddle":"Teče v řece a když zmrzne, změní se v led. Co je to?"},
+    {"id":"linden","answer":"LIPA","riddle":"Český národní strom má voňavé květy a listy jako srdíčka. Který strom to je?"},
+    {"id":"hand","answer":"RUKA","riddle":"Patří k ní dlaň a pět prstů. Můžeš s ní zamávat. Co je to?"},
+    {"id":"leg","answer":"NOHA","riddle":"Patří k ní koleno a chodidlo. Při chůzi ji zvedáš. Co je to?"},
+    {"id":"window","answer":"OKNO","riddle":"Je ve zdi domu, má sklo a pouští dovnitř denní světlo. Co je to?"},
+    {"id":"rope","answer":"LANO","riddle":"Silný provaz, kterým se jistí horolezec. Jak se jmenuje?"},
+    {"id":"key","answer":"KLIC","riddle":"Zasunutím do zámku a otočením s ním odemkneš dveře. Co je to?"},
+    {"id":"cake","answer":"DORT","riddle":"Sladká narozeninová dobrota, na které sfoukáváš svíčky. Co je to?"},
+    {"id":"fence","answer":"PLOT","riddle":"Obepíná zahradu, může být z latěk a bývá v něm branka. Co je to?"},
+    {"id":"leaf","answer":"LIST","riddle":"Roste na větvi, bývá zelený a na podzim může spadnout. Co je to?"},
+    {"id":"goose","answer":"HUSA","riddle":"Domácí pták s dlouhým krkem, který kejhá. Co je to?"},
+    {"id":"owl","answer":"SOVA","riddle":"Noční pták s velkýma očima, který houká. Co je to?"},
+    {"id":"scythe","answer":"KOSA","riddle":"Má dlouhé držadlo a zahnutou čepel. Dříve se s ní sekala tráva. Co je to?"},
+    {"id":"frog","answer":"ZABA","riddle":"Kváká u rybníka a začíná život jako pulec. Co je to?"},
+    {"id":"morning","answer":"RANO","riddle":"Část dne po noci, kdy vstáváme a snídáme. Jak se jmenuje?"},
+    {"id":"elephant","answer":"SLON","riddle":"Velké zvíře s chobotem a velkýma ušima. Co je to?"},
+    {"id":"palm","answer":"DLAN","riddle":"Vnitřní plocha ruky pod prsty, do které můžeš něco položit. Co je to?"}
+  ],
+  "cipherWords": ["PERLA","KOTVA","PROUD","VETEV","LAMPA","KNIHA","MISKA","HRNEK","RYBKA","MUSLE","ZAMEK","KAMEN","SRDCE","KARTA","CESTA","MOSTY","LISTY","KAPKA","JELEN","RUKAV","SOCHA","SKALA","TRAVA","DRAHA","KOULE"]
+}

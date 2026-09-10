@@ -2,6 +2,7 @@ import Phaser from 'phaser';
 import { OverlayBase } from './OverlayBase';
 import { ScrollablePanel } from './ScrollablePanel';
 import { MasterySystem } from '../systems/MasterySystem';
+import { SUB_ATOM_EXAM_REQUIREMENTS } from '../systems/ExamProgress';
 import { GameStateManager } from '../systems/GameStateManager';
 import { ProblemDatabase } from '../systems/ProblemDatabase';
 import {
@@ -22,10 +23,10 @@ const BAND_RANGES: Record<string, string> = {
 };
 
 const FORM_LABELS: Record<ProblemForm, string> = {
-    result_unknown: 'result_unknown',
-    missing_part: 'missing_part',
-    compare_equation_vs_number: 'compare_eq_vs_num',
-    compare_equation_vs_equation: 'compare_eq_vs_eq',
+    result_unknown: 'Najdi výsledek',
+    missing_part: 'Doplň chybějící část',
+    compare_equation_vs_number: 'Porovnej příklad s číslem',
+    compare_equation_vs_equation: 'Porovnej dva příklady',
 };
 
 const STATE_COLORS: Record<MasteryState, number> = {
@@ -38,10 +39,10 @@ const STATE_COLORS: Record<MasteryState, number> = {
 
 const STATE_LABELS: Record<MasteryState, string> = {
     locked: 'Zamčeno',
-    training: 'Training',
-    secure: 'Secure',
-    fluent: 'Fluent',
-    mastery: 'Mastery',
+    training: 'Procvičování',
+    secure: 'Jistota',
+    fluent: 'Plynulost',
+    mastery: 'Mistrovství',
 };
 
 /**
@@ -54,7 +55,7 @@ export class MasteryMapOverlay extends OverlayBase {
     private savedScrollOffset: number = 0;
 
     constructor(scene: Phaser.Scene) {
-        super(scene, 'MAPA MISTROVSTVÍ', 1150, 600);
+        super(scene, 'MAPA UČENÍ', 1150, 610);
     }
 
     protected buildContent(area: { x: number; y: number; width: number; height: number }): void {
@@ -63,6 +64,13 @@ export class MasteryMapOverlay extends OverlayBase {
 
     protected onShow(): void {
         this.rebuildContent();
+    }
+
+    /** Opens the map directly on one atom; useful for contextual links and QA. */
+    public showNode(subAtomId: SubAtomId): void {
+        this.expandedSubAtoms.clear();
+        this.expandedSubAtoms.add(subAtomId);
+        this.show();
     }
 
     private rebuildContent(): void {
@@ -76,39 +84,14 @@ export class MasteryMapOverlay extends OverlayBase {
         let yOffset = 0;
         const totalWidth = 1090;
 
+        yOffset = this.renderMapIntro(content, yOffset, totalWidth);
+
         for (const bandId of ALL_BANDS) {
             const band = data.bands[bandId];
-            const bandLocked = band.state === 'locked';
+            yOffset = this.renderBandMap(content, bandId, band.state, data, yOffset, totalWidth);
 
-            // Band header
-            yOffset = this.renderBandHeader(content, bandId, band.state, yOffset, totalWidth);
-
-            if (bandLocked) {
-                const lockedText = this.scene.add.text(20, yOffset, '(zamčeno)', {
-                    fontSize: '13px', fontFamily: 'Arial, sans-serif', color: '#555555',
-                });
-                content.add(lockedText);
-                yOffset += 30;
-                continue;
-            }
-
-            // Sub-atom cards row (4 cards)
-            const cardWidth = 240;
-            const cardGap = 16;
-            const cardRowX = 10;
-
-            for (let i = 0; i < ALL_SUB_ATOM_NUMBERS.length; i++) {
-                const num = ALL_SUB_ATOM_NUMBERS[i];
-                const saId = `${bandId}${num}` as SubAtomId;
-                const sa = data.subAtoms[saId];
-                const cx = cardRowX + i * (cardWidth + cardGap);
-
-                this.renderSubAtomCard(content, saId, sa, cx, yOffset, cardWidth);
-            }
-
-            yOffset += 120; // card height
-
-            // Expanded detail panel (if any card in this band is expanded)
+            // The map stays clean until a node is selected. Only then do the
+            // existing detailed form/accuracy/speed metrics unfold below it.
             for (const num of ALL_SUB_ATOM_NUMBERS) {
                 const saId = `${bandId}${num}` as SubAtomId;
                 if (this.expandedSubAtoms.has(saId)) {
@@ -117,158 +100,180 @@ export class MasteryMapOverlay extends OverlayBase {
                 }
             }
 
-            yOffset += 16; // gap between bands
+            yOffset += 18;
         }
 
         this.scrollPanel.setContentHeight(yOffset);
         this.scrollPanel.setScrollOffset(this.savedScrollOffset);
     }
 
-    // ── Band header ──
-
-    private renderBandHeader(
+    private renderMapIntro(
         content: Phaser.GameObjects.Container,
-        bandId: BandId,
-        state: MasteryState,
         yOffset: number,
         width: number,
     ): number {
-        const color = STATE_COLORS[state];
-
-        const headerBg = this.scene.add.rectangle(0, yOffset, width, 32, 0x111122)
-            .setOrigin(0, 0);
-        content.add(headerBg);
-
-        const headerText = this.scene.add.text(12, yOffset + 7, `PÁSMO ${bandId} (${BAND_RANGES[bandId]})`, {
-            fontSize: '15px', fontFamily: 'Arial, sans-serif', color: '#e8d44d', fontStyle: 'bold',
-        });
-        content.add(headerText);
-
-        // State badge (colored pill)
-        const badgeX = 240;
-        const badge = this.scene.add.rectangle(badgeX, yOffset + 8, 80, 18, color, 0.3)
+        const intro = this.scene.add.rectangle(0, yOffset, width, 50, 0x101929, 0.98)
             .setOrigin(0, 0)
-            .setStrokeStyle(1, color);
-        content.add(badge);
+            .setStrokeStyle(1, 0x425c78, 0.7);
+        content.add(intro);
+        content.add(this.scene.add.text(18, yOffset + 10, 'CESTA ATOMŮ', {
+            fontFamily: 'Palatino Linotype, Book Antiqua, Georgia, serif',
+            fontSize: '16px',
+            fontStyle: 'bold',
+            color: '#f2d58a',
+        }));
+        content.add(this.scene.add.text(18, yOffset + 29, 'Klikni na uzel a teprve potom uvidíš formy, přesnost a rychlost.', {
+            fontFamily: 'Arial, sans-serif',
+            fontSize: '10px',
+            color: '#8294aa',
+        }));
 
-        const badgeText = this.scene.add.text(badgeX + 40, yOffset + 8 + 9, STATE_LABELS[state], {
-            fontSize: '11px', fontFamily: 'Arial, sans-serif',
-            color: `#${color.toString(16).padStart(6, '0')}`,
-        }).setOrigin(0.5);
-        content.add(badgeText);
-
-        // Accent line below
-        const line = this.scene.add.rectangle(0, yOffset + 32, width, 2, color, 0.3)
-            .setOrigin(0, 0);
-        content.add(line);
-
-        return yOffset + 38;
+        const legendStates: MasteryState[] = ['training', 'secure', 'fluent', 'mastery'];
+        let legendX = 535;
+        for (const state of legendStates) {
+            const color = STATE_COLORS[state];
+            content.add(this.scene.add.circle(legendX, yOffset + 25, 5, color));
+            content.add(this.scene.add.text(legendX + 10, yOffset + 18, STATE_LABELS[state], {
+                fontFamily: 'Arial, sans-serif',
+                fontSize: '9px',
+                color: `#${color.toString(16).padStart(6, '0')}`,
+            }));
+            legendX += 135;
+        }
+        return yOffset + 62;
     }
 
-    // ── Sub-atom card (collapsed) ──
+    private renderBandMap(
+        content: Phaser.GameObjects.Container,
+        bandId: BandId,
+        bandState: MasteryState,
+        data: any,
+        yOffset: number,
+        width: number,
+    ): number {
+        const laneHeight = 176;
+        const lane = this.scene.add.rectangle(0, yOffset, width, laneHeight, 0x0d1726, 0.97)
+            .setOrigin(0, 0)
+            .setStrokeStyle(1, STATE_COLORS[bandState], bandState === 'locked' ? 0.25 : 0.55);
+        content.add(lane);
 
-    private renderSubAtomCard(
+        const bandColor = STATE_COLORS[bandState];
+        const bandHalo = this.scene.add.circle(72, yOffset + 82, 39, bandColor, bandState === 'locked' ? 0.05 : 0.14)
+            .setStrokeStyle(1, bandColor, 0.35);
+        const bandBadge = this.scene.add.circle(72, yOffset + 82, 30, 0x121f32, 1)
+            .setStrokeStyle(3, bandColor, 0.9);
+        content.add([bandHalo, bandBadge]);
+        content.add(this.scene.add.text(72, yOffset + 73, bandId, {
+            fontFamily: 'Palatino Linotype, Book Antiqua, Georgia, serif',
+            fontSize: '20px',
+            fontStyle: 'bold',
+            color: '#ffffff',
+        }).setOrigin(0.5));
+        content.add(this.scene.add.text(72, yOffset + 101, BAND_RANGES[bandId], {
+            fontFamily: 'Arial, sans-serif',
+            fontSize: '9px',
+            color: '#8da0b6',
+        }).setOrigin(0.5));
+
+        const nodePoints = [
+            { x: 245, y: yOffset + 53 },
+            { x: 455, y: yOffset + 112 },
+            { x: 680, y: yOffset + 53 },
+            { x: 900, y: yOffset + 112 },
+        ];
+        const route = this.scene.add.graphics();
+        route.lineStyle(6, 0x25364a, 0.9);
+        route.lineBetween(104, yOffset + 82, nodePoints[0].x - 30, nodePoints[0].y);
+        for (let index = 0; index < nodePoints.length - 1; index++) {
+            route.lineBetween(
+                nodePoints[index].x + 30,
+                nodePoints[index].y,
+                nodePoints[index + 1].x - 30,
+                nodePoints[index + 1].y,
+            );
+        }
+        route.lineStyle(2, bandColor, bandState === 'locked' ? 0.14 : 0.45);
+        route.lineBetween(104, yOffset + 82, nodePoints[0].x - 30, nodePoints[0].y);
+        for (let index = 0; index < nodePoints.length - 1; index++) {
+            route.lineBetween(
+                nodePoints[index].x + 30,
+                nodePoints[index].y,
+                nodePoints[index + 1].x - 30,
+                nodePoints[index + 1].y,
+            );
+        }
+        content.add(route);
+
+        nodePoints.forEach((point, index) => {
+            const saId = `${bandId}${ALL_SUB_ATOM_NUMBERS[index]}` as SubAtomId;
+            this.renderMapNode(content, saId, data.subAtoms[saId], point.x, point.y);
+        });
+
+        const bandLabel = this.scene.add.text(1060, yOffset + 14, STATE_LABELS[bandState].toUpperCase(), {
+            fontFamily: 'Arial, sans-serif',
+            fontSize: '9px',
+            fontStyle: 'bold',
+            color: `#${bandColor.toString(16).padStart(6, '0')}`,
+        }).setOrigin(1, 0);
+        content.add(bandLabel);
+        return yOffset + laneHeight;
+    }
+
+    private renderMapNode(
         content: Phaser.GameObjects.Container,
         saId: SubAtomId,
         sa: any,
         x: number,
         y: number,
-        width: number,
     ): void {
         const state = sa.state as MasteryState;
         const color = STATE_COLORS[state];
-        const cardHeight = 110;
-        const isExpanded = this.expandedSubAtoms.has(saId);
+        const selected = this.expandedSubAtoms.has(saId);
+        const target = this.getNextSolveTarget(state);
 
-        // Card background
-        const cardBg = this.scene.add.rectangle(x, y, width, cardHeight, 0x16213e)
-            .setOrigin(0, 0)
-            .setStrokeStyle(1, color, 0.3);
-        content.add(cardBg);
-
-        // Top glow line (3px)
-        const glowLine = this.scene.add.rectangle(x, y, width, 3, color)
-            .setOrigin(0, 0);
-        content.add(glowLine);
-
-        // Sub-atom ID
-        const idText = this.scene.add.text(x + 10, y + 10, saId, {
-            fontSize: '16px', fontFamily: 'Arial, sans-serif', color: '#ffffff', fontStyle: 'bold',
-        });
-        content.add(idText);
-
-        // Chevron
-        const chevron = this.scene.add.text(x + width - 24, y + 10, isExpanded ? '▲' : '▼', {
-            fontSize: '14px', fontFamily: 'Arial, sans-serif', color: '#8888aa',
-        });
-        content.add(chevron);
-
-        // Name
-        const name = SUB_ATOM_NAMES[saId] || saId;
-        const nameText = this.scene.add.text(x + 10, y + 32, name, {
-            fontSize: '12px', fontFamily: 'Arial, sans-serif', color: '#8888cc',
-        });
-        content.add(nameText);
-
-        // State indicator
-        const stateDot = this.scene.add.circle(x + 10, y + 58, 4, color);
-        content.add(stateDot);
-
-        const stateText = this.scene.add.text(x + 20, y + 52, STATE_LABELS[state], {
-            fontSize: '12px', fontFamily: 'Arial, sans-serif',
+        const halo = this.scene.add.circle(x, y, selected ? 39 : 35, color, selected ? 0.26 : 0.1)
+            .setStrokeStyle(selected ? 2 : 1, color, selected ? 0.9 : 0.3);
+        const node = this.scene.add.circle(x, y, 28, 0x101c2e, 1)
+            .setStrokeStyle(3, color, state === 'locked' ? 0.45 : 1)
+            .setInteractive({ useHandCursor: true });
+        content.add([halo, node]);
+        content.add(this.scene.add.text(x, y - 2, state === 'locked' ? '×' : saId, {
+            fontFamily: 'Palatino Linotype, Book Antiqua, Georgia, serif',
+            fontSize: state === 'locked' ? '20px' : '15px',
+            fontStyle: 'bold',
+            color: state === 'locked' ? '#5c6570' : '#ffffff',
+        }).setOrigin(0.5));
+        content.add(this.scene.add.text(x, y + 39, SUB_ATOM_NAMES[saId], {
+            fontFamily: 'Arial, sans-serif',
+            fontSize: '10px',
+            color: state === 'locked' ? '#596575' : '#c7d2df',
+            align: 'center',
+            wordWrap: { width: 150 },
+        }).setOrigin(0.5, 0));
+        const progressLabel = state === 'locked'
+            ? 'ZAMČENO'
+            : state === 'mastery'
+                ? '★ HOTOVO'
+                : `${sa.successfulSolves ?? 0} / ${target}`;
+        content.add(this.scene.add.text(x, y - 52, progressLabel, {
+            fontFamily: 'Arial, sans-serif',
+            fontSize: '9px',
+            fontStyle: 'bold',
             color: `#${color.toString(16).padStart(6, '0')}`,
+        }).setOrigin(0.5));
+
+        node.on('pointerover', () => {
+            node.setStrokeStyle(4, color, 1);
+            halo.setAlpha(selected ? 0.34 : 0.2);
         });
-        content.add(stateText);
-
-        // Solve count
-        if (state !== 'locked') {
-            const solves = sa.successfulSolves || 0;
-            const nextTarget = this.getNextSolveTarget(state);
-            const solvesText = this.scene.add.text(x + 10, y + 70, `Úlohy: ${solves}`, {
-                fontSize: '11px', fontFamily: 'Arial, sans-serif', color: '#8888aa',
-            });
-            content.add(solvesText);
-
-            // Mini progress bar
-            if (nextTarget > 0) {
-                const barX = x + 10;
-                const barY = y + 88;
-                const barW = width - 20;
-                const barH = 6;
-
-                const barBg = this.scene.add.rectangle(barX, barY, barW, barH, 0x222244).setOrigin(0, 0);
-                content.add(barBg);
-
-                const fillRatio = Math.min(1, solves / nextTarget);
-                if (fillRatio > 0) {
-                    const barFill = this.scene.add.rectangle(barX, barY, barW * fillRatio, barH, color).setOrigin(0, 0);
-                    content.add(barFill);
-                }
-
-                const barLabel = this.scene.add.text(barX + barW + 4, barY - 2, `${solves}/${nextTarget}`, {
-                    fontSize: '9px', fontFamily: 'Arial, sans-serif', color: '#666688',
-                });
-                // Don't add if it would overflow, just skip
-                if (barX + barW + 4 < x + width + 50) {
-                    // Actually just position within the bar area
-                }
-                content.add(barLabel);
-            }
-        }
-
-        // Make card interactive (click to expand/collapse)
-        cardBg.setInteractive({ useHandCursor: true });
-        cardBg.on('pointerover', () => cardBg.setStrokeStyle(1, color, 0.8));
-        cardBg.on('pointerout', () => cardBg.setStrokeStyle(1, color, 0.3));
-        cardBg.on('pointerdown', () => {
-            if (this.expandedSubAtoms.has(saId)) {
-                this.expandedSubAtoms.delete(saId);
-            } else {
-                // Close others in same band to avoid visual clutter
-                const bandId = saId[0];
-                for (const num of ALL_SUB_ATOM_NUMBERS) {
-                    this.expandedSubAtoms.delete(`${bandId}${num}` as SubAtomId);
-                }
+        node.on('pointerout', () => {
+            node.setStrokeStyle(3, color, state === 'locked' ? 0.45 : 1);
+            halo.setAlpha(1);
+        });
+        node.on('pointerdown', () => {
+            if (selected) this.expandedSubAtoms.clear();
+            else {
+                this.expandedSubAtoms.clear();
                 this.expandedSubAtoms.add(saId);
             }
             this.rebuildContent();
@@ -300,7 +305,7 @@ export class MasteryMapOverlay extends OverlayBase {
 
         // Header
         const headerText = this.scene.add.text(24, py, `${saId}: ${SUB_ATOM_NAMES[saId]} ─ ${STATE_LABELS[state].toUpperCase()}`, {
-            fontSize: '14px', fontFamily: 'Arial, sans-serif', color: '#e8d44d', fontStyle: 'bold',
+            fontSize: '16px', fontFamily: 'Arial, sans-serif', color: '#e8d44d', fontStyle: 'bold',
         });
         content.add(headerText);
         py += 26;
@@ -324,16 +329,18 @@ export class MasteryMapOverlay extends OverlayBase {
 
         const summaryText = this.scene.add.text(24, py,
             `Celkem: ✓${totalCorrect}  ✗${totalWrong}  |  Přesnost (posl. 20): ${Math.round(accuracy * 100)}%  |  Median RT: ${rtStr}`, {
-            fontSize: '12px', fontFamily: 'Arial, sans-serif', color: '#aaaacc',
+            fontSize: '13px', fontFamily: 'Arial, sans-serif', color: '#b9c7d8',
         });
         content.add(summaryText);
-        py += 24;
+        py += 30;
 
-        // Per-form table
-        py = this.renderFormTable(content, saId, data, mastery, problemDb, py);
-
-        // Next level section
-        py = this.renderNextLevel(content, saId, sa, mastery, state, py, totalWidth);
+        const sectionTop = py;
+        const formBottom = this.renderFormTable(content, saId, data, mastery, problemDb, sectionTop);
+        const separator = this.scene.add.rectangle(564, sectionTop, 1, 108, 0x4a6fa5, 0.36)
+            .setOrigin(0, 0);
+        content.add(separator);
+        const nextBottom = this.renderNextLevel(content, saId, sa, mastery, state, sectionTop, totalWidth, 592);
+        py = Math.max(formBottom, nextBottom);
 
         panelBg.setSize(totalWidth - 20, py - yOffset + 8);
         return py + 12;
@@ -349,7 +356,7 @@ export class MasteryMapOverlay extends OverlayBase {
     ): number {
         // Table header
         const colX = [24, 240, 330, 400, 480];
-        const headerStyle = { fontSize: '11px', fontFamily: 'Arial, sans-serif', color: '#6688aa', fontStyle: 'bold' as const };
+        const headerStyle = { fontSize: '12px', fontFamily: 'Arial, sans-serif', color: '#7fa1c4', fontStyle: 'bold' as const };
 
         const headers = ['Forma', 'Správně', 'Špatně', 'Prům. RT'];
         for (let i = 0; i < headers.length; i++) {
@@ -366,7 +373,7 @@ export class MasteryMapOverlay extends OverlayBase {
         for (const form of ALL_PROBLEM_FORMS) {
             const stats = this.computeFormStats(saId, form, data, problemDb);
 
-            const rowStyle = { fontSize: '11px', fontFamily: 'Arial, sans-serif', color: '#ccccee' };
+            const rowStyle = { fontSize: '12px', fontFamily: 'Arial, sans-serif', color: '#d6deea' };
 
             const formText = this.scene.add.text(colX[0], yOffset, FORM_LABELS[form], rowStyle);
             content.add(formText);
@@ -385,7 +392,7 @@ export class MasteryMapOverlay extends OverlayBase {
             const rtText = this.scene.add.text(colX[3], yOffset, rtDisplay, rowStyle);
             content.add(rtText);
 
-            yOffset += 18;
+            yOffset += 20;
         }
 
         return yOffset + 8;
@@ -399,36 +406,38 @@ export class MasteryMapOverlay extends OverlayBase {
         state: MasteryState,
         yOffset: number,
         _totalWidth: number,
+        xOffset: number = 24,
     ): number {
         const color = STATE_COLORS[state];
 
         if (state === 'mastery') {
-            const starText = this.scene.add.text(24, yOffset, '★ Mistrovství!', {
-                fontSize: '14px', fontFamily: 'Arial, sans-serif', color: '#ff44ff', fontStyle: 'bold',
+            const starText = this.scene.add.text(xOffset, yOffset, '★ Mistrovství!', {
+                fontSize: '15px', fontFamily: 'Arial, sans-serif', color: '#ff44ff', fontStyle: 'bold',
             });
             content.add(starText);
             return yOffset + 28;
         }
 
         const transitions: Record<string, string> = {
-            training: 'Zkouška sub-atomu (Training → Secure)',
-            secure: 'Plynulost (Secure → Fluent)',
-            fluent: 'Mistrovství (Fluent → Mastery)',
+            training: 'Zkouška atomu (Procvičování → Jistota)',
+            secure: 'Výzva plynulosti (Jistota → Plynulost)',
+            fluent: 'Výzva mistrovství (Plynulost → Mistrovství)',
         };
 
         const nextLabel = transitions[state] || '';
         if (!nextLabel) return yOffset;
 
-        const nextText = this.scene.add.text(24, yOffset, `Další úroveň: ${nextLabel}`, {
-            fontSize: '12px', fontFamily: 'Arial, sans-serif', color: '#aaaacc', fontStyle: 'bold',
+        const nextText = this.scene.add.text(xOffset, yOffset, `DALŠÍ KROK\n${nextLabel}`, {
+            fontSize: '13px', fontFamily: 'Arial, sans-serif', color: '#e0c777', fontStyle: 'bold',
+            lineSpacing: 4,
         });
         content.add(nextText);
-        yOffset += 22;
+        yOffset += 43;
 
         // Progress bars
         const bars = this.getNextLevelProgress(saId, sa, mastery, state);
         for (const bar of bars) {
-            yOffset = this.renderProgressBar(content, bar, yOffset, color);
+            yOffset = this.renderProgressBar(content, bar, yOffset, color, xOffset);
         }
 
         return yOffset;
@@ -439,13 +448,14 @@ export class MasteryMapOverlay extends OverlayBase {
         item: { label: string; current: number; target: number; valueStr: string; met: boolean },
         yOffset: number,
         stateColor: number,
+        xOffset: number,
     ): number {
-        const barX = 36;
-        const barWidth = 140;
+        const barX = xOffset;
+        const barWidth = 150;
         const barHeight = 8;
 
         const label = this.scene.add.text(barX, yOffset, item.label, {
-            fontSize: '11px', fontFamily: 'Arial, sans-serif', color: '#8888aa',
+            fontSize: '12px', fontFamily: 'Arial, sans-serif', color: '#a7b5c7',
         });
         content.add(label);
 
@@ -461,11 +471,11 @@ export class MasteryMapOverlay extends OverlayBase {
 
         const checkMark = item.met ? ' ✓' : '';
         const valText = this.scene.add.text(barX + 268, yOffset, `${item.valueStr}${checkMark}`, {
-            fontSize: '11px', fontFamily: 'Arial, sans-serif', color: item.met ? '#44ff44' : '#8888aa',
+            fontSize: '12px', fontFamily: 'Arial, sans-serif', color: item.met ? '#44ff44' : '#a7b5c7',
         });
         content.add(valText);
 
-        return yOffset + 18;
+        return yOffset + 21;
     }
 
     // ── Data computation helpers ──
@@ -528,7 +538,7 @@ export class MasteryMapOverlay extends OverlayBase {
 
     private getNextSolveTarget(state: MasteryState): number {
         switch (state) {
-            case 'training': return 20;
+            case 'training': return SUB_ATOM_EXAM_REQUIREMENTS.successfulSolves;
             case 'secure': return 30;
             case 'fluent': return 50;
             default: return 0;
@@ -547,11 +557,29 @@ export class MasteryMapOverlay extends OverlayBase {
         const rtStr = medianRT === Infinity ? '--' : `${(medianRT / 1000).toFixed(1)}s`;
 
         if (state === 'training') {
-            const formsCount = mastery.getFormsWithSolves(saId, 4);
+            const progress = mastery.getSubAtomExamProgress(saId);
             return [
-                { label: 'Úlohy:', current: solves, target: 20, valueStr: `${solves}/20`, met: solves >= 20 },
-                { label: 'Přesnost:', current: accuracy * 100, target: 70, valueStr: `${Math.round(accuracy * 100)}%/70%`, met: accuracy >= 0.70 },
-                { label: 'Formy:', current: formsCount, target: 2, valueStr: `${formsCount}/2`, met: formsCount >= 2 },
+                {
+                    label: 'Úlohy:',
+                    current: progress.successfulSolves,
+                    target: progress.requiredSuccessfulSolves,
+                    valueStr: `${progress.successfulSolves}/${progress.requiredSuccessfulSolves}`,
+                    met: progress.successfulSolves >= progress.requiredSuccessfulSolves,
+                },
+                {
+                    label: 'Přesnost:',
+                    current: progress.accuracy * 100,
+                    target: progress.requiredAccuracy * 100,
+                    valueStr: `${Math.round(progress.accuracy * 100)}%/${Math.round(progress.requiredAccuracy * 100)}%`,
+                    met: progress.accuracy >= progress.requiredAccuracy,
+                },
+                {
+                    label: 'Formy:',
+                    current: progress.qualifyingForms,
+                    target: progress.requiredQualifyingForms,
+                    valueStr: `${progress.qualifyingForms}/${progress.requiredQualifyingForms}`,
+                    met: progress.qualifyingForms >= progress.requiredQualifyingForms,
+                },
             ];
         } else if (state === 'secure') {
             const formsCount = mastery.getFormsWithSolves(saId, 4);

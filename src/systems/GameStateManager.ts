@@ -26,6 +26,7 @@ export class GameStateManager {
     private player: PlayerState;
     private mathStats: MathStats;
     private activeSlotIndex: number | null = null;
+    private previewSnapshot: { player: PlayerState; mathStats: MathStats; slot: number | null } | null = null;
 
     private constructor() {
         // Try to load from active slot, or create new game state
@@ -172,11 +173,39 @@ export class GameStateManager {
      * Save to the currently active slot
      */
     save(): void {
+        if (this.previewSnapshot) return; // Menu playtests must never write a real slot.
         if (this.activeSlotIndex === null) {
             console.warn('[GameStateManager] No active slot - cannot save');
             return;
         }
         SaveSystem.save(this.activeSlotIndex, this.player, this.mathStats);
+    }
+
+    /** Isolated, disposable playtest profile; the user's active slot stays untouched. */
+    beginUnderwaterPreview(): void {
+        if (this.previewSnapshot) return;
+        this.previewSnapshot = { player: this.player, mathStats: this.mathStats, slot: this.activeSlotIndex };
+        this.player = ProgressionSystem.createInitialPlayer(this.player.characterType);
+        this.player.name = 'Průzkumník';
+        this.player.maxHp = this.player.hp = 24;
+        this.player.attack = 8;
+        // Representative, disposable exploration kit for the multi-enemy Silverpond rooms.
+        this.player.equippedWeapon = 'sword_iron';
+        this.player.equippedShield = 'shield_iron';
+        this.player.potions = 3;
+        this.mathStats = this.createInitialMathStats();
+        this.activeSlotIndex = null;
+    }
+
+    isPreviewActive(): boolean { return this.previewSnapshot !== null; }
+
+    endPreview(): boolean {
+        if (!this.previewSnapshot) return false;
+        this.player = this.previewSnapshot.player;
+        this.mathStats = this.previewSnapshot.mathStats;
+        this.activeSlotIndex = this.previewSnapshot.slot;
+        this.previewSnapshot = null;
+        return true;
     }
 
     /**
@@ -237,8 +266,7 @@ export class GameStateManager {
             ? this.migrateExistingMasteryData(stats.masteryData)
             : this.migrateMasteryData(stats);
 
-        // Migrate problemStats to include manaCollected if missing
-        // Also migrate old diamondsCollected → manaCollected
+        // Keep the old field readable so existing saves remain compatible.
         const migratedProblemStats: Record<string, ProblemStats> = {};
         if (stats.problemStats) {
             for (const [key, problemStats] of Object.entries(stats.problemStats)) {
@@ -248,7 +276,7 @@ export class GameStateManager {
                     wrongCount: typedStats.wrongCount || 0,
                     lastAttempt: typedStats.lastAttempt || 0,
                     mastered: typedStats.mastered || false,
-                    // Migrate diamondsCollected → manaCollected (backwards compatibility)
+                    // Legacy only; gameplay no longer derives mana from solve counts.
                     manaCollected: typedStats.manaCollected ?? typedStats.diamondsCollected ?? 0,
                 };
             }

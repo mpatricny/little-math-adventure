@@ -161,6 +161,12 @@ export abstract class OverlayBase {
         else this.show();
     }
 
+    /** Keeps static overlay placement controllable through a SceneBuilder host. */
+    public setPlacement(x: number, y: number, depth: number): this {
+        this.container.setPosition(x, y).setDepth(depth);
+        return this;
+    }
+
     /** Called when overlay becomes visible. Override to refresh data. */
     protected onShow(): void {}
 

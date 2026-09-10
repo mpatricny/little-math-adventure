@@ -31,6 +31,8 @@ public/assets/data/
 └── pets.json                # Pet definitions
 ```
 
+For the practical image-generation and chroma-key pipeline used to turn generated UI sheets into game-ready PNG assets, see `docs/ASSET_CREATION.md`.
+
 ### File Responsibilities
 
 | File | Contains | Purpose |

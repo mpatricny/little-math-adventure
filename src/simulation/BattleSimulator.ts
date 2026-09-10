@@ -13,6 +13,7 @@ import {
   getProblemsForLevel,
   GAME_BALANCE,
 } from './types';
+import { resolveDamageAfterDefense } from '../systems/CombatDamageSystem';
 
 export interface BattleSimulatorConfig {
   /** Minimum streak length for bonus */
@@ -58,7 +59,7 @@ export function simulateBattle(
   if (config.debug) {
     console.log(`\n=== Battle Start ===`);
     console.log(`Player: Lv${player.level} HP:${playerHP} ATK:${player.atk}`);
-    console.log(`Enemy: ${enemy.name} HP:${enemyHP} ATK:${enemy.atk}`);
+    console.log(`Enemy: ${enemy.name} HP:${enemyHP} ATK:${enemy.atk} DEF:${enemy.defense}`);
     console.log(`Problems/turn: ${problemsPerTurn}`);
   }
 
@@ -94,13 +95,12 @@ export function simulateBattle(
       }
     }
 
-    // ACTUAL GAME: Only correct answers deal damage, NO base ATK added
-    // ATK stat affects problem generation difficulty, not direct damage
-    const totalDamage = damage;
+    // Actual game: defense is subtracted once from the complete attack total.
+    const totalDamage = resolveDamageAfterDefense(damage, enemy.defense).damage;
     enemyHP -= totalDamage;
 
     if (config.debug) {
-      console.log(`Turn ${turns}: Player deals ${totalDamage} damage (from ${damage} correct answers)`);
+      console.log(`Turn ${turns}: Player deals ${totalDamage} damage (${damage} raw - ${enemy.defense} defense)`);
       console.log(`  Enemy HP: ${Math.max(0, enemyHP)}/${enemy.hp}`);
     }
 

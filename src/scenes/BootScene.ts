@@ -2,6 +2,7 @@ import Phaser from 'phaser';
 import { LocalizationService } from '../systems/LocalizationService';
 import { TexturesFile, AnimationsFile } from '../types/assets';
 import { uiTemplateLoader } from '../systems/UiTemplateLoader';
+import { isTvMode } from '../remote/remoteMode';
 
 export class BootScene extends Phaser.Scene {
     constructor() {
@@ -41,7 +42,8 @@ export class BootScene extends Phaser.Scene {
         // Nine-slice configs (for scalable UI elements)
         this.load.json('nineSlices', 'assets/data/nine-slices.json');
 
-        // Legacy data (keep until fully migrated)
+        // Runtime data. encounters.json is the source of truth for arena and forest battles.
+        this.load.json('encounters', 'assets/data/encounters.json');
         this.load.json('enemies', 'assets/data/enemies.json');
         this.load.json('items', 'assets/data/items.json');
         this.load.json('pets', 'assets/data/pets.json');
@@ -85,8 +87,20 @@ export class AssetLoaderScene extends Phaser.Scene {
             progressBar.fillRect(width / 2 - 150, height / 2 - 15, 300 * value, 30);
         });
 
+        // A texture key can represent either a plain image or a spritesheet, never both.
+        // Prefer spritesheets defensively so an accidental duplicate catalog entry cannot
+        // collapse every animation frame into one large static texture.
+        const spritesheetKeys = new Set(Object.keys(textures.spritesheets));
+
         // Load all images
         for (const [key, path] of Object.entries(textures.images)) {
+            // Chapter backgrounds are loaded on entry, never during tablet boot.
+            if (key.startsWith('underwater-')) continue;
+            if (spritesheetKeys.has(key)) {
+                console.error(`[AssetLoaderScene] Skipping duplicate image key reserved for spritesheet: ${key}`);
+                continue;
+            }
+
             // Handle library: prefix for Asset Library files
             const actualPath = path.startsWith('library:')
                 ? `assets/library/${path.slice(8)}`  // Strip "library:" and add "assets/library/"
@@ -124,9 +138,9 @@ export class AssetLoaderScene extends Phaser.Scene {
             this.registry.set('nineSlices', nineSlices);
         }
 
-        // Load UI templates, then go to menu
+        // Load UI templates, then go to menu or TV pairing mode
         uiTemplateLoader.load().then(() => {
-            this.scene.start('MenuScene');
+            this.scene.start(isTvMode() ? 'TvPairingScene' : 'MenuScene');
         });
     }
 

@@ -48,12 +48,18 @@ export interface ArenaWaveResult {
 
 export interface ArenaState {
     isActive: boolean;
-    arenaLevel: number;         // Which arena level (1-5)
+    arenaLevel: number;         // Highest unlocked global arena level (city-local levels are stored in encounters.json)
     currentBattle: number;      // 0-4 (5 battles per arena)
     playerHpAtStart: number;    // HP when arena started
     completedArenaLevels: number[];  // Tracks which arena levels have been completed
     waveResults?: ArenaWaveResult[]; // Index 0-4 for waves 1-5, tracks completion and perfect status
     waveResultsArenaLevel?: number;  // Which arena level the waveResults belong to (reset when different)
+    /** Versioned encounter-keyed progress. Legacy waveResults remains dual-written during migration. */
+    arenaProgressVersion?: 2;
+    /** Stable encounter ID for the currently selected wave. */
+    currentEncounterId?: string;
+    /** Best historical result per encounter, retained across arena levels. */
+    encounterResults?: Record<string, ArenaWaveResult>;
 }
 
 // ===== PET SYSTEM =====
@@ -88,7 +94,15 @@ export interface PetDefinition {
 
 export type CharacterType = 'girl_knight' | 'boy_knight';
 
+export type PreparationKind = 'sword' | 'shield';
+
+export interface PreparationState {
+    kind: PreparationKind | null;
+    charges: number;
+}
+
 export interface PlayerState {
+    puzzleProgress?: import('./puzzles').PuzzleProgress;
     name: string;
     characterType: CharacterType;
     level: number;
@@ -103,6 +117,8 @@ export interface PlayerState {
     equippedArmor: string | null;
     equippedShield: string | null;
     equippedHelmet: string | null;
+    /** Optional for save compatibility; normalized by PreparationSystem on load/use. */
+    preparation?: PreparationState;
     potions: number;                  // Consumable potions for battle
     hasPotionSubscription: boolean;   // True once player buys potion at witch (enables auto-refill)
     pet: PetState | null;             // Active pet companion
@@ -122,10 +138,18 @@ export interface PlayerState {
     trialHistory?: TrialHistory;
     // === STORY PROGRESS ===
     storyProgress?: StoryProgress;     // Track story milestones for visual storytelling
+    underwaterProgress?: import('./underwater').UnderwaterProgress;
     // === TOWN PROGRESS ===
     townProgress?: TownProgress;       // Track building unlocks and progressive town growth
     // === CATACOMB TRIALS ===
     catacombPetUpgrades?: Record<string, number>;  // BandId → mastery upgrade count (0-4)
+    // === DAILY LEARNING SUMMARY ===
+    dailyProgressLog?: Record<string, {
+        coinsEarned: number;
+        manaEarned: number;
+        crystalsEarned: number;
+        milestones: string[];
+    }>;
 }
 
 // ===== GUILD TRIAL SYSTEM =====
@@ -207,7 +231,8 @@ export interface ProblemStats {
     wrongCount: number;
     lastAttempt: number;        // timestamp
     mastered: boolean;          // true if correctly answered this session
-    manaCollected: number;      // 0, 1, 2, or 3 (tracks collected mana at 5x, 10x, 20x thresholds)
+    /** @deprecated Legacy save field; no longer affects mana rewards or problem selection. */
+    manaCollected: number;
 }
 
 export interface InventoryState {
@@ -324,8 +349,18 @@ export interface EnemyDefinition {
     defense: number;
     goldReward: [number, number];  // [min, max]
     difficulty: number;            // Recommended player level
-    scale?: number;                // Character scale multiplier
-    battleOffsetY?: number;        // Vertical offset on battlefield (negative = up)
+    /** Legacy fallback used by enemies not yet migrated to context-specific presentation. */
+    scale?: number;
+    /** Default scale in exploration/world scenes. */
+    worldScale?: number;
+    /** Default scale when rendered as a battle actor. */
+    battleScale?: number;
+    /** Battle-only correction relative to the configured spawn point. */
+    battleOffsetX?: number;
+    /** Battle-only correction relative to the configured spawn point. */
+    battleOffsetY?: number;
+    /** Transparent top padding above the full motion envelope, in source-frame pixels. */
+    frameTopInset?: number;
 }
 
 // ===== ITEMS =====
@@ -424,6 +459,14 @@ export interface StoryProgress {
     hasSeenPythiaIntro: boolean;       // Pythia's Workshop first visit
     hasSeenPostArena1: boolean;        // After Arena 1 complete
     hasSeenPostArena2: boolean;        // After Arena 2 complete
+    hasDefeatedVerdantGuardian: boolean;
+    hasClaimedForestCrystal: boolean;
+    hasInstalledForestCrystal: boolean;
+    hasUnlockedSilverpond: boolean;
+    hasSeenSilverpondQuest: boolean;
+    hasFreedLakeFairy: boolean;
+    hasWaterBreathingScale: boolean;
+    hasSeenLakeFairyReward: boolean;
 }
 
 // ===== MASTERY SYSTEM =====
@@ -445,7 +488,10 @@ export interface MasteryAttempt {
     timestamp: number;
     correct: boolean;
     responseTimeMs: number;
-    context: 'battle' | 'battle_block' | 'battle_sword' | 'battle_pet' | 'exam' | 'fluency' | 'mastery_challenge' | 'band_gate';
+    context: 'battle' | 'battle_block' | 'battle_sword' | 'battle_pet'
+        | 'shop_prep_sword' | 'shop_prep_shield'
+        | 'mana_collection' | 'underwater_bell'
+        | 'exam' | 'fluency' | 'mastery_challenge' | 'band_gate';
     sequenceIndex: number;      // globalSolveSequence at time of attempt
 }
 
@@ -521,18 +567,18 @@ export interface ExamConfig {
 }
 
 export const EXAM_CONFIGS: Record<ExamType, ExamConfig> = {
-    sub_atom: { type: 'sub_atom', itemCount: 10, timePerItem: 15, bronzeThreshold: 6, silverThreshold: 8, goldThreshold: 9 },
-    fluency_challenge: { type: 'fluency_challenge', itemCount: 12, timePerItem: 15, passThreshold: 10 },
-    mastery_challenge: { type: 'mastery_challenge', itemCount: 12, timePerItem: 15, passThreshold: 11 },
-    band_gate: { type: 'band_gate', itemCount: 16, timePerItem: 15, bronzeThreshold: 11, silverThreshold: 13, goldThreshold: 15 },
-    band_mastery: { type: 'band_mastery', itemCount: 20, timePerItem: 15, passThreshold: 18 },
+    sub_atom: { type: 'sub_atom', itemCount: 8, timePerItem: 15, bronzeThreshold: 5, silverThreshold: 6, goldThreshold: 7 },
+    fluency_challenge: { type: 'fluency_challenge', itemCount: 10, timePerItem: 15, passThreshold: 8 },
+    mastery_challenge: { type: 'mastery_challenge', itemCount: 10, timePerItem: 15, passThreshold: 9 },
+    band_gate: { type: 'band_gate', itemCount: 12, timePerItem: 15, bronzeThreshold: 8, silverThreshold: 10, goldThreshold: 11 },
+    band_mastery: { type: 'band_mastery', itemCount: 14, timePerItem: 15, passThreshold: 12 },
 };
 
 // ===== CATACOMB TRIAL SYSTEM =====
 export interface CatacombTrialConfig {
     examType: 'fluency_challenge' | 'mastery_challenge';
     subAtomId: SubAtomId;
-    creatureHp: number;      // 12
+    creatureHp: number;      // Matches configured item count (currently 10)
     playerLives: number;     // 3 (fluency) or 2 (mastery)
     chargeTime: number;      // 15 seconds
     enemyId: string;         // creature enemy ID (per-band)

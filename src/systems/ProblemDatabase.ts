@@ -1,3 +1,4 @@
+import { BAND_RANGES, crossesTen } from './MathSkillRules';
 import { BandId, SubAtomId, SubAtomNumber, ProblemForm, ProblemDefinition, ALL_BANDS, ALL_SUB_ATOM_NUMBERS, ALL_PROBLEM_FORMS } from '../types';
 
 /**
@@ -8,19 +9,6 @@ import { BandId, SubAtomId, SubAtomNumber, ProblemForm, ProblemDefinition, ALL_B
  * D: results 11-20, no crossing 10 (both operands on same side of 10)
  * E: results 0-20, crossing 10 (addition crosses up through 10, subtraction crosses down)
  */
-interface BandRange {
-    minResult: number;
-    maxResult: number;
-}
-
-const BAND_RANGES: Record<BandId, BandRange> = {
-    A: { minResult: 0, maxResult: 5 },
-    B: { minResult: 0, maxResult: 8 },
-    C: { minResult: 0, maxResult: 10 },
-    D: { minResult: 0, maxResult: 20 },
-    E: { minResult: 0, maxResult: 20 },
-};
-
 /**
  * Runtime-computed catalog of ALL possible problems.
  * The dataset is small (<1000 total problems) so we compute it at startup.
@@ -395,10 +383,10 @@ export class ProblemDatabase {
                 if (answer > 20 || answer < 0) return false;
                 if (operator === '+') {
                     // a < 10 and answer > 10 (crosses up through 10)
-                    return a < 10 && b > 0 && answer > 10 && answer <= 20;
+                    return a < 10 && b > 0 && crossesTen(a, answer) && answer <= 20;
                 } else {
                     // a > 10 and answer < 10 (crosses down through 10)
-                    return a > 10 && a <= 20 && answer < 10 && answer >= 0;
+                    return a > 10 && a <= 20 && crossesTen(a, answer) && answer >= 0;
                 }
         }
     }

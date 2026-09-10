@@ -1,4 +1,5 @@
 import { PlayerState } from '../types';
+import { DailyProgressSystem } from './DailyProgressSystem';
 
 /**
  * ManaSystem handles mana resource for Crystal Forge operations
@@ -41,6 +42,7 @@ export class ManaSystem {
      */
     static add(player: PlayerState, amount: number): void {
         player.mana = this.getMana(player) + amount;
+        DailyProgressSystem.recordMana(player, amount);
     }
 
     /**

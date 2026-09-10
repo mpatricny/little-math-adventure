@@ -12,9 +12,10 @@ import {
   JourneyResult,
   EnemyStats,
   ENEMIES,
-  GAME_BALANCE,
 } from './types';
 import { simulateBattle } from './BattleSimulator';
+import forestJourneyJson from '../../public/assets/data/forest-journey.json';
+import { resolveProductionJourneyEncounter } from './ProductionEncounterAdapter';
 
 export interface JourneyConfig {
   /** HP threshold to consider retreating (% of max) */
@@ -29,64 +30,67 @@ const DEFAULT_JOURNEY_CONFIG: JourneyConfig = {
   debug: false,
 };
 
-/**
- * Default Verdant Forest journey definition.
- */
-export const VERDANT_FOREST: JourneyStage[] = [
-  {
-    id: 'stage_1',
-    name: 'Forest Edge',
-    encounters: [
-      { type: 'battle', enemyId: 'forest_slime' },
-      { type: 'puzzle', puzzleDifficulty: 1 },
-      { type: 'battle', enemyId: 'forest_slime' },
-      { type: 'rest', healPercent: 50 },
-    ],
-  },
-  {
-    id: 'stage_2',
-    name: 'Deep Woods',
-    encounters: [
-      { type: 'battle', enemyId: 'wild_boar' },
-      { type: 'chest', chestCoins: 30 },
-      { type: 'puzzle', puzzleDifficulty: 2 },
-      { type: 'battle', enemyId: 'forest_sprite' },
-    ],
-  },
-  {
-    id: 'stage_3',
-    name: 'Ancient Grove',
-    encounters: [
-      { type: 'battle', enemyId: 'elder_treant' },
-      { type: 'puzzle', puzzleDifficulty: 2 },
-      { type: 'rest', healPercent: 100 },
-    ],
-  },
-  {
-    id: 'boss',
-    name: 'Forest Guardian',
-    encounters: [
-      { type: 'boss', bossId: 'forest_guardian' },
-    ],
-  },
-];
+interface ProductionJourneyJsonEncounter {
+  type: JourneyEncounter['type'];
+  encounterId?: string;
+  healPercent?: number;
+  puzzleId?: string;
+  gold?: number;
+}
 
-/**
- * Forest-specific enemies (slightly harder than town enemies).
- */
-const FOREST_ENEMIES: Record<string, EnemyStats> = {
-  'forest_slime': { id: 'forest_slime', name: 'Forest Slime', hp: 4, atk: 1, xp: 25, coinMin: 8, coinMax: 18, difficulty: 1 },
-  'wild_boar': { id: 'wild_boar', name: 'Wild Boar', hp: 6, atk: 2, xp: 35, coinMin: 12, coinMax: 28, difficulty: 2 },
-  'forest_sprite': { id: 'forest_sprite', name: 'Forest Sprite', hp: 5, atk: 2, xp: 30, coinMin: 10, coinMax: 25, difficulty: 2 },
-  'elder_treant': { id: 'elder_treant', name: 'Elder Treant', hp: 12, atk: 3, xp: 60, coinMin: 25, coinMax: 45, difficulty: 3 },
-  'forest_guardian': { id: 'forest_guardian', name: 'Forest Guardian', hp: 30, atk: 4, xp: 150, coinMin: 80, coinMax: 120, difficulty: 4 },
-};
+const productionJourney = forestJourneyJson.journey;
 
-/**
- * Gets enemy stats by ID, checking forest enemies first, then regular enemies.
- */
-function getEnemy(enemyId: string): EnemyStats {
-  return FOREST_ENEMIES[enemyId] ?? ENEMIES.find(e => e.id === enemyId) ?? ENEMIES[0];
+/** Verdant Forest structure comes directly from the production journey file. */
+export const VERDANT_FOREST: JourneyStage[] = productionJourney.stages.map(stage => ({
+  id: stage.id,
+  name: stage.name,
+  encounters: (stage.encounters as ProductionJourneyJsonEncounter[]).map(encounter => {
+    if (encounter.type === 'battle' || encounter.type === 'boss') {
+      return { type: encounter.type, encounterId: encounter.encounterId };
+    }
+    if (encounter.type === 'rest') {
+      return { type: 'rest', healPercent: encounter.healPercent };
+    }
+    if (encounter.type === 'chest') {
+      return { type: 'chest', chestCoins: encounter.gold };
+    }
+    return { type: 'puzzle', puzzleDifficulty: 1 };
+  }),
+}));
+
+/** Legacy support for synthetic simulator fixtures. Production journey entries use encounterId. */
+function getLegacyEnemy(enemyId: string): EnemyStats {
+  return ENEMIES.find(e => e.id === enemyId) ?? ENEMIES[0];
+}
+
+/** Resolve the exact combat sequence used by production, including every boss phase. */
+function resolveSimulationCombatants(encounter: JourneyEncounter): {
+  rewardEnemies: EnemyStats[];
+  battleEnemies: EnemyStats[];
+} {
+  if (encounter.encounterId) {
+    const resolved = resolveProductionJourneyEncounter(encounter.encounterId);
+    return {
+      rewardEnemies: resolved.enemies,
+      battleEnemies: resolved.boss
+        ? resolved.boss.phases.map((phase, index) => ({
+          ...resolved.enemies[0],
+          id: `${resolved.enemies[0].id}-phase-${index + 1}`,
+          name: `${resolved.enemies[0].name} - ${phase.name}`,
+          hp: phase.hp,
+          atk: phase.attack,
+          defense: phase.defense,
+        }))
+        : resolved.enemies,
+    };
+  }
+
+  const legacyId = encounter.type === 'boss' ? encounter.bossId : encounter.enemyId;
+  if (!legacyId) {
+    throw new Error(`Journey ${encounter.type} encounter is missing encounterId`);
+  }
+  const enemy = getLegacyEnemy(legacyId);
+  return { rewardEnemies: [enemy], battleEnemies: [enemy] };
 }
 
 /**
@@ -214,32 +218,38 @@ function processEncounter(
   switch (encounter.type) {
     case 'battle':
     case 'boss': {
-      const enemyId = encounter.type === 'boss' ? encounter.bossId! : encounter.enemyId!;
-      const enemy = getEnemy(enemyId);
+      const { rewardEnemies, battleEnemies } = resolveSimulationCombatants(encounter);
 
       if (config.debug) {
-        console.log(`Battle: ${enemy.name} (HP: ${enemy.hp}, ATK: ${enemy.atk})`);
+        console.log(`Battle: ${battleEnemies.map(enemy => `${enemy.name} (HP: ${enemy.hp}, ATK: ${enemy.atk})`).join(', ')}`);
       }
 
-      const result = simulateBattle(player, enemy, accuracy);
-
-      // Update player HP
-      player.hp = result.playerHPRemaining;
+      let won = true;
+      for (const enemy of battleEnemies) {
+        const result = simulateBattle(player, enemy, accuracy);
+        player.hp = result.playerHPRemaining;
+        if (!result.won) {
+          won = false;
+          break;
+        }
+      }
 
       // Award coins on victory
       let coins = 0;
-      if (result.won) {
-        coins = Math.floor(Math.random() * (enemy.coinMax - enemy.coinMin + 1)) + enemy.coinMin;
+      if (won) {
+        coins = rewardEnemies.reduce((total, enemy) => (
+          total + Math.floor(Math.random() * (enemy.coinMax - enemy.coinMin + 1)) + enemy.coinMin
+        ), 0);
         player.coins += coins;
       }
 
       if (config.debug) {
-        console.log(`  Result: ${result.won ? 'Victory' : 'Defeat'}, HP: ${player.hp}, Coins: +${coins}`);
+        console.log(`  Result: ${won ? 'Victory' : 'Defeat'}, HP: ${player.hp}, Coins: +${coins}`);
       }
 
       return {
         battlesFought: 1,
-        battlesWon: result.won ? 1 : 0,
+        battlesWon: won ? 1 : 0,
         puzzlesSolved: 0,
         puzzlesFailed: 0,
         coinsEarned: coins,
@@ -390,10 +400,12 @@ export function estimateJourneyRequirements(
   for (const stage of stages) {
     for (const encounter of stage.encounters) {
       if (encounter.type === 'battle' || encounter.type === 'boss') {
-        const enemyId = encounter.type === 'boss' ? encounter.bossId! : encounter.enemyId!;
-        const enemy = getEnemy(enemyId);
-        totalEnemyHP += enemy.hp;
-        totalEnemyDamage += enemy.atk * 3; // Estimate 3 turns per battle
+        const { battleEnemies } = resolveSimulationCombatants(encounter);
+        totalEnemyHP += battleEnemies.reduce((total, enemy) => total + enemy.hp, 0);
+        totalEnemyDamage += battleEnemies.reduce(
+          (total, enemy) => total + enemy.atk * 3,
+          0,
+        );
         battleCount++;
       }
     }

@@ -1,3 +1,4 @@
+import { sfx, voice } from '../audio/AudioDirector';
 import Phaser from 'phaser';
 import { GameStateManager } from '../systems/GameStateManager';
 import { ProgressionSystem } from '../systems/ProgressionSystem';
@@ -7,6 +8,14 @@ import { SceneBuilder } from '../systems/SceneBuilder';
 import { UiElementBuilder } from '../systems/UiElementBuilder';
 import { PetDefinition, Crystal, PlayerState, CrystalTier } from '../types';
 import { CoopSwitchUI } from '../ui/CoopSwitchUI';
+
+export interface PythiaWorkshopSceneOptions {
+    key?: string;
+    backSceneKey?: string;
+    layoutSceneKey?: string;
+    backgroundTexture?: string;
+    persistChanges?: boolean;
+}
 
 /**
  * PythiaWorkshopScene - Graphical replacement for WitchHutScene
@@ -20,6 +29,10 @@ import { CoopSwitchUI } from '../ui/CoopSwitchUI';
 export class PythiaWorkshopScene extends Phaser.Scene {
     private gameState!: GameStateManager;
     private sceneBuilder!: SceneBuilder;
+    private readonly backSceneKey: string;
+    private readonly layoutSceneKey: string;
+    private readonly backgroundTexture?: string;
+    private readonly persistChanges: boolean;
 
     // Selection state
     private selectedPet: PetDefinition | null = null;
@@ -57,12 +70,18 @@ export class PythiaWorkshopScene extends Phaser.Scene {
     private bindCostDisplay: Phaser.GameObjects.Container | null = null;
     private bindWarningText: Phaser.GameObjects.Text | null = null;
 
-    constructor() {
-        super({ key: 'PythiaWorkshopScene' });
+    constructor(options: PythiaWorkshopSceneOptions = {}) {
+        const sceneKey = options.key ?? 'PythiaWorkshopScene';
+        super({ key: sceneKey });
+        this.backSceneKey = options.backSceneKey ?? 'TownScene';
+        this.layoutSceneKey = options.layoutSceneKey ?? sceneKey;
+        this.backgroundTexture = options.backgroundTexture;
+        this.persistChanges = options.persistChanges ?? true;
     }
 
     create(): void {
         this.gameState = GameStateManager.getInstance();
+        this.captureTransientState();
         this.selectedPet = null;
         this.selectedCrystal = null;
         this.crystalPages = { shard: 0, fragment: 0, prism: 0 };
@@ -77,9 +96,10 @@ export class PythiaWorkshopScene extends Phaser.Scene {
         this.sceneBuilder = new SceneBuilder(this);
 
         // Register handler BEFORE buildScene (pattern from CharacterSelectNewScene)
-        this.sceneBuilder.registerHandler('onBack', () => this.scene.start('TownScene'));
+        this.sceneBuilder.registerHandler('onBack', () => this.scene.start(this.backSceneKey));
 
-        this.sceneBuilder.buildScene();
+        this.sceneBuilder.buildScene(this.layoutSceneKey);
+        this.applyBackgroundTexture();
 
         // Co-op: add player switch UI
         new CoopSwitchUI(this, 300, 640);
@@ -91,6 +111,34 @@ export class PythiaWorkshopScene extends Phaser.Scene {
         this.createBindingArea();
         this.createPetList();
         this.setupArrowVisibility();
+    }
+
+    private captureTransientState(): void {
+        if (this.persistChanges) return;
+
+        const player = this.gameState.getPlayer();
+        const playerSnapshot = this.cloneState(player);
+
+        this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+            Object.assign(player, this.cloneState(playerSnapshot));
+        });
+    }
+
+    private cloneState<T>(state: T): T {
+        return JSON.parse(JSON.stringify(state)) as T;
+    }
+
+    private applyBackgroundTexture(): void {
+        if (!this.backgroundTexture) return;
+
+        const background = this.sceneBuilder.get<Phaser.GameObjects.Image>('PythiaWorkshopBG');
+        background?.setTexture(this.backgroundTexture);
+    }
+
+    private saveState(): void {
+        if (this.persistChanges) {
+            this.gameState.save();
+        }
     }
 
     // ========== RESOURCE DISPLAY ==========
@@ -187,7 +235,7 @@ export class PythiaWorkshopScene extends Phaser.Scene {
         const player = this.gameState.getPlayer();
         if (ProgressionSystem.spendCoins(player, this.POTION_COST)) {
             player.potions = 1;
-            this.gameState.save();
+            this.saveState();
             this.scene.restart();
         }
     }
@@ -448,7 +496,9 @@ export class PythiaWorkshopScene extends Phaser.Scene {
         // Show selected pet
         if (this.selectedPet) {
             if (this.textures.exists(this.selectedPet.spriteKey)) {
-                const sprite = this.add.sprite(0, -5, this.selectedPet.spriteKey, 0).setScale(0.5);
+                const sprite = this.add.sprite(0, -5, this.selectedPet.spriteKey, 0);
+                // Keep the complete creature above its name inside the binding frame.
+                sprite.setScale(Math.min(0.5, 90 / sprite.width, 60 / sprite.height));
                 this.bindingPetDisplay.add(sprite);
             }
 
@@ -628,6 +678,7 @@ export class PythiaWorkshopScene extends Phaser.Scene {
     }
 
     private performBinding(): void {
+        // Audio is emitted only after successful binding below.
         if (!this.canPerformBinding()) {
             return;
         }
@@ -653,13 +704,14 @@ export class PythiaWorkshopScene extends Phaser.Scene {
 
         // Add pet to owned
         player.ownedPets.push(this.selectedPet!.id);
+        this.registry.set('audioPetBound', true);
 
         // Set as active if first pet
         if (!player.activePet) {
             player.activePet = this.selectedPet!.id;
         }
 
-        this.gameState.save();
+        this.saveState();
 
         // Binding animation - white flash
         const flash = this.add.rectangle(640, 360, 1280, 720, 0xffffff, 0).setDepth(200);
@@ -675,6 +727,11 @@ export class PythiaWorkshopScene extends Phaser.Scene {
     // ========== PET LIST (Template-based Rows) ==========
 
     private createPetList(): void {
+        if (this.registry.get('audioPetBound')) {
+            this.registry.remove('audioPetBound');
+            sfx(this, 'pet.bind');
+            this.time.delayedCall(650, () => voice(this, 'vo.pythia.friend'));
+        }
         // Get the Black-frmae-pets frame position
         const frameDef = this.sceneBuilder.getElementDef('Black-frmae-pets');
         const frameX = frameDef?.x ?? 1184;
@@ -814,7 +871,9 @@ export class PythiaWorkshopScene extends Phaser.Scene {
             // Local position: (56-90, 67-75) = (-34, -8)
             if (this.textures.exists(pet.spriteKey)) {
                 const sprite = this.add.sprite(-34, -8, pet.spriteKey, 0);
-                sprite.setScale(0.5);
+                // The template's 130px portrait has a 10px safe inset. Large
+                // 512px creature frames must fit it just like the older sprites.
+                sprite.setScale(Math.min(0.5, 110 / sprite.width, 110 / sprite.height));
                 container.add(sprite);
                 container.setData('petSprite', sprite);
             }
@@ -900,10 +959,11 @@ export class PythiaWorkshopScene extends Phaser.Scene {
         if (isOwned) {
             // Owned pets: immediate activation
             player.activePet = pet.id;
-            this.gameState.save();
+            this.saveState();
             this.scene.restart();
         } else {
             // Unowned pets: select for binding
+            voice(this, 'vo.pythia.bind', true);
             this.selectedPet = (this.selectedPet?.id === pet.id) ? null : pet;
             this.refreshUI();
         }

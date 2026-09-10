@@ -1,0 +1,1795 @@
+{
+  "schemaVersion": 3,
+  "sceneOrder": [
+    "ArenaScene",
+    "ForestRoomScene",
+    "ForestMapScene",
+    "UnderwaterRoomScene"
+  ],
+  "multiplayerPolicies": {
+    "arena-coop-v1": {
+      "kind": "arena",
+      "rules": [
+        {
+          "enemyCounts": [
+            1,
+            2
+          ],
+          "strategy": "append-last"
+        },
+        {
+          "enemyCounts": [
+            3
+          ],
+          "strategy": "scale-full-roster",
+          "hpScale": 1.35,
+          "rounding": "ceil"
+        }
+      ],
+      "rewardPolicy": "preserve-as-if-last-appended"
+    },
+    "forest-coop-v1": {
+      "kind": "journey",
+      "nonBossStrategy": "append-last",
+      "bossStrategy": "scale-all-phases",
+      "bossHpScale": 1.35,
+      "rounding": "ceil",
+      "rewardPolicy": "resolved-roster"
+    }
+  },
+  "bosses": {
+    "depth-guardian-v1": {
+      "phases": [
+        {
+          "hp": 28,
+          "attack": 4,
+          "defense": 1,
+          "name": "Clouded guardian",
+          "nameCs": "Zakalený strážce",
+          "healPercent": 20,
+          "attackAnim": "depth-guardian-attack"
+        },
+        {
+          "hp": 26,
+          "attack": 4,
+          "defense": 1,
+          "name": "Rising currents",
+          "nameCs": "Rozbouřené proudy",
+          "ability": "tidal_wave",
+          "healPercent": 20,
+          "attackAnim": "depth-guardian-attack-tide"
+        },
+        {
+          "hp": 32,
+          "attack": 5,
+          "defense": 2,
+          "name": "Breaking the bond",
+          "nameCs": "Praskající pouto",
+          "healPercent": 0,
+          "attackAnim": "depth-guardian-attack-crystal"
+        }
+      ],
+      "phaseHealPlayer": 0,
+      "diamondReward": 0,
+      "tidalWave": {
+        "everyTurns": 2,
+        "bonusDamage": 3,
+        "blessingReduction": 3
+      }
+    },
+    "verdant-guardian-v1": {
+      "phases": [
+        {
+          "hp": 15,
+          "attack": 3,
+          "defense": 2,
+          "name": "Awakening",
+          "nameCs": "Probuzení",
+          "ability": null,
+          "healPercent": 30
+        },
+        {
+          "hp": 12,
+          "attack": 5,
+          "defense": 0,
+          "name": "Fury",
+          "nameCs": "Zuřivost",
+          "ability": "vengeful_strike",
+          "healPercent": 15,
+          "transitionAnim": "verdant-enraged",
+          "tint": "0xffaaaa"
+        },
+        {
+          "hp": 18,
+          "attack": 3,
+          "defense": 4,
+          "name": "Final Stand",
+          "nameCs": "Poslední vzdor",
+          "ability": "last_stand",
+          "healPercent": 0,
+          "transitionAnim": "verdant-shield-on",
+          "idleAnim": "verdant-shield-idle",
+          "attackAnim": "verdant-shield-attack",
+          "deathSequence": [
+            "verdant-shield-broke",
+            "verdant-death"
+          ]
+        }
+      ],
+      "phaseHealPlayer": 0,
+      "diamondReward": 5
+    }
+  },
+  "scenes": {
+    "UnderwaterRoomScene": {
+      "roomOrder": [
+        "sp_shallows",
+        "sp_reed_garden",
+        "sp_sunken_canal",
+        "sp_current_chamber",
+        "sp_post_wreck",
+        "sp_glow_grotto",
+        "sp_depth_gate",
+        "sp_lake_heart"
+      ],
+      "rooms": {
+        "sp_current_chamber": {
+          "encounters": [
+            {
+              "id": "silverpond-chamber-keepers",
+              "objectId": "guardianHost",
+              "kind": "battle",
+              "multiplayerPolicy": "forest-coop-v1",
+              "enemies": [
+                {
+                  "source": "core",
+                  "enemyId": "silverpond_mill_turtle"
+                },
+                {
+                  "source": "core",
+                  "enemyId": "silverpond_ruin_axolotl"
+                }
+              ]
+            }
+          ]
+        },
+        "sp_reed_garden": {
+          "encounters": [
+            {
+              "id": "silverpond-garden-patrol",
+              "objectId": "guardianHost",
+              "kind": "battle",
+              "multiplayerPolicy": "forest-coop-v1",
+              "enemies": [
+                {
+                  "source": "core",
+                  "enemyId": "silverpond_silverfin_scalefish"
+                },
+                {
+                  "source": "core",
+                  "enemyId": "silverpond_ruin_axolotl"
+                }
+              ]
+            }
+          ]
+        },
+        "sp_sunken_canal": {
+          "encounters": [
+            {
+              "id": "silverpond-canal-blockade",
+              "objectId": "guardianHost",
+              "kind": "battle",
+              "multiplayerPolicy": "forest-coop-v1",
+              "enemies": [
+                {
+                  "source": "core",
+                  "enemyId": "silverpond_bubble_crab"
+                },
+                {
+                  "source": "core",
+                  "enemyId": "silverpond_silverfin_scalefish"
+                }
+              ]
+            }
+          ]
+        },
+        "sp_shallows": {
+          "encounters": [
+            {
+              "id": "silverpond-shallows-guardian",
+              "objectId": "guardianHost",
+              "kind": "battle",
+              "multiplayerPolicy": "forest-coop-v1",
+              "enemies": [
+                {
+                  "source": "core",
+                  "enemyId": "silverpond_silverfin_scalefish"
+                }
+              ]
+            }
+          ]
+        },
+        "sp_post_wreck": {
+          "encounters": [
+            {
+              "id": "silverpond-wreck-watch",
+              "objectId": "guardianHost",
+              "kind": "battle",
+              "multiplayerPolicy": "forest-coop-v1",
+              "enemies": [
+                {
+                  "source": "core",
+                  "enemyId": "silverpond_bubble_crab"
+                },
+                {
+                  "source": "core",
+                  "enemyId": "silverpond_ruin_axolotl"
+                }
+              ]
+            }
+          ]
+        },
+        "sp_glow_grotto": {
+          "encounters": [
+            {
+              "id": "silverpond-grotto-keeper",
+              "objectId": "guardianHost",
+              "kind": "battle",
+              "multiplayerPolicy": "forest-coop-v1",
+              "enemies": [
+                {
+                  "source": "core",
+                  "enemyId": "silverpond_pearl_jellyfish"
+                }
+              ]
+            }
+          ]
+        },
+        "sp_depth_gate": {
+          "encounters": [
+            {
+              "id": "silverpond-depth-watch",
+              "objectId": "guardianHost",
+              "kind": "battle",
+              "multiplayerPolicy": "forest-coop-v1",
+              "enemies": [
+                {
+                  "source": "core",
+                  "enemyId": "silverpond_mill_turtle"
+                },
+                {
+                  "source": "core",
+                  "enemyId": "silverpond_silverfin_scalefish"
+                }
+              ]
+            }
+          ]
+        },
+        "sp_lake_heart": {
+          "encounters": [
+            {
+              "id": "silverpond-depth-guardian",
+              "objectId": "guardianHost",
+              "kind": "boss",
+              "multiplayerPolicy": "forest-coop-v1",
+              "enemies": [
+                {
+                  "source": "core",
+                  "enemyId": "silverpond_depth_guardian"
+                }
+              ],
+              "bossId": "depth-guardian-v1"
+            }
+          ]
+        }
+      }
+    },
+    "ArenaScene": {
+      "metadata": {
+        "waveCount": 5,
+        "maxVisibleEnemies": 3,
+        "levelsPerCity": 3
+      },
+      "arenas": {
+        "1": {
+          "id": "arena-1",
+          "level": 1,
+          "cityId": "mathoria",
+          "cityArenaLevel": 1,
+          "multiplayerPolicy": "arena-coop-v1",
+          "metadata": {
+            "completionEncounterId": "arena-1-wave-5",
+            "nextArenaId": "arena-2",
+            "completionBonus": {
+              "coins": 15,
+              "crystals": [
+                {
+                  "tier": "shard",
+                  "count": 1,
+                  "valueMin": 4,
+                  "valueMax": 6
+                }
+              ],
+              "mana": 3
+            }
+          },
+          "waves": [
+            {
+              "id": "arena-1-wave-1",
+              "index": 0,
+              "completionBonus": {
+                "firstCompletion": {
+                  "coins": 0,
+                  "crystals": [
+                    {
+                      "tier": "shard",
+                      "count": 1,
+                      "valueMin": 1,
+                      "valueMax": 1
+                    }
+                  ],
+                  "mana": 1
+                },
+                "firstPerfect": {
+                  "coins": 0,
+                  "crystals": [
+                    {
+                      "tier": "shard",
+                      "count": 1,
+                      "valueMin": 1,
+                      "valueMax": 1
+                    }
+                  ],
+                  "mana": 2
+                }
+              },
+              "enemies": [
+                {
+                  "source": "core",
+                  "enemyId": "slime_green"
+                }
+              ]
+            },
+            {
+              "id": "arena-1-wave-2",
+              "index": 1,
+              "completionBonus": {
+                "firstCompletion": {
+                  "coins": 0,
+                  "crystals": [
+                    {
+                      "tier": "shard",
+                      "count": 1,
+                      "valueMin": 1,
+                      "valueMax": 1
+                    }
+                  ],
+                  "mana": 2
+                },
+                "firstPerfect": {
+                  "coins": 0,
+                  "crystals": [
+                    {
+                      "tier": "shard",
+                      "count": 1,
+                      "valueMin": 1,
+                      "valueMax": 1
+                    }
+                  ]
+                }
+              },
+              "enemies": [
+                {
+                  "source": "core",
+                  "enemyId": "purple_demon"
+                }
+              ]
+            },
+            {
+              "id": "arena-1-wave-3",
+              "index": 2,
+              "completionBonus": {
+                "firstCompletion": {
+                  "coins": 0,
+                  "crystals": [
+                    {
+                      "tier": "shard",
+                      "count": 1,
+                      "valueMin": 1,
+                      "valueMax": 1
+                    }
+                  ],
+                  "mana": 1
+                },
+                "firstPerfect": {
+                  "coins": 0,
+                  "crystals": [
+                    {
+                      "tier": "shard",
+                      "count": 1,
+                      "valueMin": 1,
+                      "valueMax": 1
+                    }
+                  ]
+                }
+              },
+              "enemies": [
+                {
+                  "source": "core",
+                  "enemyId": "slime_green"
+                },
+                {
+                  "source": "core",
+                  "enemyId": "slime_green"
+                }
+              ]
+            },
+            {
+              "id": "arena-1-wave-4",
+              "index": 3,
+              "completionBonus": {
+                "firstCompletion": {
+                  "coins": 0,
+                  "crystals": [
+                    {
+                      "tier": "shard",
+                      "count": 1,
+                      "valueMin": 1,
+                      "valueMax": 1
+                    }
+                  ]
+                },
+                "firstPerfect": {
+                  "coins": 0,
+                  "crystals": [
+                    {
+                      "tier": "shard",
+                      "count": 1,
+                      "valueMin": 1,
+                      "valueMax": 1
+                    }
+                  ]
+                }
+              },
+              "enemies": [
+                {
+                  "source": "core",
+                  "enemyId": "purple_demon"
+                },
+                {
+                  "source": "core",
+                  "enemyId": "slime_green"
+                }
+              ]
+            },
+            {
+              "id": "arena-1-wave-5",
+              "index": 4,
+              "completionBonus": {
+                "firstCompletion": {
+                  "coins": 0,
+                  "crystals": [
+                    {
+                      "tier": "shard",
+                      "count": 1,
+                      "valueMin": 1,
+                      "valueMax": 1
+                    }
+                  ]
+                },
+                "firstPerfect": {
+                  "coins": 0,
+                  "crystals": [
+                    {
+                      "tier": "shard",
+                      "count": 1,
+                      "valueMin": 1,
+                      "valueMax": 1
+                    }
+                  ]
+                }
+              },
+              "enemies": [
+                {
+                  "source": "core",
+                  "enemyId": "purple_demon"
+                },
+                {
+                  "source": "core",
+                  "enemyId": "purple_demon"
+                }
+              ]
+            }
+          ]
+        },
+        "2": {
+          "id": "arena-2",
+          "level": 2,
+          "cityId": "mathoria",
+          "cityArenaLevel": 2,
+          "multiplayerPolicy": "arena-coop-v1",
+          "metadata": {
+            "completionEncounterId": "arena-2-wave-5",
+            "nextArenaId": "arena-3",
+            "completionBonus": {
+              "coins": 30,
+              "crystals": [
+                {
+                  "tier": "shard",
+                  "count": 1,
+                  "valueMin": 4,
+                  "valueMax": 6
+                },
+                {
+                  "tier": "special_porcupine",
+                  "count": 1,
+                  "valueMin": 1,
+                  "valueMax": 1
+                }
+              ]
+            }
+          },
+          "waves": [
+            {
+              "id": "arena-2-wave-1",
+              "index": 0,
+              "completionBonus": {
+                "firstCompletion": {
+                  "coins": 0,
+                  "crystals": [
+                    {
+                      "tier": "shard",
+                      "count": 1,
+                      "valueMin": 1,
+                      "valueMax": 1
+                    }
+                  ]
+                },
+                "firstPerfect": {
+                  "coins": 0,
+                  "crystals": [
+                    {
+                      "tier": "shard",
+                      "count": 1,
+                      "valueMin": 1,
+                      "valueMax": 1
+                    }
+                  ]
+                }
+              },
+              "enemies": [
+                {
+                  "source": "core",
+                  "enemyId": "pink_beast"
+                }
+              ]
+            },
+            {
+              "id": "arena-2-wave-2",
+              "index": 1,
+              "completionBonus": {
+                "firstCompletion": {
+                  "coins": 0,
+                  "crystals": [
+                    {
+                      "tier": "shard",
+                      "count": 1,
+                      "valueMin": 1,
+                      "valueMax": 1
+                    }
+                  ]
+                },
+                "firstPerfect": {
+                  "coins": 0,
+                  "crystals": [
+                    {
+                      "tier": "shard",
+                      "count": 1,
+                      "valueMin": 1,
+                      "valueMax": 1
+                    }
+                  ]
+                }
+              },
+              "enemies": [
+                {
+                  "source": "core",
+                  "enemyId": "pink_beast"
+                },
+                {
+                  "source": "core",
+                  "enemyId": "slime_green"
+                }
+              ]
+            },
+            {
+              "id": "arena-2-wave-3",
+              "index": 2,
+              "completionBonus": {
+                "firstCompletion": {
+                  "coins": 0,
+                  "crystals": [
+                    {
+                      "tier": "shard",
+                      "count": 1,
+                      "valueMin": 1,
+                      "valueMax": 1
+                    }
+                  ]
+                },
+                "firstPerfect": {
+                  "coins": 0,
+                  "crystals": [
+                    {
+                      "tier": "shard",
+                      "count": 1,
+                      "valueMin": 1,
+                      "valueMax": 1
+                    }
+                  ]
+                }
+              },
+              "enemies": [
+                {
+                  "source": "core",
+                  "enemyId": "pink_beast"
+                },
+                {
+                  "source": "core",
+                  "enemyId": "pink_beast"
+                }
+              ]
+            },
+            {
+              "id": "arena-2-wave-4",
+              "index": 3,
+              "completionBonus": {
+                "firstCompletion": {
+                  "coins": 0,
+                  "crystals": [
+                    {
+                      "tier": "shard",
+                      "count": 1,
+                      "valueMin": 1,
+                      "valueMax": 1
+                    }
+                  ]
+                },
+                "firstPerfect": {
+                  "coins": 0,
+                  "crystals": [
+                    {
+                      "tier": "shard",
+                      "count": 1,
+                      "valueMin": 1,
+                      "valueMax": 1
+                    }
+                  ]
+                }
+              },
+              "enemies": [
+                {
+                  "source": "core",
+                  "enemyId": "leafy"
+                }
+              ]
+            },
+            {
+              "id": "arena-2-wave-5",
+              "index": 4,
+              "completionBonus": {
+                "firstCompletion": {
+                  "coins": 0,
+                  "crystals": [
+                    {
+                      "tier": "shard",
+                      "count": 1,
+                      "valueMin": 1,
+                      "valueMax": 1
+                    }
+                  ]
+                },
+                "firstPerfect": {
+                  "coins": 0,
+                  "crystals": [
+                    {
+                      "tier": "shard",
+                      "count": 1,
+                      "valueMin": 1,
+                      "valueMax": 1
+                    }
+                  ]
+                }
+              },
+              "enemies": [
+                {
+                  "source": "core",
+                  "enemyId": "leafy"
+                },
+                {
+                  "source": "core",
+                  "enemyId": "slime_green"
+                }
+              ]
+            }
+          ]
+        },
+        "3": {
+          "id": "arena-3",
+          "level": 3,
+          "cityId": "mathoria",
+          "cityArenaLevel": 3,
+          "multiplayerPolicy": "arena-coop-v1",
+          "metadata": {
+            "completionEncounterId": "arena-3-wave-5",
+            "nextArenaId": null,
+            "completionBonus": {
+              "coins": 45,
+              "crystals": [
+                {
+                  "tier": "shard",
+                  "count": 1,
+                  "valueMin": 4,
+                  "valueMax": 6
+                }
+              ]
+            }
+          },
+          "waves": [
+            {
+              "id": "arena-3-wave-1",
+              "index": 0,
+              "completionBonus": {
+                "firstCompletion": {
+                  "coins": 0,
+                  "crystals": [
+                    {
+                      "tier": "shard",
+                      "count": 1,
+                      "valueMin": 1,
+                      "valueMax": 1
+                    }
+                  ]
+                },
+                "firstPerfect": {
+                  "coins": 0,
+                  "crystals": [
+                    {
+                      "tier": "shard",
+                      "count": 1,
+                      "valueMin": 1,
+                      "valueMax": 1
+                    }
+                  ]
+                }
+              },
+              "enemies": [
+                {
+                  "source": "core",
+                  "enemyId": "leafy"
+                }
+              ]
+            },
+            {
+              "id": "arena-3-wave-2",
+              "index": 1,
+              "completionBonus": {
+                "firstCompletion": {
+                  "coins": 0,
+                  "crystals": [
+                    {
+                      "tier": "shard",
+                      "count": 1,
+                      "valueMin": 1,
+                      "valueMax": 1
+                    }
+                  ]
+                },
+                "firstPerfect": {
+                  "coins": 0,
+                  "crystals": [
+                    {
+                      "tier": "shard",
+                      "count": 1,
+                      "valueMin": 1,
+                      "valueMax": 1
+                    }
+                  ]
+                }
+              },
+              "enemies": [
+                {
+                  "source": "core",
+                  "enemyId": "pink_beast"
+                },
+                {
+                  "source": "core",
+                  "enemyId": "pink_beast"
+                },
+                {
+                  "source": "core",
+                  "enemyId": "pink_beast"
+                }
+              ]
+            },
+            {
+              "id": "arena-3-wave-3",
+              "index": 2,
+              "completionBonus": {
+                "firstCompletion": {
+                  "coins": 0,
+                  "crystals": [
+                    {
+                      "tier": "shard",
+                      "count": 1,
+                      "valueMin": 1,
+                      "valueMax": 1
+                    }
+                  ]
+                },
+                "firstPerfect": {
+                  "coins": 0,
+                  "crystals": [
+                    {
+                      "tier": "shard",
+                      "count": 1,
+                      "valueMin": 1,
+                      "valueMax": 1
+                    }
+                  ]
+                }
+              },
+              "enemies": [
+                {
+                  "source": "core",
+                  "enemyId": "leafy"
+                },
+                {
+                  "source": "core",
+                  "enemyId": "purple_demon"
+                },
+                {
+                  "source": "core",
+                  "enemyId": "purple_demon"
+                }
+              ]
+            },
+            {
+              "id": "arena-3-wave-4",
+              "index": 3,
+              "completionBonus": {
+                "firstCompletion": {
+                  "coins": 0,
+                  "crystals": [
+                    {
+                      "tier": "shard",
+                      "count": 1,
+                      "valueMin": 1,
+                      "valueMax": 1
+                    }
+                  ]
+                },
+                "firstPerfect": {
+                  "coins": 0,
+                  "crystals": [
+                    {
+                      "tier": "shard",
+                      "count": 1,
+                      "valueMin": 1,
+                      "valueMax": 1
+                    }
+                  ]
+                }
+              },
+              "enemies": [
+                {
+                  "source": "core",
+                  "enemyId": "leafy"
+                },
+                {
+                  "source": "core",
+                  "enemyId": "pink_beast"
+                },
+                {
+                  "source": "core",
+                  "enemyId": "slime_green"
+                }
+              ]
+            },
+            {
+              "id": "arena-3-wave-5",
+              "index": 4,
+              "completionBonus": {
+                "firstCompletion": {
+                  "coins": 0,
+                  "crystals": [
+                    {
+                      "tier": "shard",
+                      "count": 1,
+                      "valueMin": 1,
+                      "valueMax": 1
+                    }
+                  ]
+                },
+                "firstPerfect": {
+                  "coins": 0,
+                  "crystals": [
+                    {
+                      "tier": "shard",
+                      "count": 1,
+                      "valueMin": 1,
+                      "valueMax": 1
+                    }
+                  ]
+                }
+              },
+              "enemies": [
+                {
+                  "source": "core",
+                  "enemyId": "leafy"
+                },
+                {
+                  "source": "core",
+                  "enemyId": "pink_beast"
+                },
+                {
+                  "source": "core",
+                  "enemyId": "leafy"
+                }
+              ]
+            }
+          ]
+        },
+        "4": {
+          "id": "silverpond-arena-1",
+          "level": 4,
+          "cityId": "silverpond",
+          "cityArenaLevel": 1,
+          "multiplayerPolicy": "arena-coop-v1",
+          "metadata": {
+            "completionEncounterId": "silverpond-arena-1-wave-5",
+            "nextArenaId": "silverpond-arena-2",
+            "completionBonus": {
+              "coins": 60,
+              "crystals": [
+                {
+                  "tier": "shard",
+                  "count": 1,
+                  "valueMin": 5,
+                  "valueMax": 7
+                }
+              ]
+            }
+          },
+          "waves": [
+            {
+              "id": "silverpond-arena-1-wave-1",
+              "index": 0,
+              "completionBonus": {
+                "firstCompletion": {
+                  "coins": 0,
+                  "crystals": [
+                    {
+                      "tier": "shard",
+                      "count": 1,
+                      "valueMin": 1,
+                      "valueMax": 1
+                    }
+                  ]
+                },
+                "firstPerfect": {
+                  "coins": 0,
+                  "crystals": [
+                    {
+                      "tier": "shard",
+                      "count": 1,
+                      "valueMin": 1,
+                      "valueMax": 1
+                    }
+                  ]
+                }
+              },
+              "enemies": [
+                {
+                  "source": "core",
+                  "enemyId": "silverpond_mill_turtle"
+                }
+              ]
+            },
+            {
+              "id": "silverpond-arena-1-wave-2",
+              "index": 1,
+              "completionBonus": {
+                "firstCompletion": {
+                  "coins": 0,
+                  "crystals": [
+                    {
+                      "tier": "shard",
+                      "count": 1,
+                      "valueMin": 1,
+                      "valueMax": 1
+                    }
+                  ]
+                },
+                "firstPerfect": {
+                  "coins": 0,
+                  "crystals": [
+                    {
+                      "tier": "shard",
+                      "count": 1,
+                      "valueMin": 1,
+                      "valueMax": 1
+                    }
+                  ]
+                }
+              },
+              "enemies": [
+                {
+                  "source": "core",
+                  "enemyId": "silverpond_ruin_axolotl"
+                }
+              ]
+            },
+            {
+              "id": "silverpond-arena-1-wave-3",
+              "index": 2,
+              "completionBonus": {
+                "firstCompletion": {
+                  "coins": 0,
+                  "crystals": [
+                    {
+                      "tier": "shard",
+                      "count": 1,
+                      "valueMin": 1,
+                      "valueMax": 1
+                    }
+                  ]
+                },
+                "firstPerfect": {
+                  "coins": 0,
+                  "crystals": [
+                    {
+                      "tier": "shard",
+                      "count": 1,
+                      "valueMin": 1,
+                      "valueMax": 1
+                    }
+                  ]
+                }
+              },
+              "enemies": [
+                {
+                  "source": "core",
+                  "enemyId": "silverpond_ruin_axolotl"
+                },
+                {
+                  "source": "core",
+                  "enemyId": "silverpond_silverfin_scalefish"
+                }
+              ]
+            },
+            {
+              "id": "silverpond-arena-1-wave-4",
+              "index": 3,
+              "completionBonus": {
+                "firstCompletion": {
+                  "coins": 0,
+                  "crystals": [
+                    {
+                      "tier": "shard",
+                      "count": 1,
+                      "valueMin": 1,
+                      "valueMax": 1
+                    }
+                  ]
+                },
+                "firstPerfect": {
+                  "coins": 0,
+                  "crystals": [
+                    {
+                      "tier": "shard",
+                      "count": 1,
+                      "valueMin": 1,
+                      "valueMax": 1
+                    }
+                  ]
+                }
+              },
+              "enemies": [
+                {
+                  "source": "core",
+                  "enemyId": "silverpond_silverfin_scalefish"
+                },
+                {
+                  "source": "core",
+                  "enemyId": "silverpond_silverfin_scalefish"
+                }
+              ]
+            },
+            {
+              "id": "silverpond-arena-1-wave-5",
+              "index": 4,
+              "completionBonus": {
+                "firstCompletion": {
+                  "coins": 0,
+                  "crystals": [
+                    {
+                      "tier": "shard",
+                      "count": 1,
+                      "valueMin": 1,
+                      "valueMax": 1
+                    }
+                  ]
+                },
+                "firstPerfect": {
+                  "coins": 0,
+                  "crystals": [
+                    {
+                      "tier": "shard",
+                      "count": 1,
+                      "valueMin": 1,
+                      "valueMax": 1
+                    }
+                  ]
+                }
+              },
+              "enemies": [
+                {
+                  "source": "core",
+                  "enemyId": "silverpond_bubble_crab"
+                },
+                {
+                  "source": "core",
+                  "enemyId": "silverpond_silverfin_scalefish"
+                },
+                {
+                  "source": "core",
+                  "enemyId": "silverpond_silverfin_scalefish"
+                }
+              ]
+            }
+          ]
+        },
+        "5": {
+          "id": "silverpond-arena-2",
+          "level": 5,
+          "cityId": "silverpond",
+          "cityArenaLevel": 2,
+          "multiplayerPolicy": "arena-coop-v1",
+          "metadata": {
+            "completionEncounterId": "silverpond-arena-2-wave-5",
+            "nextArenaId": "silverpond-arena-3",
+            "completionBonus": {
+              "coins": 75,
+              "crystals": [
+                {
+                  "tier": "shard",
+                  "count": 1,
+                  "valueMin": 6,
+                  "valueMax": 8
+                }
+              ]
+            }
+          },
+          "waves": [
+            {
+              "id": "silverpond-arena-2-wave-1",
+              "index": 0,
+              "completionBonus": {
+                "firstCompletion": {
+                  "coins": 0,
+                  "crystals": [
+                    {
+                      "tier": "shard",
+                      "count": 1,
+                      "valueMin": 1,
+                      "valueMax": 1
+                    }
+                  ]
+                },
+                "firstPerfect": {
+                  "coins": 0,
+                  "crystals": [
+                    {
+                      "tier": "shard",
+                      "count": 1,
+                      "valueMin": 1,
+                      "valueMax": 1
+                    }
+                  ]
+                }
+              },
+              "enemies": [
+                {
+                  "source": "core",
+                  "enemyId": "silverpond_silverfin_scalefish"
+                }
+              ]
+            },
+            {
+              "id": "silverpond-arena-2-wave-2",
+              "index": 1,
+              "completionBonus": {
+                "firstCompletion": {
+                  "coins": 0,
+                  "crystals": [
+                    {
+                      "tier": "shard",
+                      "count": 1,
+                      "valueMin": 1,
+                      "valueMax": 1
+                    }
+                  ]
+                },
+                "firstPerfect": {
+                  "coins": 0,
+                  "crystals": [
+                    {
+                      "tier": "shard",
+                      "count": 1,
+                      "valueMin": 1,
+                      "valueMax": 1
+                    }
+                  ]
+                }
+              },
+              "enemies": [
+                {
+                  "source": "core",
+                  "enemyId": "silverpond_bubble_crab"
+                },
+                {
+                  "source": "core",
+                  "enemyId": "silverpond_silverfin_scalefish"
+                }
+              ]
+            },
+            {
+              "id": "silverpond-arena-2-wave-3",
+              "index": 2,
+              "completionBonus": {
+                "firstCompletion": {
+                  "coins": 0,
+                  "crystals": [
+                    {
+                      "tier": "shard",
+                      "count": 1,
+                      "valueMin": 1,
+                      "valueMax": 1
+                    }
+                  ]
+                },
+                "firstPerfect": {
+                  "coins": 0,
+                  "crystals": [
+                    {
+                      "tier": "shard",
+                      "count": 1,
+                      "valueMin": 1,
+                      "valueMax": 1
+                    }
+                  ]
+                }
+              },
+              "enemies": [
+                {
+                  "source": "core",
+                  "enemyId": "silverpond_silverfin_scalefish"
+                },
+                {
+                  "source": "core",
+                  "enemyId": "silverpond_silverfin_scalefish"
+                }
+              ]
+            },
+            {
+              "id": "silverpond-arena-2-wave-4",
+              "index": 3,
+              "completionBonus": {
+                "firstCompletion": {
+                  "coins": 0,
+                  "crystals": [
+                    {
+                      "tier": "shard",
+                      "count": 1,
+                      "valueMin": 1,
+                      "valueMax": 1
+                    }
+                  ]
+                },
+                "firstPerfect": {
+                  "coins": 0,
+                  "crystals": [
+                    {
+                      "tier": "shard",
+                      "count": 1,
+                      "valueMin": 1,
+                      "valueMax": 1
+                    }
+                  ]
+                }
+              },
+              "enemies": [
+                {
+                  "source": "core",
+                  "enemyId": "silverpond_bubble_crab"
+                },
+                {
+                  "source": "core",
+                  "enemyId": "silverpond_silverfin_scalefish"
+                },
+                {
+                  "source": "core",
+                  "enemyId": "silverpond_silverfin_scalefish"
+                }
+              ]
+            },
+            {
+              "id": "silverpond-arena-2-wave-5",
+              "index": 4,
+              "completionBonus": {
+                "firstCompletion": {
+                  "coins": 0,
+                  "crystals": [
+                    {
+                      "tier": "shard",
+                      "count": 1,
+                      "valueMin": 1,
+                      "valueMax": 1
+                    }
+                  ]
+                },
+                "firstPerfect": {
+                  "coins": 0,
+                  "crystals": [
+                    {
+                      "tier": "shard",
+                      "count": 1,
+                      "valueMin": 1,
+                      "valueMax": 1
+                    }
+                  ]
+                }
+              },
+              "enemies": [
+                {
+                  "source": "core",
+                  "enemyId": "silverpond_bubble_crab"
+                },
+                {
+                  "source": "core",
+                  "enemyId": "silverpond_bubble_crab"
+                },
+                {
+                  "source": "core",
+                  "enemyId": "silverpond_silverfin_scalefish"
+                }
+              ]
+            }
+          ]
+        },
+        "6": {
+          "id": "silverpond-arena-3",
+          "level": 6,
+          "cityId": "silverpond",
+          "cityArenaLevel": 3,
+          "multiplayerPolicy": "arena-coop-v1",
+          "metadata": {
+            "completionEncounterId": "silverpond-arena-3-wave-5",
+            "nextArenaId": null,
+            "completionBonus": {
+              "coins": 90,
+              "crystals": [
+                {
+                  "tier": "shard",
+                  "count": 1,
+                  "valueMin": 7,
+                  "valueMax": 9
+                }
+              ]
+            }
+          },
+          "waves": [
+            {
+              "id": "silverpond-arena-3-wave-1",
+              "index": 0,
+              "completionBonus": {
+                "firstCompletion": {
+                  "coins": 0,
+                  "crystals": [
+                    {
+                      "tier": "shard",
+                      "count": 1,
+                      "valueMin": 1,
+                      "valueMax": 1
+                    }
+                  ]
+                },
+                "firstPerfect": {
+                  "coins": 0,
+                  "crystals": [
+                    {
+                      "tier": "shard",
+                      "count": 1,
+                      "valueMin": 1,
+                      "valueMax": 1
+                    }
+                  ]
+                }
+              },
+              "enemies": [
+                {
+                  "source": "core",
+                  "enemyId": "silverpond_bubble_crab"
+                },
+                {
+                  "source": "core",
+                  "enemyId": "silverpond_silverfin_scalefish"
+                }
+              ]
+            },
+            {
+              "id": "silverpond-arena-3-wave-2",
+              "index": 1,
+              "completionBonus": {
+                "firstCompletion": {
+                  "coins": 0,
+                  "crystals": [
+                    {
+                      "tier": "shard",
+                      "count": 1,
+                      "valueMin": 1,
+                      "valueMax": 1
+                    }
+                  ]
+                },
+                "firstPerfect": {
+                  "coins": 0,
+                  "crystals": [
+                    {
+                      "tier": "shard",
+                      "count": 1,
+                      "valueMin": 1,
+                      "valueMax": 1
+                    }
+                  ]
+                }
+              },
+              "enemies": [
+                {
+                  "source": "core",
+                  "enemyId": "silverpond_silverfin_scalefish"
+                },
+                {
+                  "source": "core",
+                  "enemyId": "silverpond_silverfin_scalefish"
+                }
+              ]
+            },
+            {
+              "id": "silverpond-arena-3-wave-3",
+              "index": 2,
+              "completionBonus": {
+                "firstCompletion": {
+                  "coins": 0,
+                  "crystals": [
+                    {
+                      "tier": "shard",
+                      "count": 1,
+                      "valueMin": 1,
+                      "valueMax": 1
+                    }
+                  ]
+                },
+                "firstPerfect": {
+                  "coins": 0,
+                  "crystals": [
+                    {
+                      "tier": "shard",
+                      "count": 1,
+                      "valueMin": 1,
+                      "valueMax": 1
+                    }
+                  ]
+                }
+              },
+              "enemies": [
+                {
+                  "source": "core",
+                  "enemyId": "silverpond_bubble_crab"
+                },
+                {
+                  "source": "core",
+                  "enemyId": "silverpond_silverfin_scalefish"
+                },
+                {
+                  "source": "core",
+                  "enemyId": "silverpond_silverfin_scalefish"
+                }
+              ]
+            },
+            {
+              "id": "silverpond-arena-3-wave-4",
+              "index": 3,
+              "completionBonus": {
+                "firstCompletion": {
+                  "coins": 0,
+                  "crystals": [
+                    {
+                      "tier": "shard",
+                      "count": 1,
+                      "valueMin": 1,
+                      "valueMax": 1
+                    }
+                  ]
+                },
+                "firstPerfect": {
+                  "coins": 0,
+                  "crystals": [
+                    {
+                      "tier": "shard",
+                      "count": 1,
+                      "valueMin": 1,
+                      "valueMax": 1
+                    }
+                  ]
+                }
+              },
+              "enemies": [
+                {
+                  "source": "core",
+                  "enemyId": "silverpond_bubble_crab"
+                },
+                {
+                  "source": "core",
+                  "enemyId": "silverpond_bubble_crab"
+                },
+                {
+                  "source": "core",
+                  "enemyId": "silverpond_silverfin_scalefish"
+                }
+              ]
+            },
+            {
+              "id": "silverpond-arena-3-wave-5",
+              "index": 4,
+              "completionBonus": {
+                "firstCompletion": {
+                  "coins": 0,
+                  "crystals": [
+                    {
+                      "tier": "shard",
+                      "count": 1,
+                      "valueMin": 1,
+                      "valueMax": 1
+                    }
+                  ]
+                },
+                "firstPerfect": {
+                  "coins": 0,
+                  "crystals": [
+                    {
+                      "tier": "shard",
+                      "count": 1,
+                      "valueMin": 1,
+                      "valueMax": 1
+                    }
+                  ]
+                }
+              },
+              "enemies": [
+                {
+                  "source": "core",
+                  "enemyId": "silverpond_bubble_crab"
+                },
+                {
+                  "source": "core",
+                  "enemyId": "silverpond_silverfin_scalefish"
+                },
+                {
+                  "source": "core",
+                  "enemyId": "silverpond_silverfin_scalefish"
+                }
+              ]
+            }
+          ]
+        }
+      }
+    },
+    "ForestRoomScene": {
+      "roomOrder": [
+        "forest_edge",
+        "forest_riddle",
+        "deep_forest",
+        "ancient_grove",
+        "guardian_lair"
+      ],
+      "rooms": {
+        "forest_edge": {
+          "encounters": [
+            {
+              "id": "forest-room-edge-wolf",
+              "objectId": "wolf_1",
+              "kind": "battle",
+              "multiplayerPolicy": "forest-coop-v1",
+              "enemies": [
+                {
+                  "source": "core",
+                  "enemyId": "forest_wolf"
+                }
+              ]
+            }
+          ]
+        },
+        "forest_riddle": {
+          "encounters": [
+            {
+              "id": "forest-room-riddle-mushroom",
+              "objectId": "mushroom_1",
+              "kind": "battle",
+              "multiplayerPolicy": "forest-coop-v1",
+              "enemies": [
+                {
+                  "source": "core",
+                  "enemyId": "giant_mushroom"
+                }
+              ]
+            }
+          ]
+        },
+        "deep_forest": {
+          "encounters": [
+            {
+              "id": "forest-room-deep-mushroom-pack",
+              "objectId": "mushroom_2",
+              "kind": "battle",
+              "multiplayerPolicy": "forest-coop-v1",
+              "enemies": [
+                {
+                  "source": "core",
+                  "enemyId": "giant_mushroom"
+                },
+                {
+                  "source": "core",
+                  "enemyId": "forest_wolf"
+                }
+              ]
+            }
+          ]
+        },
+        "ancient_grove": {
+          "encounters": [
+            {
+              "id": "forest-room-grove-treant",
+              "objectId": "treant_1",
+              "kind": "battle",
+              "multiplayerPolicy": "forest-coop-v1",
+              "enemies": [
+                {
+                  "source": "core",
+                  "enemyId": "ancient_treant"
+                }
+              ]
+            }
+          ]
+        },
+        "guardian_lair": {
+          "encounters": [
+            {
+              "id": "forest-room-guardian-boss",
+              "objectId": "boss_guardian",
+              "kind": "boss",
+              "multiplayerPolicy": "forest-coop-v1",
+              "enemies": [
+                {
+                  "source": "core",
+                  "enemyId": "verdant_guardian"
+                }
+              ],
+              "bossId": "verdant-guardian-v1"
+            }
+          ]
+        }
+      }
+    },
+    "ForestMapScene": {
+      "stageOrder": [
+        "forest_edge",
+        "deep_woods",
+        "ancient_grove",
+        "guardians_lair"
+      ],
+      "stages": {
+        "forest_edge": {
+          "encounters": [
+            {
+              "id": "forest-map-edge-wolf",
+              "encounterIndex": 0,
+              "kind": "battle",
+              "multiplayerPolicy": "forest-coop-v1",
+              "enemies": [
+                {
+                  "source": "core",
+                  "enemyId": "forest_wolf"
+                }
+              ]
+            },
+            {
+              "id": "forest-map-edge-mushroom",
+              "encounterIndex": 3,
+              "kind": "battle",
+              "multiplayerPolicy": "forest-coop-v1",
+              "enemies": [
+                {
+                  "source": "core",
+                  "enemyId": "giant_mushroom"
+                }
+              ]
+            }
+          ]
+        },
+        "deep_woods": {
+          "encounters": [
+            {
+              "id": "forest-map-deep-wolf-1",
+              "encounterIndex": 3,
+              "kind": "battle",
+              "multiplayerPolicy": "forest-coop-v1",
+              "enemies": [
+                {
+                  "source": "core",
+                  "enemyId": "forest_wolf"
+                }
+              ]
+            },
+            {
+              "id": "forest-map-deep-wolf-2",
+              "encounterIndex": 5,
+              "kind": "battle",
+              "multiplayerPolicy": "forest-coop-v1",
+              "enemies": [
+                {
+                  "source": "core",
+                  "enemyId": "forest_wolf"
+                }
+              ]
+            }
+          ]
+        },
+        "ancient_grove": {
+          "encounters": [
+            {
+              "id": "forest-map-grove-treant",
+              "encounterIndex": 1,
+              "kind": "battle",
+              "multiplayerPolicy": "forest-coop-v1",
+              "enemies": [
+                {
+                  "source": "core",
+                  "enemyId": "ancient_treant"
+                }
+              ]
+            }
+          ]
+        },
+        "guardians_lair": {
+          "encounters": [
+            {
+              "id": "forest-map-guardian-boss",
+              "encounterIndex": 1,
+              "kind": "boss",
+              "multiplayerPolicy": "forest-coop-v1",
+              "enemies": [
+                {
+                  "source": "core",
+                  "enemyId": "verdant_guardian"
+                }
+              ],
+              "bossId": "verdant-guardian-v1"
+            }
+          ]
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,703 @@
+{
+  "version": 1,
+  "assets": {
+    "ui.confirm": {
+      "url": "/assets/audio/sfx/ui.confirm.wav",
+      "kind": "sfx",
+      "gain": 0.48,
+      "duration": 0.48
+    },
+    "math.correct": {
+      "url": "/assets/audio/sfx/math.correct.wav",
+      "kind": "sfx",
+      "gain": 0.48,
+      "duration": 0.6
+    },
+    "math.retry": {
+      "url": "/assets/audio/sfx/math.retry.wav",
+      "kind": "sfx",
+      "gain": 0.48,
+      "duration": 0.48
+    },
+    "reward.crystal": {
+      "url": "/assets/audio/sfx/reward.crystal.wav",
+      "kind": "sfx",
+      "gain": 0.48,
+      "duration": 1
+    },
+    "combat.hit": {
+      "url": "/assets/audio/sfx/combat.hit.wav",
+      "kind": "sfx",
+      "gain": 0.48,
+      "duration": 0.48
+    },
+    "amb.forest": {
+      "url": "/assets/audio/ambience/amb.forest.wav",
+      "kind": "ambience",
+      "gain": 0.18,
+      "duration": 15
+    },
+    "reward.coins": {
+      "url": "/assets/audio/sfx/reward.coins.wav",
+      "kind": "sfx",
+      "gain": 0.48,
+      "duration": 0.8
+    },
+    "reward.victory": {
+      "url": "/assets/audio/sfx/reward.victory.wav",
+      "kind": "sfx",
+      "gain": 0.48,
+      "duration": 2.48
+    },
+    "combat.swing": {
+      "url": "/assets/audio/sfx/combat.swing.wav",
+      "kind": "sfx",
+      "gain": 0.48,
+      "duration": 0.48
+    },
+    "combat.block": {
+      "url": "/assets/audio/sfx/combat.block.wav",
+      "kind": "sfx",
+      "gain": 0.48,
+      "duration": 0.6
+    },
+    "combat.spell": {
+      "url": "/assets/audio/sfx/combat.spell.wav",
+      "kind": "sfx",
+      "gain": 0.48,
+      "duration": 0.88
+    },
+    "combat.release": {
+      "url": "/assets/audio/sfx/combat.release.wav",
+      "kind": "sfx",
+      "gain": 0.48,
+      "duration": 1.2
+    },
+    "chest.open": {
+      "url": "/assets/audio/sfx/chest.open.wav",
+      "kind": "sfx",
+      "gain": 0.48,
+      "duration": 1.2
+    },
+    "puzzle.place": {
+      "url": "/assets/audio/sfx/puzzle.place.wav",
+      "kind": "sfx",
+      "gain": 0.48,
+      "duration": 0.48
+    },
+    "puzzle.solved": {
+      "url": "/assets/audio/sfx/puzzle.solved.wav",
+      "kind": "sfx",
+      "gain": 0.48,
+      "duration": 1.28
+    },
+    "ui.back": {
+      "url": "/assets/audio/sfx/ui.back.wav",
+      "kind": "sfx",
+      "gain": 0.48,
+      "duration": 0.48
+    },
+    "ui.page": {
+      "url": "/assets/audio/sfx/ui.page.wav",
+      "kind": "sfx",
+      "gain": 0.48,
+      "duration": 0.48
+    },
+    "ui.unavailable": {
+      "url": "/assets/audio/sfx/ui.unavailable.wav",
+      "kind": "sfx",
+      "gain": 0.48,
+      "duration": 0.48
+    },
+    "reward.milestone": {
+      "url": "/assets/audio/sfx/reward.milestone.wav",
+      "kind": "sfx",
+      "gain": 0.48,
+      "duration": 3
+    },
+    "reward.rest": {
+      "url": "/assets/audio/sfx/reward.rest.wav",
+      "kind": "sfx",
+      "gain": 0.48,
+      "duration": 1.48
+    },
+    "combat.phase": {
+      "url": "/assets/audio/sfx/combat.phase.wav",
+      "kind": "sfx",
+      "gain": 0.48,
+      "duration": 1.48
+    },
+    "combat.retreat": {
+      "url": "/assets/audio/sfx/combat.retreat.wav",
+      "kind": "sfx",
+      "gain": 0.48,
+      "duration": 1
+    },
+    "prep.charge": {
+      "url": "/assets/audio/sfx/prep.charge.wav",
+      "kind": "sfx",
+      "gain": 0.48,
+      "duration": 1
+    },
+    "prep.consume": {
+      "url": "/assets/audio/sfx/prep.consume.wav",
+      "kind": "sfx",
+      "gain": 0.48,
+      "duration": 0.48
+    },
+    "item.equip": {
+      "url": "/assets/audio/sfx/item.equip.wav",
+      "kind": "sfx",
+      "gain": 0.48,
+      "duration": 0.48
+    },
+    "item.potion": {
+      "url": "/assets/audio/sfx/item.potion.wav",
+      "kind": "sfx",
+      "gain": 0.48,
+      "duration": 0.88
+    },
+    "lock.turn": {
+      "url": "/assets/audio/sfx/lock.turn.wav",
+      "kind": "sfx",
+      "gain": 0.48,
+      "duration": 0.48
+    },
+    "lock.open": {
+      "url": "/assets/audio/sfx/lock.open.wav",
+      "kind": "sfx",
+      "gain": 0.48,
+      "duration": 0.6802494331065759
+    },
+    "puzzle.stone_move": {
+      "url": "/assets/audio/sfx/puzzle.stone_move.wav",
+      "kind": "sfx",
+      "gain": 0.48,
+      "duration": 1.48
+    },
+    "forge.merge": {
+      "url": "/assets/audio/sfx/forge.merge.wav",
+      "kind": "sfx",
+      "gain": 0.48,
+      "duration": 1.48
+    },
+    "forge.split": {
+      "url": "/assets/audio/sfx/forge.split.wav",
+      "kind": "sfx",
+      "gain": 0.48,
+      "duration": 1.48
+    },
+    "pet.bind": {
+      "url": "/assets/audio/sfx/pet.bind.wav",
+      "kind": "sfx",
+      "gain": 0.48,
+      "duration": 2.48
+    },
+    "mana.collect": {
+      "url": "/assets/audio/sfx/mana.collect.wav",
+      "kind": "sfx",
+      "gain": 0.48,
+      "duration": 0.6
+    },
+    "story.ship_fault": {
+      "url": "/assets/audio/sfx/story.ship_fault.wav",
+      "kind": "sfx",
+      "gain": 0.48,
+      "duration": 1.2
+    },
+    "story.ship_landing": {
+      "url": "/assets/audio/sfx/story.ship_landing.wav",
+      "kind": "sfx",
+      "gain": 0.48,
+      "duration": 1.48
+    },
+    "machine.activate": {
+      "url": "/assets/audio/sfx/machine.activate.wav",
+      "kind": "sfx",
+      "gain": 0.48,
+      "duration": 2.48
+    },
+    "water.splash": {
+      "url": "/assets/audio/sfx/water.splash.wav",
+      "kind": "sfx",
+      "gain": 0.48,
+      "duration": 1
+    },
+    "water.bubbles": {
+      "url": "/assets/audio/sfx/water.bubbles.wav",
+      "kind": "sfx",
+      "gain": 0.48,
+      "duration": 0.8
+    },
+    "water.valve": {
+      "url": "/assets/audio/sfx/water.valve.wav",
+      "kind": "sfx",
+      "gain": 0.48,
+      "duration": 0.6802494331065759
+    },
+    "water.pump": {
+      "url": "/assets/audio/sfx/water.pump.wav",
+      "kind": "sfx",
+      "gain": 0.48,
+      "duration": 0.8
+    },
+    "water.bell": {
+      "url": "/assets/audio/sfx/water.bell.wav",
+      "kind": "sfx",
+      "gain": 0.48,
+      "duration": 2
+    },
+    "amb.fire": {
+      "url": "/assets/audio/ambience/amb.fire.wav",
+      "kind": "ambience",
+      "gain": 0.18,
+      "duration": 15
+    },
+    "amb.lake": {
+      "url": "/assets/audio/ambience/amb.lake.wav",
+      "kind": "ambience",
+      "gain": 0.18,
+      "duration": 15
+    },
+    "amb.underwater": {
+      "url": "/assets/audio/ambience/amb.underwater.wav",
+      "kind": "ambience",
+      "gain": 0.18,
+      "duration": 15
+    },
+    "step.grass": {
+      "url": "/assets/audio/sfx/step.grass.wav",
+      "kind": "sfx",
+      "gain": 0.48,
+      "duration": 0.48
+    },
+    "step.stone": {
+      "url": "/assets/audio/sfx/step.stone.wav",
+      "kind": "sfx",
+      "gain": 0.48,
+      "duration": 0.48
+    },
+    "creature.slime": {
+      "url": "/assets/audio/sfx/creature.slime.wav",
+      "kind": "sfx",
+      "gain": 0.48,
+      "duration": 0.6
+    },
+    "creature.forest": {
+      "url": "/assets/audio/sfx/creature.forest.wav",
+      "kind": "sfx",
+      "gain": 0.48,
+      "duration": 0.6802494331065759
+    },
+    "creature.fox": {
+      "url": "/assets/audio/sfx/creature.fox.wav",
+      "kind": "sfx",
+      "gain": 0.48,
+      "duration": 0.6
+    },
+    "amb.workshop": {
+      "url": "/assets/audio/ambience/amb.workshop.wav",
+      "kind": "ambience",
+      "gain": 0.18,
+      "duration": 15
+    },
+    "vo.crash.hello": {
+      "url": "/assets/audio/voice/cs/vo.crash.hello.wav",
+      "kind": "voice",
+      "gain": 0.85,
+      "duration": 6.408707482993197,
+      "text": "Ahoj! Já jsem Ziks. Moje loď se rozbila. Vyřeš příklad a pomoz tomu tvorovi najít klid.",
+      "voice": "Zyx"
+    },
+    "vo.crash.arena": {
+      "url": "/assets/audio/voice/cs/vo.crash.arena.wav",
+      "kind": "voice",
+      "gain": 0.85,
+      "duration": 2.647074829931973,
+      "text": "Už je mu lépe! Pojď za mnou do arény.",
+      "voice": "Zyx"
+    },
+    "vo.battle.intro": {
+      "url": "/assets/audio/voice/cs/vo.battle.intro.wav",
+      "kind": "voice",
+      "gain": 0.85,
+      "duration": 2.8328344671201813,
+      "text": "Podívej se na příklad a vyber správnou odpověď.",
+      "voice": "Zyx"
+    },
+    "vo.arena.intro": {
+      "url": "/assets/audio/voice/cs/vo.arena.intro.wav",
+      "kind": "voice",
+      "gain": 0.85,
+      "duration": 4.6439909297052155,
+      "text": "V aréně tě čeká pět vln. Začneme tou, kterou ještě nemáš hotovou.",
+      "voice": "Zyx"
+    },
+    "vo.shop.prep": {
+      "url": "/assets/audio/voice/cs/vo.shop.prep.wav",
+      "kind": "voice",
+      "gain": 0.85,
+      "duration": 3.297233560090703,
+      "text": "Vyber meč nebo štít a připrav si ho pomocí příkladů.",
+      "voice": "Zyx"
+    },
+    "vo.shop.sword": {
+      "url": "/assets/audio/voice/cs/vo.shop.sword.wav",
+      "kind": "voice",
+      "gain": 0.85,
+      "duration": 3.297233560090703,
+      "text": "Meč je připravený. Runy ti pomohou při útoku.",
+      "voice": "Zyx"
+    },
+    "vo.shop.shield": {
+      "url": "/assets/audio/voice/cs/vo.shop.shield.wav",
+      "kind": "voice",
+      "gain": 0.85,
+      "duration": 3.7616326530612243,
+      "text": "Štít je připravený. Runy ti pomohou zachytit zásah.",
+      "voice": "Zyx"
+    },
+    "vo.pythia.welcome": {
+      "url": "/assets/audio/voice/cs/vo.pythia.welcome.wav",
+      "kind": "voice",
+      "gain": 0.85,
+      "duration": 3.6687528344671203,
+      "text": "Vítej v mé dílně. Krystaly nám pomohou získat nové přátele.",
+      "voice": "Pythia"
+    },
+    "vo.pythia.bind": {
+      "url": "/assets/audio/voice/cs/vo.pythia.bind.wav",
+      "kind": "voice",
+      "gain": 0.85,
+      "duration": 3.4829931972789114,
+      "text": "Najdi amulet s číslem, které potřebuje tvůj nový přítel.",
+      "voice": "Pythia"
+    },
+    "vo.pythia.friend": {
+      "url": "/assets/audio/voice/cs/vo.pythia.friend.wav",
+      "kind": "voice",
+      "gain": 0.85,
+      "duration": 2.2755555555555556,
+      "text": "Teď už máš nového kamaráda na cestu.",
+      "voice": "Pythia"
+    },
+    "vo.forge.merge": {
+      "url": "/assets/audio/voice/cs/vo.forge.merge.wav",
+      "kind": "voice",
+      "gain": 0.85,
+      "duration": 2.7399546485260773,
+      "text": "Spoj krystaly. Jejich čísla sečti.",
+      "voice": "Pythia"
+    },
+    "vo.forge.split": {
+      "url": "/assets/audio/voice/cs/vo.forge.split.wav",
+      "kind": "voice",
+      "gain": 0.85,
+      "duration": 2.3219954648526078,
+      "text": "Rozděl krystal a zjisti, kolik zbývá.",
+      "voice": "Pythia"
+    },
+    "vo.forest.enter": {
+      "url": "/assets/audio/voice/cs/vo.forest.enter.wav",
+      "kind": "voice",
+      "gain": 0.85,
+      "duration": 3.622312925170068,
+      "text": "Cesta vede do lesa. Podívej se, co cestou objevíš.",
+      "voice": "Zyx"
+    },
+    "vo.bridge.intro": {
+      "url": "/assets/audio/voice/cs/vo.bridge.intro.wav",
+      "kind": "voice",
+      "gain": 0.85,
+      "duration": 4.4117913832199545,
+      "text": "Doplň chybějící čísla v řadě. Přesuň kameny na správná místa.",
+      "voice": "Zyx"
+    },
+    "vo.forest.balance": {
+      "url": "/assets/audio/voice/cs/vo.forest.balance.wav",
+      "kind": "voice",
+      "gain": 0.85,
+      "duration": 1.6718367346938776,
+      "text": "Vyrovnej obě strany vah.",
+      "voice": "Zyx"
+    },
+    "vo.forest.path": {
+      "url": "/assets/audio/voice/cs/vo.forest.path.wav",
+      "kind": "voice",
+      "gain": 0.85,
+      "duration": 2.507755102040816,
+      "text": "Vyber cestu, na které je příklad správně.",
+      "voice": "Zyx"
+    },
+    "vo.forest.offering": {
+      "url": "/assets/audio/voice/cs/vo.forest.offering.wav",
+      "kind": "voice",
+      "gain": 0.85,
+      "duration": 3.111473922902494,
+      "text": "Vyber krystaly, jejichž součet odpovídá cíli.",
+      "voice": "Zyx"
+    },
+    "vo.lock.intro": {
+      "url": "/assets/audio/voice/cs/vo.lock.intro.wav",
+      "kind": "voice",
+      "gain": 0.85,
+      "duration": 2.647074829931973,
+      "text": "Použij nápovědu a nastav správná písmena.",
+      "voice": "Zyx"
+    },
+    "vo.camp.rest": {
+      "url": "/assets/audio/voice/cs/vo.camp.rest.wav",
+      "kind": "voice",
+      "gain": 0.85,
+      "duration": 2.8328344671201813,
+      "text": "Teď si chvilku odpočiň. Cesta na tebe počká.",
+      "voice": "Pythia"
+    },
+    "vo.forest.crystal": {
+      "url": "/assets/audio/voice/cs/vo.forest.crystal.wav",
+      "kind": "voice",
+      "gain": 0.85,
+      "duration": 2.5541950113378684,
+      "text": "To je Krystal lesa! Přines ho ke mně.",
+      "voice": "Zyx"
+    },
+    "vo.rocket.1": {
+      "url": "/assets/audio/voice/cs/vo.rocket.1.wav",
+      "kind": "voice",
+      "gain": 0.85,
+      "duration": 2.2755555555555556,
+      "text": "Můj krystal! Spadl z lodi.",
+      "voice": "Zyx"
+    },
+    "vo.rocket.2": {
+      "url": "/assets/audio/voice/cs/vo.rocket.2.wav",
+      "kind": "voice",
+      "gain": 0.85,
+      "duration": 2.786394557823129,
+      "text": "Loď potřebuje tři krystaly. Máme první!",
+      "voice": "Zyx"
+    },
+    "vo.rocket.3": {
+      "url": "/assets/audio/voice/cs/vo.rocket.3.wav",
+      "kind": "voice",
+      "gain": 0.85,
+      "duration": 2.182675736961451,
+      "text": "Pojď ke stroji. Vložíme krystal.",
+      "voice": "Zyx"
+    },
+    "vo.machine.numbers": {
+      "url": "/assets/audio/voice/cs/vo.machine.numbers.wav",
+      "kind": "voice",
+      "gain": 0.85,
+      "duration": 3.7616326530612243,
+      "text": "Vyber tři čísla. Jejich součet musí odpovídat cíli.",
+      "voice": "Zyx"
+    },
+    "vo.machine.crystal": {
+      "url": "/assets/audio/voice/cs/vo.machine.crystal.wav",
+      "kind": "voice",
+      "gain": 0.85,
+      "duration": 1.253877551020408,
+      "text": "Klikni na krystal.",
+      "voice": "Zyx"
+    },
+    "vo.machine.slot": {
+      "url": "/assets/audio/voice/cs/vo.machine.slot.wav",
+      "kind": "voice",
+      "gain": 0.85,
+      "duration": 2.2755555555555556,
+      "text": "Klikni na zelené místo pro krystal.",
+      "voice": "Zyx"
+    },
+    "vo.machine.activate": {
+      "url": "/assets/audio/voice/cs/vo.machine.activate.wav",
+      "kind": "voice",
+      "gain": 0.85,
+      "duration": 1.3003174603174603,
+      "text": "Aktivuj stroj.",
+      "voice": "Zyx"
+    },
+    "vo.machine.done": {
+      "url": "/assets/audio/voice/cs/vo.machine.done.wav",
+      "kind": "voice",
+      "gain": 0.85,
+      "duration": 1.5789569160997732,
+      "text": "Jeden ze tří hotovo!",
+      "voice": "Zyx"
+    },
+    "vo.silverpond.enter": {
+      "url": "/assets/audio/voice/cs/vo.silverpond.enter.wav",
+      "kind": "voice",
+      "gain": 0.85,
+      "duration": 2.507755102040816,
+      "text": "Další dobrodružství čeká pod hladinou.",
+      "voice": "Zyx"
+    },
+    "vo.descent.intro": {
+      "url": "/assets/audio/voice/cs/vo.descent.intro.wav",
+      "kind": "voice",
+      "gain": 0.85,
+      "duration": 2.414875283446712,
+      "text": "Vyhýbej se překážkám a doplav dolů.",
+      "voice": "Zyx"
+    },
+    "vo.water.reverse": {
+      "url": "/assets/audio/voice/cs/vo.water.reverse.wav",
+      "kind": "voice",
+      "gain": 0.85,
+      "duration": 3.4829931972789114,
+      "text": "Postupuj zpátky a zjisti, které číslo bylo na začátku.",
+      "voice": "Zyx"
+    },
+    "vo.water.routing": {
+      "url": "/assets/audio/voice/cs/vo.water.routing.wav",
+      "kind": "voice",
+      "gain": 0.85,
+      "duration": 2.8792743764172335,
+      "text": "Sleduj změny po cestě a vyber správný cíl.",
+      "voice": "Zyx"
+    },
+    "vo.water.pump": {
+      "url": "/assets/audio/voice/cs/vo.water.pump.wav",
+      "kind": "voice",
+      "gain": 0.85,
+      "duration": 2.507755102040816,
+      "text": "Otoč ventily podle čísel na potrubí.",
+      "voice": "Zyx"
+    },
+    "vo.water.current": {
+      "url": "/assets/audio/voice/cs/vo.water.current.wav",
+      "kind": "voice",
+      "gain": 0.85,
+      "duration": 2.3219954648526078,
+      "text": "Projdi plán po jednotlivých krocích.",
+      "voice": "Zyx"
+    },
+    "vo.water.bell": {
+      "url": "/assets/audio/voice/cs/vo.water.bell.wav",
+      "kind": "voice",
+      "gain": 0.85,
+      "duration": 2.414875283446712,
+      "text": "Vyber dvě perly a sestav z nich plán.",
+      "voice": "Zyx"
+    },
+    "vo.common.retry": {
+      "url": "/assets/audio/voice/cs/vo.common.retry.wav",
+      "kind": "voice",
+      "gain": 0.85,
+      "duration": 1.3931972789115645,
+      "text": "Zkus to ještě jednou.",
+      "voice": "Zyx"
+    },
+    "vo.common.complete": {
+      "url": "/assets/audio/voice/cs/vo.common.complete.wav",
+      "kind": "voice",
+      "gain": 0.85,
+      "duration": 1.1145578231292517,
+      "text": "Povedlo se!",
+      "voice": "Zyx"
+    }
+  },
+  "music": {
+    "m01_starfall": {
+      "url": "/assets/audio/music/m01_starfall.mp3",
+      "title": "Starlit Storybook",
+      "gain": 0.27,
+      "crossfade": 2,
+      "sha256": "625144ae1656a22ddfb44904d5ab6f8e19a3741a952fb7f70f997c3a984896eb",
+      "duration": 198.01349206349207,
+      "loopStart": 0,
+      "loopEnd": 197.70532879818595
+    },
+    "m02_mathoria": {
+      "url": "/assets/audio/music/m02_mathoria.mp3",
+      "title": "The Village Path",
+      "gain": 0.3,
+      "crossfade": 2,
+      "sha256": "59ebacc98e436bfdede29a9e76f4e3e756abf476cfa04abfb7a01cb0f2e3a56e",
+      "duration": 108.41349206349206,
+      "loopStart": 0,
+      "loopEnd": 108.20138321995465
+    },
+    "m03_crystal_workshop": {
+      "url": "/assets/audio/music/m03_crystal_workshop.mp3",
+      "title": "Gathering Numbers",
+      "gain": 0.259,
+      "crossfade": 2,
+      "sha256": "4b497ef265770d755650fbc602d8bfff0ae749663a86d1731ec6b7cd9bdcce0f",
+      "duration": 49.333492063492066,
+      "loopStart": 0,
+      "loopEnd": 49.333492063492066
+    },
+    "m04_forest": {
+      "url": "/assets/audio/music/m04_forest.mp3",
+      "title": "Dappled Discovery",
+      "gain": 0.263,
+      "crossfade": 2,
+      "sha256": "781852395d0db994b4cc19f410dd3f80f73d578bc26147e61e9c9a254c59655a",
+      "duration": 123.13349206349206,
+      "loopStart": 0,
+      "loopEnd": 121.85671201814058
+    },
+    "m05_battle": {
+      "url": "/assets/audio/music/m05_battle.mp3",
+      "title": "Number Hero March",
+      "gain": 0.281,
+      "crossfade": 2,
+      "sha256": "747e91ce6ab2ad535ce9da3302b2633e2b541604cf2339e8917173fe0cc21f88",
+      "duration": 20.413492063492065,
+      "loopStart": 0,
+      "loopEnd": 20.413492063492065
+    },
+    "m06_guardian": {
+      "url": "/assets/audio/music/m06_guardian.mp3",
+      "title": "The Guardian's Watch",
+      "gain": 0.257,
+      "crossfade": 2,
+      "sha256": "3686d46bd9a2ac660e57520eb123031d7eb9bdb4f96daaa2017ca554991914e4",
+      "duration": 87.81349206349206,
+      "loopStart": 0,
+      "loopEnd": 87.81349206349206
+    },
+    "m07_rest": {
+      "url": "/assets/audio/music/m07_rest.mp3",
+      "title": "Campfire Rest",
+      "gain": 0.271,
+      "crossfade": 2,
+      "sha256": "8f7c85440406c36b08314448dbde5f8e13fbc3d03c9c7a004ecd92fc8d48eb05",
+      "duration": 120.41349206349206,
+      "loopStart": 0,
+      "loopEnd": 120.41349206349206
+    },
+    "m08_silverpond": {
+      "url": "/assets/audio/music/m08_silverpond.mp3",
+      "title": "Pearlescent Lake",
+      "gain": 0.293,
+      "crossfade": 2,
+      "sha256": "f63a082d96fc9541e1797ceb4f1c348bf986646b17ecef5278bfd0631002e6ca",
+      "duration": 103.01349206349207,
+      "loopStart": 0,
+      "loopEnd": 102.05712018140589
+    },
+    "m09_underwater": {
+      "url": "/assets/audio/music/m09_underwater.mp3",
+      "title": "Calm Blue Depths",
+      "gain": 0.238,
+      "crossfade": 2,
+      "sha256": "c3037097055fb34f3f63078ea6fb0c3ce0d2de3aa9e23f3c3f3f2577b8e0573a",
+      "duration": 132.37349206349205,
+      "loopStart": 0,
+      "loopEnd": 132.37349206349205
+    },
+    "m10_zyx_hope": {
+      "url": "/assets/audio/music/m10_zyx_hope.mp3",
+      "title": "Little Repair",
+      "gain": 0.274,
+      "crossfade": 2,
+      "sha256": "241d89023f6688f499db7628e094873d6efa4670b96644fc143fa72ea0f8aed7",
+      "duration": 98.05349206349206,
+      "loopStart": 0,
+      "loopEnd": 98.05349206349206
+    }
+  }
+}

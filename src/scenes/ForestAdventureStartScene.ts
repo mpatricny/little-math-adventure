@@ -5,6 +5,7 @@ import { ProgressionSystem } from '../systems/ProgressionSystem';
 import { CoopSessionManager } from '../systems/CoopSessionManager';
 import { LocalizationService } from '../systems/LocalizationService';
 import { SceneBuilder } from '../systems/SceneBuilder';
+import { resolveForestRoomSceneKey } from '../systems/ForestRoomRouting';
 
 /**
  * ForestAdventureStartScene - Entry point to Verdant Forest journey
@@ -45,9 +46,6 @@ export class ForestAdventureStartScene extends Phaser.Scene {
     preload(): void {
         if (!this.cache.json.has('forestJourney')) {
             this.load.json('forestJourney', 'assets/data/forest-journey.json');
-        }
-        if (!this.cache.json.has('forestEnemies')) {
-            this.load.json('forestEnemies', 'assets/data/forest-enemies.json');
         }
         if (!this.cache.json.has('forestRooms')) {
             this.load.json('forestRooms', 'assets/data/forest-rooms.json');
@@ -262,7 +260,10 @@ export class ForestAdventureStartScene extends Phaser.Scene {
                 if (!this.debugMode) {
                     this.deductSupplyCost();
                 }
-                this.scene.start('ForestRoomScene', { roomId: roomsData.startRoom });
+                this.scene.start(
+                    resolveForestRoomSceneKey(roomsData, roomsData.startRoom),
+                    { roomId: roomsData.startRoom },
+                );
             } else {
                 console.error('Failed to start room journey');
             }

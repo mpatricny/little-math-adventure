@@ -1,0 +1,10 @@
+{
+  "durationMs": 20000,
+  "graceMs": 2500,
+  "damage": 1,
+  "invulnerabilityMs": 1600,
+  "minimumHp": 1,
+  "speed": 400,
+  "minX": 330,
+  "maxX": 980
+}

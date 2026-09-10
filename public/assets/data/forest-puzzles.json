@@ -9,27 +9,7 @@
       "timeLimit": 60,
       "failDamage": 3,
       "description": "Complete the sequence to cross the river",
-      "descriptionCs": "Doplň posloupnost a přejdi přes řeku",
-      "templates": [
-        {
-          "sequence": [2, null, 6, 8, null, 12],
-          "pattern": "+2",
-          "answers": [4, 10],
-          "options": [4, 10, 5, 9]
-        },
-        {
-          "sequence": [5, 10, null, 20, null],
-          "pattern": "+5",
-          "answers": [15, 25],
-          "options": [15, 25, 12, 18]
-        },
-        {
-          "sequence": [3, 6, null, 12, null, 18],
-          "pattern": "+3",
-          "answers": [9, 15],
-          "options": [9, 15, 10, 14]
-        }
-      ]
+      "descriptionCs": "Doplň posloupnost a přejdi přes řeku"
     },
     "balance_scale": {
       "id": "balance_scale",
@@ -39,29 +19,11 @@
       "difficulty": "medium",
       "timeLimit": 45,
       "failDamage": 5,
-      "successBonus": { "gold": 10 },
+      "successBonus": {
+        "gold": 10
+      },
       "description": "Balance the magical scale to open the path",
-      "descriptionCs": "Vyrovnej magické váhy a otevři cestu",
-      "templates": [
-        {
-          "left": "7 + ?",
-          "right": "5 + 8",
-          "answer": 6,
-          "options": [5, 6, 7, 8]
-        },
-        {
-          "left": "? + 4",
-          "right": "3 + 9",
-          "answer": 8,
-          "options": [6, 7, 8, 9]
-        },
-        {
-          "left": "10 + ?",
-          "right": "6 + 7",
-          "answer": 3,
-          "options": [2, 3, 4, 5]
-        }
-      ]
+      "descriptionCs": "Vyrovnej magické váhy a otevři cestu"
     },
     "path_choice": {
       "id": "path_choice",
@@ -71,32 +33,11 @@
       "difficulty": "medium",
       "timeLimit": 30,
       "failDamage": 5,
-      "failPenalty": { "extraBattle": "forest_wolf" },
+      "failPenalty": {
+        "extraBattle": "forest_wolf"
+      },
       "description": "Choose the path with the CORRECT equation",
-      "descriptionCs": "Vyber cestu se SPRÁVNOU rovnicí",
-      "templates": [
-        {
-          "paths": [
-            { "equation": "4 + 5 = 8", "correct": false },
-            { "equation": "3 × 3 = 9", "correct": true },
-            { "equation": "12 - 4 = 7", "correct": false }
-          ]
-        },
-        {
-          "paths": [
-            { "equation": "6 + 7 = 13", "correct": true },
-            { "equation": "8 - 3 = 4", "correct": false },
-            { "equation": "2 × 4 = 6", "correct": false }
-          ]
-        },
-        {
-          "paths": [
-            { "equation": "9 - 5 = 3", "correct": false },
-            { "equation": "5 + 6 = 12", "correct": false },
-            { "equation": "4 × 2 = 8", "correct": true }
-          ]
-        }
-      ]
+      "descriptionCs": "Vyber cestu se SPRÁVNOU rovnicí"
     },
     "crystal_offering": {
       "id": "crystal_offering",
@@ -106,45 +47,15 @@
       "difficulty": "hard",
       "timeLimit": 90,
       "optional": true,
+      "selectionCount": 3,
+      "showRunningSum": false,
       "successBonus": {
         "bossAtkReduction": 1,
         "healPercent": 20,
         "potionRefill": true
       },
       "description": "Place crystals to match the obelisk's target",
-      "descriptionCs": "Vlož krystaly aby jejich hodnota odpovídala cíli",
-      "templates": [
-        {
-          "target": 15,
-          "items": [
-            { "emoji": "🔴", "value": 5 },
-            { "emoji": "💚", "value": 7 },
-            { "emoji": "💙", "value": 3 },
-            { "emoji": "💜", "value": 4 },
-            { "emoji": "💎", "value": 8 }
-          ]
-        },
-        {
-          "target": 20,
-          "items": [
-            { "emoji": "🔴", "value": 8 },
-            { "emoji": "💚", "value": 5 },
-            { "emoji": "💙", "value": 7 },
-            { "emoji": "💜", "value": 6 },
-            { "emoji": "💎", "value": 4 }
-          ]
-        },
-        {
-          "target": 18,
-          "items": [
-            { "emoji": "🔴", "value": 6 },
-            { "emoji": "💚", "value": 9 },
-            { "emoji": "💙", "value": 3 },
-            { "emoji": "💜", "value": 5 },
-            { "emoji": "💎", "value": 7 }
-          ]
-        }
-      ]
+      "descriptionCs": "Vlož krystaly aby jejich hodnota odpovídala cíli"
     }
   }
 }

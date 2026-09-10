@@ -272,9 +272,25 @@ Wrong answers are tracked per wave via `waveWrongAnswerCount` in BattleScene:
 ### Arena Start Behavior
 
 When player enters an arena (from TownScene):
-- **Always starts from wave 0** (first wave)
+- **Defaults to the highest unlocked arena and its first incomplete wave**
+- Completed-but-imperfect waves are offered as optional practice, never as a progression gate
 - **Historical waveResults are preserved** (not reset)
 - Only awards crystals for improvements over historical best
+
+### Encounter Source of Truth
+
+`public/assets/data/encounters.json` is the single source of truth for arena waves,
+forest battles, enemy order, boss phases/mechanics, completion links/bonuses, and
+multiplayer policy. All base enemy stats live in `public/assets/data/enemies.json`.
+
+- Edit arena, forest, and boss profiles in the Scene Editor's **Encounters** tab; it saves directly to `encounters.json`.
+- Every enemy reference uses `source: "core"` and resolves to one stable ID in `enemies.json`.
+- Runtime scenes and simulators must resolve rosters through `EncounterCatalog`; do not add copied or regional fallback rosters.
+- Boss phase HP, attack, and defense live in `encounters.json` and must remain editable in the Scene Editor.
+- Enemy defense is subtracted once from each complete hero or pet attack via `CombatDamageSystem`: `max(0, totalDamage - defense)`.
+- A prepared sword charge is consumed only when its bonus increases post-defense damage.
+- Tests must derive production roster/stat expectations from `encounters.json` and `enemies.json`.
+- After saving encounters, reload a running game or restart the simulation/test process so its in-memory JSON cache is refreshed.
 
 ### UI: Wave Progress Table
 
@@ -288,15 +304,29 @@ Located in ArenaScene, uses the `misc.arena-with-title` frame element. Shows:
 ### Adding New Arenas
 
 To add a new arena level:
-1. Add wave configuration to `ARENA_WAVES` in ArenaScene.ts
-2. Configure enemies per wave in format: `{ level: number, waves: EnemyDefinition[][] }`
-3. The Wave Progress Table and reward system work automatically
+1. Add the arena, its five waves, completion metadata, and multiplayer policy reference to `encounters.json` (prefer the Scene Editor).
+2. Reference enemies by IDs defined in `enemies.json`.
+3. The runtime preview, BattleScene, Wave Progress Table, rewards, and simulator resolve the change from the catalog automatically.
 
 All arena levels share the same:
 - Wave Progress Table UI positioning
 - Crystal reward calculation logic
 - Wrong answer tracking
 - Historical progress preservation
+
+## Shop Battle Preparation
+
+The production `ShopScene` lets a player prepare exactly one equipped item for a
+future battle. Preparation tuning lives in `src/data/preparation.json`; both runtime
+logic and tests must import that file instead of copying charge or bonus constants.
+
+- Sword preparation requires an equipped weapon. Each stored rune adds `+1` damage to one successful player attack.
+- Shield preparation requires an equipped shield. Each stored rune automatically blocks `1` otherwise-unblocked damage.
+- A rune is consumed only when its effect is useful. Missed attacks and already-fully-blocked hits do not spend one.
+- Preparation persists across scenes and arena waves until consumed or replaced by completing the other preparation.
+- Shop problems come from `MasterySystem.drawPreparationProblems()` and each displayed problem records one attempt, including first-answer correctness and response time. A wrong answer adds a fresh problem; it is never converted into a second successful solve.
+- Co-op stores preparation independently on player A and player B. Battle indicators must follow the active player.
+- Static shop and battle indicator hosts stay in `scenes.json`; positions and depths must be read through `SceneBuilder`.
 
 ## ForestRiddleScene Architecture
 

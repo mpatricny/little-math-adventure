@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "initialProblems": 3,
+  "maxProblems": 5,
+  "maxCharges": 3,
+  "effects": {
+    "sword": {
+      "damagePerCharge": 1
+    },
+    "shield": {
+      "blockPerCharge": 1
+    }
+  }
+}

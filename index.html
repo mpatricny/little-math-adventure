@@ -30,9 +30,42 @@
         justify-content: center;
         align-items: center;
       }
+      #boot-error {
+        position: fixed;
+        inset: 0;
+        z-index: 100000;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        padding: 32px;
+        box-sizing: border-box;
+        background: #111827;
+        color: #facc15;
+        font-family: Arial, sans-serif;
+        font-size: 28px;
+        line-height: 1.35;
+        text-align: center;
+      }
     </style>
+    <script>
+      window.__LMA_SHOW_BOOT_ERROR__ = function(message) {
+        var el = document.getElementById('boot-error');
+        if (!el) return;
+        el.style.display = 'flex';
+        el.style.color = '#fca5a5';
+        el.textContent = 'Chyba při spuštění hry: ' + message;
+      };
+      window.addEventListener('error', function(event) {
+        window.__LMA_SHOW_BOOT_ERROR__(event.message || 'neznamy JavaScript error');
+      });
+      window.addEventListener('unhandledrejection', function(event) {
+        var reason = event.reason;
+        window.__LMA_SHOW_BOOT_ERROR__((reason && (reason.message || reason.toString())) || 'nezachycena promise chyba');
+      });
+    </script>
   </head>
   <body>
+    <div id="boot-error" role="alert"></div>
     <div id="game-container"></div>
     <script src="/sdk/mesa-sdk.js"></script>
     <script>if(window.Mesa){Mesa.init().then(function(){console.log('[LMA] Mesa SDK initialized, env:', Mesa.getEnvironment());});}</script>

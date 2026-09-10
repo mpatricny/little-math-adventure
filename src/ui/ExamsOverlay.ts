@@ -152,7 +152,7 @@ export class ExamsOverlay extends OverlayBase {
         // --- Sub-atom exam ---
         yOffset = this.renderExamLine(content, '  Zkouška:', sa.state, sa.examBestMedal,
             sa.state === 'training', mastery.checkExamEligibility(saId),
-            () => this.getSubAtomExamProgress(saId, sa, mastery), yOffset);
+            () => this.getSubAtomExamProgress(saId, mastery), yOffset);
 
         // --- Fluency challenge ---
         const fluencyAvailable = sa.state === 'secure';
@@ -378,15 +378,13 @@ export class ExamsOverlay extends OverlayBase {
 
     // ── Progress data computation ──
 
-    private getSubAtomExamProgress(saId: SubAtomId, sa: any, mastery: MasterySystem): ProgressItem[] {
-        const solves = sa.successfulSolves;
-        const accuracy = mastery.getLast20Accuracy(saId);
-        const formsCount = mastery.getFormsWithSolves(saId, 4);
+    private getSubAtomExamProgress(saId: SubAtomId, mastery: MasterySystem): ProgressItem[] {
+        const progress = mastery.getSubAtomExamProgress(saId);
 
         return [
-            { label: 'Úlohy:', current: solves, target: 20, valueStr: `${solves}/20`, met: solves >= 20, stateColor: 'training' },
-            { label: 'Přesnost:', current: accuracy * 100, target: 70, valueStr: `${Math.round(accuracy * 100)}%/70%`, met: accuracy >= 0.70, stateColor: 'training' },
-            { label: 'Formy:', current: formsCount, target: 2, valueStr: `${formsCount}/2`, met: formsCount >= 2, stateColor: 'training' },
+            { label: 'Úlohy:', current: progress.successfulSolves, target: progress.requiredSuccessfulSolves, valueStr: `${progress.successfulSolves}/${progress.requiredSuccessfulSolves}`, met: progress.successfulSolves >= progress.requiredSuccessfulSolves, stateColor: 'training' },
+            { label: 'Přesnost:', current: progress.accuracy * 100, target: progress.requiredAccuracy * 100, valueStr: `${Math.round(progress.accuracy * 100)}%/${Math.round(progress.requiredAccuracy * 100)}%`, met: progress.accuracy >= progress.requiredAccuracy, stateColor: 'training' },
+            { label: 'Formy:', current: progress.qualifyingForms, target: progress.requiredQualifyingForms, valueStr: `${progress.qualifyingForms}/${progress.requiredQualifyingForms}`, met: progress.qualifyingForms >= progress.requiredQualifyingForms, stateColor: 'training' },
         ];
     }
 

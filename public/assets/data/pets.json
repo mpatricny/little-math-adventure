@@ -5,11 +5,14 @@
         "spriteKey": "slime-sheet",
         "animPrefix": "slime",
         "unlockedByEnemy": "slime_green",
-        "requiredAmulet": { "tier": "shard", "value": 1 },
+        "requiredAmulet": {
+            "tier": "shard",
+            "value": 1
+        },
         "mathProblemType": "addition",
         "mathProblemMax": 3,
         "damageMultiplier": 1,
-        "scale": 1.0
+        "scale": 1
     },
     {
         "id": "pet_demon",
@@ -17,11 +20,14 @@
         "spriteKey": "purple-attack-sheet",
         "animPrefix": "purple",
         "unlockedByEnemy": "purple_demon",
-        "requiredAmulet": { "tier": "shard", "value": 2 },
+        "requiredAmulet": {
+            "tier": "shard",
+            "value": 2
+        },
         "mathProblemType": "subtraction",
         "mathProblemMax": 5,
-        "damageMultiplier": 1,
-        "scale": 1.0
+        "damageMultiplier": 2,
+        "scale": 1
     },
     {
         "id": "pet_porcupine",
@@ -29,11 +35,14 @@
         "spriteKey": "pet-porcupine-sheet",
         "animPrefix": "porcupine",
         "unlockedByArenaLevel": 1,
-        "requiredAmulet": { "tier": "shard", "value": 9 },
+        "requiredAmulet": {
+            "tier": "shard",
+            "value": 9
+        },
         "mathProblemType": "addition",
         "mathProblemMax": 3,
-        "damageMultiplier": 2,
-        "scale": 1.0
+        "damageMultiplier": 3,
+        "scale": 1
     },
     {
         "id": "pet_beast",
@@ -41,11 +50,14 @@
         "spriteKey": "pink-idle-sheet",
         "animPrefix": "pink",
         "unlockedByEnemy": "pink_beast",
-        "requiredAmulet": { "tier": "fragment", "value": 9 },
+        "requiredAmulet": {
+            "tier": "fragment",
+            "value": 9
+        },
         "mathProblemType": "subtraction",
         "mathProblemMax": 8,
-        "damageMultiplier": 2,
-        "scale": 1.0
+        "damageMultiplier": 4,
+        "scale": 1
     },
     {
         "id": "pet_leafy",
@@ -53,24 +65,33 @@
         "spriteKey": "leafy-idle-sheet",
         "animPrefix": "leafy",
         "unlockedByEnemy": "leafy",
-        "requiredAmulet": { "tier": "fragment", "value": 15 },
+        "requiredAmulet": {
+            "tier": "fragment",
+            "value": 15
+        },
         "mathProblemType": "threeOperand",
         "mathProblemMax": 8,
-        "damageMultiplier": 2,
-        "scale": 1.0
+        "damageMultiplier": 5,
+        "scale": 1
     },
     {
         "id": "pet_porcupine2",
         "name": "Bodlina",
         "spriteKey": "pet-porcupine-2",
         "animPrefix": "porcupine2",
-        "unlockedByArenaLevels": [1, 2],
-        "requiredAmulet": { "tier": "fragment", "value": 12 },
+        "unlockedByArenaLevels": [
+            1,
+            2
+        ],
+        "requiredAmulet": {
+            "tier": "fragment",
+            "value": 12
+        },
         "requiredSpecialCrystal": "special_porcupine",
         "mathProblemType": "multiplication",
         "mathProblemMax": 12,
-        "damageMultiplier": 3,
-        "scale": 1.0,
+        "damageMultiplier": 6,
+        "scale": 1,
         "attackEffect": {
             "type": "lightning",
             "tint": "0x44ff44"
@@ -78,61 +99,31 @@
     },
     {
         "id": "pet_catacomb_A",
-        "name": "Vlk Katakomb",
-        "spriteKey": "wolves-only-transparent-sheet",
-        "animPrefix": "wolf",
+        "name": "Runová liška",
+        "spriteKey": "rune-fox-sheet",
+        "animPrefix": "rune-fox",
         "unlockedByEnemy": "catacomb_creature_A",
-        "requiredAmulet": { "tier": "shard", "value": 5 },
+        "requiredAmulet": {
+            "tier": "shard",
+            "value": 5
+        },
         "mathProblemType": "addition",
         "mathProblemMax": 5,
-        "damageMultiplier": 1,
+        "damageMultiplier": 6,
         "scale": 0.5
     },
     {
-        "id": "pet_catacomb_B",
-        "name": "Vlk Katakomb",
+        "id": "pet_wolf",
+        "name": "Lesní vlk",
         "spriteKey": "wolves-only-transparent-sheet",
         "animPrefix": "wolf",
-        "unlockedByEnemy": "catacomb_creature_B",
-        "requiredAmulet": { "tier": "shard", "value": 8 },
-        "mathProblemType": "subtraction",
-        "mathProblemMax": 8,
-        "damageMultiplier": 1,
-        "scale": 0.5
-    },
-    {
-        "id": "pet_catacomb_C",
-        "name": "Vlk Katakomb",
-        "spriteKey": "wolves-only-transparent-sheet",
-        "animPrefix": "wolf",
-        "unlockedByEnemy": "catacomb_creature_C",
-        "requiredAmulet": { "tier": "fragment", "value": 10 },
+        "unlockedByEnemy": "forest_wolf",
+        "requiredAmulet": {
+            "tier": "shard",
+            "value": 5
+        },
         "mathProblemType": "addition",
-        "mathProblemMax": 10,
-        "damageMultiplier": 2,
-        "scale": 0.5
-    },
-    {
-        "id": "pet_catacomb_D",
-        "name": "Vlk Katakomb",
-        "spriteKey": "wolves-only-transparent-sheet",
-        "animPrefix": "wolf",
-        "unlockedByEnemy": "catacomb_creature_D",
-        "requiredAmulet": { "tier": "fragment", "value": 15 },
-        "mathProblemType": "subtraction",
-        "mathProblemMax": 15,
-        "damageMultiplier": 2,
-        "scale": 0.5
-    },
-    {
-        "id": "pet_catacomb_E",
-        "name": "Vlk Katakomb",
-        "spriteKey": "wolves-only-transparent-sheet",
-        "animPrefix": "wolf",
-        "unlockedByEnemy": "catacomb_creature_E",
-        "requiredAmulet": { "tier": "prism", "value": 20 },
-        "mathProblemType": "multiplication",
-        "mathProblemMax": 12,
+        "mathProblemMax": 5,
         "damageMultiplier": 3,
         "scale": 0.5
     }

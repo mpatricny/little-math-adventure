@@ -1,5 +1,6 @@
-import { ALL_BANDS, ALL_SUB_ATOM_NUMBERS, BandId, EnemyDefinition, MasteryData, SubAtomId } from '../types';
+import { BandId, EnemyDefinition, ExamType, MasteryData, SubAtomId } from '../types';
 import { GameStateManager } from './GameStateManager';
+import { MasterySystem } from './MasterySystem';
 
 
 /**
@@ -95,8 +96,9 @@ export class CoopSessionManager {
     endSession(): void {
         if (!this._isActive) return;
 
-        // Save current player's state
-        GameStateManager.getInstance().save();
+        // Co-op learning belongs to both save slots, even when the session ends
+        // outside the normal victory/defeat flow.
+        this.persistMasteryProgress();
 
         this._isActive = false;
         this._activePlayer = 'A';
@@ -181,6 +183,33 @@ export class CoopSessionManager {
 
     getPlayerBMasteryData(): MasteryData | null {
         return this._playerBMasteryData;
+    }
+
+    /**
+     * Evaluate co-op learning thresholds and persist both players' mastery,
+     * rewards and derived levels to their own save slots.
+     */
+    applyAndPersistMasteryProgress(): Array<{
+        player: 'A' | 'B';
+        type: ExamType;
+        targetId: SubAtomId | BandId;
+    }> {
+        return this.persistMasteryTracks(true);
+    }
+
+    /** Persist recorded co-op attempts without evaluating another promotion. */
+    persistMasteryProgress(): void {
+        this.persistMasteryTracks(false);
+    }
+
+    /** Checkpoint a completed math phase without swapping players or awarding promotions. */
+    persistActiveMasteryProgress(): void {
+        if (!this._isActive) return;
+        const data = this._activePlayer === 'A' ? this._playerAMasteryData : this._playerBMasteryData;
+        if (!data) return;
+        const gameState = GameStateManager.getInstance();
+        gameState.getMathStats().masteryData = this.cloneMasteryData(data);
+        gameState.save();
     }
 
     resetCasualProgress(): void {
@@ -288,60 +317,62 @@ export class CoopSessionManager {
     }
 
     private createSessionMastery(source: MasteryData): MasteryData {
-        const sessionData = JSON.parse(JSON.stringify(source)) as MasteryData;
-        const currentBand = this.getCurrentBand(sessionData);
-
-        sessionData.fightCount = 0;
-        sessionData.lastStruggleOfferFight = 0;
-        sessionData.retryPool = [];
-        sessionData.slowPool = [];
-        sessionData.currentPool = [];
-        sessionData.currentPoolIndex = 0;
-        sessionData.lastPoolProblems = [];
-        sessionData.coopAutoPromotionBases = {};
-
-        for (const band of ALL_BANDS) {
-            if (band !== currentBand) {
-                continue;
-            }
-
-            sessionData.bands[band].state = 'training';
-            sessionData.bands[band].gateExamBestMedal = null;
-            sessionData.bands[band].bandMasteryChallengeResult = null;
-
-            for (const num of ALL_SUB_ATOM_NUMBERS) {
-                const subAtomId = `${band}${num}` as SubAtomId;
-                const subAtom = sessionData.subAtoms[subAtomId];
-                subAtom.state = num === 1 ? 'training' : 'locked';
-                subAtom.successfulSolves = 0;
-                subAtom.examBestMedal = null;
-                subAtom.fluencyChallengeResult = null;
-                subAtom.masteryChallengeResult = null;
-                subAtom.fightsSinceSeen = 0;
-            }
-        }
-
-        return sessionData;
+        // Each player needs an isolated object during hotseat turns, but it must
+        // start from (and later return to) that player's real learning progress.
+        return this.cloneMasteryData(source);
     }
 
-    private getCurrentBand(data: MasteryData): BandId {
-        for (let i = ALL_BANDS.length - 1; i >= 0; i--) {
-            const band = ALL_BANDS[i];
-            const state = data.bands[band].state;
-            if (state !== 'locked' && state !== 'secure' && state !== 'fluent' && state !== 'mastery') {
-                return band;
+    private cloneMasteryData(source: MasteryData): MasteryData {
+        return JSON.parse(JSON.stringify(source)) as MasteryData;
+    }
+
+    private persistMasteryTracks(applyPromotions: boolean): Array<{
+        player: 'A' | 'B';
+        type: ExamType;
+        targetId: SubAtomId | BandId;
+    }> {
+        if (!this._isActive) return [];
+
+        const originalPlayer = this._activePlayer;
+        const gameState = GameStateManager.getInstance();
+        const masterySystem = MasterySystem.getInstance();
+        const promotions: Array<{
+            player: 'A' | 'B';
+            type: ExamType;
+            targetId: SubAtomId | BandId;
+        }> = [];
+
+        const persistPlayer = (playerId: 'A' | 'B', data: MasteryData | null): void => {
+            if (!data) return;
+
+            if (playerId === 'A') this.activatePlayerA();
+            else this.activatePlayerB();
+
+            masterySystem.setActiveData(data);
+            if (applyPromotions) {
+                promotions.push(...masterySystem.applyCoopAutoPromotions(false).map(promotion => ({
+                    player: playerId,
+                    ...promotion,
+                })));
             }
+
+            // Keep the session object isolated from save hydration while writing
+            // its complete learning history back to the correct slot.
+            gameState.getMathStats().masteryData = this.cloneMasteryData(data);
+            masterySystem.updatePlayerLevel();
+            gameState.save();
+        };
+
+        try {
+            persistPlayer('A', this._playerAMasteryData);
+            persistPlayer('B', this._playerBMasteryData);
+        } finally {
+            masterySystem.setActiveData(null);
+            if (originalPlayer === 'A') this.activatePlayerA();
+            else this.activatePlayerB();
         }
 
-        for (let i = ALL_BANDS.length - 1; i >= 0; i--) {
-            const band = ALL_BANDS[i];
-            const state = data.bands[band].state;
-            if (state !== 'locked' && state !== 'mastery') {
-                return band;
-            }
-        }
-
-        return 'A';
+        return promotions;
     }
 
     /**

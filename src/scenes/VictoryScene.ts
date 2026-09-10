@@ -2,9 +2,15 @@ import Phaser from 'phaser';
 import { SceneDebugger } from '../systems/SceneDebugger';
 import { GameStateManager } from '../systems/GameStateManager';
 import { ProgressionSystem } from '../systems/ProgressionSystem';
-import { UiElementBuilder } from '../systems/UiElementBuilder';
+import { SceneBuilder } from '../systems/SceneBuilder';
+import { waterHost } from '../ui/UnderwaterUI';
+import { auditUnderwaterLayout, fitWaterText, UnderwaterButton, waterArtwork } from '../ui/UnderwaterTheme';
+import { UNDERWATER_ROOMS } from '../systems/UnderwaterProgressSystem';
 import { Crystal } from '../types';
 import { CoopSessionManager } from '../systems/CoopSessionManager';
+import { RemoteInputService } from '../remote/RemoteInputService';
+import { RemoteCommand } from '../remote/types';
+import { legacyArenaEncounterId } from '../systems/ArenaProgressSystem';
 
 interface VictoryData {
     // Navigation after dismiss
@@ -39,7 +45,9 @@ interface VictoryData {
     // Arena-specific
     arenaCompleted?: boolean;
     arenaLevel?: number;
+    cityArenaLevel?: number;
     nextArenaLevel?: number;
+    nextCityArenaLevel?: number;
 
     // Co-op specific
     coopMode?: boolean;
@@ -53,11 +61,12 @@ interface VictoryData {
 
 export class VictoryScene extends Phaser.Scene {
     private victoryData!: VictoryData;
-    private debugger!: SceneDebugger;
     private gameState!: GameStateManager;
+    private remoteInput = RemoteInputService.getInstance();
+    private unsubscribeRemoteCommand: (() => void) | null = null;
+    private remoteContinueReady = false;
 
-    // Nine-slice grey frame (same as PictureDialog)
-    private static readonly FRAME_TEXTURE = '991bb46f-0417-4c22-8e3e-04cea0a3079a';
+    private builder!: SceneBuilder;
 
     constructor() {
         super({ key: 'VictoryScene' });
@@ -66,6 +75,7 @@ export class VictoryScene extends Phaser.Scene {
     init(data: VictoryData): void {
         this.victoryData = data;
         this.gameState = GameStateManager.getInstance();
+        this.remoteContinueReady = false;
 
         // Handle arena completion
         if (data.arenaCompleted) {
@@ -76,18 +86,26 @@ export class VictoryScene extends Phaser.Scene {
                     const player = this.gameState.getPlayer();
                     player.arena.isActive = false;
                     player.arena.currentBattle = 0;
-                    if (data.nextArenaLevel && data.nextArenaLevel <= 3) {
-                        player.arena.arenaLevel = data.nextArenaLevel;
+                    if (data.nextArenaLevel !== undefined) {
+                        player.arena.arenaLevel = Math.max(
+                            player.arena.arenaLevel || 1,
+                            data.nextArenaLevel,
+                        );
                     }
+                    player.arena.currentEncounterId = legacyArenaEncounterId(player.arena.arenaLevel, 0);
                     ProgressionSystem.fullHeal(player);
                 });
             } else {
                 const player = this.gameState.getPlayer();
                 player.arena.isActive = false;
                 player.arena.currentBattle = 0;
-                if (data.nextArenaLevel && data.nextArenaLevel <= 3) {
-                    player.arena.arenaLevel = data.nextArenaLevel;
+                if (data.nextArenaLevel !== undefined) {
+                    player.arena.arenaLevel = Math.max(
+                        player.arena.arenaLevel || 1,
+                        data.nextArenaLevel,
+                    );
                 }
+                player.arena.currentEncounterId = legacyArenaEncounterId(player.arena.arenaLevel, 0);
                 ProgressionSystem.fullHeal(player);
                 this.gameState.save();
             }
@@ -95,348 +113,161 @@ export class VictoryScene extends Phaser.Scene {
     }
 
     create(): void {
-        const isArenaComplete = this.victoryData.arenaCompleted;
-        const hasPet = !!this.victoryData.unlockedPet;
-        const crystalDrops = this.victoryData.crystalDrops || [];
-        const hasCrystals = crystalDrops.length > 0;
-        const hasEnemyName = !isArenaComplete && !!this.victoryData.enemyName;
-        const hasSharedAttackBanner = !!(this.victoryData.coopMode && this.victoryData.sharedAttackCountLeveledUp);
+        const data = this.victoryData;
+        this.builder = new SceneBuilder(this);
+        this.builder.buildScene('VictoryScene');
+        const host = (id: string) => waterHost(this.builder, id);
+        const shade = host('victoryShadeHost');
+        const room = UNDERWATER_ROOMS[String(data.returnData?.roomId)];
+        if (room && this.textures.exists(room.background)) {
+            waterArtwork(this, room.background, { ...shade, depth: shade.depth - 1 });
+        }
+        this.add.rectangle(shade.x, shade.y, shade.width, shade.height, 0x020f1c, room ? 0.82 : 1).setDepth(shade.depth);
+        const frame = waterArtwork(this, 'silverpond-fairy-reward-frame', host('victoryFrameHost')).setAlpha(0);
+        this.tweens.add({ targets: frame, alpha: 1, duration: 280 });
 
-        // === COMPUTE LAYOUT ===
-        // Each section: height of its content + gap after it.
-        // yOffset tracks the TOP edge of the next section.
-        // All text origins are (0.5, 0) so y is the top of the text.
-        const SECTION_GAP = 18;
-        const TOP_MARGIN = 40;
-        const BOTTOM_MARGIN = 35;
+        const text = (id: string, value: string, size: number, color = '#eaf3ef') => {
+            const box = host(id);
+            const label = this.add.text(box.x, box.y, value, {
+                resolution: 2, fontFamily: 'Georgia, serif', fontSize: `${size}px`, color,
+                align: 'center', lineSpacing: 3,
+            }).setOrigin(0.5).setDepth(box.depth).setName(id);
+            fitWaterText(label, box, size, Math.min(size, 16));
+            return label;
+        };
+        text('victoryTitleHost', data.arenaCompleted ? 'Aréna dokončena!' : 'Vítězství!', 42, '#f5dfa3');
+        text('victorySubtitleHost', data.arenaCompleted
+            ? `Aréna ${data.cityArenaLevel ?? data.arenaLevel ?? 1}`
+            : data.enemyName ?? 'Společnými silami!', 23);
+        text('victoryNamesHost', data.coopMode ? `${data.playerAName ?? 'Hráč A'}  &  ${data.playerBName ?? 'Hráč B'}` : '', 20, '#b4dce9');
 
-        // Section heights (measured from top of section to bottom of its last element)
-        const titleH = 44 + SECTION_GAP;                         // 44px font
-        const enemyNameH = hasEnemyName ? 20 + SECTION_GAP : 0;  // 20px font
-        const sharedAttackH = hasSharedAttackBanner ? 36 + SECTION_GAP : 0;
-        const rewardsH = 45 + SECTION_GAP;                       // coin sprite ~45px at 0.18 scale
-        const petH = hasPet ? 115 + SECTION_GAP : 0;             // title(18) + gap(8) + sprite(80) + gap(4) + name(16) + gap(2) + hint(12) = ~140 but squished
-        const crystalH = hasCrystals ? 90 + SECTION_GAP : 0;     // holders(~65) + labels(~25)
-        const arenaH = isArenaComplete ? 50 + SECTION_GAP : 0;
-        const buttonH = 50;
-
-        const totalContentH = titleH + enemyNameH + sharedAttackH + rewardsH + petH + crystalH + arenaH + buttonH;
-        const panelHeight = Math.max(totalContentH + TOP_MARGIN + BOTTOM_MARGIN, 260);
-
-        // Dark overlay
-        const overlay = this.add.rectangle(640, 360, 1280, 720, 0x000000, 0.7)
-            .setDepth(99).setAlpha(0);
-
-        // Nine-slice grey frame panel — sized to content
-        const panel = this.add.nineslice(
-            640, 360,
-            VictoryScene.FRAME_TEXTURE, undefined,
-            680, panelHeight,
-            41, 57, 45, 50
-        ).setOrigin(0.5).setDepth(100).setScale(0).setAlpha(0);
-
-        // Content container at depth 101
-        const content = this.add.container(640, 360).setDepth(101).setAlpha(0);
-
-        // yOffset = top of content area (container-local, 0 = panel center)
-        let yOffset = -(panelHeight / 2) + TOP_MARGIN;
-
-        // === TITLE ===
-        const titleText = isArenaComplete ? 'ARÉNA DOKONČENA!' : 'VÍTĚZSTVÍ!';
-        const title = this.add.text(0, yOffset + 22, titleText, {
-            fontSize: '44px',
-            fontFamily: 'Arial, sans-serif',
-            color: '#ffd700',
-            fontStyle: 'bold',
-            stroke: '#000000',
-            strokeThickness: 6,
-            shadow: { offsetX: 2, offsetY: 2, color: '#000000', blur: 5, fill: true }
-        }).setOrigin(0.5).setScale(0);
-        content.add(title);
-        yOffset += titleH;
-
-        // === ENEMY NAME (non-arena only) ===
-        if (hasEnemyName) {
-            const defeated = this.add.text(0, yOffset + 10, `PORAZIL JSI: ${this.victoryData.enemyName!.toUpperCase()}`, {
-                fontSize: '20px',
-                fontFamily: 'Arial, sans-serif',
-                color: '#dddddd'
-            }).setOrigin(0.5).setAlpha(0);
-            content.add(defeated);
-            yOffset += enemyNameH;
+        // One centered reward row; co-op shows each participant's own reward.
+        const coinHost = host('victoryCoinsHost');
+        const coinRow = this.add.container(coinHost.x, coinHost.y).setDepth(coinHost.depth).setName('victoryCoins');
+        const amounts = data.coopMode ? [data.goldRewardA ?? data.goldReward, data.goldRewardB ?? data.goldReward] : [data.goldReward];
+        amounts.forEach((amount, index) => {
+            const x = (index - (amounts.length - 1) / 2) * coinHost.width / 2;
+            const coin = this.add.image(x - 29, 0, 'shop-coins-sheet', 1);
+            coin.setScale(Math.min(32 / coin.width, 32 / coin.height)).setData('waterArtwork', true);
+            const label = this.add.text(x + 8, 0, `+${amount ?? 0}`, {
+                resolution: 2, fontFamily: 'Georgia', fontSize: '26px', color: '#f5d283',
+            }).setOrigin(0, 0.5).setName(`victoryCoin${index}`);
+            fitWaterText(label, { x: x + 50, y: 0, width: 100, height: 40 }, 26);
+            // Bounds contract is centered on the actual label, including variable digit counts.
+            label.setOrigin(0.5).setX(x + 30);
+            label.setData('waterTextBox', { x: x + 30, y: 0, width: 140, height: 40 });
+            coinRow.add([coin, label]);
+        });
+        if (data.unlockedPet) {
+            const pet = data.unlockedPet;
+            text('victoryPetTitleHost', 'Nový přítel', 22, '#bde9d3');
+            const petHost = host('victoryPetHost');
+            const sprite = this.add.image(petHost.x, petHost.y, pet.spriteKey, 0).setDepth(petHost.depth);
+            sprite.setScale(Math.min(petHost.width / sprite.width, petHost.height / sprite.height)).setData('waterArtwork', true);
+            text('victoryPetNameHost', pet.name, 18);
         }
 
-        // === CO-OP PLAYER NAMES ===
-        if (this.victoryData.coopMode && this.victoryData.playerAName && this.victoryData.playerBName) {
-            const coopLabel = this.add.text(0, yOffset + 5, `${this.victoryData.playerAName} & ${this.victoryData.playerBName}`, {
-                fontSize: '18px', fontFamily: 'Arial, sans-serif',
-                color: '#88ccff', fontStyle: 'bold',
-            }).setOrigin(0.5);
-            content.add(coopLabel);
-            yOffset += 28;
+        // Reward cards paginate instead of overflowing in co-op or on long labels.
+        const crystals = data.crystalDrops ?? [];
+        if (!crystals.length && !data.unlockedPet) {
+            const seal = host('victorySealHost');
+            waterArtwork(this, 'enamel-control-socket', seal);
+            waterArtwork(this, 'enamel-check-normal', { ...seal, width: seal.width * 0.73, height: seal.height * 0.73, depth: seal.depth + 1 });
         }
-
-        if (hasSharedAttackBanner) {
-            const sharedAttackBanner = this.add.text(0, yOffset + 8, `Společný útok posílil na ${this.victoryData.sharedAttackCount} příklad${this.victoryData.sharedAttackCount === 1 ? '' : this.victoryData.sharedAttackCount === 2 || this.victoryData.sharedAttackCount === 3 || this.victoryData.sharedAttackCount === 4 ? 'y' : 'ů'}!`, {
-                fontSize: '20px',
-                fontFamily: 'Arial, sans-serif',
-                color: '#aaff88',
-                fontStyle: 'bold',
-                stroke: '#000000',
-                strokeThickness: 4,
-            }).setOrigin(0.5);
-            content.add(sharedAttackBanner);
-            yOffset += sharedAttackH;
-        }
-
-        // === REWARDS ROW (Coin sprite) ===
-        const rewardsContainer = this.add.container(0, yOffset + 13);
-
-        if (this.victoryData.goldReward) {
-            const coinSprite = this.add.image(55, 0, 'shop-coins-sheet', 1)
-                .setScale(0.18).setOrigin(0.5);
-            const coinAmount = this.add.text(80, 0, `+${this.victoryData.goldReward}`, {
-                fontSize: '26px',
-                fontFamily: 'Arial, sans-serif',
-                color: '#ffaa00',
-                fontStyle: 'bold'
-            }).setOrigin(0, 0.5);
-            rewardsContainer.add([coinSprite, coinAmount]);
-        }
-
-        rewardsContainer.setScale(0);
-        content.add(rewardsContainer);
-        yOffset += rewardsH;
-
-        // === CREATURE FREED (pet image + name, NO enemy sprite or arrow) ===
-        let petContainer: Phaser.GameObjects.Container | null = null;
-        if (hasPet) {
-            const pet = this.victoryData.unlockedPet!;
-            // Container y = top of section. Layout top-down within container.
-            petContainer = this.add.container(0, yOffset);
-
-            // "TVOR OSVOBOZEN!" label at top
-            const freedTitle = this.add.text(0, 10, 'TVOR OSVOBOZEN!', {
-                fontSize: '18px',
-                fontFamily: 'Arial, sans-serif',
-                color: '#88ff88',
-                fontStyle: 'bold',
-                stroke: '#000000',
-                strokeThickness: 3
-            }).setOrigin(0.5, 0);
-            petContainer.add(freedTitle);
-
-            // Pet sprite (static frame 0, scale 0.4 = 80x80px)
-            const petSprite = this.add.image(0, 55, pet.spriteKey, 0).setScale(0.4);
-            petContainer.add(petSprite);
-
-            // Pet name
-            const petName = this.add.text(0, 100, pet.name, {
-                fontSize: '15px',
-                fontFamily: 'Arial, sans-serif',
-                color: '#ffffff',
-                fontStyle: 'bold'
-            }).setOrigin(0.5, 0);
-            petContainer.add(petName);
-
-            petContainer.setScale(0);
-            content.add(petContainer);
-            yOffset += petH;
-        }
-
-        // === CRYSTAL REWARDS ===
-        let crystalContainer: Phaser.GameObjects.Container | null = null;
-
-        if (hasCrystals) {
-            // Container y = top of section. Holders centered in section.
-            crystalContainer = this.add.container(0, yOffset);
-
-            const holderSpacing = 150;
-            const startX = -(crystalDrops.length - 1) * holderSpacing / 2;
-
-            crystalDrops.forEach((crystal, index) => {
-                const holderX = startX + index * holderSpacing;
-
-                // Crystal holder from forge template (scale 0.5 → ~65px)
-                const holder = this.createCrystalHolder(holderX, 35, 0.5);
-                this.updateCrystalHolder(holder, crystal);
-                crystalContainer!.add(holder);
-
-                // Label below holder (from BattleScene-provided labels)
-                const labelText = (this.victoryData.crystalLabels || [])[index] || '';
-
-                if (labelText) {
-                    const label = this.add.text(holderX, 75, labelText, {
-                        fontSize: '14px',
-                        fontFamily: 'Arial, sans-serif',
-                        color: '#ccccff',
-                        align: 'center'
-                    }).setOrigin(0.5, 0);
-                    crystalContainer!.add(label);
-                }
+        const perPage = 4;
+        let page = 0;
+        let rewardObjects: Phaser.GameObjects.GameObject[] = [];
+        const pageLabel = text('victoryPageHost', '', 18, '#bbdbe8');
+        const drawPage = () => {
+            rewardObjects.forEach(object => object.destroy());
+            rewardObjects = [];
+            const pageCount = Math.max(1, Math.ceil(crystals.length / perPage));
+            pageLabel.setText(pageCount > 1 ? `${page + 1}/${pageCount}` : '');
+            crystals.slice(page * perPage, (page + 1) * perPage).forEach((crystal, index) => {
+                const prefix = data.unlockedPet ? 'victoryPetCrystal' : 'victoryCrystal';
+                const count = Math.min(perPage, crystals.length - page * perPage);
+                const slot = index + Math.floor((perPage - count) / 2);
+                const box = host(`${prefix}${slot}Host`);
+                const plate = waterArtwork(this, 'enamel-clue-plaque', box);
+                const gem = this.add.image(box.x, box.y - 7, 'gemstone-icons',
+                    ({ shard: 1, fragment: 3, prism: 5 } as Record<string, number>)[crystal.tier] ?? 1).setDepth(box.depth + 1);
+                gem.setScale(Math.min(box.width * 0.57 / gem.width, box.height * 0.57 / gem.height)).setData('waterArtwork', true);
+                const value = this.add.text(box.x, box.y + 24, String(crystal.value), {
+                    resolution: 2, fontFamily: 'Georgia', fontSize: '20px', color: '#ffedbb',
+                }).setOrigin(0.5).setDepth(box.depth + 1).setName(`victoryCrystalValue${index}`);
+                fitWaterText(value, { x: box.x, y: box.y + 24, width: box.width * 0.68, height: 24 }, 20, 16);
+                const label = text(`${prefix}Label${slot}Host`, (data.crystalLabels ?? [])[page * perPage + index] ?? '', 17, '#c3d9e7');
+                rewardObjects.push(plate, gem, value, label);
             });
-
-            // Overflow warning
-            if (this.victoryData.crystalOverflow) {
-                const warning = this.add.text(0, 88, '⚠️ Inventář plný! Krystaly zůstaly na zemi.', {
-                    fontSize: '12px',
-                    fontFamily: 'Arial, sans-serif',
-                    color: '#ffaa44',
-                    fontStyle: 'bold'
-                }).setOrigin(0.5, 0);
-                crystalContainer.add(warning);
-            }
-
-            crystalContainer.setScale(0);
-            content.add(crystalContainer);
-            yOffset += crystalH;
-        }
-
-        // === ARENA COMPLETION INFO ===
-        let arenaContainer: Phaser.GameObjects.Container | null = null;
-        if (isArenaComplete) {
-            arenaContainer = this.add.container(0, yOffset);
-            const arenaLevel = this.victoryData.arenaLevel || 1;
-            const nextLevel = this.victoryData.nextArenaLevel || arenaLevel + 1;
-
-            const completeMsg = this.add.text(0, 5, `🏆 ARÉNA ${arenaLevel} DOKONČENA! 🏆`, {
-                fontSize: '22px',
-                fontFamily: 'Arial, sans-serif',
-                color: '#00ff00',
-                fontStyle: 'bold',
-                stroke: '#000000',
-                strokeThickness: 3
-            }).setOrigin(0.5, 0);
-            arenaContainer.add(completeMsg);
-
-            if (nextLevel <= 3) {
-                const nextMsg = this.add.text(0, 32, `ARÉNA ${nextLevel} JE ODEMČENA!`, {
-                    fontSize: '16px',
-                    fontFamily: 'Arial, sans-serif',
-                    color: '#ffcc00',
-                    fontStyle: 'bold'
-                }).setOrigin(0.5, 0);
-                arenaContainer.add(nextMsg);
-            } else {
-                const finalMsg = this.add.text(0, 32, 'VSE ARÉNY DOKONČENY!', {
-                    fontSize: '16px',
-                    fontFamily: 'Arial, sans-serif',
-                    color: '#ff88ff',
-                    fontStyle: 'bold'
-                }).setOrigin(0.5, 0);
-                arenaContainer.add(finalMsg);
-            }
-
-            arenaContainer.setAlpha(0);
-            content.add(arenaContainer);
-            yOffset += arenaH;
-        }
-
-        // === CONTINUE BUTTON ===
-        const button = this.add.container(0, yOffset + 25);
-
-        const bg = this.add.rectangle(0, 0, 200, 50, 0x444444)
-            .setStrokeStyle(2, 0xffffff);
-        const btnText = this.add.text(0, 0, 'POKRAČOVAT', {
-            fontSize: '22px',
-            fontFamily: 'Arial, sans-serif',
-            color: '#ffffff'
-        }).setOrigin(0.5);
-        button.add([bg, btnText]);
-        button.setAlpha(0);
-
-        bg.setInteractive({ useHandCursor: true })
-            .on('pointerover', () => bg.setFillStyle(0x666666))
-            .on('pointerout', () => bg.setFillStyle(0x444444))
-            .on('pointerdown', () => this.returnToNextScene());
-
-        content.add(button);
-
-        // === STAGGERED ANIMATION SEQUENCE ===
-
-        // 0ms: Overlay + panel
-        this.tweens.add({ targets: overlay, alpha: 1, duration: 300 });
-        this.tweens.add({ targets: panel, scale: 1, alpha: 1, duration: 400, ease: 'Back.out' });
-        this.tweens.add({ targets: content, alpha: 1, duration: 200 });
-
-        // 300ms: Title
-        this.tweens.add({ targets: title, scale: 1, duration: 500, delay: 300, ease: 'Back.out' });
-
-        // 600ms: Rewards
-        this.tweens.add({ targets: rewardsContainer, scale: 1, duration: 400, delay: 600, ease: 'Back.out' });
-
-        // 900ms: Pet section
-        if (petContainer) {
-            this.tweens.add({ targets: petContainer, scale: 1, duration: 500, delay: 900, ease: 'Back.out' });
-        }
-
-        // 1200ms: Crystal holders
-        if (crystalContainer) {
-            this.tweens.add({ targets: crystalContainer, scale: 1, duration: 400, delay: 1200, ease: 'Back.out' });
-        }
-
-        // Arena info fade
-        if (arenaContainer) {
-            this.tweens.add({ targets: arenaContainer, alpha: 1, duration: 500, delay: 1000 });
-        }
-
-        // 1500ms: Continue button
-        this.tweens.add({ targets: button, alpha: 1, duration: 500, delay: 1500 });
-
-        // Spacebar shortcut (delayed to match button appearance)
-        this.time.delayedCall(1500, () => {
-            this.input.keyboard!.once('keydown-SPACE', () => this.returnToNextScene());
+        };
+        drawPage();
+        if (crystals.length > perPage) new UnderwaterButton(this, {
+            ...host('victoryNextHost'), name: 'victoryNextHost', label: '', fontSize: 18, icon: 'continue',
+            onClick: () => { page = (page + 1) % Math.ceil(crystals.length / perPage); drawPage(); },
         });
 
-        // Setup debugger
-        this.debugger = new SceneDebugger(this, 'VictoryScene');
+        const messages: string[] = [];
+        if (data.arenaCompleted) messages.push(data.nextCityArenaLevel !== undefined
+            ? `Otevřena aréna ${data.nextCityArenaLevel}.` : 'Všechny městské arény dokončeny.');
+        if (data.coopMode && data.sharedAttackCountLeveledUp)
+            messages.push(`Společný útok: ${data.sharedAttackCount} příkladů.`);
+        if (data.crystalOverflow) messages.push('Plný inventář — další krystaly čekají na zemi.');
+        text('victoryStatusHost', messages.length > 2
+            ? `${messages[0]}  ·  ${messages[1]}\n${messages[2]}` : messages.join('\n'), 18, '#d8dfbf');
+
+        const button = new UnderwaterButton(this, {
+            ...host('victoryContinueHost'), name: 'victoryContinueHost', label: 'POKRAČOVAT',
+            fontSize: 21, icon: 'continue', onClick: () => this.returnToNextScene(),
+        });
+        button.setState('disabled');
+        // Match keyboard, touch and remote availability. No invisible early click target.
+        this.time.delayedCall(1500, () => {
+            this.remoteContinueReady = true;
+            button.setState('normal');
+            this.publishRemoteVictoryState();
+        });
+        const keyboardContinue = () => this.returnToNextScene();
+        this.input.keyboard?.on('keydown-SPACE', keyboardContinue);
+        this.unsubscribeRemoteCommand = this.remoteInput.onCommand(command => this.handleRemoteCommand(command));
+        this.events.once('shutdown', () => {
+            this.unsubscribeRemoteCommand?.();
+            this.unsubscribeRemoteCommand = null;
+            this.input.keyboard?.off('keydown-SPACE', keyboardContinue);
+        });
+        new SceneDebugger(this, 'VictoryScene');
     }
 
-    /**
-     * Creates a crystal holder from the UI template (same as CrystalForgeScene).
-     */
-    private createCrystalHolder(x: number, y: number, scale: number): Phaser.GameObjects.Container {
-        const builder = new UiElementBuilder(this);
-        const templateId = '1770150302226-gb3gzlbpa';
-        const container = builder.buildFromTemplate(templateId, x, y, [0.5, 0.5]);
-        if (!container) {
-            console.warn('[VictoryScene] Failed to create crystal holder from template');
-            return this.add.container(x, y);
-        }
-        container.setScale(scale);
-        return container;
-    }
-
-    /**
-     * Updates a crystal holder's visual state (simplified version, no selection/usability logic).
-     */
-    private updateCrystalHolder(container: Phaser.GameObjects.Container, crystal: Crystal): void {
-        const layerObjects = container.getData('layerObjects') as Map<string, Phaser.GameObjects.Image> | undefined;
-        const textObjects = container.getData('textObjects') as Map<string, { text: Phaser.GameObjects.Text }> | undefined;
-
-        const crystalLayer = layerObjects?.get('1770150364402-twzxmxrgz');
-        const valueTextInfo = textObjects?.get('1770150398556-n42xyxo4u');
-
-        // Frame indices: shard=1, fragment=3, prism=5
-        const tierFrames: { [key: string]: number } = { shard: 1, fragment: 3, prism: 5 };
-
-        if (crystalLayer && this.textures.exists('gemstone-icons')) {
-            crystalLayer.setTexture('gemstone-icons', tierFrames[crystal.tier] ?? 1);
-            crystalLayer.setVisible(true);
-            // Offset crystal for better centering (matching forge pattern)
-            if (crystalLayer.getData('originalX') === undefined) {
-                crystalLayer.setData('originalX', crystalLayer.x);
-                crystalLayer.setData('originalY', crystalLayer.y);
-            }
-            crystalLayer.setPosition(
-                (crystalLayer.getData('originalX') as number) - 6,
-                (crystalLayer.getData('originalY') as number) - 12
-            );
-        }
-        valueTextInfo?.text.setText(String(crystal.value));
-    }
+    auditLayout(): string[] { return auditUnderwaterLayout(this); }
 
     private returnToNextScene(): void {
+        if (!this.remoteContinueReady) return;
+        this.remoteContinueReady = false;
         this.scene.start(this.victoryData.returnScene, this.victoryData.returnData);
+    }
+
+    private handleRemoteCommand(command: RemoteCommand): void {
+        if (command.type === 'continue' && this.remoteContinueReady) {
+            this.returnToNextScene();
+        }
+    }
+
+    private publishRemoteVictoryState(): void {
+        if (!this.remoteInput.getRoom()) return;
+
+        const reward = this.victoryData.goldReward
+            ? `Získáno: ${this.victoryData.goldReward} mincí.`
+            : 'Souboj dokončen.';
+        this.remoteInput.publishState({
+            screen: 'feedback',
+            title: this.victoryData.arenaCompleted ? 'Aréna dokončena' : 'Vítězství',
+            subtitle: reward,
+            actions: [
+                {
+                    id: 'continue',
+                    label: 'Pokračovat',
+                    command: { type: 'continue' },
+                },
+            ],
+        });
     }
 }

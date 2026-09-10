@@ -272,9 +272,27 @@ Wrong answers are tracked per wave via `waveWrongAnswerCount` in BattleScene:
 ### Arena Start Behavior
 
 When player enters an arena (from TownScene):
-- **Always starts from wave 0** (first wave)
+- **Defaults to the highest unlocked arena and its first incomplete wave**
+- Completed-but-imperfect waves are offered as optional practice, never as a progression gate
 - **Historical waveResults are preserved** (not reset)
 - Only awards crystals for improvements over historical best
+
+### Encounter Source of Truth
+
+`public/assets/data/encounters.json` is the single source of truth for arena waves,
+forest room and legacy map battles, enemy order, boss phases/mechanics, completion
+links/bonuses, and multiplayer policy. Enemy base stats remain in
+`public/assets/data/enemies.json`.
+
+- Keep `sceneOrder` in first-appearance order: `ArenaScene`, `ForestRoomScene`, then `ForestMapScene`. The optional `UnderwaterRoomScene` group is appended fourth; schema v3 readers still accept documents without it.
+- Every enemy reference uses `source: "core"` and must resolve to one stable ID in `enemies.json`; do not add a regional enemy catalog.
+- Edit arena, forest room/map, and boss compositions in the Scene Editor's **Encounters** tab; it saves directly to `encounters.json`.
+- Forest room/map data stores stable `encounterId` links. Save progress continues to use room/object or journey indices, so encounter edits do not invalidate saves.
+- `ArenaScene`, forest scenes, and `BattleScene` must resolve every combat roster through `EncounterCatalog`.
+- `ArenaSimulator` and `JourneySimulator` must resolve the same catalog through `ProductionEncounterAdapter`; do not add copied or fallback rosters/phases.
+- Keep reusable multi-phase boss mechanics and phase HP/attack/defense in `bosses` inside `encounters.json`, not in enemy stat files or scene code.
+- Tests must derive production roster/stat expectations from `encounters.json` and `enemies.json`. Never change production encounter data merely to satisfy an old golden composition or fixed HP total.
+- After saving encounters, reload a running game or restart the simulation/test process so its in-memory JSON cache is refreshed.
 
 ### UI: Wave Progress Table
 
@@ -288,15 +306,36 @@ Located in ArenaScene, uses the `misc.arena-with-title` frame element. Shows:
 ### Adding New Arenas
 
 To add a new arena level:
-1. Add wave configuration to `ARENA_WAVES` in ArenaScene.ts
-2. Configure enemies per wave in format: `{ level: number, waves: EnemyDefinition[][] }`
-3. The Wave Progress Table and reward system work automatically
+1. Add the arena, its five waves, completion metadata, and multiplayer policy reference to `encounters.json` (prefer the Scene Editor).
+2. Reference enemies by IDs defined in `enemies.json`.
+3. The runtime preview, BattleScene, Wave Progress Table, rewards, and simulator resolve the change from the catalog automatically.
 
 All arena levels share the same:
 - Wave Progress Table UI positioning
 - Crystal reward calculation logic
 - Wrong answer tracking
 - Historical progress preservation
+
+## Shop Battle Preparation
+
+The production `ShopScene` lets a player prepare exactly one equipped item for a
+future battle. Preparation tuning lives in `src/data/preparation.json`; both runtime
+logic and tests must import that file instead of copying charge or bonus constants.
+
+- Sword preparation requires an equipped weapon. Each stored rune adds `+1` damage to one successful player attack.
+- Shield preparation requires an equipped shield. Each stored rune automatically blocks `1` otherwise-unblocked damage.
+- A rune is consumed only when its effect is useful. Missed attacks and already-fully-blocked hits do not spend one.
+- Preparation persists across scenes and arena waves until consumed or replaced by completing the other preparation.
+- Shop problems come from `MasterySystem.drawPreparationProblems()` and each displayed problem records one attempt, including first-answer correctness and response time. A wrong answer adds a fresh problem; it is never converted into a second successful solve.
+- Co-op stores preparation independently on player A and player B. Battle indicators must follow the active player.
+- Static shop and battle indicator hosts stay in `scenes.json`; positions and depths must be read through `SceneBuilder`.
+
+## Battle Damage and Enemy Defense
+
+- Enemy defense is subtracted once from the complete accumulated attack damage: `max(0, totalDamage - defense)`.
+- The same rule applies to Player A, Player B, melee pets, and spell pets. Never subtract defense separately for each solved problem.
+- A sword preparation charge is consumed only when its bonus increases the final post-defense damage.
+- Keep the shared formula in `CombatDamageSystem`; do not duplicate defense arithmetic in scenes.
 
 ## ForestRiddleScene Architecture
 
@@ -327,6 +366,10 @@ private getPathY(x: number): number {
 This creates a 2.5D effect where the player walks "over" the bridge.
 
 ### Drag-and-Drop Puzzle Structure
+
+**User-required puzzle contract:** Both illustrated bridges always show five numbered fixed stones and two missing stones (seven sequence positions, holes at indices 1 and 5). Both gaps must be filled before success. Never leave an illustrated stone blank or remove a gap to satisfy numeric limits or a pool-size target. For this puzzle, counting rows up to 10 are explicitly allowed even for players whose arithmetic is only up to 5; repeating pairs/triples of familiar numbers are also appropriate. Equal answers require two separate draggable stones and must restore into separate gaps.
+
+If a future generation, difficulty, diversity, or layout constraint would undermine a puzzle's logical meaning or required interactions, ask the user before changing those gameplay requirements. Do not silently weaken the puzzle to satisfy a technical constraint.
 
 The puzzle has three distinct layers:
 
@@ -395,15 +438,12 @@ if (!this.puzzleSolved) {
     this.setupFloatingRocks();
     this.setupDragEvents();
 } else {
-    // Reposition correct answers (indices 0,1), destroy distractors (indices 2,3,4)
+    // Assign a separate matching rock to each gap, then destroy unused rocks.
     this.placeCorrectRocksInSolvedState();
 }
 ```
 
-The `placeCorrectRocksInSolvedState()` method:
-- Keeps rocks with values 4 and 12 (correct answers)
-- Positions them in drop zones, scales to 0.7
-- Destroys distractor rocks (values 3, 7, 5)
+The `placeCorrectRocksInSolvedState()` method matches generated answer values to two distinct rocks and two distinct gaps, including duplicate values; positions them at the editor hosts with scale 0.7; and destroys unused distractors. Never assume fixed answer values or fixed answer-option indices.
 
 ## Known Recurring Bugs
 
@@ -530,6 +570,65 @@ When creating or modifying any visual elements (buttons, panels, labels, overlay
 2. **Consistent aesthetics**: New UI should match the existing game style (dark panels, colored borders, Georgia/Arial fonts, muted color palette).
 3. **Test visually**: After any visual change, use the Playwright MCP browser tools to verify the result looks correct — take a screenshot or navigate to the scene and inspect.
 4. **Button text**: If reusing a scene definition with different behavior, override button labels to match the new context (e.g., "HRÁT" → "ZVOLIT" in co-op setup).
+
+### Visual acceptance gates (not replaced by functional tests)
+
+- Preserve bitmap aspect ratios. Use uniform `setScale(min(width / sourceWidth, height / sourceHeight))` for complete artwork; only a deliberately authored and reviewed 9-slice may stretch its center. Never stretch a complete decorative frame to a new aspect ratio.
+- Define a frame's **safe content inset**, not only its outer bounds. Titles, body copy, portraits, answer choices, feedback, and footer actions must fit inside that inset and occupy separate layout regions in `scenes.json`.
+- Measure actual rendered text bounds, including localized/long text and feedback states. Do not squeeze text with non-uniform scaling or hide overflow behind a mask. Fix the layout/copy instead.
+- Set high-resolution Phaser text through the **constructor style** (`resolution: 2`), not a late `.setResolution(2)`. In the installed Phaser version the late setter leaves `frame.source.resolution` stale for Canvas rendering; the glyphs can render twice as large while `getBounds()` still passes. Check that texture/source resolution equals style resolution and visually verify both Canvas fallback and WebGL.
+- Review the actual screenshots at desktop and tablet sizes: normal, hover, pressed, pointer-out, disabled, selected/correct, wrong-answer, and completion states. Inspect proportions, borders, text, visual hierarchy, and regional art consistency. Merely capturing a screenshot is not a visual review.
+- Automated bounds/aspect checks are necessary but cannot approve aesthetics. Record the reviewed images and any remaining visual limitations before declaring a UI ready.
+- Underwater reference: `src/ui/UnderwaterTheme.ts`, `UnderwaterOverlay` safe-area host, `UnderwaterLayout.test.ts`, and `npm run test:e2e:underwater`. Reuse the blue enamel/pearl Silverpond art; do not introduce generic wooden action rails into this chapter.
+
+## Production Creature Animation Workflow
+
+Production idle, attack, hurt, and similar creature animations must use a real
+image-to-video model as the motion source when following the video workflow.
+The generated video is an intermediate source that is visually approved before
+it is split into frames and normalized into a spritesheet.
+
+1. Start from one canonical full-body creature image and generate motion with an
+   actual video model. Do not create a fake "video" by repackaging an existing
+   spritesheet, vertically or horizontally stretching a still, affine-warping a
+   still, morphing frames, or cross-fading whole silhouettes.
+2. Prompt for a locked camera, locked character scale, locked ground baseline,
+   stable anatomy, generous transparent/chroma-key padding, and the complete
+   creature visible for the entire clip.
+3. No body part, equipment, crystal, particle, shadow, or effect may touch or
+   cross the frame boundary. A clipped foot, limb, hat, crystal, or attack effect
+   rejects the entire take; never repair it by independently cropping frames.
+4. Reject takes with camera movement, zoom, framing drift, anatomy drift,
+   duplicate limbs, texture/style changes, background motion, edge clipping,
+   or silhouette ghosting before extracting any frames.
+5. After approval, sample the video into frames and apply one shared crop,
+   translation, scale, canvas size, origin, and baseline to the whole sequence.
+   Never trim or normalize frames independently.
+6. Inspect the first, last, motion-extreme, and effect-extreme frames plus the
+   assembled loop before registering the spritesheet in game data.
+
+This video-model workflow supersedes procedural stretching or spritesheet-to-video
+experiments for production creature animation.
+
+The validated Sorceress + AutoSprite V3 implementation profile, including Every 4
+sampling, conservative alpha extraction, WebP export, and runtime animation aliases,
+is documented in `docs/ASSET_CREATION.md` under "Validated Sorceress and AutoSprite
+V3 Profile".
+
+## Mandatory UI Creation Context
+
+For every task that creates or changes visible UI, read `docs/ASSET_CREATION.md` before designing or prompting. The following rules are mandatory prompt context, not optional guidance:
+
+1. Start from the existing game design language and reuse one canonical frame/source across related controls. Do not generate each button independently.
+2. Build stateful UI from stable layers: reusable frame, aligned normal/active icon pair, runtime text, and code/template animation.
+3. Generate paired icon states together in one image-model call. Require identical silhouette, pose, scale, cell size, and placement; only light, glow, or compact particles may change.
+4. Keep generated text out of production assets. Labels, hit areas, layout, disabled state, and localization belong in code or UI templates.
+5. Normalize assets deterministically: remove the flat background, use one shared crop/translation for every state pair, and export identical transparent canvases. Never trim normal and active states independently.
+6. Keep hover geometry stable. Animate a small surface lift, shadow, highlight sweep, and icon cross-fade; do not swap complete button bitmaps, scale the root, or tint the whole control.
+7. Keep all static UI represented in `scenes.json` and read position/depth from `SceneBuilder` hosts so the Scene Editor remains authoritative.
+8. Verify the extracted assets themselves and then the composed normal, hover, pressed, pointer-out, disabled, and localized-text states in the running game.
+
+Whenever an image model is used for a UI element, include these constraints explicitly in the image prompt and add the element-specific requirements after them. The production reference implementation is `src/ui/MedievalActionButton.ts`; scenes should position it through `SceneBuilder` hosts as demonstrated in `src/scenes/ShopPrepMockScene.ts`.
 
 ## Running the Project
 

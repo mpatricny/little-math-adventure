@@ -153,7 +153,18 @@ export class AssetFactory {
 
     private createImage(def: ImageAssetDef, placement: SceneElement): Phaser.GameObjects.Image {
         const texture = placement.texture || def.texture;
-        const image = this.scene.add.image(placement.x, placement.y, texture);
+        // A Scene Editor save used to be able to register a spritesheet as a
+        // static image. Phaser then rendered the complete sheet rather than a
+        // single preview frame. Selecting frame 0 when it exists makes this
+        // fallback deterministic while ordinary images keep their base frame.
+        const textureObject = this.scene.textures.get(texture);
+        const initialFrame = textureObject.has(0) ? 0 : undefined;
+        const image = this.scene.add.image(
+            placement.x,
+            placement.y,
+            texture,
+            initialFrame,
+        );
 
         const origin = def.origin || [0.5, 0.5];
         image.setOrigin(origin[0], origin[1]);

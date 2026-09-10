@@ -1,9 +1,12 @@
+import { sfx, voice } from '../audio/AudioDirector';
 import Phaser from 'phaser';
 import { SceneBuilder } from '../systems/SceneBuilder';
 import { GameStateManager } from '../systems/GameStateManager';
 import { JourneySystem } from '../systems/JourneySystem';
 import { getPlayerSpriteConfig } from '../utils/characterUtils';
 import { CoopSessionManager } from '../systems/CoopSessionManager';
+import { WalkingSceneHud } from '../ui/WalkingSceneHud';
+import { resolveForestRoomSceneKey } from '../systems/ForestRoomRouting';
 
 /**
  * Scene initialization data
@@ -73,6 +76,7 @@ export class ForestCampScene extends Phaser.Scene {
     private player!: Phaser.GameObjects.Sprite;
     private playerBSprite: Phaser.GameObjects.Sprite | null = null;
     private playerBWalkTween: Phaser.Tweens.Tween | null = null;
+    private walkingHud!: WalkingSceneHud;
     private isWalking = false;
 
     // State
@@ -164,8 +168,9 @@ export class ForestCampScene extends Phaser.Scene {
         // Create exit arrows
         this.createExitArrows();
 
-        // Create UI overlay (HP bar, back button)
+        // Keep the journey-specific controls and add the shared world HUD.
         this.createUI();
+        this.walkingHud = new WalkingSceneHud(this);
 
         // Setup click-to-move
         this.setupClickToMove();
@@ -633,11 +638,14 @@ export class ForestCampScene extends Phaser.Scene {
 
     private handleRest(): void {
         if (this.hasRested) {
+            sfx(this, 'ui.unavailable');
             this.showFloatingText('Už jsi odpočíval!', '#ffaa44', 640, 200);
             return;
         }
 
         this.hasRested = true;
+        sfx(this, 'reward.rest');
+        voice(this, 'vo.camp.rest', true);
 
         // Get heal config from room objects
         const restObj = this.roomConfig.objects.find(o => o.type === 'rest');
@@ -645,6 +653,7 @@ export class ForestCampScene extends Phaser.Scene {
 
         // Apply healing
         this.journeySystem.applyHeal(healPercent);
+        this.walkingHud.refresh();
 
         // Save point
         if (restObj?.isSavePoint || this.roomConfig.isWaypoint) {
@@ -840,8 +849,7 @@ export class ForestCampScene extends Phaser.Scene {
 
         // Check if target room has a custom scene class
         const forestRooms = this.cache.json.get('forestRooms') as any;
-        const targetRoomConfig = forestRooms?.rooms?.[targetRoom];
-        const sceneKey = targetRoomConfig?.sceneClass || 'ForestRoomScene';
+        const sceneKey = resolveForestRoomSceneKey(forestRooms, targetRoom);
 
         this.cameras.main.fadeOut(300, 0, 0, 0);
 
@@ -858,27 +866,8 @@ export class ForestCampScene extends Phaser.Scene {
     // ═══════════════════════════════════════════════════════════════════════
 
     private createUI(): void {
-        // HP Bar at top
-        const player = this.gameState.getPlayer();
-        const hpPercent = player.hp / player.maxHp;
-
-        this.add.rectangle(150, 70, 200, 20, 0x333333)
-            .setStrokeStyle(2, 0x666666)
-            .setDepth(100);
-
-        this.add.rectangle(52, 70, 196 * hpPercent, 16, 0x44aa44)
-            .setOrigin(0, 0.5)
-            .setDepth(100);
-
-        this.add.text(150, 70, `❤️ ${player.hp}/${player.maxHp}`, {
-            fontSize: '14px',
-            fontFamily: 'Arial, sans-serif',
-            color: '#ffffff',
-            fontStyle: 'bold'
-        }).setOrigin(0.5).setDepth(101);
-
         // Room name
-        this.add.text(640, 30, this.roomConfig.nameCs, {
+        this.add.text(850, 52, this.roomConfig.nameCs, {
             fontSize: '28px',
             fontFamily: 'Arial, sans-serif',
             color: '#ffffff',

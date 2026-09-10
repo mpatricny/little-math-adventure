@@ -56,6 +56,8 @@ export interface AnimationDef {
     frames: { start: number; end: number };
     frameRate: number;
     repeat: number;
+    /** Opt-in battle attack: finish the one-shot motion before returning to idle. */
+    holdUntilComplete?: boolean;
 }
 
 // Base asset definition

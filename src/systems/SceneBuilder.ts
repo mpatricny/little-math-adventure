@@ -176,6 +176,7 @@ export class SceneBuilder {
         scale?: number;
         scaleX?: number;
         scaleY?: number;
+        rotation?: number;
         depth?: number;
         origin?: [number, number];
         alpha?: number;
@@ -194,6 +195,7 @@ export class SceneBuilder {
                 scale: element.scale,
                 scaleX: element.scaleX,
                 scaleY: element.scaleY,
+                rotation: element.rotation,
                 depth: element.depth,
                 origin: element.origin,
                 alpha: element.alpha,
@@ -212,6 +214,7 @@ export class SceneBuilder {
                 scale: uiElement.scale,
                 scaleX: uiElement.scaleX,
                 scaleY: uiElement.scaleY,
+                rotation: uiElement.rotation,
                 depth: uiElement.depth,
                 origin: uiElement.origin,
                 alpha: uiElement.alpha,

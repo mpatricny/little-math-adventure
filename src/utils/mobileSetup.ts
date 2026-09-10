@@ -2,20 +2,23 @@ export function isTouchDevice(): boolean {
     return 'ontouchstart' in window || navigator.maxTouchPoints > 0;
 }
 
-export function requestFullscreen(): void {
-    const el = document.documentElement;
-    if (el.requestFullscreen) {
-        el.requestFullscreen().catch(() => {});
-    } else if ((el as any).webkitRequestFullscreen) {
-        (el as any).webkitRequestFullscreen();
+export async function requestLandscapeLock(): Promise<boolean> {
+    const orientation = screen.orientation as ScreenOrientation & {
+        lock?: (orientation: 'landscape') => Promise<void>;
+    };
+    if (!orientation?.lock) return false;
+
+    try {
+        await orientation.lock('landscape');
+        return true;
+    } catch {
+        return false;
     }
 }
 
 export function setupMobile(): void {
     // Try orientation lock (requires fullscreen on most browsers; fails silently)
-    if ((screen.orientation as any)?.lock) {
-        (screen.orientation as any).lock('landscape').catch(() => {});
-    }
+    void requestLandscapeLock();
 
     // Portrait warning overlay (CSS, hidden by default)
     createPortraitOverlay();

@@ -35,6 +35,15 @@ export class StorySystem {
             player.storyProgress = this.createInitialProgress();
         }
 
+        player.storyProgress.hasDefeatedVerdantGuardian ??= false;
+        player.storyProgress.hasClaimedForestCrystal ??= false;
+        player.storyProgress.hasInstalledForestCrystal ??= false;
+        player.storyProgress.hasUnlockedSilverpond ??= false;
+        player.storyProgress.hasSeenSilverpondQuest ??= false;
+        player.storyProgress.hasFreedLakeFairy ??= false;
+        player.storyProgress.hasWaterBreathingScale ??= false;
+        player.storyProgress.hasSeenLakeFairyReward ??= false;
+
         return player.storyProgress;
     }
 
@@ -51,6 +60,14 @@ export class StorySystem {
             hasSeenPythiaIntro: false,
             hasSeenPostArena1: false,
             hasSeenPostArena2: false,
+            hasDefeatedVerdantGuardian: false,
+            hasClaimedForestCrystal: false,
+            hasInstalledForestCrystal: false,
+            hasUnlockedSilverpond: false,
+            hasSeenSilverpondQuest: false,
+            hasFreedLakeFairy: false,
+            hasWaterBreathingScale: false,
+            hasSeenLakeFairyReward: false,
         };
     }
 
@@ -140,6 +157,21 @@ export class StorySystem {
      */
     markPostArena2Seen(): void {
         this.setFlag('hasSeenPostArena2');
+    }
+
+    /**
+     * Complete the Silverpond arena story reward in one save operation. The
+     * scale flag is the capability check future underwater scenes should use.
+     */
+    completeLakeFairyQuest(): void {
+        const progress = this.getProgress();
+        progress.hasFreedLakeFairy = true;
+        progress.hasWaterBreathingScale = true;
+        this.save();
+    }
+
+    markLakeFairyRewardSeen(): void {
+        this.setFlag('hasSeenLakeFairyReward');
     }
 
     /**

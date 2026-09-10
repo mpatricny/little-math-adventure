@@ -45,6 +45,9 @@ function cleanBuildPlugin(): Plugin {
     return {
         name: 'clean-build',
         closeBundle() {
+            for (const folder of ['incoming', 'previews']) {
+                fs.rmSync(path.resolve('dist/assets/audio', folder), { recursive: true, force: true });
+            }
             const distLibrary = path.resolve('dist/assets/library');
             const removals = [
                 'assets.db',
@@ -65,6 +68,12 @@ function cleanBuildPlugin(): Plugin {
 
 export default defineConfig({
     plugins: [debugSavePlugin(), cleanBuildPlugin()],
+    esbuild: {
+        target: 'es2018',
+    },
+    build: {
+        target: 'es2018',
+    },
     server: {
         host: '0.0.0.0',
         port: 8000,

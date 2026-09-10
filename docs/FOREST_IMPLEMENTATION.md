@@ -64,74 +64,13 @@ TownScene (Village)
 
 ## New Data Files
 
-### 1. `forest-enemies.json`
+### 1. Enemy and encounter catalogs
 
-```json
-{
-  "enemies": {
-    "forest_wolf": {
-      "id": "forest_wolf",
-      "name": "Forest Wolf",
-      "hp": 10,
-      "atk": 3,
-      "xp": 25,
-      "goldMin": 8,
-      "goldMax": 18,
-      "difficulty": 5,
-      "spriteKey": "enemy-wolf"
-    },
-    "mushroom_giant": {
-      "id": "mushroom_giant",
-      "name": "Mushroom Giant",
-      "hp": 12,
-      "atk": 2,
-      "xp": 35,
-      "goldMin": 15,
-      "goldMax": 25,
-      "difficulty": 5,
-      "spriteKey": "enemy-mushroom"
-    },
-    "thorn_sprite": {
-      "id": "thorn_sprite",
-      "name": "Thorn Sprite",
-      "hp": 8,
-      "atk": 4,
-      "xp": 30,
-      "goldMin": 12,
-      "goldMax": 22,
-      "difficulty": 6,
-      "spriteKey": "enemy-sprite"
-    },
-    "elder_treant": {
-      "id": "elder_treant",
-      "name": "Elder Treant",
-      "hp": 15,
-      "atk": 2,
-      "xp": 50,
-      "goldMin": 25,
-      "goldMax": 40,
-      "difficulty": 7,
-      "spriteKey": "enemy-treant"
-    },
-    "verdant_guardian": {
-      "id": "verdant_guardian",
-      "name": "Verdant Guardian",
-      "isBoss": true,
-      "phases": [
-        { "hp": 10, "atk": 2, "name": "Awakening" },
-        { "hp": 10, "atk": 3, "name": "Fury" },
-        { "hp": 12, "atk": 3, "name": "Final Stand" }
-      ],
-      "phaseHealPlayer": 8,
-      "xp": 150,
-      "goldMin": 80,
-      "goldMax": 120,
-      "diamonds": 5,
-      "spriteKey": "boss-guardian"
-    }
-  }
-}
-```
+All forest enemy base definitions use the shared `enemies.json` catalog:
+`forest_wolf`, `giant_mushroom`, `ancient_treant`, and `verdant_guardian`.
+Forest rosters and the guardian's phase-specific HP/attack/defense live in
+`encounters.json` and are edited through the Scene Editor. There is no separate
+regional enemy file.
 
 ### 2. `forest-journey.json`
 
@@ -150,10 +89,10 @@ TownScene (Village)
         "id": "forest_edge",
         "name": "Forest Edge",
         "encounters": [
-          { "type": "battle", "enemy": "forest_wolf" },
+          { "type": "battle", "encounterId": "forest-map-edge-wolf" },
           { "type": "rest", "healPercent": 40 },
           { "type": "puzzle", "puzzleId": "number_bridge" },
-          { "type": "battle", "enemy": "mushroom_giant" },
+          { "type": "battle", "encounterId": "forest-map-edge-mushroom" },
           { "type": "rest", "healPercent": 30 }
         ]
       },
@@ -161,13 +100,12 @@ TownScene (Village)
         "id": "deep_woods",
         "name": "Deep Woods",
         "encounters": [
-          { "type": "battle", "enemy": "thorn_sprite" },
           { "type": "chest", "gold": 25 },
           { "type": "rest", "healPercent": 25 },
           { "type": "puzzle", "puzzleId": "balance_scale" },
-          { "type": "battle", "enemy": "forest_wolf" },
+          { "type": "battle", "encounterId": "forest-map-deep-wolf-1" },
           { "type": "rest", "healPercent": 20 },
-          { "type": "battle", "enemy": "forest_wolf" },
+          { "type": "battle", "encounterId": "forest-map-deep-wolf-2" },
           { "type": "rest", "healPercent": 40 }
         ]
       },
@@ -176,7 +114,7 @@ TownScene (Village)
         "name": "Ancient Grove",
         "encounters": [
           { "type": "puzzle", "puzzleId": "path_choice" },
-          { "type": "battle", "enemy": "elder_treant" },
+          { "type": "battle", "encounterId": "forest-map-grove-treant" },
           { "type": "chest", "gold": 40, "potionRefill": true },
           { "type": "rest", "healPercent": 100, "name": "Sacred Spring" }
         ]
@@ -186,7 +124,7 @@ TownScene (Village)
         "name": "Guardian's Lair",
         "encounters": [
           { "type": "puzzle", "puzzleId": "feeding_puzzle", "optional": true },
-          { "type": "boss", "enemy": "verdant_guardian" }
+          { "type": "boss", "encounterId": "forest-map-guardian-boss" }
         ]
       }
     ],
@@ -386,7 +324,8 @@ src/
 ├── systems/
 │   └── JourneySystem.ts        # Journey state management
 public/assets/data/
-├── forest-enemies.json
+├── enemies.json            # Shared base enemy definitions
+├── encounters.json         # Forest rosters and boss phases
 ├── forest-journey.json
 └── forest-puzzles.json
 ```

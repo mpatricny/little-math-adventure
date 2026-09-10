@@ -6,6 +6,25 @@ const ACTIVE_SLOT_KEY = 'littleMathAdventure_activeSlot';
 const OLD_SAVE_KEY = 'littleMathAdventure_saveData';        // Legacy single-slot key
 
 const MAX_SLOTS = 8;
+const SAVE_EXPORT_FORMAT = 'little-math-adventure-save-bundle';
+const SAVE_EXPORT_VERSION = 1;
+
+type SaveExportEntry = {
+    sourceSlot: number;
+    save: SaveSlotData;
+};
+
+type SaveExportBundle = {
+    format: typeof SAVE_EXPORT_FORMAT;
+    version: typeof SAVE_EXPORT_VERSION;
+    exportedAt: number;
+    activeSlot: number | null;
+    saves: SaveExportEntry[];
+};
+
+export type SaveBundleImportResult =
+    | { ok: true; importedSlots: number[]; activeSlot: number | null }
+    | { ok: false; error: string };
 
 export class SaveSystem {
     /**
@@ -99,6 +118,103 @@ export class SaveSystem {
         } catch (error) {
             console.error('[SaveSystem] Failed to save:', error);
         }
+    }
+
+    /**
+     * Serialize every occupied slot into one portable JSON file.
+     * The bundle contains only game save data; browser-specific settings are excluded.
+     */
+    static exportBundle(): string | null {
+        const saves: SaveExportEntry[] = [];
+
+        for (let slotIndex = 0; slotIndex < MAX_SLOTS; slotIndex++) {
+            const save = this.load(slotIndex);
+            if (save) saves.push({ sourceSlot: slotIndex, save });
+        }
+
+        if (saves.length === 0) return null;
+
+        const activeSlot = this.getActiveSlot();
+        const bundle: SaveExportBundle = {
+            format: SAVE_EXPORT_FORMAT,
+            version: SAVE_EXPORT_VERSION,
+            exportedAt: Date.now(),
+            activeSlot: activeSlot !== null && saves.some(entry => entry.sourceSlot === activeSlot)
+                ? activeSlot
+                : null,
+            saves,
+        };
+
+        return JSON.stringify(bundle, null, 2);
+    }
+
+    /**
+     * Import a portable save bundle without overwriting any local slot.
+     * Original slot numbers are preserved when available; conflicts are moved to
+     * the first free slots. The operation is rejected before writing if there is
+     * not enough space for the complete bundle.
+     */
+    static importBundle(serializedBundle: string): SaveBundleImportResult {
+        let parsed: unknown;
+        try {
+            parsed = JSON.parse(serializedBundle);
+        } catch {
+            return { ok: false, error: 'Soubor není platný JSON.' };
+        }
+
+        if (!this.isSaveExportBundle(parsed)) {
+            return { ok: false, error: 'Soubor není platný export Little Math Adventure.' };
+        }
+
+        const occupiedSlots = new Set(
+            this.getSlotsMeta()
+                .filter(slot => !slot.isEmpty)
+                .map(slot => slot.slotIndex),
+        );
+        const freeSlots = Array.from({ length: MAX_SLOTS }, (_, slotIndex) => slotIndex)
+            .filter(slotIndex => !occupiedSlots.has(slotIndex));
+
+        if (parsed.saves.length > freeSlots.length) {
+            return {
+                ok: false,
+                error: `Pro import je potřeba ${parsed.saves.length} prázdných slotů, volných je ${freeSlots.length}.`,
+            };
+        }
+
+        const reservedSlots = new Set<number>();
+        const assignments = parsed.saves.map(entry => {
+            const preferredSlotAvailable = !occupiedSlots.has(entry.sourceSlot)
+                && !reservedSlots.has(entry.sourceSlot);
+            const targetSlot = preferredSlotAvailable
+                ? entry.sourceSlot
+                : freeSlots.find(slotIndex => !reservedSlots.has(slotIndex))!;
+            reservedSlots.add(targetSlot);
+            return { ...entry, targetSlot };
+        });
+
+        const writtenSlots: number[] = [];
+        try {
+            for (const assignment of assignments) {
+                localStorage.setItem(
+                    `${SAVE_DATA_PREFIX}${assignment.targetSlot}`,
+                    JSON.stringify(assignment.save),
+                );
+                writtenSlots.push(assignment.targetSlot);
+            }
+        } catch (error) {
+            writtenSlots.forEach(slotIndex => localStorage.removeItem(`${SAVE_DATA_PREFIX}${slotIndex}`));
+            console.error('[SaveSystem] Failed to import save bundle:', error);
+            return { ok: false, error: 'Import se nepodařilo uložit do prohlížeče.' };
+        }
+
+        const activeAssignment = parsed.activeSlot === null
+            ? null
+            : assignments.find(entry => entry.sourceSlot === parsed.activeSlot) ?? null;
+        const activeSlot = activeAssignment?.targetSlot ?? assignments[0]?.targetSlot ?? null;
+        if (activeSlot !== null) this.setActiveSlot(activeSlot);
+
+        console.log(`[SaveSystem] Imported ${writtenSlots.length} save slot(s)`);
+        return { ok: true, importedSlots: writtenSlots, activeSlot };
     }
 
     /**
@@ -294,5 +410,60 @@ export class SaveSystem {
             }
         }
         return -1;
+    }
+
+    private static isSaveExportBundle(value: unknown): value is SaveExportBundle {
+        if (!this.isRecord(value)
+            || value.format !== SAVE_EXPORT_FORMAT
+            || value.version !== SAVE_EXPORT_VERSION
+            || !Array.isArray(value.saves)
+            || value.saves.length === 0
+            || value.saves.length > MAX_SLOTS
+            || !(value.activeSlot === null || this.isSlotIndex(value.activeSlot))) {
+            return false;
+        }
+
+        const sourceSlots = new Set<number>();
+        for (const entry of value.saves) {
+            if (!this.isRecord(entry)
+                || !this.isSlotIndex(entry.sourceSlot)
+                || sourceSlots.has(entry.sourceSlot)
+                || !this.isSaveSlotData(entry.save)) {
+                return false;
+            }
+            sourceSlots.add(entry.sourceSlot);
+        }
+
+        return value.activeSlot === null || sourceSlots.has(value.activeSlot);
+    }
+
+    private static isSaveSlotData(value: unknown): value is SaveSlotData {
+        if (!this.isRecord(value)
+            || !this.isRecord(value.player)
+            || !this.isRecord(value.mathStats)
+            || !Number.isFinite(value.timestamp)) {
+            return false;
+        }
+
+        const player = value.player;
+        const mathStats = value.mathStats;
+        return typeof player.name === 'string'
+            && Number.isFinite(player.level)
+            && Number.isFinite(player.hp)
+            && Number.isFinite(player.maxHp)
+            && Number.isFinite(player.attack)
+            && Number.isFinite(player.defense)
+            && Number.isFinite(mathStats.totalAttempts)
+            && Number.isFinite(mathStats.correctAnswers)
+            && Array.isArray(mathStats.recentResults)
+            && this.isRecord(mathStats.problemStats);
+    }
+
+    private static isSlotIndex(value: unknown): value is number {
+        return Number.isInteger(value) && (value as number) >= 0 && (value as number) < MAX_SLOTS;
+    }
+
+    private static isRecord(value: unknown): value is Record<string, unknown> {
+        return typeof value === 'object' && value !== null && !Array.isArray(value);
     }
 }

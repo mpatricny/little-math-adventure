@@ -1,5 +1,7 @@
 import Phaser from 'phaser';
 import { JourneySystem, Encounter } from '../systems/JourneySystem';
+import { createEncounterCatalog, type EncounterCatalog } from '../systems/EncounterCatalog';
+import type { EnemyDefinition } from '../types';
 
 /**
  * ForestMapScene - Journey progress hub
@@ -12,6 +14,7 @@ import { JourneySystem, Encounter } from '../systems/JourneySystem';
  */
 export class ForestMapScene extends Phaser.Scene {
     private journeySystem = JourneySystem.getInstance();
+    private encounterCatalog!: EncounterCatalog;
 
     private battleWon: boolean = false;
 
@@ -23,14 +26,11 @@ export class ForestMapScene extends Phaser.Scene {
         this.battleWon = data?.battleWon || false;
     }
 
-    preload(): void {
-        // Load forest enemies if not already cached
-        if (!this.cache.json.has('forestEnemies')) {
-            this.load.json('forestEnemies', 'assets/data/forest-enemies.json');
-        }
-    }
-
     create(): void {
+        this.encounterCatalog = createEncounterCatalog(this.cache.json.get('encounters'), {
+            core: this.cache.json.get('enemies') as EnemyDefinition[],
+        });
+
         // If returning from a won battle, advance the encounter
         if (this.battleWon) {
             console.log('[ForestMapScene] Returning from battle victory, advancing encounter...');
@@ -242,7 +242,7 @@ export class ForestMapScene extends Phaser.Scene {
     private getEncounterDisplay(encounter: Encounter): { icon: string; label: string } {
         switch (encounter.type) {
             case 'battle':
-                return { icon: '⚔️', label: `Souboj: ${encounter.enemy || 'Nepřítel'}` };
+                return { icon: '⚔️', label: `Souboj: ${this.getEncounterEnemyName(encounter)}` };
             case 'rest':
                 const restName = encounter.nameCs || encounter.name || 'Odpočinek';
                 return { icon: '🏕️', label: `${restName} (+${encounter.healPercent}% HP)` };
@@ -251,10 +251,16 @@ export class ForestMapScene extends Phaser.Scene {
             case 'chest':
                 return { icon: '💰', label: `Poklad (+${encounter.gold} zlato)` };
             case 'boss':
-                return { icon: '👹', label: `BOSS: ${encounter.enemy || 'Boss'}` };
+                return { icon: '👹', label: `BOSS: ${this.getEncounterEnemyName(encounter)}` };
             default:
                 return { icon: '❓', label: 'Neznámé' };
         }
+    }
+
+    private getEncounterEnemyName(encounter: Encounter): string {
+        if (!encounter.encounterId) return encounter.enemy || 'Nepřítel';
+        const definition = this.encounterCatalog.getJourneyEncounterById(encounter.encounterId);
+        return this.encounterCatalog.resolveEnemy(definition.enemies[0]).name;
     }
 
     private createContinueButton(): void {
@@ -307,17 +313,27 @@ export class ForestMapScene extends Phaser.Scene {
         switch (encounter.type) {
             case 'battle':
             case 'boss':
-                // Go to battle scene with forest enemy
-                // Get current stage for background
                 const currentStage = this.journeySystem.getCurrentStage();
+                const state = this.journeySystem.getJourneyState();
+                if (!currentStage || !state || !encounter.encounterId) {
+                    throw new Error('Forest map battle is missing stage state or encounterId');
+                }
+                const mappedEncounter = this.encounterCatalog.getForestMapEncounter(
+                    currentStage.id,
+                    state.currentEncounter,
+                );
+                if (mappedEncounter.id !== encounter.encounterId) {
+                    throw new Error(
+                        `Forest map ${currentStage.id}/${state.currentEncounter} points to ${encounter.encounterId}, expected ${mappedEncounter.id}`,
+                    );
+                }
                 const bgKey = currentStage?.background || 'bg-forest';
                 
                 this.scene.start('BattleScene', {
                     mode: 'journey',
-                    enemyId: encounter.enemy,
+                    encounterId: encounter.encounterId,
                     returnScene: 'ForestMapScene',
                     backgroundKey: bgKey,
-                    isBoss: encounter.type === 'boss'
                 });
                 break;
 

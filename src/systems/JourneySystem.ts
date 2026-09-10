@@ -9,6 +9,8 @@ export type EncounterType = 'battle' | 'rest' | 'puzzle' | 'chest' | 'boss';
 
 export interface Encounter {
     type: EncounterType;
+    encounterId?: string;
+    /** @deprecated Legacy journey data; production battles use encounterId. */
     enemy?: string;
     healPercent?: number;
     isSavePoint?: boolean;
@@ -65,6 +67,7 @@ export interface RoomStates {
 }
 
 export interface JourneyState {
+    puzzles?: Record<string, import('../types/puzzles').PuzzleInstance>;
     journeyId: string;
     currentStage: number;
     currentEncounter: number;
@@ -111,6 +114,13 @@ export class JourneySystem {
         }
         return JourneySystem.instance;
     }
+
+    /** Active puzzles belong to this run, and survive scene/battle transitions. */
+    getPuzzleStore(): Record<string, import('../types/puzzles').PuzzleInstance> {
+        if (this.currentJourney) return this.currentJourney.puzzles ??= {};
+        return this.previewPuzzles;
+    }
+    private previewPuzzles: Record<string, import('../types/puzzles').PuzzleInstance> = {};
 
     /**
      * Calculate total gold from coin currency

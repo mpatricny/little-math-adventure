@@ -1,30 +1,56 @@
 import Phaser from 'phaser';
 import { GameStateManager } from '../systems/GameStateManager';
 import { MathEngine } from '../systems/MathEngine';
-import { ManaSystem } from '../systems/ManaSystem';
-import { MathProblemDef, ProblemStats, MathProblem, TrialState, TrialProblemResult, TrialTier, ExamType, ExamConfig, SubAtomId, BandId, EXAM_CONFIGS } from '../types';
+import { MathProblem, TrialState, TrialProblemResult, TrialTier, ExamType, SubAtomId, BandId, EXAM_CONFIGS, MathStats, PlayerState } from '../types';
 import { MasterySystem } from '../systems/MasterySystem';
 import { SceneDebugger } from '../systems/SceneDebugger';
 import { SceneBuilder } from '../systems/SceneBuilder';
 import { TrialFeedbackVisualizer } from '../ui/TrialFeedbackVisualizer';
 import { formatMathProblem } from '../utils/formatMathProblem';
 import { CoopSwitchUI } from '../ui/CoopSwitchUI';
-import { ExamsOverlay } from '../ui/ExamsOverlay';
 import { MasteryMapOverlay } from '../ui/MasteryMapOverlay';
-import { ProgressionSystem } from '../systems/ProgressionSystem';
+import { DailyProgressOverlay } from '../ui/DailyProgressOverlay';
 import { CoopSessionManager } from '../systems/CoopSessionManager';
+import { GuildHallUI } from '../ui/GuildHallUI';
+import { SilverpondQuestDialog } from '../ui/SilverpondQuestDialog';
+import { MedievalActionButton } from '../ui/MedievalActionButton';
+import { createGuildExamBoard, createGuildExamRule } from '../ui/GuildExamTheme';
 
-const ROW_HEIGHT = 28;
-const VISIBLE_ROWS = 8;
-const MANA_COLLECTION_PLAY_COST = 3;
+type AvailableGuildExam = {
+    type: ExamType;
+    targetId: SubAtomId | BandId;
+    label: string;
+};
+
+type GuildHostLayout = {
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+    depth: number;
+};
+
+export interface GuildSceneOptions {
+    key?: string;
+    backSceneKey?: string;
+    layoutSceneKey?: string;
+    backgroundTexture?: string;
+    persistChanges?: boolean;
+    accentColor?: number;
+    silverpondStory?: boolean;
+}
 
 export class GuildScene extends Phaser.Scene {
+    private readonly backSceneKey: string;
+    private readonly layoutSceneKey: string;
+    private readonly backgroundTexture: string;
+    private readonly persistChanges: boolean;
+    private readonly accentColor: number;
+    private readonly silverpondStory: boolean;
     private gameState!: GameStateManager;
     private mathEngine!: MathEngine;
-    private problemList: Array<MathProblemDef & { stats: ProblemStats }> = [];
-    private scrollOffset: number = 0;
-    private listContainer!: Phaser.GameObjects.Container;
-    private listPanel!: Phaser.GameObjects.Container;
+    private catacombExam: AvailableGuildExam | null = null;
+    private transientSnapshot: { player: PlayerState; mathStats: MathStats } | null = null;
 
     // Trial mode state
     private trialState: TrialState = {
@@ -46,24 +72,27 @@ export class GuildScene extends Phaser.Scene {
 
     // Trial UI elements
     private trialOverlay!: Phaser.GameObjects.Container;
-    private trialStartButton!: Phaser.GameObjects.Container;
-    private timerText!: Phaser.GameObjects.Text;
-    private timerBar!: Phaser.GameObjects.Graphics;
-    private timerFrame!: Phaser.GameObjects.Image;
-    private timerBg!: Phaser.GameObjects.Rectangle;
+    private trialQuestionCounter!: Phaser.GameObjects.Text;
     private problemText!: Phaser.GameObjects.Text;
-    private answerButtonBgs: Phaser.GameObjects.Rectangle[] = [];
-    private answerButtonTexts: Phaser.GameObjects.Text[] = [];
+    private answerButtons: MedievalActionButton[] = [];
     private answerButtonValues: number[] = [0, 0, 0];
     private progressDots: Phaser.GameObjects.Text[] = [];
+    private progressFrames: Phaser.GameObjects.Arc[] = [];
     private feedbackOverlay!: Phaser.GameObjects.Container;
     private feedbackVisualizer: TrialFeedbackVisualizer | null = null;
+    private feedbackActionButton!: MedievalActionButton;
     private resultsOverlay!: Phaser.GameObjects.Container;
     private overviewOverlay!: Phaser.GameObjects.Container;
-    private actionButtonsBottomY: number = 430;
-
-    // Current trial level (may differ from player level on retry)
-    private currentTrialLevel: number = 0;
+    private overviewStartButton!: MedievalActionButton;
+    private overviewMedalCards: Phaser.GameObjects.Container[] = [];
+    private overviewMedalTexts: Phaser.GameObjects.Text[] = [];
+    private resultsContinueButton!: MedievalActionButton;
+    private resultsTitleText!: Phaser.GameObjects.Text;
+    private resultsMedalText!: Phaser.GameObjects.Text;
+    private resultsScoreText!: Phaser.GameObjects.Text;
+    private resultsRewardText!: Phaser.GameObjects.Text;
+    private resultsZyxText!: Phaser.GameObjects.Text;
+    private resultEntryTexts: Phaser.GameObjects.Text[] = [];
 
     // Mastery exam state (used when taking mastery-system exams)
     private currentMasteryExamType: ExamType | null = null;
@@ -71,495 +100,144 @@ export class GuildScene extends Phaser.Scene {
     private masteryExamStatGains: { hpGain: number; attackGain: number; manaGain: number; shardGain?: number; coinGain?: number } = { hpGain: 0, attackGain: 0, manaGain: 0 };
 
     // Info overlays
-    private examsOverlay!: ExamsOverlay;
+    private dailyProgressOverlay!: DailyProgressOverlay;
     private masteryMapOverlay!: MasteryMapOverlay;
-
-    // Universal debugger
-    private debugger!: SceneDebugger;
 
     // Scene Builder
     private sceneBuilder!: SceneBuilder;
 
-    // UI references for debug repositioning
-    private titleText!: Phaser.GameObjects.Text;
-    private statsContainer!: Phaser.GameObjects.Container;
-    private resultsTableImage!: Phaser.GameObjects.Image;
-    private backButtonContainer!: Phaser.GameObjects.Container;
-    private totalStatsPanel!: Phaser.GameObjects.Container;
-    private collectButtonContainer!: Phaser.GameObjects.Container;
-    private manaCollectionButton: Phaser.GameObjects.Container | null = null;
-
-    constructor() {
-        super({ key: 'GuildScene' });
+    constructor(options: GuildSceneOptions = {}) {
+        const sceneKey = options.key ?? 'GuildScene';
+        super({ key: sceneKey });
+        this.backSceneKey = options.backSceneKey ?? 'TownScene';
+        this.layoutSceneKey = options.layoutSceneKey ?? sceneKey;
+        this.backgroundTexture = options.backgroundTexture ?? 'interior-guild';
+        this.persistChanges = options.persistChanges ?? true;
+        this.accentColor = options.accentColor ?? 0xd5943c;
+        this.silverpondStory = options.silverpondStory ?? false;
     }
 
     create(): void {
         this.gameState = GameStateManager.getInstance();
+        this.captureTransientState();
 
         // Set player level in registry for MathEngine's adaptive difficulty
         const player = this.gameState.getPlayer();
         this.registry.set('playerLevel', player.level);
 
         this.mathEngine = new MathEngine(this.registry);
-        // Use ALL problems ever attempted, not just current level pool
-        this.problemList = this.mathEngine.getAllProblemsWithStats();
-        this.scrollOffset = 0;
 
-        // Initialize SceneBuilder - this creates all elements from scenes.json
+        // Scene Editor layout stays authoritative for both visual variants.
         this.sceneBuilder = new SceneBuilder(this);
-        this.sceneBuilder.buildScene();
+        this.sceneBuilder.registerHandler('onBack', () => this.leaveGuild());
+        this.sceneBuilder.buildScene(this.layoutSceneKey);
+        this.applyBackgroundTexture();
 
-        // Co-op: add player switch UI
-        new CoopSwitchUI(this, 300, 640);
-
-        // Retrieve references from SceneBuilder (positions come from scenes.json)
-        this.titleText = this.sceneBuilder.get('title') as Phaser.GameObjects.Text;
-        this.backButtonContainer = this.sceneBuilder.get('backButton') as Phaser.GameObjects.Container;
-        this.resultsTableImage = this.sceneBuilder.get('resultsTable') as Phaser.GameObjects.Image;
-
-        // Get positions from SceneBuilder for complex UI components
-        // Cast to Container to access x/y properties (all game objects have these via Transform component)
-        const statsPanel = this.sceneBuilder.get('statsPanel') as Phaser.GameObjects.Container | undefined;
-        const totalStatsPanel = this.sceneBuilder.get('totalStatsPanel') as Phaser.GameObjects.Container | undefined;
-        const collectButton = this.sceneBuilder.get('collectButton') as Phaser.GameObjects.Container | undefined;
-        // Hide the sceneBuilder-built collectButton - we create a dynamic one
-        collectButton?.setVisible(false);
-
-        // Get depth directly from scene-layouts.json overrides (not from game object which uses scenes.json)
-        const statsPanelDepth = this.sceneBuilder.getLayoutOverride('statsPanel')?.depth ?? 10;
-        const resultsTableDepth = this.sceneBuilder.getLayoutOverride('resultsTable')?.depth ?? 10;
-        const totalStatsPanelDepth = this.sceneBuilder.getLayoutOverride('totalStatsPanel')?.depth ?? 15;
-        const collectButtonDepth = this.sceneBuilder.getLayoutOverride('collectButton')?.depth ?? 15;
-
-        // Create complex UI components using positions and depths from JSON
-        this.createStatsSummary(statsPanel?.x ?? 880, statsPanel?.y ?? 110, statsPanelDepth);
-        this.createListPanel(resultsTableDepth);
-        this.createTotalStats(
-            totalStatsPanel?.x ?? 800,
-            totalStatsPanel?.y ?? 650,
-            collectButton?.x ?? 950,
-            totalStatsPanelDepth,
-            collectButtonDepth
-        );
         this.createTrialUI();
 
-        // Create info overlays and their buttons
-        this.examsOverlay = new ExamsOverlay(this);
+        const dailyOverlayHost = this.getHostLayout('dailyProgressOverlayHost', {
+            x: 640, y: 360, width: 1160, height: 620, depth: 10000,
+        });
+        const learningOverlayHost = this.getHostLayout('learningMapOverlayHost', {
+            x: 640, y: 360, width: 1150, height: 610, depth: 10000,
+        });
+        this.dailyProgressOverlay = new DailyProgressOverlay(this);
+        this.dailyProgressOverlay.setPlacement(dailyOverlayHost.x, dailyOverlayHost.y, dailyOverlayHost.depth);
         this.masteryMapOverlay = new MasteryMapOverlay(this);
-        this.createInfoButtons();
+        this.masteryMapOverlay.setPlacement(learningOverlayHost.x, learningOverlayHost.y, learningOverlayHost.depth);
+        this.createHallUI();
 
-        // Setup universal debugger
+        if (this.silverpondStory) {
+            new SilverpondQuestDialog(this, this.sceneBuilder);
+        }
+
+        const coopHost = this.getHostLayout('coopSwitchHost', { x: 280, y: 655, width: 260, height: 45, depth: 80 });
+        new CoopSwitchUI(this, coopHost.x, coopHost.y);
+
         this.setupDebugger();
+    }
 
-        // Mouse wheel scrolling
-        this.input.on('wheel', (_pointer: any, _gameObjects: any, _deltaX: number, deltaY: number) => {
-            this.scroll(deltaY > 0 ? 1 : -1);
+    private captureTransientState(): void {
+        if (this.persistChanges || this.transientSnapshot) return;
+
+        this.transientSnapshot = {
+            player: this.cloneState(this.gameState.getPlayer()),
+            mathStats: this.cloneState(this.gameState.getMathStats()),
+        };
+    }
+
+    private cloneState<T>(state: T): T {
+        return JSON.parse(JSON.stringify(state)) as T;
+    }
+
+    private restoreTransientState(): void {
+        if (!this.transientSnapshot) return;
+
+        Object.assign(this.gameState.getPlayer(), this.cloneState(this.transientSnapshot.player));
+        this.gameState.setMathStats(this.cloneState(this.transientSnapshot.mathStats));
+        MasterySystem.destroyInstance();
+        this.transientSnapshot = null;
+    }
+
+    private saveState(): void {
+        if (this.persistChanges) this.gameState.save();
+    }
+
+    private leaveGuild(): void {
+        this.restoreTransientState();
+        this.scene.start(this.backSceneKey);
+    }
+
+    private applyBackgroundTexture(): void {
+        this.sceneBuilder.get<Phaser.GameObjects.Image>('interior')?.setTexture(this.backgroundTexture);
+    }
+
+    private getHostLayout(id: string, fallback: GuildHostLayout): GuildHostLayout {
+        const object = this.sceneBuilder.get<Phaser.GameObjects.Container>(id);
+        const definition = this.sceneBuilder.getElementDef(id) as Partial<GuildHostLayout> | undefined;
+        return {
+            x: object?.x ?? definition?.x ?? fallback.x,
+            y: object?.y ?? definition?.y ?? fallback.y,
+            width: definition?.width ?? object?.width ?? fallback.width,
+            height: definition?.height ?? object?.height ?? fallback.height,
+            depth: object?.depth ?? definition?.depth ?? fallback.depth,
+        };
+    }
+
+    private createHallUI(): void {
+        const availableExams = MasterySystem.getInstance().getAvailableExams();
+        const standardExam = this.currentMasteryExamType && this.currentMasteryExamTarget
+            ? availableExams.find(exam =>
+                exam.type === this.currentMasteryExamType
+                && exam.targetId === this.currentMasteryExamTarget
+            ) ?? null
+            : null;
+
+        new GuildHallUI({
+            scene: this,
+            sceneBuilder: this.sceneBuilder,
+            gameState: this.gameState,
+            accentColor: this.accentColor,
+            standardExam,
+            catacombExam: this.catacombExam,
+            onStartExam: () => this.showTrialOverview(),
+            onStartManaCollection: () => {
+                this.scene.start('ManaCollectionScene', { returnScene: this.scene.key });
+            },
+            onStartCatacomb: exam => {
+                this.scene.start('CatacombTrialScene', {
+                    examType: exam.type,
+                    subAtomId: exam.targetId,
+                    returnScene: this.scene.key,
+                });
+            },
+            onShowLearning: () => this.masteryMapOverlay.show(),
+            onShowDailyProgress: () => this.dailyProgressOverlay.show(),
         });
-
-        // Touch-drag scrolling for mobile
-        this.setupTouchScroll();
-    }
-
-    private setupTouchScroll(): void {
-        let lastPointerY = 0;
-        let isScrollDragging = false;
-
-        this.input.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
-            const panelBounds = this.listPanel.getBounds();
-            if (panelBounds.contains(pointer.x, pointer.y)) {
-                const hitObjects = this.input.hitTestPointer(pointer);
-                if (hitObjects.length === 0) {
-                    lastPointerY = pointer.y;
-                    isScrollDragging = true;
-                }
-            }
-        });
-
-        this.input.on('pointermove', (pointer: Phaser.Input.Pointer) => {
-            if (!isScrollDragging) return;
-            const delta = lastPointerY - pointer.y;
-            if (Math.abs(delta) > 10) {
-                this.scroll(delta > 0 ? 1 : -1);
-                lastPointerY = pointer.y;
-            }
-        });
-
-        this.input.on('pointerup', () => { isScrollDragging = false; });
-    }
-
-    private createStatsSummary(x: number, y: number, depth: number): void {
-        const player = this.gameState.getPlayer();
-        const masteryPct = this.mathEngine.getMasteryPercentage();
-        const poolCycle = this.mathEngine.getPoolCycle();
-
-        this.statsContainer = this.add.container(x, y);
-        this.statsContainer.setDepth(depth);
-
-        // Background panel
-        const bg = this.add.rectangle(0, 0, 300, 50, 0x000000, 0.6)
-            .setStrokeStyle(2, 0x4488aa);
-        this.statsContainer.add(bg);
-
-        const statsText = this.add.text(0, 0,
-            `ÚROVEŇ: ${player.level}   |   CYKLUS: ${poolCycle + 1}   |   ${masteryPct}%`,
-            {
-                fontSize: '16px',
-                fontFamily: 'Arial, sans-serif',
-                color: '#ffffff'
-            }).setOrigin(0.5);
-        this.statsContainer.add(statsText);
-    }
-
-    private createListPanel(depth: number): void {
-        // Get listPanel position from scene-layouts.json if available
-        // Falls back to resultsTable position + offset if not defined
-        const listPanelLayout = this.sceneBuilder.getLayoutOverride('listPanel');
-        const tableX = this.resultsTableImage?.x ?? 800;
-        const tableY = this.resultsTableImage?.y ?? 380;
-
-        // Use layout position if available, otherwise calculate from resultsTable
-        const panelX = listPanelLayout?.x ?? (tableX + 80);
-        const panelY = listPanelLayout?.y ?? tableY;
-
-        // List panel container
-        this.listPanel = this.add.container(panelX, panelY);
-        this.listPanel.setDepth(depth);
-
-        // Headers
-        const headerText = this.add.text(-148, -150, 'PŘÍKLAD', {
-            fontSize: '14px',
-            fontFamily: 'Arial, sans-serif',
-            color: '#5a4a3a',
-            fontStyle: 'bold'
-        }).setOrigin(0, 0.5);
-        this.listPanel.add(headerText);
-
-        const correctHeader = this.add.text(42, -150, '✓', {
-            fontSize: '18px',
-            fontFamily: 'Arial, sans-serif',
-            color: '#228822'
-        }).setOrigin(0.5);
-        this.listPanel.add(correctHeader);
-
-        const wrongHeader = this.add.text(92, -150, '✗', {
-            fontSize: '18px',
-            fontFamily: 'Arial, sans-serif',
-            color: '#882222'
-        }).setOrigin(0.5);
-        this.listPanel.add(wrongHeader);
-
-        // List container
-        this.listContainer = this.add.container(0, 0);
-        this.listPanel.add(this.listContainer);
-
-        // Mask - use panel position (not table position) to properly include diamond slots
-        // Diamond slots are at x offsets -196 to -160, so mask needs to start before that
-        const maskLeft = panelX - 220;  // Include diamond area with some margin
-        const maskTop = panelY - 135;
-        const maskWidth = 400;  // Wider to include all content
-        const maskHeight = VISIBLE_ROWS * ROW_HEIGHT + 35;  // Extra height to show all 8 rows fully
-        const maskShape = this.make.graphics({ x: 0, y: 0, add: false });
-        maskShape.fillStyle(0xffffff);
-        maskShape.fillRect(maskLeft, maskTop, maskWidth, maskHeight);
-        const mask = maskShape.createGeometryMask();
-        this.listContainer.setMask(mask);
-
-        // Render list items
-        this.renderList();
-
-        // Scroll buttons
-        this.createScrollButtons();
-    }
-
-    private renderList(): void {
-        this.listContainer.removeAll(true);
-
-        // Sort problems by correct count (descending)
-        const sortedProblems = [...this.problemList].sort((a, b) => {
-            return b.stats.correctCount - a.stats.correctCount;
-        });
-
-        // Start below header
-        const startY = -100 + ROW_HEIGHT / 2;
-
-        for (let i = 0; i < sortedProblems.length; i++) {
-            const problem = sortedProblems[i];
-            const y = startY + i * ROW_HEIGHT - this.scrollOffset * ROW_HEIGHT;
-
-            // Mana slots (changed from diamond slots)
-            const correct = problem.stats.correctCount;
-            const collected = problem.stats.manaCollected || 0;
-            const thresholds = [5, 10, 20];
-
-            for (let d = 0; d < 3; d++) {
-                const threshold = thresholds[d];
-                const slotX = -160 - (2 - d) * 18;
-
-                let symbol: string;
-                let color: string;
-
-                if (correct >= threshold) {
-                    if (collected > d) {
-                        // Already collected - gray
-                        symbol = '⚡';
-                        color = '#666666';
-                    } else {
-                        // Available to collect - bright cyan
-                        symbol = '⚡';
-                        color = '#44ffff';
-                    }
-                } else {
-                    // Not yet reached - dim
-                    symbol = '○';
-                    color = '#444444';
-                }
-
-                const slot = this.add.text(slotX, y, symbol, {
-                    fontSize: '14px',
-                    fontFamily: 'Arial, sans-serif',
-                    color: color,
-                }).setOrigin(0.5);
-                this.listContainer.add(slot);
-            }
-
-            // Problem text — question mode for comparison/missing (shows ○ and ?), answer mode for standard (shows result)
-            const reviewMode = (problem.problemType === 'comparison' || problem.problemType === 'comparison_eq_vs_eq' || problem.problemType === 'missing_operand')
-                ? 'question' : 'answer';
-            const problemText = formatMathProblem(problem, reviewMode);
-            const txt = this.add.text(-120, y, problemText, {
-                fontSize: '16px',
-                fontFamily: 'Arial, sans-serif',
-                color: '#3a2a1a',
-                fontStyle: 'bold'
-            }).setOrigin(0, 0.5);
-            this.listContainer.add(txt);
-
-            // Correct count
-            const correctTxt = this.add.text(70, y, correct.toString(), {
-                fontSize: '16px',
-                fontFamily: 'Arial, sans-serif',
-                color: '#228822',
-                fontStyle: 'bold'
-            }).setOrigin(0.5);
-            this.listContainer.add(correctTxt);
-
-            // Wrong count
-            const wrong = problem.stats.wrongCount;
-            const wrongTxt = this.add.text(120, y, wrong.toString(), {
-                fontSize: '16px',
-                fontFamily: 'Arial, sans-serif',
-                color: '#882222',
-                fontStyle: 'bold'
-            }).setOrigin(0.5);
-            this.listContainer.add(wrongTxt);
-        }
-    }
-
-    private createScrollButtons(): void {
-        const maxScroll = Math.max(0, this.problemList.length - VISIBLE_ROWS);
-        if (maxScroll <= 0) return;
-
-        // Up button
-        const upBtn = this.add.text(155, -100, '▲', {
-            fontSize: '28px',
-            fontFamily: 'Arial, sans-serif',
-            color: '#5a4a3a'
-        }).setOrigin(0.5).setInteractive({
-            hitArea: new Phaser.Geom.Rectangle(-22, -22, 44, 44),
-            hitAreaCallback: Phaser.Geom.Rectangle.Contains,
-            useHandCursor: true
-        });
-
-        upBtn.on('pointerover', () => upBtn.setColor('#8a6a4a'));
-        upBtn.on('pointerout', () => upBtn.setColor('#5a4a3a'));
-        upBtn.on('pointerdown', () => this.scroll(-3));
-        this.listPanel.add(upBtn);
-
-        // Down button
-        const downBtn = this.add.text(155, 100, '▼', {
-            fontSize: '28px',
-            fontFamily: 'Arial, sans-serif',
-            color: '#5a4a3a'
-        }).setOrigin(0.5).setInteractive({
-            hitArea: new Phaser.Geom.Rectangle(-22, -22, 44, 44),
-            hitAreaCallback: Phaser.Geom.Rectangle.Contains,
-            useHandCursor: true
-        });
-
-        downBtn.on('pointerover', () => downBtn.setColor('#8a6a4a'));
-        downBtn.on('pointerout', () => downBtn.setColor('#5a4a3a'));
-        downBtn.on('pointerdown', () => this.scroll(3));
-        this.listPanel.add(downBtn);
-
-        // Scroll info
-        const scrollInfo = this.add.text(155, 0,
-            `${Math.min(this.problemList.length, VISIBLE_ROWS)}/${this.problemList.length}`, {
-            fontSize: '14px',
-            fontFamily: 'Arial, sans-serif',
-            color: '#7a6a5a'
-        }).setOrigin(0.5);
-        this.listPanel.add(scrollInfo);
-        this.data.set('scrollInfo', scrollInfo);
-    }
-
-    private scroll(delta: number): void {
-        const maxScroll = Math.max(0, this.problemList.length - VISIBLE_ROWS);
-        const oldOffset = this.scrollOffset;
-        this.scrollOffset = Phaser.Math.Clamp(this.scrollOffset + delta, 0, maxScroll);
-
-        if (oldOffset !== this.scrollOffset) {
-            this.renderList();
-
-            const scrollInfo = this.data.get('scrollInfo') as Phaser.GameObjects.Text;
-            if (scrollInfo) {
-                const start = this.scrollOffset + 1;
-                const end = Math.min(this.scrollOffset + VISIBLE_ROWS, this.problemList.length);
-                scrollInfo.setText(`${start}-${end}/${this.problemList.length}`);
-            }
-        }
-    }
-
-    private createTotalStats(x: number, y: number, _collectX: number, panelDepth: number, buttonDepth: number): void {
-        const stats = this.mathEngine.getStats();
-        const player = this.gameState.getPlayer();
-
-        const allTimeTotal = stats.totalAttempts;
-        const allTimeCorrect = stats.correctAnswers;
-        const allTimeWrong = allTimeTotal - allTimeCorrect;
-        const todayProblems = stats.dailyAttempts;
-        const manaCount = ManaSystem.getMana(player);
-
-        // === Stats panel ===
-        this.totalStatsPanel = this.add.container(x, y);
-        this.totalStatsPanel.setDepth(panelDepth);
-
-        const bg = this.add.rectangle(0, 0, 340, 70, 0x000000, 0.85)
-            .setStrokeStyle(1, 0x5a4a3a);
-        this.totalStatsPanel.add(bg);
-
-        // Single-line daily + all-time
-        this.totalStatsPanel.add(this.add.text(0, -18,
-            `Dnes: ${todayProblems}  |  Celkem: ${allTimeTotal}  (✓${allTimeCorrect}  ✗${allTimeWrong})`, {
-            fontSize: '12px', fontFamily: 'Arial, sans-serif', color: '#cccccc',
-        }).setOrigin(0.5));
-
-        // Mana line
-        this.totalStatsPanel.add(this.add.text(0, 6,
-            `⚡ Mana: ${manaCount}`, {
-            fontSize: '13px', fontFamily: 'Arial, sans-serif', color: '#44ffff',
-        }).setOrigin(0.5));
-
-        // === Action row below stats: collect + mana minigame side by side ===
-        const actionY = y + 55;
-
-        // Count collectable mana
-        let collectableMana = 0;
-        const thresholds = [5, 10, 20];
-        for (const problem of this.problemList) {
-            const correct = problem.stats.correctCount;
-            const collected = problem.stats.manaCollected || 0;
-            for (let d = 0; d < 3; d++) {
-                if (correct >= thresholds[d] && collected <= d) {
-                    collectableMana++;
-                }
-            }
-        }
-
-        // Collect mana button (left)
-        this.collectButtonContainer = this.add.container(x - 55, actionY);
-        this.collectButtonContainer.setDepth(buttonDepth);
-
-        if (collectableMana > 0) {
-            const btnBg = this.add.rectangle(0, 0, 150, 36, 0x2288aa)
-                .setStrokeStyle(1, 0x44aacc);
-            const btnText = this.add.text(0, 0, `⚡ Sbírat (${collectableMana})`, {
-                fontSize: '13px', fontFamily: 'Arial, sans-serif',
-                color: '#ffffff', fontStyle: 'bold',
-            }).setOrigin(0.5);
-
-            this.collectButtonContainer.add([btnBg, btnText]);
-
-            btnBg.setInteractive({ useHandCursor: true })
-                .on('pointerover', () => btnBg.setFillStyle(0x3399bb))
-                .on('pointerout', () => btnBg.setFillStyle(0x2288aa))
-                .on('pointerdown', () => this.collectMana());
-        }
-
-        // Mana Collection minigame button (right)
-        this.createManaCollectionButton(x + 115, actionY, buttonDepth);
-    }
-
-    private collectMana(): void {
-        const collectedCount = this.mathEngine.collectAllMana();
-
-        if (collectedCount > 0) {
-            const player = this.gameState.getPlayer();
-            ManaSystem.add(player, collectedCount);
-            this.gameState.save();
-
-            this.showCollectionAnimation(collectedCount);
-            this.problemList = this.mathEngine.getAllProblemsWithStats();
-            this.scene.restart();
-        }
-    }
-
-    private showCollectionAnimation(count: number): void {
-        const floatText = this.add.text(800, 620, `+${count} ⚡`, {
-            fontSize: '28px',
-            fontFamily: 'Arial, sans-serif',
-            color: '#44ffff',
-            fontStyle: 'bold',
-            stroke: '#000000',
-            strokeThickness: 3
-        }).setOrigin(0.5).setDepth(1000);
-
-        this.tweens.add({
-            targets: floatText,
-            y: floatText.y - 80,
-            alpha: 0,
-            scale: 1.3,
-            duration: 1500,
-            ease: 'Power2',
-            onComplete: () => floatText.destroy()
-        });
-    }
-
-    private createInfoButtons(): void {
-        const y = this.actionButtonsBottomY + 15;
-
-        // "ZKOUŠKY" programmatic button
-        this.createInfoButton(200, y, 'ZKOUŠKY', () => this.examsOverlay.show());
-
-        // "MISTROVSTVÍ" uses the template Mastery button from scenes.json
-        const masteryBtn = this.sceneBuilder.get<Phaser.GameObjects.Container>('masteryButton');
-        if (masteryBtn) {
-            this.sceneBuilder.bindClick('masteryButton', () => this.masteryMapOverlay.show());
-        }
-    }
-
-    private createInfoButton(x: number, y: number, label: string, onClick: () => void): void {
-        const container = this.add.container(x, y).setDepth(50);
-
-        const bg = this.add.rectangle(0, 0, 95, 32, 0x3a3a5a)
-            .setStrokeStyle(1, 0x5a5a7a);
-        const text = this.add.text(0, 0, label, {
-            fontSize: '11px',
-            fontFamily: 'Arial, sans-serif',
-            color: '#aaaacc',
-            fontStyle: 'bold',
-        }).setOrigin(0.5);
-
-        container.add([bg, text]);
-
-        bg.setInteractive({ useHandCursor: true })
-            .on('pointerover', () => { bg.setFillStyle(0x4a4a6a); text.setColor('#ffffff'); })
-            .on('pointerout', () => { bg.setFillStyle(0x3a3a5a); text.setColor('#aaaacc'); })
-            .on('pointerdown', onClick);
     }
 
     private setupDebugger(): void {
-        this.debugger = new SceneDebugger(this, 'GuildScene');
-        // Register elements
+        new SceneDebugger(this, this.layoutSceneKey);
     }
 
     // ============ TRIAL MODE (4-phase system) ============
@@ -568,273 +246,238 @@ export class GuildScene extends Phaser.Scene {
         const isCoopReadOnly = CoopSessionManager.getInstance().isCoopActive();
         const availableExams = MasterySystem.getInstance().getAvailableExams();
 
-        const trialOverlayEl = this.sceneBuilder.get('trialOverlay') as Phaser.GameObjects.Container | undefined;
-        const overlayX = trialOverlayEl?.x ?? 640;
-        const overlayY = trialOverlayEl?.y ?? 360;
+        this.currentMasteryExamType = null;
+        this.currentMasteryExamTarget = null;
+        this.catacombExam = null;
 
-        // === Dynamic button stacking ===
-        const btnX = 200;
-        let nextY = 380;
-        const btnSpacing = 50;
-        const btnColor = 0x2a5a2a;
-        const btnHoverColor = 0x3a7a3a;
-        const btnStrokeColor = 0x4a8a4a;
-
-        if (isCoopReadOnly) {
-            this.trialStartButton = this.add.container(btnX, nextY).setVisible(false);
-
-            const note = this.add.text(btnX, nextY, [
-                'CO-OP REŽIM',
-                'Zkoušky a katakomby jsou zde jen pro přehled.',
-                'Postup do Plynulosti a Mistrovství se zapisuje automaticky po soubojích.',
-            ].join('\n'), {
-                fontSize: '15px',
-                fontFamily: 'Arial, sans-serif',
-                color: '#c8d6e5',
-                align: 'left',
-                lineSpacing: 5,
-                stroke: '#000000',
-                strokeThickness: 3,
-            }).setOrigin(0, 0);
-
-            nextY += note.height + 12;
-        } else {
-            // Exam button (sub_atom, band_gate, band_mastery)
+        if (!isCoopReadOnly) {
             const standardExam = availableExams.find(
-                e => e.type !== 'fluency_challenge' && e.type !== 'mastery_challenge'
+                exam => exam.type !== 'fluency_challenge' && exam.type !== 'mastery_challenge',
             );
             if (standardExam) {
                 this.currentMasteryExamType = standardExam.type;
-                this.currentMasteryExamTarget = standardExam.targetId as SubAtomId | BandId;
-
-                this.trialStartButton = this.createActionButton(
-                    btnX, nextY, 'ZAČÍT ZKOUŠKU', btnColor, btnHoverColor, btnStrokeColor,
-                    () => this.showTrialOverview()
-                );
-                nextY += btnSpacing;
-            } else {
-                this.trialStartButton = this.add.container(btnX, nextY).setVisible(false);
+                this.currentMasteryExamTarget = standardExam.targetId;
             }
 
-            // Catacomb button (fluency/mastery challenges)
-            const catacombExam = availableExams.find(
-                e => e.type === 'fluency_challenge' || e.type === 'mastery_challenge'
-            );
-            if (catacombExam) {
-                this.createActionButton(
-                    btnX, nextY, 'VSTUP DO KATAKOMB', btnColor, btnHoverColor, btnStrokeColor,
-                    () => {
-                        this.scene.start('CatacombTrialScene', {
-                            examType: catacombExam.type,
-                            subAtomId: catacombExam.targetId,
-                            returnScene: 'GuildScene',
-                        });
-                    }
-                );
-                nextY += btnSpacing;
-            }
+            this.catacombExam = availableExams.find(
+                exam => exam.type === 'fluency_challenge' || exam.type === 'mastery_challenge',
+            ) ?? null;
         }
 
-        this.actionButtonsBottomY = nextY;
-
+        const trialOverlayEl = this.sceneBuilder.get('trialOverlay') as Phaser.GameObjects.Container | undefined;
+        const overlayX = trialOverlayEl?.x ?? 640;
+        const overlayY = trialOverlayEl?.y ?? 360;
         this.createOverviewOverlay(overlayX, overlayY);
         this.createTrialOverlay(overlayX, overlayY);
         this.createFeedbackOverlay(overlayX, overlayY);
         this.createResultsOverlay(overlayX, overlayY);
     }
 
-    private createActionButton(
-        x: number, y: number, label: string,
-        color: number, hoverColor: number, strokeColor: number,
-        onClick: () => void
-    ): Phaser.GameObjects.Container {
-        const container = this.add.container(x, y).setDepth(50);
-
-        const bg = this.add.rectangle(0, 0, 200, 44, color)
-            .setStrokeStyle(2, strokeColor);
-        const text = this.add.text(0, 0, label, {
-            fontSize: '15px',
-            fontFamily: 'Arial, sans-serif',
-            color: '#ffffff',
-            fontStyle: 'bold',
-        }).setOrigin(0.5);
-
-        container.add([bg, text]);
-        container.setSize(200, 44);
-
-        bg.setInteractive({ useHandCursor: true })
-            .on('pointerover', () => bg.setFillStyle(hoverColor))
-            .on('pointerout', () => bg.setFillStyle(color))
-            .on('pointerdown', onClick);
-
-        return container;
+    private getLocalHost(
+        id: string,
+        rootX: number,
+        rootY: number,
+        fallback: GuildHostLayout,
+    ): GuildHostLayout {
+        const host = this.getHostLayout(id, fallback);
+        return { ...host, x: host.x - rootX, y: host.y - rootY };
     }
 
-    /** Unlocked once player has earned 10+ coins total (not current balance). */
-    private createManaCollectionButton(x: number, y: number, depth: number): void {
-        const coop = CoopSessionManager.getInstance();
-        const originalPlayer = coop.isCoopActive() ? coop.getActivePlayer() : 'A';
-        let canAfford: boolean;
+    private addExamBackdrop(container: Phaser.GameObjects.Container): void {
+        const dimmer = this.add.rectangle(0, 0, 1280, 720, 0x080b0d, 0.76)
+            .setInteractive();
+        const vignette = this.add.graphics();
+        vignette.fillStyle(0x000000, 0.28);
+        vignette.fillRect(-640, -360, 1280, 74);
+        vignette.fillRect(-640, 286, 1280, 74);
+        vignette.lineStyle(2, this.accentColor, 0.23);
+        vignette.lineBetween(-520, -308, 520, -308);
+        vignette.lineBetween(-520, 308, 520, 308);
+        container.add([dimmer, vignette]);
+    }
 
-        if (coop.isCoopActive()) {
-            coop.activatePlayerA();
-            const canAffordA = ProgressionSystem.getTotalCoinValue(this.gameState.getPlayer().coins) >= MANA_COLLECTION_PLAY_COST;
-            coop.activatePlayerB();
-            const canAffordB = ProgressionSystem.getTotalCoinValue(this.gameState.getPlayer().coins) >= MANA_COLLECTION_PLAY_COST;
-
-            if (originalPlayer === 'A') {
-                coop.activatePlayerA();
-            } else {
-                coop.activatePlayerB();
-            }
-
-            canAfford = canAffordA && canAffordB;
-        } else {
-            const player = this.gameState.getPlayer();
-            const totalCoins = ProgressionSystem.getTotalCoinValue(player.coins);
-
-            // Gate: not available until player has gathered 10 coins
-            if (totalCoins < 10) return;
-            canAfford = totalCoins >= MANA_COLLECTION_PLAY_COST;
-        }
-
-        const btn = this.add.container(x, y).setDepth(depth);
-        this.manaCollectionButton = btn;
-
-        // Medieval-styled button: dark parchment with golden border and ornamental text
-        const bg = this.add.rectangle(0, 0, 170, 52, 0x2a1f14)
-            .setStrokeStyle(2, 0x8b6914);
-
-        // Inner border for ornate double-frame effect
-        const innerBorder = this.add.rectangle(0, 0, 160, 42, 0x000000, 0)
-            .setStrokeStyle(1, 0x5a4a2a);
-
-        const label = this.add.text(0, -5, '⚡ Sbírání many', {
-            fontSize: '13px',
-            fontFamily: 'Arial, sans-serif',
-            color: canAfford ? '#d4aa44' : '#665533',
-            fontStyle: 'bold',
-        }).setOrigin(0.5);
-
-        const costLabel = this.add.text(0, 14, coop.isCoopActive() ? '— 3 mince za hráče —' : '— 3 mince —', {
-            fontSize: '10px',
-            fontFamily: 'Arial, sans-serif',
-            color: canAfford ? '#8b7840' : '#554422',
-        }).setOrigin(0.5);
-
-        btn.add([bg, innerBorder, label, costLabel]);
-
-        if (canAfford) {
-            bg.setInteractive({ useHandCursor: true })
-                .on('pointerover', () => {
-                    bg.setFillStyle(0x3d2e1c);
-                    bg.setStrokeStyle(2, 0xccaa44);
-                    label.setColor('#ffe066');
-                })
-                .on('pointerout', () => {
-                    bg.setFillStyle(0x2a1f14);
-                    bg.setStrokeStyle(2, 0x8b6914);
-                    label.setColor('#d4aa44');
-                })
-                .on('pointerdown', () => {
-                    this.scene.start('ManaCollectionScene', { returnScene: 'GuildScene' });
-                });
-
-            // Subtle golden glow pulse
-            this.tweens.add({
-                targets: label,
-                alpha: 0.7,
-                duration: 1200,
-                yoyo: true,
-                repeat: -1,
-                ease: 'Sine.easeInOut',
-            });
-        }
+    private accentHex(): string {
+        return `#${this.accentColor.toString(16).padStart(6, '0')}`;
     }
 
     // === Phase 1: Overview ===
 
     private createOverviewOverlay(x: number, y: number): void {
-        this.overviewOverlay = this.add.container(x, y);
-        this.overviewOverlay.setDepth(200);
-        this.overviewOverlay.setVisible(false);
+        const rootHost = this.getHostLayout('overviewOverlay', {
+            x, y, width: 1280, height: 720, depth: 200,
+        });
+        this.overviewOverlay = this.add.container(rootHost.x, rootHost.y)
+            .setDepth(rootHost.depth)
+            .setVisible(false);
+        this.addExamBackdrop(this.overviewOverlay);
 
-        const bg = this.add.rectangle(0, 0, 1280, 720, 0x000000, 0.92);
-        this.overviewOverlay.add(bg);
+        const boardHost = this.getLocalHost('trialBoardHost', rootHost.x, rootHost.y, {
+            x: 640, y: 360, width: 1080, height: 610, depth: 201,
+        });
+        const board = createGuildExamBoard(this, {
+            x: boardHost.x,
+            y: boardHost.y,
+            width: boardHost.width,
+            height: boardHost.height,
+            accent: this.accentColor,
+        }).setDepth(boardHost.depth);
+        this.overviewOverlay.add(board);
 
-        const title = this.add.text(0, -200, 'ZKOUŠKA HRDINY', {
-            fontSize: '36px',
-            fontFamily: 'Arial, sans-serif',
-            color: '#ffd700',
+        const headerHost = this.getLocalHost('trialHeaderHost', rootHost.x, rootHost.y, {
+            x: 640, y: 103, width: 760, height: 74, depth: 203,
+        });
+        const title = this.add.text(headerHost.x, headerHost.y - 7, 'CECHOVNÍ ZKOUŠKA', {
+            resolution: 2,
+            fontFamily: 'Palatino Linotype, Book Antiqua, Georgia, serif',
+            fontSize: '38px',
             fontStyle: 'bold',
-            stroke: '#000000',
-            strokeThickness: 4
-        }).setOrigin(0.5);
-        this.overviewOverlay.add(title);
+            color: '#3b210f',
+            stroke: '#f5d88b',
+            strokeThickness: 2,
+            align: 'center',
+        }).setOrigin(0.5).setDepth(headerHost.depth);
+        const subtitle = this.add.text(headerHost.x, headerHost.y + 30, 'MISTROVA SÍŇ • PROVĚŘENÍ DOVEDNOSTI', {
+            resolution: 2,
+            fontFamily: 'Georgia, serif',
+            fontSize: '14px',
+            fontStyle: 'bold',
+            color: '#6e4524',
+            letterSpacing: 1,
+        }).setOrigin(0.5).setDepth(headerHost.depth);
+        this.overviewOverlay.add([title, subtitle]);
 
-        // Zyx dialog placeholder
-        const dialog = this.add.text(0, -100, '', {
+        const rule = createGuildExamRule(
+            this,
+            headerHost.x,
+            headerHost.y + 54,
+            Math.min(720, headerHost.width),
+            this.accentColor,
+        );
+        this.overviewOverlay.add(rule);
+
+        const contentHost = this.getLocalHost('trialProblemHost', rootHost.x, rootHost.y, {
+            x: 640, y: 285, width: 820, height: 190, depth: 203,
+        });
+        const dialog = this.add.text(contentHost.x, contentHost.y - 45, '', {
+            resolution: 2,
+            fontFamily: 'Palatino Linotype, Book Antiqua, Georgia, serif',
+            fontSize: '24px',
+            fontStyle: 'bold',
+            color: '#3b210f',
+            align: 'center',
+            lineSpacing: 7,
+            wordWrap: { width: contentHost.width },
+        }).setOrigin(0.5).setDepth(contentHost.depth);
+        const desc = this.add.text(contentHost.x, contentHost.y + 37, '', {
+            resolution: 2,
+            fontFamily: 'Georgia, serif',
             fontSize: '18px',
-            fontFamily: 'Arial, sans-serif',
-            color: '#ffffff',
+            color: '#5f3a1c',
             align: 'center',
-            wordWrap: { width: 500 }
-        }).setOrigin(0.5);
-        this.overviewOverlay.add(dialog);
+            lineSpacing: 6,
+            wordWrap: { width: contentHost.width },
+        }).setOrigin(0.5).setDepth(contentHost.depth);
+        this.overviewOverlay.add([dialog, desc]);
         this.overviewOverlay.setData('dialog', dialog);
-
-        // Test description placeholder
-        const desc = this.add.text(0, 10, '', {
-            fontSize: '16px',
-            fontFamily: 'Arial, sans-serif',
-            color: '#aaaaaa',
-            align: 'center',
-            wordWrap: { width: 500 }
-        }).setOrigin(0.5);
-        this.overviewOverlay.add(desc);
         this.overviewOverlay.setData('desc', desc);
 
-        // Start button
-        const startBg = this.add.rectangle(0, 120, 220, 60, 0x228822)
-            .setStrokeStyle(3, 0x44aa44);
-        this.overviewOverlay.add(startBg);
-        this.overviewOverlay.setData('startBtnBg', startBg);
+        const medalsHost = this.getLocalHost('trialMedalsHost', rootHost.x, rootHost.y, {
+            x: 640, y: 452, width: 720, height: 82, depth: 204,
+        });
+        this.overviewMedalCards = [];
+        this.overviewMedalTexts = [];
+        const medalNames = ['BRONZ', 'STŘÍBRO', 'ZLATO'];
+        const medalColors = [0xb87333, 0xbfc7ce, 0xe0b33c];
+        for (let i = 0; i < 3; i++) {
+            const cardX = medalsHost.x + (i - 1) * (medalsHost.width / 3.15);
+            const card = this.add.container(cardX, medalsHost.y).setDepth(medalsHost.depth);
+            const plate = this.add.graphics();
+            plate.fillStyle(0x2a180e, 0.92);
+            plate.fillRoundedRect(-105, -34, 210, 68, 13);
+            plate.lineStyle(2, medalColors[i], 0.95);
+            plate.strokeRoundedRect(-105, -34, 210, 68, 13);
+            const medal = this.add.circle(-72, 0, 22, medalColors[i], 1)
+                .setStrokeStyle(3, 0x4b301a, 1);
+            const star = this.add.text(-72, 1, '★', {
+                resolution: 2,
+                fontFamily: 'Georgia, serif', fontSize: '22px', color: '#fff2be',
+            }).setOrigin(0.5);
+            const label = this.add.text(20, 0, medalNames[i], {
+                resolution: 2,
+                fontFamily: 'Georgia, serif',
+                fontSize: '15px',
+                fontStyle: 'bold',
+                color: '#f4ddb0',
+                align: 'center',
+            }).setOrigin(0.5);
+            card.add([plate, medal, star, label]);
+            this.overviewOverlay.add(card);
+            this.overviewMedalCards.push(card);
+            this.overviewMedalTexts.push(label);
+        }
 
-        const startText = this.add.text(0, 120, 'ZAČÍT ZKOUŠKU', {
-            fontSize: '22px',
-            fontFamily: 'Arial, sans-serif',
-            color: '#ffffff',
-            fontStyle: 'bold'
-        }).setOrigin(0.5);
-        this.overviewOverlay.add(startText);
-        this.overviewOverlay.setData('startBtnText', startText);
+        const actionHost = this.getLocalHost('trialOverviewActionHost', rootHost.x, rootHost.y, {
+            x: 640, y: 585, width: 340, height: 82, depth: 205,
+        });
+        this.overviewStartButton = new MedievalActionButton(this, {
+            x: actionHost.x,
+            y: actionHost.y,
+            depth: actionHost.depth,
+            width: actionHost.width,
+            height: actionHost.height,
+            label: 'VSTOUPIT DO ZKOUŠKY',
+            accent: this.accentColor,
+            layout: 'text',
+            labelFontSize: 21,
+            onClick: () => this.startTrial(),
+        });
+        this.overviewOverlay.add(this.overviewStartButton.root);
 
-        startBg.setInteractive({ useHandCursor: true })
-            .on('pointerover', () => startBg.setFillStyle(0x33aa33))
-            .on('pointerout', () => startBg.setFillStyle(0x228822))
-            .on('pointerdown', () => this.startTrial());
+        const cancelHost = this.getLocalHost('trialCancelHost', rootHost.x, rootHost.y, {
+            x: 1040, y: 105, width: 170, height: 54, depth: 205,
+        });
+        const cancelButton = new MedievalActionButton(this, {
+            x: cancelHost.x,
+            y: cancelHost.y,
+            depth: cancelHost.depth,
+            width: cancelHost.width,
+            height: cancelHost.height,
+            label: 'ZPĚT',
+            accent: this.accentColor,
+            layout: 'text',
+            labelFontSize: 17,
+            onClick: () => this.overviewOverlay.setVisible(false),
+        });
+        this.overviewOverlay.add(cancelButton.root);
     }
 
     private showTrialOverview(): void {
         const examType = this.currentMasteryExamType;
         const examTarget = this.currentMasteryExamTarget;
-
         const dialog = this.overviewOverlay.getData('dialog') as Phaser.GameObjects.Text;
-        dialog.setText('Ukaž mi, co už umíš!\nNeboj se, každou chybu si vysvětlíme.');
-
         const desc = this.overviewOverlay.getData('desc') as Phaser.GameObjects.Text;
+
+        dialog.setText('Předstup před cechovní radu.\nUkaž klidnou hlavu a přesné počítání.');
         if (examType && examTarget) {
             const config = EXAM_CONFIGS[examType];
             const examLabel = MasterySystem.getInstance().getAvailableExams()
                 .find(e => e.type === examType && e.targetId === examTarget)?.label || `Zkouška ${examTarget}`;
-            const thresholdText = config.passThreshold
-                ? `${config.passThreshold}+ správně = postup`
-                : `${config.bronzeThreshold}+ správně = postup`;
-            desc.setText(
-                `${examLabel}\n\n` +
-                `${config.itemCount} příkladů, ${config.timePerItem}s na každý\n` +
-                thresholdText
-            );
+            const rules = config.bronzeThreshold
+                ? `${config.itemCount} příkladů • medaile podle počtu správných odpovědí`
+                : `${config.itemCount} příkladů • ${config.passThreshold}+ správně pro postup`;
+            desc.setText(`${examLabel.toUpperCase()}\n${rules}`);
+
+            if (config.passThreshold) {
+                this.overviewMedalCards[0].setVisible(false);
+                this.overviewMedalCards[2].setVisible(false);
+                this.overviewMedalCards[1].setVisible(true);
+                this.overviewMedalTexts[1].setText(`POSTUP\n${config.passThreshold} / ${config.itemCount}`);
+            } else {
+                this.overviewMedalCards.forEach(card => card.setVisible(true));
+                this.overviewMedalTexts[0].setText(`BRONZ\n${config.bronzeThreshold}+ SPRÁVNĚ`);
+                this.overviewMedalTexts[1].setText(`STŘÍBRO\n${config.silverThreshold}+ SPRÁVNĚ`);
+                this.overviewMedalTexts[2].setText(`ZLATO\n${config.goldThreshold}+ SPRÁVNĚ`);
+            }
         }
 
         this.overviewOverlay.setVisible(true);
@@ -844,202 +487,223 @@ export class GuildScene extends Phaser.Scene {
     // === Phase 2: Problem display with per-problem timer ===
 
     private createTrialOverlay(x: number, y: number): void {
-        this.trialOverlay = this.add.container(x, y);
-        this.trialOverlay.setDepth(200);
-        this.trialOverlay.setVisible(false);
+        const rootHost = this.getHostLayout('trialOverlay', {
+            x, y, width: 1280, height: 720, depth: 200,
+        });
+        this.trialOverlay = this.add.container(rootHost.x, rootHost.y)
+            .setDepth(rootHost.depth)
+            .setVisible(false);
+        this.addExamBackdrop(this.trialOverlay);
 
-        const bg = this.add.rectangle(0, 0, 1280, 720, 0x000000, 0.9);
-        this.trialOverlay.add(bg);
+        const boardHost = this.getLocalHost('trialBoardHost', rootHost.x, rootHost.y, {
+            x: 640, y: 360, width: 1080, height: 610, depth: 201,
+        });
+        this.trialOverlay.add(createGuildExamBoard(this, {
+            x: boardHost.x,
+            y: boardHost.y,
+            width: boardHost.width,
+            height: boardHost.height,
+            accent: this.accentColor,
+        }).setDepth(boardHost.depth));
 
-        // Progress dots (dynamically sized at top)
+        const headerHost = this.getLocalHost('trialHeaderHost', rootHost.x, rootHost.y, {
+            x: 640, y: 101, width: 760, height: 66, depth: 203,
+        });
+        this.trialQuestionCounter = this.add.text(headerHost.x, headerHost.y, 'OTÁZKA 1 Z 8', {
+            resolution: 2,
+            fontFamily: 'Palatino Linotype, Book Antiqua, Georgia, serif',
+            fontSize: '28px',
+            fontStyle: 'bold',
+            color: '#3b210f',
+            stroke: '#f5d88b',
+            strokeThickness: 1,
+        }).setOrigin(0.5).setDepth(headerHost.depth);
+        this.trialOverlay.add(this.trialQuestionCounter);
+
+        const progressHost = this.getLocalHost('trialProgressHost', rootHost.x, rootHost.y, {
+            x: 640, y: 165, width: 760, height: 48, depth: 204,
+        });
         this.progressDots = [];
-        const maxDots = 20; // Maximum possible exam items
-        const dotsStartX = -((maxDots - 1) * 36) / 2;
+        this.progressFrames = [];
+        const maxDots = Math.max(...Object.values(EXAM_CONFIGS).map(config => config.itemCount));
+        const gap = Math.min(52, progressHost.width / Math.max(1, maxDots - 1));
+        const dotsStartX = progressHost.x - ((maxDots - 1) * gap) / 2;
+        this.trialOverlay.setData('progressHost', progressHost);
         for (let i = 0; i < maxDots; i++) {
-            const dot = this.add.text(dotsStartX + i * 36, -280, '○', {
-                fontSize: '24px',
-                fontFamily: 'Arial, sans-serif',
-                color: '#666666',
-            }).setOrigin(0.5);
-            this.trialOverlay.add(dot);
+            const nodeX = dotsStartX + i * gap;
+            const frame = this.add.circle(nodeX, progressHost.y, 17, 0x2b190e, 1)
+                .setStrokeStyle(2, 0x8b633a, 1)
+                .setDepth(progressHost.depth);
+            const dot = this.add.text(nodeX, progressHost.y + 1, `${i + 1}`, {
+                fontSize: '13px',
+                resolution: 2,
+                fontFamily: 'Georgia, serif',
+                fontStyle: 'bold',
+                color: '#dcc79f',
+            }).setOrigin(0.5).setDepth(progressHost.depth + 1);
+            this.trialOverlay.add([frame, dot]);
+            this.progressFrames.push(frame);
             this.progressDots.push(dot);
         }
 
-        // Timer bar area
-        const overlayX = 640;
-        const overlayY = 360;
-
-        const timerFrameLayout = this.sceneBuilder.getLayoutOverride('timerFrame');
-        const timerBarLayout = this.sceneBuilder.getLayoutOverride('timerBar');
-
-        const frameX = (timerFrameLayout?.x ?? 640) - overlayX;
-        const frameY = (timerFrameLayout?.y ?? 180) - overlayY;
-        const frameScaleX = timerFrameLayout?.scaleX ?? timerFrameLayout?.scale ?? 0.178;
-        const frameScaleY = timerFrameLayout?.scaleY ?? timerFrameLayout?.scale ?? 0.123;
-
-        const barX = (timerBarLayout?.x ?? 640) - overlayX;
-        const barY = (timerBarLayout?.y ?? 180) - overlayY;
-        const barWidth = timerBarLayout?.width ?? 200;
-        const barHeight = timerBarLayout?.height ?? 24;
-
-        this.timerBg = this.add.rectangle(barX, barY, barWidth, barHeight, 0x333333);
-        this.trialOverlay.add(this.timerBg);
-
-        const barLeft = barX - barWidth / 2;
-        const barTop = barY - barHeight / 2;
-        this.timerBar = this.add.graphics();
-        this.timerBar.setPosition(barLeft, barTop);
-        this.timerBar.fillStyle(0x44aa44, 1);
-        this.timerBar.fillRect(0, 0, barWidth, barHeight);
-        this.trialOverlay.add(this.timerBar);
-
-        this.timerBar.setData('barWidth', barWidth);
-        this.timerBar.setData('barHeight', barHeight);
-
-        this.timerFrame = this.add.image(frameX, frameY, 'ui-stone-bar-frame');
-        this.timerFrame.setScale(frameScaleX, frameScaleY);
-        this.trialOverlay.add(this.timerFrame);
-
-        this.timerText = this.add.text(frameX, frameY, '', {
-            fontSize: '24px',
-            fontFamily: 'Arial, sans-serif',
-            color: '#ffffff',
-            fontStyle: 'bold'
-        }).setOrigin(0.5);
-        this.trialOverlay.add(this.timerText);
-
-        // Problem text
-        this.problemText = this.add.text(0, 0, '', {
-            fontSize: '64px',
-            fontFamily: 'Arial, sans-serif',
-            color: '#ffffff',
-            fontStyle: 'bold'
-        }).setOrigin(0.5);
+        const problemHost = this.getLocalHost('trialProblemHost', rootHost.x, rootHost.y, {
+            x: 640, y: 305, width: 860, height: 150, depth: 204,
+        });
+        this.problemText = this.add.text(problemHost.x, problemHost.y, '', {
+            fontSize: '72px',
+            resolution: 2,
+            fontFamily: 'Palatino Linotype, Book Antiqua, Georgia, serif',
+            color: '#2f1a0d',
+            fontStyle: 'bold',
+            stroke: '#f9e6ad',
+            strokeThickness: 2,
+            align: 'center',
+        }).setOrigin(0.5).setDepth(problemHost.depth);
         this.trialOverlay.add(this.problemText);
 
-        // Answer buttons
-        const buttonY = 120;
-        const buttonSpacing = 150;
-        this.answerButtonBgs = [];
-        this.answerButtonTexts = [];
-
-        for (let i = 0; i < 3; i++) {
-            const btnX = (i - 1) * buttonSpacing;
-
-            const btnBg = this.add.rectangle(btnX, buttonY, 120, 80, 0x4466aa)
-                .setStrokeStyle(3, 0x6688cc);
-            this.trialOverlay.add(btnBg);
-            this.answerButtonBgs.push(btnBg);
-
-            const btnText = this.add.text(btnX, buttonY, '', {
-                fontSize: '32px',
-                fontFamily: 'Arial, sans-serif',
-                color: '#ffffff',
-                fontStyle: 'bold'
+        this.answerButtons = [];
+        ['answerButton1', 'answerButton2', 'answerButton3'].forEach((id, index) => {
+            const fallbackX = 320 + index * 320;
+            const host = this.getLocalHost(id, rootHost.x, rootHost.y, {
+                x: fallbackX, y: 475, width: 292, height: 88, depth: 205,
+            });
+            const button = new MedievalActionButton(this, {
+                x: host.x,
+                y: host.y,
+                depth: host.depth,
+                width: host.width,
+                height: host.height,
+                label: '',
+                accent: this.accentColor,
+                layout: 'text',
+                frameTexture: 'guild-nav-frame-v2',
+                labelOffsetX: host.width * 0.1,
+                labelFontSize: 34,
+                labelMaxWidth: host.width * 0.56,
+                onClick: () => this.checkTrialAnswer(index),
+            });
+            const badge = this.add.text(-host.width * 0.305, 1, ['I', 'II', 'III'][index], {
+                resolution: 2,
+                fontFamily: 'Georgia, serif',
+                fontSize: '20px',
+                fontStyle: 'bold',
+                color: this.accentHex(),
+                stroke: '#130c08',
+                strokeThickness: 3,
             }).setOrigin(0.5);
-            this.trialOverlay.add(btnText);
-            this.answerButtonTexts.push(btnText);
+            button.root.add(badge);
+            this.trialOverlay.add(button.root);
+            this.answerButtons.push(button);
+        });
 
-            const buttonIndex = i;
-            btnBg.setInteractive({ useHandCursor: true })
-                .on('pointerover', () => {
-                    if (this.trialState.phase === 'problem') btnBg.setFillStyle(0x5577bb);
-                })
-                .on('pointerout', () => {
-                    if (this.trialState.phase === 'problem') btnBg.setFillStyle(0x4466aa);
-                })
-                .on('pointerdown', () => this.checkTrialAnswer(buttonIndex));
-        }
+        const hintHost = this.getLocalHost('trialHintHost', rootHost.x, rootHost.y, {
+            x: 640, y: 575, width: 760, height: 42, depth: 204,
+        });
+        const hintRule = createGuildExamRule(this, hintHost.x, hintHost.y - 24, hintHost.width, this.accentColor);
+        const hint = this.add.text(hintHost.x, hintHost.y + 2, 'O MEDAILI ROZHODUJE POČET SPRÁVNÝCH ODPOVĚDÍ', {
+            resolution: 2,
+            fontFamily: 'Georgia, serif',
+            fontSize: '14px',
+            fontStyle: 'bold',
+            color: '#6b4425',
+            letterSpacing: 1,
+        }).setOrigin(0.5).setDepth(hintHost.depth);
+        this.trialOverlay.add([hintRule, hint]);
     }
 
     // === Phase 3: Feedback overlay ===
 
     private createFeedbackOverlay(x: number, y: number): void {
-        this.feedbackOverlay = this.add.container(x, y);
-        this.feedbackOverlay.setDepth(210);
-        this.feedbackOverlay.setVisible(false);
+        const rootHost = this.getHostLayout('feedbackOverlay', {
+            x, y, width: 1280, height: 720, depth: 210,
+        });
+        this.feedbackOverlay = this.add.container(rootHost.x, rootHost.y)
+            .setDepth(rootHost.depth)
+            .setVisible(false);
+        this.addExamBackdrop(this.feedbackOverlay);
 
-        const bg = this.add.rectangle(0, 0, 1280, 720, 0x000000, 0.85);
-        this.feedbackOverlay.add(bg);
+        const boardHost = this.getLocalHost('trialBoardHost', rootHost.x, rootHost.y, {
+            x: 640, y: 360, width: 1080, height: 610, depth: 211,
+        });
+        this.feedbackOverlay.add(createGuildExamBoard(this, {
+            x: boardHost.x,
+            y: boardHost.y,
+            width: boardHost.width,
+            height: boardHost.height,
+            accent: this.accentColor,
+        }).setDepth(boardHost.depth));
+
+        const headerHost = this.getLocalHost('trialFeedbackHeaderHost', rootHost.x, rootHost.y, {
+            x: 640, y: 120, width: 780, height: 90, depth: 213,
+        });
+        const heading = this.add.text(headerHost.x, headerHost.y - 20, 'MISTROVA RADA', {
+            resolution: 2,
+            fontFamily: 'Georgia, serif',
+            fontSize: '17px',
+            fontStyle: 'bold',
+            color: '#6b4425',
+            letterSpacing: 2,
+        }).setOrigin(0.5).setDepth(headerHost.depth);
+        const correctLabel = this.add.text(headerHost.x, headerHost.y + 25, '', {
+            fontSize: '40px',
+            resolution: 2,
+            fontFamily: 'Palatino Linotype, Book Antiqua, Georgia, serif',
+            color: '#276129',
+            fontStyle: 'bold',
+            stroke: '#e9cf83',
+            strokeThickness: 2,
+        }).setOrigin(0.5).setDepth(headerHost.depth);
+        this.feedbackOverlay.add([heading, correctLabel]);
+        this.feedbackOverlay.setData('correctLabel', correctLabel);
+
+        const visualHost = this.getLocalHost('trialFeedbackVisualHost', rootHost.x, rootHost.y, {
+            x: 640, y: 355, width: 820, height: 310, depth: 213,
+        });
+        const visualContainer = this.add.container(visualHost.x, visualHost.y).setDepth(visualHost.depth);
+        this.feedbackOverlay.add(visualContainer);
+        this.feedbackOverlay.setData('visualContainer', visualContainer);
+
+        const actionHost = this.getLocalHost('trialFeedbackActionHost', rootHost.x, rootHost.y, {
+            x: 640, y: 585, width: 310, height: 78, depth: 214,
+        });
+        this.feedbackActionButton = new MedievalActionButton(this, {
+            x: actionHost.x,
+            y: actionHost.y,
+            depth: actionHost.depth,
+            width: actionHost.width,
+            height: actionHost.height,
+            label: 'PŘESKOČIT',
+            accent: this.accentColor,
+            layout: 'text',
+            labelFontSize: 21,
+            onClick: () => this.closeFeedback(),
+        });
+        this.feedbackOverlay.add(this.feedbackActionButton.root);
     }
 
     private showFeedback(problem: MathProblem, _playerAnswer: number | null): void {
         this.trialState.phase = 'feedback';
-
-        // Pause per-problem timer
         if (this.trialTimer) this.trialTimer.paused = true;
-
-        // Clear previous feedback content (keep bg)
-        while (this.feedbackOverlay.length > 1) {
-            this.feedbackOverlay.removeAt(1, true);
-        }
-
-        // Destroy previous visualizer
         if (this.feedbackVisualizer) {
             this.feedbackVisualizer.destroy();
             this.feedbackVisualizer = null;
         }
 
+        const correctLabel = this.feedbackOverlay.getData('correctLabel') as Phaser.GameObjects.Text;
+        const visualContainer = this.feedbackOverlay.getData('visualContainer') as Phaser.GameObjects.Container;
+        visualContainer.removeAll(true);
+        correctLabel.setText(formatMathProblem(problem, 'answer'));
+        this.feedbackActionButton.setLabel('PŘESKOČIT');
         this.feedbackOverlay.setVisible(true);
 
-        // Only show the equation — no text explanation (first-graders can barely read)
-        const equationStr = formatMathProblem(problem, 'answer');
-
-        const correctLabel = this.add.text(0, -250, equationStr, {
-            fontSize: '36px',
-            fontFamily: 'Arial, sans-serif',
-            color: '#44ff44',
-            fontStyle: 'bold',
-            stroke: '#000000',
-            strokeThickness: 4,
-        }).setOrigin(0.5);
-        this.feedbackOverlay.add(correctLabel);
-
-        // Visual counting animation (centered, large area)
-        const visualContainer = this.add.container(0, 20);
-        this.feedbackOverlay.add(visualContainer);
-
-        // Show skip button immediately — changes to ROZUMÍM after animation
-        const btnBg = this.add.rectangle(0, 200, 200, 50, 0x4466aa)
-            .setStrokeStyle(2, 0x6688cc);
-        this.feedbackOverlay.add(btnBg);
-
-        const btnText = this.add.text(0, 200, 'PŘESKOČIT', {
-            fontSize: '22px',
-            fontFamily: 'Arial, sans-serif',
-            color: '#ffffff',
-            fontStyle: 'bold'
-        }).setOrigin(0.5);
-        this.feedbackOverlay.add(btnText);
-
-        btnBg.setAlpha(0);
-        btnText.setAlpha(0);
-        this.tweens.add({
-            targets: [btnBg, btnText],
-            alpha: 1,
-            duration: 300,
-            ease: 'Power2',
-        });
-
         let animationDone = false;
-
-        btnBg.setInteractive({ useHandCursor: true })
-            .on('pointerover', () => btnBg.setFillStyle(0x5577bb))
-            .on('pointerout', () => btnBg.setFillStyle(0x4466aa))
-            .on('pointerdown', () => {
-                animationDone = true;
-                this.closeFeedback();
-            });
-
-        // Create visualizer — button changes to ROZUMÍM after animation completes
         const showTime = Date.now();
         this.feedbackVisualizer = new TrialFeedbackVisualizer(this, visualContainer, () => {
             if (animationDone) return;
             animationDone = true;
-            const elapsed = Date.now() - showTime;
-            const remaining = Math.max(0, 3000 - elapsed);
+            const remaining = Math.max(0, 3000 - (Date.now() - showTime));
             this.time.delayedCall(remaining, () => {
-                if (btnText.active) btnText.setText('ROZUMÍM');
+                if (this.feedbackActionButton.root.active) this.feedbackActionButton.setLabel('ROZUMÍM');
             });
         });
         this.feedbackVisualizer.show(problem);
@@ -1060,154 +724,191 @@ export class GuildScene extends Phaser.Scene {
     // === Phase 4: Results overlay ===
 
     private createResultsOverlay(x: number, y: number): void {
-        this.resultsOverlay = this.add.container(x, y);
-        this.resultsOverlay.setDepth(200);
-        this.resultsOverlay.setVisible(false);
+        const rootHost = this.getHostLayout('resultsOverlay', {
+            x, y, width: 1280, height: 720, depth: 200,
+        });
+        this.resultsOverlay = this.add.container(rootHost.x, rootHost.y)
+            .setDepth(rootHost.depth)
+            .setVisible(false);
+        this.addExamBackdrop(this.resultsOverlay);
+
+        const boardHost = this.getLocalHost('trialBoardHost', rootHost.x, rootHost.y, {
+            x: 640, y: 360, width: 1080, height: 610, depth: 201,
+        });
+        this.resultsOverlay.add(createGuildExamBoard(this, {
+            x: boardHost.x,
+            y: boardHost.y,
+            width: boardHost.width,
+            height: boardHost.height,
+            accent: this.accentColor,
+        }).setDepth(boardHost.depth));
+
+        const headerHost = this.getLocalHost('trialResultsHeaderHost', rootHost.x, rootHost.y, {
+            x: 640, y: 115, width: 800, height: 110, depth: 203,
+        });
+        this.resultsTitleText = this.add.text(headerHost.x, headerHost.y - 22, '', {
+            resolution: 2,
+            fontFamily: 'Palatino Linotype, Book Antiqua, Georgia, serif',
+            fontSize: '32px',
+            fontStyle: 'bold',
+            color: '#3b210f',
+            align: 'center',
+        }).setOrigin(0.5).setDepth(headerHost.depth);
+        this.resultsMedalText = this.add.text(headerHost.x, headerHost.y + 25, '', {
+            resolution: 2,
+            fontFamily: 'Georgia, serif',
+            fontSize: '30px',
+            color: '#d19a26',
+            stroke: '#5c3718',
+            strokeThickness: 2,
+        }).setOrigin(0.5).setDepth(headerHost.depth);
+        this.resultsOverlay.add([this.resultsTitleText, this.resultsMedalText]);
+
+        const scoreHost = this.getLocalHost('trialResultsScoreHost', rootHost.x, rootHost.y, {
+            x: 640, y: 205, width: 720, height: 48, depth: 203,
+        });
+        this.resultsScoreText = this.add.text(scoreHost.x, scoreHost.y, '', {
+            resolution: 2,
+            fontFamily: 'Georgia, serif',
+            fontSize: '18px',
+            fontStyle: 'bold',
+            color: '#68411f',
+            align: 'center',
+        }).setOrigin(0.5).setDepth(scoreHost.depth);
+        this.resultsOverlay.add(this.resultsScoreText);
+        this.resultsOverlay.add(createGuildExamRule(this, scoreHost.x, scoreHost.y + 29, scoreHost.width, this.accentColor));
+
+        const gridHost = this.getLocalHost('trialResultsGridHost', rootHost.x, rootHost.y, {
+            x: 640, y: 355, width: 790, height: 220, depth: 203,
+        });
+        this.resultEntryTexts = [];
+        const maxResults = Math.max(...Object.values(EXAM_CONFIGS).map(config => config.itemCount));
+        const maxRows = Math.ceil(maxResults / 2);
+        const rowHeight = gridHost.height / maxRows;
+        const columnWidth = gridHost.width / 2;
+        for (let i = 0; i < maxResults; i++) {
+            const col = i < maxRows ? 0 : 1;
+            const row = i < maxRows ? i : i - maxRows;
+            const entry = this.add.text(
+                gridHost.x - gridHost.width / 2 + col * columnWidth + 26,
+                gridHost.y - gridHost.height / 2 + row * rowHeight + rowHeight / 2,
+                '',
+                {
+                    resolution: 2,
+                    fontFamily: 'Georgia, serif',
+                    fontSize: '16px',
+                    fontStyle: 'bold',
+                    color: '#3f2a19',
+                },
+            ).setOrigin(0, 0.5).setDepth(gridHost.depth).setVisible(false);
+            this.resultsOverlay.add(entry);
+            this.resultEntryTexts.push(entry);
+        }
+
+        const rewardHost = this.getLocalHost('trialRewardHost', rootHost.x, rootHost.y, {
+            x: 640, y: 500, width: 820, height: 54, depth: 204,
+        });
+        this.resultsRewardText = this.add.text(rewardHost.x, rewardHost.y, '', {
+            resolution: 2,
+            fontFamily: 'Georgia, serif',
+            fontSize: '18px',
+            fontStyle: 'bold',
+            color: '#5f3a1b',
+            align: 'center',
+            wordWrap: { width: rewardHost.width },
+        }).setOrigin(0.5).setDepth(rewardHost.depth);
+        this.resultsOverlay.add(this.resultsRewardText);
+
+        const messageHost = this.getLocalHost('trialResultMessageHost', rootHost.x, rootHost.y, {
+            x: 640, y: 545, width: 760, height: 42, depth: 204,
+        });
+        this.resultsZyxText = this.add.text(messageHost.x, messageHost.y, '', {
+            resolution: 2,
+            fontFamily: 'Georgia, serif',
+            fontSize: '15px',
+            fontStyle: 'italic',
+            color: '#35637a',
+            align: 'center',
+            wordWrap: { width: messageHost.width },
+        }).setOrigin(0.5).setDepth(messageHost.depth);
+        this.resultsOverlay.add(this.resultsZyxText);
+
+        const actionHost = this.getLocalHost('trialResultsActionHost', rootHost.x, rootHost.y, {
+            x: 640, y: 607, width: 310, height: 76, depth: 205,
+        });
+        this.resultsContinueButton = new MedievalActionButton(this, {
+            x: actionHost.x,
+            y: actionHost.y,
+            depth: actionHost.depth,
+            width: actionHost.width,
+            height: actionHost.height,
+            label: 'ZPĚT DO CECHU',
+            accent: this.accentColor,
+            layout: 'text',
+            labelFontSize: 20,
+            onClick: () => {
+                this.resultsOverlay.setVisible(false);
+                this.scene.restart();
+            },
+        });
+        this.resultsOverlay.add(this.resultsContinueButton.root);
     }
 
     private showResults(): void {
-        // Clear previous results content
-        this.resultsOverlay.removeAll(true);
         this.resultsOverlay.setVisible(true);
         this.trialState.phase = 'results';
-
-        const bg = this.add.rectangle(0, 0, 1280, 720, 0x000000, 0.92);
-        this.resultsOverlay.add(bg);
-
         const tier = this.trialState.tier;
-        const correctCount = this.trialState.correctCount;
-
-        // Tier display
         const tierConfig = this.getTierDisplay(tier);
-        const title = this.add.text(0, -280, tierConfig.title, {
-            fontSize: '36px',
-            fontFamily: 'Arial, sans-serif',
-            color: tierConfig.color,
-            fontStyle: 'bold',
-            stroke: '#000000',
-            strokeThickness: 4,
-        }).setOrigin(0.5);
-        this.resultsOverlay.add(title);
+        this.resultsTitleText.setText(tierConfig.title).setColor(tierConfig.color);
+        this.resultsMedalText.setText(tierConfig.stars);
+        this.resultsScoreText.setText(
+            `${this.trialState.correctCount} Z ${this.trialState.totalProblems} SPRÁVNĚ`,
+        );
 
-        // Stars
-        const stars = this.add.text(0, -230, tierConfig.stars, {
-            fontSize: '36px',
-            fontFamily: 'Arial, sans-serif',
-            color: '#ffd700',
-        }).setOrigin(0.5);
-        this.resultsOverlay.add(stars);
-
-        // Score summary
-        const score = this.add.text(0, -190, `${correctCount} / ${this.trialState.totalProblems} správně`, {
-            fontSize: '20px',
-            fontFamily: 'Arial, sans-serif',
-            color: '#cccccc',
-        }).setOrigin(0.5);
-        this.resultsOverlay.add(score);
-
-        // Problem review list (compact, 2 balanced columns)
-        const results = this.trialState.results;
-        const colWidth = 240;
-        const rowH = 26;
-        const startY = -140;
-        const half = Math.ceil(results.length / 2);
-
-        for (let i = 0; i < results.length; i++) {
-            const r = results[i];
-            const col = i < half ? -1 : 1;
-            const row = i < half ? i : i - half;
-            const px = col * (colWidth / 2);
-            const py = startY + row * rowH;
-
-            const icon = r.wasCorrect ? '✓' : '✗';
-            const iconColor = r.wasCorrect ? '#44ff44' : '#ff4444';
-            const pStr = formatMathProblem(r.problem, 'answer');
-
-            const entry = this.add.text(px, py, `${icon} ${pStr}`, {
-                fontSize: '16px',
-                fontFamily: 'Arial, sans-serif',
-                color: iconColor,
-            }).setOrigin(0.5);
-            this.resultsOverlay.add(entry);
+        this.resultEntryTexts.forEach(entry => entry.setVisible(false));
+        const half = Math.ceil(this.trialState.results.length / 2);
+        for (let i = 0; i < this.trialState.results.length; i++) {
+            const result = this.trialState.results[i];
+            const targetIndex = i < half ? i : 7 + (i - half);
+            const entry = this.resultEntryTexts[targetIndex];
+            if (!entry) continue;
+            entry
+                .setText(`${result.wasCorrect ? '✓' : '✕'}   ${formatMathProblem(result.problem, 'answer')}`)
+                .setColor(result.wasCorrect ? '#28622b' : '#8b2f26')
+                .setVisible(true);
         }
 
-        // Position bottom elements below the problem list
-        const listBottom = startY + half * rowH;
-
-        // Show stat gains from mastery exam (already applied by applyMasteryExamResult)
         const player = this.gameState.getPlayer();
-        this.gameState.save();
+        this.saveState();
         this.registry.set('playerLevel', player.level);
-
         const gains = this.masteryExamStatGains;
-        const hasGains = gains.hpGain > 0 || gains.attackGain > 0 || gains.manaGain > 0 || (gains.shardGain ?? 0) > 0 || (gains.coinGain ?? 0) > 0;
+        const hasGains = gains.hpGain > 0 || gains.attackGain > 0 || gains.manaGain > 0
+            || (gains.shardGain ?? 0) > 0 || (gains.coinGain ?? 0) > 0;
 
         let rewardText: string;
         if (tier !== 'none' && hasGains) {
-            const parts: string[] = [`ÚROVEŇ: ${player.level}`];
-            if (gains.hpGain > 0) parts.push(`HP: +${gains.hpGain}`);
-            if (gains.attackGain > 0) parts.push(`ÚTOK: +${gains.attackGain}`);
-            if (gains.manaGain > 0) parts.push(`MANA: +${gains.manaGain}`);
-            if ((gains.shardGain ?? 0) > 0) parts.push(`KRYSTAL: +${gains.shardGain}`);
-            if ((gains.coinGain ?? 0) > 0) parts.push(`MINCE: +${gains.coinGain}`);
-            rewardText = parts.join('   ');
+            const parts: string[] = [`ÚROVEŇ ${player.level}`];
+            if (gains.hpGain > 0) parts.push(`HP +${gains.hpGain}`);
+            if (gains.attackGain > 0) parts.push(`ÚTOK +${gains.attackGain}`);
+            if (gains.manaGain > 0) parts.push(`MANA +${gains.manaGain}`);
+            if ((gains.shardGain ?? 0) > 0) parts.push(`KRYSTAL +${gains.shardGain}`);
+            if ((gains.coinGain ?? 0) > 0) parts.push(`MINCE +${gains.coinGain}`);
+            rewardText = `ODMĚNA  •  ${parts.join('  •  ')}`;
         } else if (tier !== 'none') {
-            rewardText = `ÚROVEŇ: ${player.level}   POSTUP!`;
+            rewardText = `ODMĚNA  •  ÚROVEŇ ${player.level}  •  POSTUP POTVRZEN`;
         } else {
-            rewardText = 'Musíš to zkusit znovu — nedáš se!';
+            rewardText = 'CECH DOPORUČUJE DALŠÍ TRÉNINK. NOVÝ POKUS JE PŘIPRAVEN.';
         }
-
-        const rewardColor = tier !== 'none' ? '#ffd700' : '#aaaaaa';
-        const rewards = this.add.text(0, listBottom + 20, rewardText, {
-            fontSize: '18px',
-            fontFamily: 'Arial, sans-serif',
-            color: rewardColor,
-            fontStyle: 'bold',
-            align: 'center',
-            wordWrap: { width: 500 },
-        }).setOrigin(0.5);
-        this.resultsOverlay.add(rewards);
-
-        // Zyx encouragement
-        const zyxMsg = this.getZyxMessage(tier);
-        const zyxText = this.add.text(0, listBottom + 70, zyxMsg, {
-            fontSize: '16px',
-            fontFamily: 'Arial, sans-serif',
-            color: '#88ccff',
-            align: 'center',
-            wordWrap: { width: 500 },
-        }).setOrigin(0.5);
-        this.resultsOverlay.add(zyxText);
-
-
-        // Continue button
-        const closeBg = this.add.rectangle(0, listBottom + 150, 220, 50, 0x444444)
-            .setStrokeStyle(2, 0x666666);
-        this.resultsOverlay.add(closeBg);
-
-        const closeText = this.add.text(0, listBottom + 150, 'POKRAČOVAT', {
-            fontSize: '22px',
-            fontFamily: 'Arial, sans-serif',
-            color: '#ffffff',
-            fontStyle: 'bold'
-        }).setOrigin(0.5);
-        this.resultsOverlay.add(closeText);
-
-        closeBg.setInteractive({ useHandCursor: true })
-            .on('pointerover', () => closeBg.setFillStyle(0x555555))
-            .on('pointerout', () => closeBg.setFillStyle(0x444444))
-            .on('pointerdown', () => {
-                this.resultsOverlay.setVisible(false);
-                this.scene.restart();
-            });
+        this.resultsRewardText.setText(rewardText);
+        this.resultsZyxText.setText(this.getZyxMessage(tier));
     }
 
     private getTierDisplay(tier: TrialTier): { title: string; stars: string; color: string } {
         switch (tier) {
-            case 'gold':   return { title: 'ZLATÁ ZKOUŠKA!', stars: '★ ★ ★', color: '#ffd700' };
-            case 'silver': return { title: 'STŘÍBRNÁ ZKOUŠKA!', stars: '★ ★ ☆', color: '#c0c0c0' };
-            case 'bronze': return { title: 'BRONZOVÁ ZKOUŠKA!', stars: '★ ☆ ☆', color: '#cd7f32' };
-            default:       return { title: 'ZKOUŠKA NEÚSPĚŠNÁ', stars: '☆ ☆ ☆', color: '#ff4444' };
+            case 'gold':   return { title: 'ZLATÁ ZKOUŠKA!', stars: '★ ★ ★', color: '#8a5d08' };
+            case 'silver': return { title: 'STŘÍBRNÁ ZKOUŠKA!', stars: '★ ★ ☆', color: '#56616a' };
+            case 'bronze': return { title: 'BRONZOVÁ ZKOUŠKA!', stars: '★ ☆ ☆', color: '#874918' };
+            default:       return { title: 'ZKOUŠKA NEÚSPĚŠNÁ', stars: '☆ ☆ ☆', color: '#8b2f26' };
         }
     }
 
@@ -1293,20 +994,27 @@ export class GuildScene extends Phaser.Scene {
             phase: 'problem',
         };
 
-        // Reset progress dots (show only the right number)
+        // Reset and center the numbered progress seals for this exam length.
+        const progressHost = this.trialOverlay.getData('progressHost') as GuildHostLayout;
+        const progressGap = Math.min(52, progressHost.width / Math.max(1, totalProblems - 1));
+        const progressStartX = progressHost.x - ((totalProblems - 1) * progressGap) / 2;
         for (let i = 0; i < this.progressDots.length; i++) {
             if (i < totalProblems) {
-                this.progressDots[i].setText('○');
-                this.progressDots[i].setColor('#666666');
-                this.progressDots[i].setVisible(true);
+                const x = progressStartX + i * progressGap;
+                this.progressDots[i]
+                    .setText(`${i + 1}`)
+                    .setColor('#dcc79f')
+                    .setPosition(x, progressHost.y + 1)
+                    .setVisible(true);
+                this.progressFrames[i]
+                    .setPosition(x, progressHost.y)
+                    .setFillStyle(0x2b190e, 1)
+                    .setStrokeStyle(2, 0x8b633a, 1)
+                    .setVisible(true);
             } else {
                 this.progressDots[i].setVisible(false);
+                this.progressFrames[i].setVisible(false);
             }
-        }
-        // Re-center visible dots
-        const dotsStartX = -((totalProblems - 1) * 36) / 2;
-        for (let i = 0; i < totalProblems && i < this.progressDots.length; i++) {
-            this.progressDots[i].setX(dotsStartX + i * 36);
         }
 
         this.trialOverlay.setVisible(true);
@@ -1333,11 +1041,10 @@ export class GuildScene extends Phaser.Scene {
         this.trialState.phase = 'problem';
         this.problemStartTime = Date.now();
 
-        this.problemText.setText(formatMathProblem(this.currentTrialProblem, 'question'));
-
-        // Hide timer — no visible countdown (time is tracked internally for tier only)
-        this.timerBar.setVisible(false);
-        this.timerText.setVisible(false);
+        this.trialQuestionCounter.setText(`OTÁZKA ${idx + 1} Z ${this.trialState.totalProblems}`);
+        this.problemText
+            .setText(formatMathProblem(this.currentTrialProblem, 'question'))
+            .setColor('#2f1a0d');
 
         // Update choices — display symbols for comparison types
         const answers = this.currentTrialProblem.choices;
@@ -1345,16 +1052,18 @@ export class GuildScene extends Phaser.Scene {
         const comparisonSymbols = ['<', '=', '>'];
         for (let i = 0; i < 3; i++) {
             const displayText = isComparison ? comparisonSymbols[answers[i]] : answers[i].toString();
-            this.answerButtonTexts[i].setText(displayText);
+            this.answerButtons[i]
+                .setLabel(displayText, isComparison ? 38 : 34)
+                .setEnabled(true);
+            this.answerButtons[i].label.setColor('#3c210f');
             this.answerButtonValues[i] = answers[i];
-            this.answerButtonBgs[i].setFillStyle(0x4466aa);
         }
 
-        // Highlight current progress dot
-        this.progressDots[idx].setText('●');
-        this.progressDots[idx].setColor('#ffffff');
-
-        this.updateTimerUI();
+        // Highlight the active seal without changing its geometry.
+        this.progressDots[idx].setColor('#fff4ca');
+        this.progressFrames[idx]
+            .setFillStyle(this.accentColor, 1)
+            .setStrokeStyle(3, 0xeafaff, 0.9);
     }
 
     private onProblemTick(): void {
@@ -1362,24 +1071,10 @@ export class GuildScene extends Phaser.Scene {
         if (this.trialState.phase !== 'problem') return;
     }
 
-    private updateTimerUI(): void {
-        const remaining = this.trialState.timeRemainingForProblem;
-        this.timerText.setText(remaining.toString());
-
-        const progress = remaining / this.trialState.timePerProblem;
-        const fullBarWidth = this.timerBar.getData('barWidth') as number || 320;
-        const barHeight = this.timerBar.getData('barHeight') as number || 55;
-        const currentBarWidth = fullBarWidth * progress;
-        const color = remaining <= 5 ? 0xff4444 : (remaining <= 10 ? 0xffaa44 : 0x44aa44);
-
-        this.timerBar.clear();
-        this.timerBar.fillStyle(color, 1);
-        this.timerBar.fillRect(0, 0, currentBarWidth, barHeight);
-    }
-
     private checkTrialAnswer(index: number): void {
         if (this.trialState.phase !== 'problem' || !this.currentTrialProblem) return;
 
+        this.answerButtons.forEach(button => button.setEnabled(false));
         const value = this.answerButtonValues[index];
         this.recordTrialAnswer(value);
     }
@@ -1410,18 +1105,24 @@ export class GuildScene extends Phaser.Scene {
         if (isCorrect) {
             this.trialState.correctCount++;
             this.progressDots[idx].setText('✓');
-            this.progressDots[idx].setColor('#44ff44');
+            this.progressDots[idx].setColor('#efffdc');
+            this.progressFrames[idx]
+                .setFillStyle(0x2f7333, 1)
+                .setStrokeStyle(3, 0xbbe59f, 1);
 
-            // Green flash on correct
-            this.problemText.setColor('#44ff44');
+            // A short ink-color acknowledgement keeps the parchment stable.
+            this.problemText.setColor('#2f7333');
             this.time.delayedCall(400, () => {
-                this.problemText.setColor('#ffffff');
+                this.problemText.setColor('#2f1a0d');
                 this.advanceToNextProblem();
             });
         } else {
             this.trialState.wrongCount++;
-            this.progressDots[idx].setText('✗');
-            this.progressDots[idx].setColor('#ff4444');
+            this.progressDots[idx].setText('✕');
+            this.progressDots[idx].setColor('#ffe3d8');
+            this.progressFrames[idx]
+                .setFillStyle(0x8d332a, 1)
+                .setStrokeStyle(3, 0xf0a28d, 1);
 
             // Show feedback for wrong answer
             this.cameras.main.shake(200, 0.01);
@@ -1490,31 +1191,18 @@ export class GuildScene extends Phaser.Scene {
         }
     }
 
-    /** Compute exam tier: bronze uses all correct, silver/gold require fast answers (≤15s) */
-    private computeExamTier(correctCount: number, fastCorrectCount: number, config: ExamConfig): TrialTier {
-        if (config.goldThreshold && fastCorrectCount >= config.goldThreshold) return 'gold';
-        if (config.silverThreshold && fastCorrectCount >= config.silverThreshold) return 'silver';
-        if (config.bronzeThreshold && correctCount >= config.bronzeThreshold) return 'bronze';
-        return 'none';
-    }
-
     /** Apply the result of a mastery exam to the mastery system */
     private applyMasteryExamResult(): void {
         const masterySystem = MasterySystem.getInstance();
         const target = this.currentMasteryExamTarget!;
         const correct = this.trialState.correctCount;
 
-        // Count fast correct answers (within 15s) for silver/gold tier
-        const fastCorrect = this.trialState.results
-            .filter(r => r.wasCorrect && r.timeSpent <= 15)
-            .length;
-
         // Reset stat gains
         this.masteryExamStatGains = { hpGain: 0, attackGain: 0, manaGain: 0 };
 
         switch (this.currentMasteryExamType) {
             case 'sub_atom': {
-                const tier = this.computeExamTier(correct, fastCorrect, EXAM_CONFIGS.sub_atom);
+                const tier = masterySystem.computeExamTier(correct, 'sub_atom');
                 const result = masterySystem.applyExamResult(target as SubAtomId, correct, tier);
                 this.trialState.tier = result.tier;
                 this.masteryExamStatGains = { hpGain: result.hpGain, attackGain: result.attackGain, manaGain: result.manaGain };
@@ -1533,7 +1221,7 @@ export class GuildScene extends Phaser.Scene {
                 break;
             }
             case 'band_gate': {
-                const tier = this.computeExamTier(correct, fastCorrect, EXAM_CONFIGS.band_gate);
+                const tier = masterySystem.computeExamTier(correct, 'band_gate');
                 const result = masterySystem.applyBandGateResult(target as BandId, correct, tier);
                 this.trialState.tier = result.tier;
                 this.masteryExamStatGains = { hpGain: result.hpGain, attackGain: result.attackGain, manaGain: result.manaGain };
@@ -1548,7 +1236,7 @@ export class GuildScene extends Phaser.Scene {
         }
 
         // Save state
-        this.gameState.save();
+        this.saveState();
     }
 
 }

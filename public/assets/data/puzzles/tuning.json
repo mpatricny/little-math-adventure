@@ -1,0 +1,13 @@
+{
+  "minimumPoolSize": 20,
+  "adaptation": {
+    "window": 6,
+    "promoteSuccesses": 5,
+    "demoteErrors": 3
+  },
+  "deltaByTier": [
+    2,
+    3,
+    5
+  ]
+}

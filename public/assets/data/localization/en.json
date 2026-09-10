@@ -37,7 +37,7 @@
             "TTL_004": "HEALING",
             "TTL_005": "PETS",
             "TTL_006": "YOUR DIAMONDS",
-            "TTL_GAME_TITLE": "LITTLE MATH ADVENTURE",
+            "TTL_GAME_TITLE": "LITTLE MATH\nADVENTURE",
             "TTL_GAME_SUBTITLE": "MATH ADVENTURE"
         },
         "messages": {
@@ -88,10 +88,16 @@
     },
     "characters": {
         "enemies": {
-            "ENM_001": "Slime",
-            "ENM_002": "Pinky",
-            "ENM_003": "Purple",
-            "ENM_004": "Leafy"
+          "ENM_001": "Slime",
+          "ENM_002": "Pinky",
+          "ENM_003": "Purple",
+          "ENM_004": "Leafy",
+          "ENM_005": "Bubble Crab",
+          "ENM_006": "Silverfin Scalefish",
+          "ENM_007": "Mill Turtle",
+          "ENM_008": "Ruin Axolotl",
+          "ENM_009": "Pearl Jellyfish",
+          "ENM_010": "Guardian of the Depths"
         },
         "npcs": {
             "NPC_001": "Blacksmith",

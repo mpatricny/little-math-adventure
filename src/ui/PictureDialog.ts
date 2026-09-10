@@ -1,3 +1,4 @@
+import { voice, gameAudio } from '../audio/AudioDirector';
 import Phaser from 'phaser';
 
 /**
@@ -17,6 +18,7 @@ export interface DialogContentItem {
  * Configuration for PictureDialog
  */
 export interface PictureDialogConfig {
+    voiceId?: string;
     x?: number;             // Center X position (default: screen center)
     y?: number;             // Center Y position (default: screen center)
     width?: number;         // Dialog width (default: auto based on content)
@@ -141,6 +143,7 @@ export class PictureDialog {
 
         // Entrance animation
         this.playEntranceAnimation();
+        if (config.voiceId) voice(scene, config.voiceId);
     }
 
     /**
@@ -376,6 +379,7 @@ export class PictureDialog {
      * Dismiss the dialog with animation
      */
     dismiss(): void {
+        gameAudio().cancel(this.scene);
         if (this.isDestroyed) return;
         this.isDestroyed = true;
 

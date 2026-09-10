@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { EnemyDefinition, PetDefinition } from '../types';
+import { EnemyDefinition, PetDefinition, PlayerState } from '../types';
 import { GameStateManager } from '../systems/GameStateManager';
 import { ProgressionSystem } from '../systems/ProgressionSystem';
 import { SceneDebugger } from '../systems/SceneDebugger';
@@ -7,14 +7,49 @@ import { SceneBuilder } from '../systems/SceneBuilder';
 import { getPlayerSpriteConfig } from '../utils/characterUtils';
 import { PauseMenu } from '../ui/PauseMenu';
 import { CoopSessionManager } from '../systems/CoopSessionManager';
+import { createEncounterCatalog, EncounterCatalog } from '../systems/EncounterCatalog';
+import type { ArenaEncounter, ResolvedArenaWave } from '../types/encounters';
+import {
+    getArenaResultsForEncounters,
+    selectArenaEncounterProgress,
+} from '../systems/ArenaProgressSystem';
+import {
+    getArenaChoiceOptions,
+    type ArenaChoiceKind,
+    type ArenaChoiceOption,
+} from '../systems/ArenaChoiceSystem';
+import { ManaSystem } from '../systems/ManaSystem';
+import { PreparationSystem } from '../systems/PreparationSystem';
+import { resolveEnemyBattlePresentation } from '../systems/EnemyPresentationSystem';
+import { ArenaPlayerStatusPod } from '../ui/ArenaPlayerStatusPod';
+import { TownResourceHud } from '../ui/TownResourceHud';
+import { MedievalActionButton } from '../ui/MedievalActionButton';
 
-// Arena enemy configurations per arena level
-// Level 1: 5 waves progressing in difficulty
-const ARENA_WAVES: Record<number, string[][]> = {
-    1: [['slime_green'], ['purple_demon'], ['slime_green', 'slime_green'], ['purple_demon', 'slime_green'], ['purple_demon', 'purple_demon']],
-    2: [['pink_beast'], ['pink_beast', 'slime_green'], ['pink_beast', 'pink_beast'], ['leafy'], ['leafy', 'slime_green']],
-    3: [['leafy'], ['leafy', 'pink_beast'], ['leafy', 'leafy'], ['purple_demon', 'leafy'], ['purple_demon', 'purple_demon', 'slime_green']],
+type ArenaHudHost = {
+    x: number;
+    y: number;
+    depth: number;
+    width?: number;
+    height?: number;
 };
+
+export interface ArenaSceneOptions {
+    key?: string;
+    backSceneKey?: string;
+    layoutSceneKey?: string;
+    backgroundTexture?: string;
+    battleBackgroundTexture?: string;
+    battleBackgroundTextures?: Readonly<Partial<Record<number, string>>>;
+    previewArenaLevels?: readonly number[];
+    /** One-based wave number selected when entering each configured preview arena. */
+    previewArenaWaves?: Readonly<Partial<Record<number, number>>>;
+    titleText?: string;
+    showArenaLevelInTitle?: boolean;
+    persistChanges?: boolean;
+    /** Restricts progression and practice choices to this city's three arenas. */
+    cityId?: string;
+    arenaStory?: 'silverpond-lake-fairy';
+}
 
 /**
  * ArenaScene - Wave Preview / Interlude Screen
@@ -27,18 +62,38 @@ const ARENA_WAVES: Record<number, string[][]> = {
  * - Player can leave at any time between waves
  */
 export class ArenaScene extends Phaser.Scene {
+    private static readonly ARENA_FRAME_ID = 'ARENA WITH TITLE';
+    private static readonly ARENA_TITLE_TEXT_AREA_ID = '1769790265029-1mry456tk';
+    private readonly sceneKey: string;
+    private readonly backSceneKey: string;
+    private readonly layoutSceneKey: string;
+    private readonly backgroundTexture?: string;
+    private readonly battleBackgroundTexture?: string;
+    private readonly battleBackgroundTextures?: Readonly<Partial<Record<number, string>>>;
+    private readonly previewArenaLevels?: readonly number[];
+    private readonly previewArenaWaves?: Readonly<Partial<Record<number, number>>>;
+    private readonly titleText?: string;
+    private readonly showArenaLevelInTitle: boolean;
+    private readonly persistChanges: boolean;
+    private readonly cityId: string;
+    private readonly arenaStory?: 'silverpond-lake-fairy';
+
     // Sprites
     private hero!: Phaser.GameObjects.Sprite;
     private petSprite: Phaser.GameObjects.Sprite | null = null;
     private enemies: Phaser.GameObjects.Container[] = [];  // Containers with sprite + label
 
     // UI Components
-    private hpBar!: { bg: Phaser.GameObjects.Rectangle; fill: Phaser.GameObjects.Rectangle; text: Phaser.GameObjects.Text };
-    private coinDisplay!: Phaser.GameObjects.Text;
-    private potionDisplay!: Phaser.GameObjects.Text;
+    private playerAStatusPod?: ArenaPlayerStatusPod;
+    private playerBStatusPod?: ArenaPlayerStatusPod;
+    private resourceHud?: TownResourceHud;
     private waveText!: Phaser.GameObjects.Text;
     private startBattleButton!: Phaser.GameObjects.Container;
     private leaveButton!: Phaser.GameObjects.Container;
+    private arenaOptionPrevious?: Phaser.GameObjects.GameObject;
+    private arenaOptionNext?: Phaser.GameObjects.GameObject;
+    private arenaOptionStatus?: Phaser.GameObjects.Text;
+    private arenaCompletionText?: Phaser.GameObjects.Text;
 
     // Universal debugger
     private debugger!: SceneDebugger;
@@ -48,6 +103,7 @@ export class ArenaScene extends Phaser.Scene {
 
     // Scene Builder
     private sceneBuilder!: SceneBuilder;
+    private arenaFrame?: Phaser.GameObjects.Container;
 
     // Wave Progress UI
     private waveProgressContainer!: Phaser.GameObjects.Container;
@@ -58,13 +114,46 @@ export class ArenaScene extends Phaser.Scene {
     private baseEnemyDefs: EnemyDefinition[] = []; // Unscaled defs for passing to BattleScene
     private arenaLevel: number = 1;
     private currentWave: number = 0;
+    private encounterCatalog!: EncounterCatalog;
+    private arenaDefinition!: ArenaEncounter;
+    private resolvedEncounter!: ResolvedArenaWave;
+    private encounterId: string | null = null;
+    private arenaChoices: ArenaChoiceOption[] = [];
+    private arenaChoiceId: string | null = null;
+    private arenaChoiceKind: ArenaChoiceKind | null = null;
 
-    constructor() {
-        super({ key: 'ArenaScene' });
+    constructor(options: ArenaSceneOptions = {}) {
+        const sceneKey = options.key ?? 'ArenaScene';
+        super({ key: sceneKey });
+        this.sceneKey = sceneKey;
+        this.backSceneKey = options.backSceneKey ?? 'TownScene';
+        this.layoutSceneKey = options.layoutSceneKey ?? sceneKey;
+        this.backgroundTexture = options.backgroundTexture;
+        this.battleBackgroundTexture = options.battleBackgroundTexture;
+        this.battleBackgroundTextures = options.battleBackgroundTextures;
+        this.previewArenaLevels = options.previewArenaLevels
+            ? [...options.previewArenaLevels]
+            : undefined;
+        this.previewArenaWaves = options.previewArenaWaves
+            ? { ...options.previewArenaWaves }
+            : undefined;
+        this.titleText = options.titleText;
+        this.showArenaLevelInTitle = options.showArenaLevelInTitle ?? false;
+        this.persistChanges = options.persistChanges ?? true;
+        this.cityId = options.cityId ?? 'mathoria';
+        this.arenaStory = options.arenaStory;
     }
 
-    init(data: { arenaLevel?: number; wave?: number; fromBattle?: boolean }): void {
+    init(data: {
+        arenaLevel?: number;
+        wave?: number;
+        encounterId?: string;
+        arenaChoiceId?: string;
+        fromBattle?: boolean;
+        mockBattleResult?: 'victory' | 'defeat';
+    } = {}): void {
         this.gameState = GameStateManager.getInstance();
+        this.captureTransientState();
         const player = this.gameState.getPlayer();
 
         // Debug: Log incoming data
@@ -77,37 +166,157 @@ export class ArenaScene extends Phaser.Scene {
             playerArenaIsActive: player.arena.isActive
         });
 
-        this.arenaLevel = data.arenaLevel || player.arena.arenaLevel || 1;
-        this.currentWave = data.wave ?? player.arena.currentBattle ?? 0;
-
-        // Get enemy definitions for this wave
         const allEnemies = this.cache.json.get('enemies') as EnemyDefinition[];
-        const waveConfig = ARENA_WAVES[this.arenaLevel]?.[this.currentWave] || ['slime'];
-        this.baseEnemyDefs = waveConfig.map(id => allEnemies.find(e => e.id === id) || allEnemies[0]);
+        this.encounterCatalog = createEncounterCatalog(this.cache.json.get('encounters'), {
+            core: allEnemies,
+        });
 
-        // Co-op: adjust enemies for 2-player difficulty (for display)
-        const coop = CoopSessionManager.getInstance();
-        if (coop.isCoopActive()) {
-            this.enemyDefs = coop.getCoopEnemyDefs(this.baseEnemyDefs, false);
+        const choicePlayers = this.getArenaChoicePlayers();
+        this.arenaChoices = this.previewArenaLevels
+            ? this.createPreviewArenaChoices(this.previewArenaLevels)
+            : getArenaChoiceOptions(this.encounterCatalog, choicePlayers, this.cityId);
+        const requestedChoice = data.arenaChoiceId
+            ? this.arenaChoices.find(choice => choice.id === data.arenaChoiceId)
+            : undefined;
+        const hasExplicitTarget = data.encounterId !== undefined
+            || data.arenaLevel !== undefined
+            || data.wave !== undefined;
+        // BattleScene returns an explicit next encounter. Keep the choice ID only
+        // as the run goal (progression/improvement); a recomputed first choice may
+        // still point at an earlier wave that was not perfected on this attempt.
+        const selectedChoice = hasExplicitTarget
+            ? undefined
+            : requestedChoice ?? this.arenaChoices[0];
+
+        const requestedArenaLevel = selectedChoice?.arenaLevel
+            ?? data.arenaLevel
+            ?? player.arena.arenaLevel
+            ?? 1;
+        const requestedWave = selectedChoice?.waveIndex
+            ?? data.wave
+            ?? player.arena.currentBattle
+            ?? 0;
+        const requestedEncounterId = selectedChoice?.encounterId ?? data.encounterId;
+
+        if (requestedEncounterId) {
+            const requestedEncounter = this.encounterCatalog.getWaveById(requestedEncounterId);
+            const matchingArena = this.encounterCatalog.getArenaLevels()
+                .map(level => this.encounterCatalog.getArena(level))
+                .find(arena => arena.waves.some(wave => wave.id === requestedEncounter.id));
+            if (!matchingArena) {
+                throw new Error(`Encounter ${requestedEncounterId} is not part of an arena`);
+            }
+            this.arenaLevel = matchingArena.level;
+            this.currentWave = requestedEncounter.index;
         } else {
-            this.enemyDefs = [...this.baseEnemyDefs];
+            this.arenaLevel = requestedArenaLevel;
+            this.arenaDefinition = this.encounterCatalog.getArena(this.arenaLevel);
+            this.currentWave = Phaser.Math.Clamp(requestedWave, 0, this.arenaDefinition.waves.length - 1);
         }
-        if (coop.isCoopActive()) {
+
+        this.arenaDefinition = this.encounterCatalog.getArena(this.arenaLevel);
+        const coop = CoopSessionManager.getInstance();
+        const mode = this.isCoopPreview() ? 'coop' : 'solo';
+        const soloEncounter = this.encounterCatalog.resolveArenaWave({
+            arenaLevel: this.arenaLevel,
+            waveIndex: this.currentWave,
+            mode: 'solo',
+        });
+        this.resolvedEncounter = this.encounterCatalog.resolveArenaWave({
+            arenaLevel: this.arenaLevel,
+            waveIndex: this.currentWave,
+            mode,
+        });
+        this.encounterId = this.resolvedEncounter.encounterId;
+        const matchingChoice = requestedChoice ?? selectedChoice ?? this.arenaChoices.find(choice => (
+            choice.arenaLevel === this.arenaLevel
+            && choice.waveIndex === this.currentWave
+        ));
+        this.arenaChoiceId = matchingChoice?.id ?? data.arenaChoiceId ?? null;
+        this.arenaChoiceKind = matchingChoice?.kind ?? null;
+        this.baseEnemyDefs = soloEncounter.enemies;
+        this.enemyDefs = mode === 'solo'
+            ? [...this.baseEnemyDefs]
+            : this.resolvedEncounter.enemies;
+
+        if (this.isCoopPreview()) {
             coop.forBothPlayers(() => {
                 const p = this.gameState.getPlayer();
+                selectArenaEncounterProgress(
+                    p,
+                    this.arenaLevel,
+                    this.resolvedEncounter.encounterId,
+                    this.currentWave,
+                );
                 p.arena.isActive = true;
-                p.arena.arenaLevel = this.arenaLevel;
-                p.arena.currentBattle = this.currentWave;
             });
             coop.activatePlayerA();
         } else {
+            selectArenaEncounterProgress(
+                player,
+                this.arenaLevel,
+                this.resolvedEncounter.encounterId,
+                this.currentWave,
+            );
             player.arena.isActive = true;
-            player.arena.arenaLevel = this.arenaLevel;
-            player.arena.currentBattle = this.currentWave;
-            this.gameState.save();
+            this.saveState();
         }
 
         console.log('[ArenaScene.init] Set currentWave to:', this.currentWave);
+    }
+
+    private getArenaChoicePlayers(): PlayerState[] {
+        const coop = CoopSessionManager.getInstance();
+        const players = [this.gameState.getPlayer()];
+        if (this.isCoopPreview()) {
+            coop.activatePlayerB();
+            players.push(this.gameState.getPlayer());
+            coop.activatePlayerA();
+        }
+        return players;
+    }
+
+    private createPreviewArenaChoices(levels: readonly number[]): ArenaChoiceOption[] {
+        return levels.map(level => {
+            const arena = this.encounterCatalog.getArena(level);
+            const requestedWaveNumber = Math.trunc(this.previewArenaWaves?.[level] ?? 1);
+            const waveIndex = Phaser.Math.Clamp(requestedWaveNumber - 1, 0, arena.waves.length - 1);
+            const previewWave = arena.waves[waveIndex];
+
+            return {
+                id: `progression:${arena.id}`,
+                kind: 'progression',
+                arenaId: arena.id,
+                arenaLevel: arena.level,
+                waveIndex: previewWave.index,
+                encounterId: previewWave.id,
+            };
+        });
+    }
+
+    private captureTransientState(): void {
+        if (this.persistChanges) return;
+
+        const player = this.gameState.getPlayer();
+        const playerSnapshot = this.cloneState(player);
+
+        this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+            Object.assign(player, this.cloneState(playerSnapshot));
+        });
+    }
+
+    private cloneState<T>(state: T): T {
+        return JSON.parse(JSON.stringify(state)) as T;
+    }
+
+    private saveState(): void {
+        if (this.persistChanges) {
+            this.gameState.save();
+        }
+    }
+
+    private isCoopPreview(): boolean {
+        return this.persistChanges && CoopSessionManager.getInstance().isCoopActive();
     }
 
     create(): void {
@@ -119,51 +328,72 @@ export class ArenaScene extends Phaser.Scene {
         // Register event handlers before building
         this.sceneBuilder.registerHandler('startBattle', () => this.startBattle());
         this.sceneBuilder.registerHandler('leaveArena', () => this.leaveArena());
+        this.sceneBuilder.registerHandler('selectPreviousArena', () => this.cycleArenaChoice(-1));
+        this.sceneBuilder.registerHandler('selectNextArena', () => this.cycleArenaChoice(1));
 
-        this.sceneBuilder.buildScene();
+        this.sceneBuilder.buildScene(this.layoutSceneKey);
+        this.applyBackgroundTexture();
+
+        this.arenaFrame = this.sceneBuilder.get<Phaser.GameObjects.Container>(ArenaScene.ARENA_FRAME_ID);
+        this.updateArenaTitle();
 
         // Get wave text from builder and update it
         this.waveText = this.sceneBuilder.get('waveText') as Phaser.GameObjects.Text;
         if (this.waveText) {
-            this.waveText.setText(`VLNA ${this.currentWave + 1}/5`);
+            this.waveText.setText(`VLNA ${this.currentWave + 1}/${this.arenaDefinition.waves.length}`);
         }
 
         // Get buttons from builder
-        this.startBattleButton = this.sceneBuilder.get('startBattleButton') as Phaser.GameObjects.Container;
+        this.createStartBattleButton();
         this.leaveButton = this.sceneBuilder.get('leaveButton') as Phaser.GameObjects.Container;
+        this.arenaOptionPrevious = this.sceneBuilder.get('arenaOptionPrevious');
+        this.arenaOptionNext = this.sceneBuilder.get('arenaOptionNext');
+        this.arenaOptionStatus = this.sceneBuilder.get('arenaOptionStatus') as Phaser.GameObjects.Text;
+        this.arenaCompletionText = this.sceneBuilder.get('arenaCompletionText') as Phaser.GameObjects.Text;
+        this.updateArenaChoiceControls();
 
-        // Check if arena is fully completed
-        // In co-op: only show "completed" if BOTH players have finished the final arena level (3)
+        // A completed arena remains replayable until every wave is perfect.
+        // In co-op, both profiles must have perfected every wave before replay is hidden.
         const coop = CoopSessionManager.getInstance();
-        const maxArenaLevel = Math.max(...Object.keys(ARENA_WAVES).map(Number));
-        let isCompleted: boolean;
-        if (coop.isCoopActive()) {
-            const playerADone = player.arena.completedArenaLevels?.includes(maxArenaLevel) ?? false;
+        const encounterIds = this.arenaDefinition.waves.map(wave => wave.id);
+        const playerAResults = getArenaResultsForEncounters(
+            player,
+            this.arenaLevel,
+            encounterIds,
+        );
+        const playerAPerfect = playerAResults.every(result => (
+            result?.completed === true && result.perfectWave === true
+        ));
+        let isFullyPerfect = playerAPerfect;
+        if (this.isCoopPreview()) {
             coop.activatePlayerB();
-            const playerBDone = this.gameState.getPlayer().arena.completedArenaLevels?.includes(maxArenaLevel) ?? false;
+            const playerBResults = getArenaResultsForEncounters(
+                this.gameState.getPlayer(),
+                this.arenaLevel,
+                encounterIds,
+            );
             coop.activatePlayerA();
-            isCompleted = playerADone && playerBDone;
-        } else {
-            isCompleted = player.arena.completedArenaLevels?.includes(this.arenaLevel) ?? false;
+            isFullyPerfect = playerAPerfect && playerBResults.every(result => (
+                result?.completed === true && result.perfectWave === true
+            ));
         }
 
         // Get spawn points from scene-layouts.json for positioning
         const enemyCount = this.enemyDefs.length;
-        const spawnPoints = this.sceneBuilder.getSpawnPoints(undefined, enemyCount, coop.isCoopActive());
+        const spawnPoints = this.sceneBuilder.getSpawnPoints(
+            this.layoutSceneKey,
+            enemyCount,
+            this.isCoopPreview(),
+        );
 
-        if (isCompleted) {
-            // Arena completed — show completion message, hide start button, no enemies
+        if (isFullyPerfect) {
+            // Nothing remains to improve — show completion message, hide start button, no enemies.
             if (this.waveText) {
                 this.waveText.setText('ARÉNA DOKONČENA!');
             }
             if (this.startBattleButton) this.startBattleButton.setVisible(false);
 
-            // "Completed" badge in the center where enemies would be
-            this.add.text(640, 400, 'DOKONČENO', {
-                fontSize: '36px', fontFamily: 'Arial, sans-serif',
-                color: '#ffd700', fontStyle: 'bold',
-                stroke: '#000000', strokeThickness: 4,
-            }).setOrigin(0.5).setDepth(10);
+            this.arenaCompletionText?.setVisible(true);
         } else {
             // Create enemy previews (idling) - pass spawn points for positioning
             this.createEnemyPreviews(spawnPoints);
@@ -184,10 +414,12 @@ export class ArenaScene extends Phaser.Scene {
             .setScale(heroScale)
             .play(spriteConfig.idleAnim);
 
+        let playerB: PlayerState | null = null;
+
         // Co-op: show Player B's hero + pet in arena preview
-        if (coop.isCoopActive()) {
+        if (this.isCoopPreview()) {
             coop.activatePlayerB();
-            const playerB = this.gameState.getPlayer();
+            playerB = this.gameState.getPlayer();
             const spriteBConfig = getPlayerSpriteConfig(playerB.characterType);
             const charDefB = charactersData?.find(c => c.id === playerB.characterType);
             const heroScaleB = (charDefB?.scale ?? 1.0) * HERO_BASE_SCALE;
@@ -221,10 +453,8 @@ export class ArenaScene extends Phaser.Scene {
         // Create pet companion if player has one equipped
         this.createPetCompanion(player, spawnPoints);
 
-        // Create UI
-        this.createPlayerHpBar();
-        this.createCoinDisplay();
-        this.createPotionDisplay();
+        // Create the approved compact per-player status and shared resources.
+        this.createArenaStatusHud(player, playerB);
 
         // Create Wave Progress Table inside the existing frame
         this.createWaveProgressContent();
@@ -233,8 +463,71 @@ export class ArenaScene extends Phaser.Scene {
         this.setupDebugger();
     }
 
+    private applyBackgroundTexture(): void {
+        if (!this.backgroundTexture) return;
+
+        const background = this.sceneBuilder.get<Phaser.GameObjects.Image>('bg');
+        background?.setTexture(this.backgroundTexture).setDisplaySize(1280, 720);
+    }
+
+    private updateArenaTitle(): void {
+        const textObjects = this.arenaFrame?.getData('textObjects') as Map<
+            string,
+            { text: Phaser.GameObjects.Text; parentLayerId: string | null }
+        > | undefined;
+        const title = textObjects?.get(ArenaScene.ARENA_TITLE_TEXT_AREA_ID)?.text;
+
+        if (!title) {
+            console.warn('[ArenaScene] Arena title text area was not found');
+            return;
+        }
+
+        const configuredTitle = this.titleText
+            ? `${this.titleText}${this.showArenaLevelInTitle ? ` ${this.arenaDefinition.cityArenaLevel}` : ''}`
+            : `ARÉNA ${this.arenaDefinition.cityArenaLevel}`;
+        title.setText(configuredTitle);
+    }
+
+    private updateArenaChoiceControls(): void {
+        const hasAlternatives = this.arenaChoices.length > 1;
+        this.arenaOptionPrevious?.setVisible(hasAlternatives);
+        this.arenaOptionNext?.setVisible(hasAlternatives);
+
+        if (!this.arenaOptionStatus) return;
+        const selectedIndex = Math.max(
+            0,
+            this.arenaChoices.findIndex(choice => choice.id === this.arenaChoiceId),
+        );
+        const position = `${selectedIndex + 1}/${Math.max(1, this.arenaChoices.length)}`;
+        const label = this.arenaChoiceKind === 'improvement'
+            ? 'DOPILOVAT ★'
+            : this.arenaChoiceKind === 'complete'
+                ? 'VŠECHNY VLNY PERFEKTNÍ'
+                : 'POKRAČOVAT V PŘÍBĚHU';
+        this.arenaOptionStatus.setText(`${label}  •  ${position}`).setVisible(true);
+    }
+
+    private cycleArenaChoice(offset: -1 | 1): void {
+        if (this.arenaChoices.length < 2) return;
+        const currentIndex = Math.max(
+            0,
+            this.arenaChoices.findIndex(choice => choice.id === this.arenaChoiceId),
+        );
+        const nextIndex = (
+            currentIndex + offset + this.arenaChoices.length
+        ) % this.arenaChoices.length;
+        const nextChoice = this.arenaChoices[nextIndex];
+
+        this.scene.restart({
+            arenaChoiceId: nextChoice.id,
+            arenaLevel: nextChoice.arenaLevel,
+            wave: nextChoice.waveIndex,
+            encounterId: nextChoice.encounterId,
+        });
+    }
+
     private setupDebugger(): void {
-        this.debugger = new SceneDebugger(this, 'ArenaScene');
+        this.debugger = new SceneDebugger(this, this.layoutSceneKey);
 
         // Create pause menu (ESC key to toggle)
         this.pauseMenu = new PauseMenu(this);
@@ -257,6 +550,8 @@ export class ArenaScene extends Phaser.Scene {
         );
 
         this.input.keyboard?.on('keydown-N', () => this.debugSkipWave());
+        this.input.keyboard?.on('keydown-LEFT', () => this.cycleArenaChoice(-1));
+        this.input.keyboard?.on('keydown-RIGHT', () => this.cycleArenaChoice(1));
     }
 
     private debugSkipArena(): void {
@@ -264,16 +559,19 @@ export class ArenaScene extends Phaser.Scene {
         const player = this.gameState.getPlayer();
         player.arena.isActive = false;
         ProgressionSystem.fullHeal(player);
-        this.gameState.save();
-        this.scene.start('TownScene');
+        this.saveState();
+        this.scene.start(this.backSceneKey);
     }
 
     private debugSkipWave(): void {
         console.log('[DEBUG] Skip wave');
-        if (this.currentWave < 4) {
-            this.scene.start('ArenaScene', {
+        if (this.currentWave < this.arenaDefinition.waves.length - 1) {
+            const nextWave = this.arenaDefinition.waves[this.currentWave + 1];
+            this.scene.start(this.sceneKey, {
                 arenaLevel: this.arenaLevel,
                 wave: this.currentWave + 1,
+                encounterId: nextWave.id,
+                arenaChoiceId: this.arenaChoiceId ?? undefined,
             });
         } else {
             this.debugSkipArena();
@@ -284,7 +582,7 @@ export class ArenaScene extends Phaser.Scene {
         console.log('[DEBUG] Full heal');
         const player = this.gameState.getPlayer();
         ProgressionSystem.fullHeal(player);
-        this.updatePlayerHpBar();
+        this.playerAStatusPod?.setHp(player.hp, player.maxHp);
     }
 
     private createPetCompanion(
@@ -347,19 +645,14 @@ export class ArenaScene extends Phaser.Scene {
                 y = 425;
             }
 
-            // Get animation prefix
-            const animPrefix = def.spriteKey.includes('-') ? def.spriteKey.split('-')[0] : def.spriteKey;
-
-            // Get enemy scale from definition
-            const ENEMY_BASE_SCALE = 1.0;
-            const enemyScale = (def.scale ?? 1.0) * ENEMY_BASE_SCALE;
+            const presentation = resolveEnemyBattlePresentation(def, { x, y });
 
             // Create sprite (idling) - position relative to container
             const sprite = this.add.sprite(0, 0, def.spriteKey)
-                .setScale(enemyScale);
+                .setScale(presentation.scale);
 
             // Play idle animation
-            const idleAnim = `${animPrefix}-idle`;
+            const idleAnim = `${def.animPrefix}-idle`;
             if (this.anims.exists(idleAnim)) {
                 sprite.play(idleAnim);
             }
@@ -374,71 +667,120 @@ export class ArenaScene extends Phaser.Scene {
             }).setOrigin(0.5);
 
             // Create container with sprite and label
-            const container = this.add.container(x, y, [sprite, label]);
+            const container = this.add.container(presentation.x, presentation.y, [sprite, label]);
             this.enemies.push(container);
         });
     }
 
-    private createPlayerHpBar(): void {
-        const player = this.gameState.getPlayer();
-        // Positioned in top-right area for 1280x720
-        const x = 1100;
-        const y = 40;
-        const width = 200;
-        const height = 24;
+    private createArenaStatusHud(playerA: PlayerState, playerB: PlayerState | null): void {
+        const resourceHost = this.getHudHost('arenaResourceHudHost', {
+            x: 1120,
+            y: 42,
+            depth: 72,
+            width: 258,
+            height: 74,
+        });
+        this.resourceHud = new TownResourceHud(this, resourceHost);
+        this.resourceHud.setValues(
+            ManaSystem.getMana(playerA),
+            ProgressionSystem.getTotalCoinValue(playerA.coins),
+        );
 
-        const bg = this.add.rectangle(x, y, width + 4, height + 4, 0x333333).setOrigin(0.5);
-        const fill = this.add.rectangle(x - width / 2, y, width * (player.hp / player.maxHp), height, 0x44cc44).setOrigin(0, 0.5);
-        const text = this.add.text(x, y, `HP: ${player.hp}/${player.maxHp}`, {
-            fontSize: '16px',
-            fontFamily: 'Arial, sans-serif',
-            color: '#ffffff',
-            fontStyle: 'bold',
-        }).setOrigin(0.5);
+        const playerAHost = this.getHudHost(
+            playerB ? 'arenaPlayerACoopPodHost' : 'arenaPlayerASinglePodHost',
+            playerB
+                ? { x: 470, y: 500, depth: 72, width: 178, height: 78 }
+                : { x: 368, y: 547, depth: 72, width: 178, height: 78 },
+        );
+        this.playerAStatusPod = this.createPlayerStatusPod(
+            playerA,
+            playerAHost,
+            'A',
+            'left',
+        );
 
-        this.hpBar = { bg, fill, text };
+        if (!playerB) return;
+
+        const playerBHost = this.getHudHost('arenaPlayerBPodHost', {
+            x: 89,
+            y: 630,
+            depth: 72,
+            width: 176,
+            height: 77,
+        });
+        this.playerBStatusPod = this.createPlayerStatusPod(
+            playerB,
+            playerBHost,
+            'B',
+            'right',
+        );
     }
 
-    private updatePlayerHpBar(): void {
-        const player = this.gameState.getPlayer();
-        const percent = Math.max(0, player.hp / player.maxHp);
-        this.hpBar.fill.setScale(percent, 1);
-        this.hpBar.text.setText(`HP: ${player.hp}/${player.maxHp}`);
-
-        if (percent > 0.5) {
-            this.hpBar.fill.setFillStyle(0x44cc44);
-        } else if (percent > 0.25) {
-            this.hpBar.fill.setFillStyle(0xcccc44);
-        } else {
-            this.hpBar.fill.setFillStyle(0xcc4444);
-        }
+    private createStartBattleButton(): void {
+        const host = this.getHudHost('startBattleButton', {
+            x: 980,
+            y: 654,
+            depth: 80,
+            width: 276,
+            height: 110,
+        });
+        this.startBattleButton = new MedievalActionButton(this, {
+            x: host.x,
+            y: host.y,
+            depth: host.depth,
+            width: host.width ?? 276,
+            height: host.height ?? 110,
+            label: 'ZAČÍT BOJ',
+            labelFontSize: 20,
+            accent: 0xf0b447,
+            frameTexture: 'arena-entry-start-v1',
+            normalIcon: { texture: 'arena-entry-crossed-swords-normal-v1' },
+            activeIcon: { texture: 'arena-entry-crossed-swords-active-v1' },
+            iconSize: 70,
+            iconCenterRatio: 0.19,
+            labelCenterRatio: 0.65,
+            name: 'arena-start-battle-button',
+            onClick: () => this.startBattle(),
+        }).root;
     }
 
-    private createCoinDisplay(): void {
-        const player = this.gameState.getPlayer();
-        const totalCoins = ProgressionSystem.getTotalCoinValue(player.coins);
-
-        // Positioned below HP bar
-        this.coinDisplay = this.add.text(1100, 75, `💰 ${totalCoins}`, {
-            fontSize: '20px',
-            fontFamily: 'Arial, sans-serif',
-            color: '#ffd700',
-            stroke: '#000000',
-            strokeThickness: 2,
-        }).setOrigin(0.5);
+    private createPlayerStatusPod(
+        player: PlayerState,
+        host: ArenaHudHost,
+        playerLabel: 'A' | 'B',
+        pointerSide: 'left' | 'right',
+    ): ArenaPlayerStatusPod {
+        const preparation = PreparationSystem.getState(player);
+        return new ArenaPlayerStatusPod(this, {
+            ...host,
+            width: host.width ?? 178,
+            height: host.height ?? 78,
+            playerLabel,
+            pointerSide,
+            hp: player.hp,
+            maxHp: player.maxHp,
+            potionCount: player.potions,
+            preparationKind: preparation.kind,
+            preparationCharges: preparation.charges,
+        });
     }
 
-    private createPotionDisplay(): void {
-        const player = this.gameState.getPlayer();
-
-        // Positioned below coins
-        this.potionDisplay = this.add.text(1100, 105, `🧪 ${player.potions}`, {
-            fontSize: '20px',
-            fontFamily: 'Arial, sans-serif',
-            color: '#ff88ff',
-            stroke: '#000000',
-            strokeThickness: 2,
-        }).setOrigin(0.5);
+    private getHudHost(id: string, fallback: ArenaHudHost): ArenaHudHost {
+        const element = this.sceneBuilder.get<Phaser.GameObjects.GameObject & {
+            x: number;
+            y: number;
+            depth: number;
+            displayWidth?: number;
+            displayHeight?: number;
+        }>(id);
+        const definition = this.sceneBuilder.getElementDef(id);
+        return {
+            x: element?.x ?? fallback.x,
+            y: element?.y ?? fallback.y,
+            depth: element?.depth ?? fallback.depth,
+            width: definition?.width ?? (element?.displayWidth || fallback.width),
+            height: definition?.height ?? (element?.displayHeight || fallback.height),
+        };
     }
 
     /**
@@ -447,7 +789,11 @@ export class ArenaScene extends Phaser.Scene {
      */
     private createWaveProgressContent(): void {
         const player = this.gameState.getPlayer();
-        const waveResults = player.arena.waveResults || [];
+        const waveResults = getArenaResultsForEncounters(
+            player,
+            this.arenaLevel,
+            this.arenaDefinition.waves.map(wave => wave.id),
+        );
 
         // Debug: Log wave progress state
         console.log('[ArenaScene] Wave progress:', {
@@ -457,17 +803,15 @@ export class ArenaScene extends Phaser.Scene {
         });
 
         // Get the frame element position from sceneBuilder
-        const frameElement = this.sceneBuilder.get('ARENA WITH TITLE') as Phaser.GameObjects.Image | undefined;
+        const frameElement = this.arenaFrame;
         const frameX = frameElement?.x ?? 227;
         const frameY = frameElement?.y ?? 238;
+        const frameDepth = frameElement?.depth ?? 10;
 
         // Create container for wave progress content
         // Position relative to frame center
         this.waveProgressContainer = this.add.container(frameX, frameY);
-        this.waveProgressContainer.setDepth(10);
-
-        // Get all enemy definitions for icon rendering
-        const allEnemies = this.cache.json.get('enemies') as EnemyDefinition[];
+        this.waveProgressContainer.setDepth(frameDepth + 1);
 
         // Row layout constants
         const rowHeight = 60;
@@ -475,10 +819,9 @@ export class ArenaScene extends Phaser.Scene {
         const iconScale = 0.22;
         const iconSpacing = 35;
 
-        // Create 5 wave rows
-        for (let waveIdx = 0; waveIdx < 5; waveIdx++) {
+        // Create one row per configured wave (currently validated to exactly five).
+        for (let waveIdx = 0; waveIdx < this.arenaDefinition.waves.length; waveIdx++) {
             const rowY = startY + waveIdx * rowHeight;
-            const waveConfig = ARENA_WAVES[this.arenaLevel]?.[waveIdx] || ['slime_green'];
             const waveResult = waveResults[waveIdx];
             const isCurrentWave = waveIdx === this.currentWave;
             const isFutureWave = waveIdx > this.currentWave;
@@ -525,21 +868,22 @@ export class ArenaScene extends Phaser.Scene {
             rowContainer.add(waveNum);
 
             // Enemy icons (static sprites, first frame only)
-            const displayConfig = this.getCoopAdjustedWaveConfig(waveConfig);
+            const displayConfig = this.encounterCatalog.resolveArenaWave({
+                arenaLevel: this.arenaLevel,
+                waveIndex: waveIdx,
+                mode: this.isCoopPreview() ? 'coop' : 'solo',
+            }).enemies;
             const enemyIconsStartX = -100;
-            displayConfig.forEach((enemyId, enemyIdx) => {
-                const enemyDef = allEnemies.find(e => e.id === enemyId);
-                if (enemyDef) {
-                    // Create static image from enemy spritesheet (frame 0)
-                    const icon = this.add.image(
-                        enemyIconsStartX + enemyIdx * iconSpacing,
-                        0,
-                        enemyDef.spriteKey,
-                        0  // First frame
-                    ).setScale(iconScale);
+            displayConfig.forEach((enemyDef, enemyIdx) => {
+                // Create static image from enemy spritesheet (frame 0)
+                const icon = this.add.image(
+                    enemyIconsStartX + enemyIdx * iconSpacing,
+                    0,
+                    enemyDef.spriteKey,
+                    0  // First frame
+                ).setScale(iconScale);
 
-                    rowContainer.add(icon);
-                }
+                rowContainer.add(icon);
             });
 
             // Completion indicator (✓ or ○)
@@ -589,47 +933,59 @@ export class ArenaScene extends Phaser.Scene {
     }
 
     private startBattle(): void {
-        // Pass arena/wave data to BattleScene (use base defs - BattleScene applies its own co-op scaling)
+        const battleBackgroundTexture = this.battleBackgroundTextures?.[this.arenaLevel]
+            ?? this.battleBackgroundTexture;
+
+        // BattleScene resolves this stable ID once; passing pre-resolved defs would risk double co-op scaling.
         this.scene.start('BattleScene', {
             arenaLevel: this.arenaLevel,
             wave: this.currentWave,
-            enemyDefs: this.baseEnemyDefs,
+            encounterId: this.encounterId,
+            arenaChoiceId: this.arenaChoiceId,
             fromArena: true,
+            mockMode: !this.persistChanges,
+            backgroundKey: battleBackgroundTexture,
+            returnScene: this.sceneKey,
+            arenaExitScene: this.backSceneKey,
+            arenaStory: this.arenaStory,
+            returnData: {
+                arenaLevel: this.arenaLevel,
+                wave: this.currentWave,
+                encounterId: this.encounterId ?? undefined,
+                arenaChoiceId: this.arenaChoiceId ?? undefined,
+            },
         });
     }
 
     private leaveArena(): void {
         const coop = CoopSessionManager.getInstance();
-        if (coop.isCoopActive()) {
+        if (this.isCoopPreview()) {
             coop.forBothPlayers(() => {
                 const p = this.gameState.getPlayer();
+                selectArenaEncounterProgress(
+                    p,
+                    this.arenaLevel,
+                    this.arenaDefinition.waves[0].id,
+                    0,
+                );
                 p.arena.isActive = false;
-                p.arena.currentBattle = 0;
                 ProgressionSystem.fullHeal(p);
             });
             coop.activatePlayerA();
         } else {
             const player = this.gameState.getPlayer();
+            selectArenaEncounterProgress(
+                player,
+                this.arenaLevel,
+                this.arenaDefinition.waves[0].id,
+                0,
+            );
             player.arena.isActive = false;
-            player.arena.currentBattle = 0;
             ProgressionSystem.fullHeal(player);
-            this.gameState.save();
+            this.saveState();
         }
 
-        this.scene.start('TownScene');
+        this.scene.start(this.backSceneKey);
     }
 
-    /**
-     * Adjust wave config enemy IDs for co-op display (mirrors CoopSessionManager.getCoopEnemyDefs logic)
-     */
-    private getCoopAdjustedWaveConfig(waveConfig: string[]): string[] {
-        const coop = CoopSessionManager.getInstance();
-        if (!coop.isCoopActive()) {
-            return waveConfig;
-        }
-        if (waveConfig.length === 0) {
-            return [];
-        }
-        return [...waveConfig, waveConfig[waveConfig.length - 1]];
-    }
 }

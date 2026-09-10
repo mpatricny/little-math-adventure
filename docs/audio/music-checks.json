@@ -1,0 +1,106 @@
+{
+  "checkedAt": "2026-09-08T11:32:17.104Z",
+  "method": "Chromium WebAudio decode, RMS gain balance, silence-only boundaries; 2 s runtime crossfade is not a beat-matched loop",
+  "tracks": [
+    {
+      "id": "m01_starfall",
+      "duration": 198.01349206349207,
+      "peak": 0.9901489019393921,
+      "rms": 0.16439417471852352,
+      "channels": 2,
+      "sampleRate": 44100,
+      "loopStart": 0,
+      "loopEnd": 197.70532879818595
+    },
+    {
+      "id": "m02_mathoria",
+      "duration": 108.41349206349206,
+      "peak": 0.9452287554740906,
+      "rms": 0.14811550880000607,
+      "channels": 2,
+      "sampleRate": 44100,
+      "loopStart": 0,
+      "loopEnd": 108.20138321995465
+    },
+    {
+      "id": "m03_crystal_workshop",
+      "duration": 49.333492063492066,
+      "peak": 0.990186333656311,
+      "rms": 0.1714509189715322,
+      "channels": 2,
+      "sampleRate": 44100,
+      "loopStart": 0,
+      "loopEnd": 49.333492063492066
+    },
+    {
+      "id": "m04_forest",
+      "duration": 123.13349206349206,
+      "peak": 0.996141254901886,
+      "rms": 0.16898098534862357,
+      "channels": 2,
+      "sampleRate": 44100,
+      "loopStart": 0,
+      "loopEnd": 121.85671201814058
+    },
+    {
+      "id": "m05_battle",
+      "duration": 20.413492063492065,
+      "peak": 0.9688030481338501,
+      "rms": 0.15806225955445377,
+      "channels": 2,
+      "sampleRate": 44100,
+      "loopStart": 0,
+      "loopEnd": 20.413492063492065
+    },
+    {
+      "id": "m06_guardian",
+      "duration": 87.81349206349206,
+      "peak": 0.808190107345581,
+      "rms": 0.17294203790649976,
+      "channels": 2,
+      "sampleRate": 44100,
+      "loopStart": 0,
+      "loopEnd": 87.81349206349206
+    },
+    {
+      "id": "m07_rest",
+      "duration": 120.41349206349206,
+      "peak": 0.8982086181640625,
+      "rms": 0.16386839967441644,
+      "channels": 2,
+      "sampleRate": 44100,
+      "loopStart": 0,
+      "loopEnd": 120.41349206349206
+    },
+    {
+      "id": "m08_silverpond",
+      "duration": 103.01349206349207,
+      "peak": 0.8827162981033325,
+      "rms": 0.15166176458749245,
+      "channels": 2,
+      "sampleRate": 44100,
+      "loopStart": 0,
+      "loopEnd": 102.05712018140589
+    },
+    {
+      "id": "m09_underwater",
+      "duration": 132.37349206349205,
+      "peak": 0.9723488688468933,
+      "rms": 0.1865629754066981,
+      "channels": 2,
+      "sampleRate": 44100,
+      "loopStart": 0,
+      "loopEnd": 132.37349206349205
+    },
+    {
+      "id": "m10_zyx_hope",
+      "duration": 98.05349206349206,
+      "peak": 0.9185389280319214,
+      "rms": 0.16220114721983164,
+      "channels": 2,
+      "sampleRate": 44100,
+      "loopStart": 0,
+      "loopEnd": 98.05349206349206
+    }
+  ]
+}

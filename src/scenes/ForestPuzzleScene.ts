@@ -1,7 +1,12 @@
+import { sfx, voice } from '../audio/AudioDirector';
+import { acquirePuzzle, recordPuzzleAnswer } from '../systems/puzzles/PuzzleService';
+import { sequencePuzzle, balancePuzzle, truthPuzzle, sumPuzzle } from '../systems/puzzles/PuzzleCatalog';
+import type { PuzzleFamily, PuzzleInstance, PuzzleProfile } from '../types/puzzles';
 import Phaser from 'phaser';
 import { JourneySystem } from '../systems/JourneySystem';
 import { GameStateManager } from '../systems/GameStateManager';
 import { CoopSessionManager } from '../systems/CoopSessionManager';
+import { resolveForestRoomSceneKey } from '../systems/ForestRoomRouting';
 
 /**
  * Scene initialization data
@@ -38,6 +43,7 @@ interface PathChoiceTemplate {
 }
 
 interface FeedingTemplate {
+    count: number;
     target: number;
     items: { emoji: string; value: number }[];
 }
@@ -58,7 +64,8 @@ interface PuzzleConfig {
     };
     failPenalty?: { extraBattle?: string };
     optional?: boolean;
-    templates: (NumberBridgeTemplate | BalanceScaleTemplate | PathChoiceTemplate | FeedingTemplate)[];
+    selectionCount?: number;
+    showRunningSum?: boolean;
 }
 
 /**
@@ -79,6 +86,8 @@ export class ForestPuzzleScene extends Phaser.Scene {
     private returnData: SceneData['returnData'] = {};
     private puzzleConfig: PuzzleConfig | null = null;
     private currentTemplate: unknown = null;
+    private puzzleInstance!: PuzzleInstance;
+    private ending = false;
 
     // UI elements
     private timerText!: Phaser.GameObjects.Text;
@@ -105,6 +114,8 @@ export class ForestPuzzleScene extends Phaser.Scene {
         this._objectId = data.objectId || '';
         this.returnScene = data.returnScene || 'ForestMapScene';
         this.returnData = data.returnData || {};
+        this.ending = false;
+        this.answerSlots = []; this.optionButtons = []; this.feedingCurrentSum = 0; this.feedingSumText = null;
         this.selectedAnswers = [];
         this.requiredAnswers = [];
     }
@@ -126,9 +137,15 @@ export class ForestPuzzleScene extends Phaser.Scene {
             return;
         }
 
-        // Select random template
-        const templates = this.puzzleConfig.templates;
-        this.currentTemplate = templates[Math.floor(Math.random() * templates.length)];
+        const generators: Record<string, { family: PuzzleFamily; draw: (p: PuzzleProfile) => unknown }> = {
+            sequence: { family: 'sequence', draw: sequencePuzzle }, equation: { family: 'balance', draw: balancePuzzle },
+            multiple_choice: { family: 'true_equation', draw: truthPuzzle }, sum_to_target: { family: 'sum_selection', draw: p => sumPuzzle(p) },
+        };
+        const generator = generators[this.puzzleConfig.type];
+        if (!generator) throw new Error(`Unknown puzzle type: ${this.puzzleConfig.type}`);
+        this.puzzleInstance = acquirePuzzle(this.journeySystem.getPuzzleStore(), `${this.returnData?.roomId ?? 'map'}:${this._objectId || this.puzzleId}`,
+            generator.family, generator.draw);
+        this.currentTemplate = this.puzzleInstance.payload;
 
         // Background
         if (this.textures.exists('bg-forest')) {
@@ -155,8 +172,22 @@ export class ForestPuzzleScene extends Phaser.Scene {
                 this.renderGenericPuzzle();
         }
 
-        // Timer
-        this.timeRemaining = this.puzzleConfig.timeLimit;
+        if (this.puzzleConfig.type === 'sum_to_target') {
+            for (const index of (this.puzzleInstance.state.items as number[] ?? [])) {
+                const item = (this.currentTemplate as FeedingTemplate).items[index];
+                if (item) this.toggleFeedingItem(this.optionButtons[index], item.value, this.feedingTargetSum);
+            }
+        } else if (this.puzzleConfig.type === 'sequence' || this.puzzleConfig.type === 'equation') {
+            for (const value of (this.puzzleInstance.state.answers as number[] ?? [])) {
+                const button = this.optionButtons.find(option => option.getData('value') === value && !option.getData('used'));
+                if (button) this.selectOption(button, value);
+            }
+        }
+        // Preserve the remaining time when an unfinished overlay is suspended.
+        this.timeRemaining = this.puzzleInstance.state.timeRemaining as number ?? this.puzzleConfig.timeLimit;
+        this.events.once('shutdown', () => {
+            if (!this.ending) this.puzzleInstance.state.timeRemaining = this.timeRemaining;
+        });
         this.createTimer();
 
         // Title
@@ -174,6 +205,7 @@ export class ForestPuzzleScene extends Phaser.Scene {
      * Number Bridge - Complete the sequence by filling gaps
      */
     private renderNumberBridge(): void {
+        this.time.delayedCall(300, () => voice(this, 'vo.bridge.intro', true));
         const template = this.currentTemplate as NumberBridgeTemplate;
         this.requiredAnswers = [...template.answers];
 
@@ -241,7 +273,7 @@ export class ForestPuzzleScene extends Phaser.Scene {
         });
 
         // Instructions
-        this.add.text(640, 650, 'Doplň chybějící čísla v posloupnosti!', {
+        this.add.text(640, 650, `Doplň řadu: každý krok ${template.pattern}.`, {
             fontSize: '24px',
             fontFamily: 'Arial, sans-serif',
             color: '#aaddaa',
@@ -253,6 +285,7 @@ export class ForestPuzzleScene extends Phaser.Scene {
      * Balance Scale - Find the missing value to balance
      */
     private renderBalanceScale(): void {
+        this.time.delayedCall(300, () => voice(this, 'vo.forest.balance', true));
         const template = this.currentTemplate as BalanceScaleTemplate;
         this.requiredAnswers = [template.answer];
 
@@ -320,6 +353,7 @@ export class ForestPuzzleScene extends Phaser.Scene {
      * Path Choice - Select the correct equation
      */
     private renderPathChoice(): void {
+        this.time.delayedCall(300, () => voice(this, 'vo.forest.path', true));
         const template = this.currentTemplate as PathChoiceTemplate;
         
         // Find correct answer index
@@ -391,11 +425,13 @@ export class ForestPuzzleScene extends Phaser.Scene {
         }).setOrigin(0.5);
 
         // Current sum display
-        this.feedingSumText = this.add.text(640, 220, 'Součet: 0', {
-            fontSize: '32px',
-            fontFamily: 'Arial, sans-serif',
-            color: '#ffffff'
-        }).setOrigin(0.5);
+        this.feedingSumText = this.puzzleConfig?.showRunningSum === false
+            ? null
+            : this.add.text(640, 220, 'Součet: 0', {
+                fontSize: '32px',
+                fontFamily: 'Arial, sans-serif',
+                color: '#ffffff'
+            }).setOrigin(0.5);
 
         // Item buttons
         const itemY = 400;
@@ -446,7 +482,7 @@ export class ForestPuzzleScene extends Phaser.Scene {
         confirmBtn.on('pointerdown', () => this.checkFeedingPuzzle(template.target));
 
         // Instructions
-        this.add.text(640, 650, 'Vyber položky, které dají přesně cílový součet!', {
+        this.add.text(640, 650, 'Vyber právě 3 položky, které dají cílový součet!', {
             fontSize: '22px',
             fontFamily: 'Arial, sans-serif',
             color: '#aaddaa'
@@ -546,6 +582,7 @@ export class ForestPuzzleScene extends Phaser.Scene {
 
         // Add to selected answers
         this.selectedAnswers.push(value);
+        this.puzzleInstance.state.answers = [...this.selectedAnswers];
 
         // Check if all slots filled
         if (this.selectedAnswers.length >= this.requiredAnswers.length) {
@@ -573,8 +610,15 @@ export class ForestPuzzleScene extends Phaser.Scene {
     private toggleFeedingItem(btn: Phaser.GameObjects.Container, value: number, _target: number): void {
         const selected = btn.getData('selected');
         const bg = btn.getData('bg') as Phaser.GameObjects.Arc;
+        const selectionLimit = (this.currentTemplate as FeedingTemplate).count;
+
+        if (!selected && selectionLimit !== undefined) {
+            const selectedCount = this.optionButtons.filter(option => option.getData('selected')).length;
+            if (selectedCount >= selectionLimit) return;
+        }
         
         btn.setData('selected', !selected);
+        this.puzzleInstance.state.items = this.optionButtons.flatMap((option, index) => option.getData('selected') ? [index] : []);
         
         if (!selected) {
             bg.setFillStyle(0x66aa66);
@@ -600,7 +644,9 @@ export class ForestPuzzleScene extends Phaser.Scene {
      * Check feeding puzzle result
      */
     private checkFeedingPuzzle(_target: number): void {
-        if (this.feedingCurrentSum === this.feedingTargetSum) {
+        const selectionCount = this.optionButtons.filter(option => option.getData('selected')).length;
+        const hasRequiredCount = selectionCount === (this.currentTemplate as FeedingTemplate).count;
+        if (hasRequiredCount && this.feedingCurrentSum === this.feedingTargetSum) {
             this.puzzleSuccess();
         } else {
             this.puzzleFail();
@@ -627,6 +673,9 @@ export class ForestPuzzleScene extends Phaser.Scene {
      * Handle puzzle success
      */
     private puzzleSuccess(): void {
+        if (this.ending) return; this.ending = true;
+        recordPuzzleAnswer(this.puzzleInstance, true);
+        sfx(this, 'puzzle.solved');
         this.timerEvent?.remove();
 
         // Success animation
@@ -713,6 +762,10 @@ export class ForestPuzzleScene extends Phaser.Scene {
      * Handle puzzle failure
      */
     private puzzleFail(): void {
+        if (this.ending) return; this.ending = true;
+        recordPuzzleAnswer(this.puzzleInstance, false);
+        sfx(this, 'math.retry');
+        this.puzzleInstance.state = {};
         this.timerEvent?.remove();
 
         // Fail animation
@@ -779,8 +832,13 @@ export class ForestPuzzleScene extends Phaser.Scene {
     private returnToRoom(solved: boolean): void {
         // For room-based journeys, return to ForestRoomScene with puzzle result
         if (this.returnScene === 'ForestRoomScene') {
-            this.scene.start('ForestRoomScene', {
-                roomId: this.returnData?.roomId,
+            const roomId = this.returnData?.roomId;
+            const forestRooms = this.cache.json.get('forestRooms');
+            const sceneKey = roomId
+                ? resolveForestRoomSceneKey(forestRooms, roomId)
+                : 'ForestRoomScene';
+            this.scene.start(sceneKey, {
+                roomId,
                 puzzleSolved: solved,
                 solvedObjectId: solved ? this.returnData?.solvedObjectId : undefined
             });

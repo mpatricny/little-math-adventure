@@ -2,6 +2,8 @@ import Phaser from 'phaser';
 import { SceneBuilder } from '../systems/SceneBuilder';
 import { SaveSystem } from '../systems/SaveSystem';
 import { CoopSessionManager } from '../systems/CoopSessionManager';
+import { GameStateManager } from '../systems/GameStateManager';
+import { getPlayerResumeScene } from '../systems/SilverpondProgressSystem';
 import { SaveSlotMeta, CharacterType } from '../types';
 import { getPlayerSpriteConfig } from '../utils/characterUtils';
 
@@ -284,7 +286,7 @@ export class CoopSetupScene extends Phaser.Scene {
         const success = coop.startSession(this.player1Slot, this.player2Slot);
 
         if (success) {
-            this.scene.start('TownScene');
+            this.scene.start(getPlayerResumeScene(GameStateManager.getInstance().getPlayer()));
         } else {
             this.instructionText.setText('Chyba!').setColor('#ff4444');
         }

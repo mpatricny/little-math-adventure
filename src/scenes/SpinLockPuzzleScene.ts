@@ -1,3 +1,7 @@
+import { sfx } from '../audio/AudioDirector';
+import { acquirePuzzle, recordPuzzleAnswer } from '../systems/puzzles/PuzzleService';
+import { wordRiddle } from '../systems/puzzles/WordPuzzles';
+import type { PuzzleInstance } from '../types/puzzles';
 import Phaser from 'phaser';
 import { JourneySystem } from '../systems/JourneySystem';
 import { SceneBuilder } from '../systems/SceneBuilder';
@@ -23,6 +27,7 @@ export class SpinLockPuzzleScene extends Phaser.Scene {
     private sceneBuilder!: SceneBuilder;
 
     // Puzzle data
+    private puzzleInstance!: PuzzleInstance<ReturnType<typeof wordRiddle>>;
     private riddle = '';
     private answer = '';
     private reward?: { gold?: number; diamonds?: number };
@@ -32,7 +37,6 @@ export class SpinLockPuzzleScene extends Phaser.Scene {
 
     // Wheel state
     private readonly ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
-    private readonly OPTIONS_PER_WHEEL = 5;
     private wheelOptions: string[][] = [];
     private currentIndices: number[] = [];
     private currentLetters: string[] = [];
@@ -68,8 +72,9 @@ export class SpinLockPuzzleScene extends Phaser.Scene {
     }
 
     init(data: SceneData): void {
-        this.riddle = data.riddle || data.riddleEn || 'Solve the riddle!';
-        this.answer = (data.answer || 'TEST').toUpperCase();
+        this.puzzleInstance = acquirePuzzle(this.journeySystem.getPuzzleStore(), `${data.roomId}:${data.objectId}:word`, 'word_riddle', wordRiddle);
+        this.riddle = this.puzzleInstance.payload.riddle;
+        this.answer = this.puzzleInstance.payload.answer;
         this.reward = data.reward;
         this.objectId = data.objectId;
         this.roomId = data.roomId;
@@ -105,6 +110,8 @@ export class SpinLockPuzzleScene extends Phaser.Scene {
 
         this.setupFrameTexts();
         this.setupWheels();
+        this.puzzleInstance.state.wheelOptions = this.wheelOptions;
+        this.puzzleInstance.state.wheelIndices = this.currentIndices;
         this.setupButton();
         this.setupCloseButton();
     }
@@ -164,12 +171,13 @@ export class SpinLockPuzzleScene extends Phaser.Scene {
 
             // Generate wheel options
             const correctLetter = this.answer[i];
-            const options = this.generateWheelOptions(correctLetter);
+            const savedOptions = this.puzzleInstance.state.wheelOptions as string[][] | undefined;
+            const options = savedOptions?.[i] ?? this.generateWheelOptions(correctLetter);
             this.wheelOptions.push(options);
 
             // Start at random non-correct position
-            let startIndex = Math.floor(Math.random() * options.length);
-            if (startIndex === 0) startIndex = 1;
+            const savedIndices = this.puzzleInstance.state.wheelIndices as number[] | undefined;
+            const startIndex = savedIndices?.[i] ?? Math.floor(Math.random() * options.length);
             this.currentIndices.push(startIndex);
             this.currentLetters.push(options[startIndex]);
 
@@ -231,7 +239,7 @@ export class SpinLockPuzzleScene extends Phaser.Scene {
             [available[i], available[j]] = [available[j], available[i]];
         }
 
-        options.push(...available.slice(0, this.OPTIONS_PER_WHEEL - 1));
+        options.push(...available.slice(0, this.puzzleInstance.profile.tier + 1));
 
         // Shuffle all options
         for (let i = options.length - 1; i > 0; i--) {
@@ -246,6 +254,7 @@ export class SpinLockPuzzleScene extends Phaser.Scene {
 
     private rotateWheel(index: number): void {
         if (this.isSolved || this.isAnimating[index]) return;
+        sfx(this, 'lock.turn');
 
         this.isAnimating[index] = true;
         const textObj = this.wheelTexts[index];
@@ -367,6 +376,7 @@ export class SpinLockPuzzleScene extends Phaser.Scene {
         if (this.isSolved) return;
 
         const playerAnswer = this.currentLetters.join('');
+        recordPuzzleAnswer(this.puzzleInstance, playerAnswer === this.answer);
         if (playerAnswer === this.answer) {
             this.handleSuccess();
         } else {
@@ -375,6 +385,7 @@ export class SpinLockPuzzleScene extends Phaser.Scene {
     }
 
     private handleSuccess(): void {
+        sfx(this, 'lock.open');
         this.isSolved = true;
 
         // Mark completed in journey system
@@ -457,6 +468,7 @@ export class SpinLockPuzzleScene extends Phaser.Scene {
     }
 
     private handleWrongAnswer(): void {
+        sfx(this, 'math.retry');
         // Red flash + shake on wheel texts.
         // Per SLIDE_ANIMATION.md: always kill previous tweens and use stored
         // original positions to prevent drift from rapid repeated clicks.

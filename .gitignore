@@ -11,6 +11,7 @@ dist
 # Local settings
 .claude/settings.local.json
 .mcp.json
+.local-credentials/
 
 # Local automation/debug artifacts
 .playwright-mcp/
@@ -23,3 +24,17 @@ nova-hra-attempt3.png
 reloaded.png
 slot1.png
 test-scene-result.png
+
+# Generated test/media outputs and local save recovery copies
+/artifacts/
+/test-results/
+/tmp/
+__pycache__/
+*.pyc
+/fox-workshop.png
+/ruin-axolotl-arena-wave2.png
+/ruin-axolotl-game-menu.png
+
+# SQLite runtime sidecars (the checkpointed database is versioned)
+*.db-shm
+*.db-wal

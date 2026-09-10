@@ -37,7 +37,7 @@
             "TTL_004": "LÉČENÍ",
             "TTL_005": "MAZLÍČCI",
             "TTL_006": "TVOJE DIAMANTY",
-            "TTL_GAME_TITLE": "LITTLE MATH ADVENTURE",
+            "TTL_GAME_TITLE": "LITTLE MATH\nADVENTURE",
             "TTL_GAME_SUBTITLE": "MATEMATICKÉ DOBRODRUŽSTVÍ"
         },
         "messages": {
@@ -88,10 +88,16 @@
     },
     "characters": {
         "enemies": {
-            "ENM_001": "Sliz",
-            "ENM_002": "Růžák",
-            "ENM_003": "Fialák",
-            "ENM_004": "Listovák"
+          "ENM_001": "Sliz",
+          "ENM_002": "Růžák",
+          "ENM_003": "Fialák",
+          "ENM_004": "Listovák",
+          "ENM_005": "Bublinový rak",
+          "ENM_006": "Stříbroploutvý šupináč",
+          "ENM_007": "Mlýnský krunýřník",
+          "ENM_008": "Ruinový mlok",
+          "ENM_009": "Perlová medúzka",
+          "ENM_010": "Strážce hlubin"
         },
         "npcs": {
             "NPC_001": "Kovář",

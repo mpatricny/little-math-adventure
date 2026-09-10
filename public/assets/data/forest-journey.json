@@ -15,10 +15,10 @@
         "nameCs": "Okraj lesa",
         "background": "bg-forest-edge",
         "encounters": [
-          { "type": "battle", "enemy": "forest_wolf" },
+          { "type": "battle", "encounterId": "forest-map-edge-wolf" },
           { "type": "rest", "healPercent": 40, "isSavePoint": true },
           { "type": "puzzle", "puzzleId": "number_bridge" },
-          { "type": "battle", "enemy": "mushroom_giant" },
+          { "type": "battle", "encounterId": "forest-map-edge-mushroom" },
           { "type": "rest", "healPercent": 30, "isSavePoint": true }
         ]
       },
@@ -28,13 +28,12 @@
         "nameCs": "Hluboký les",
         "background": "bg-deep-woods",
         "encounters": [
-          { "type": "battle", "enemy": "thorn_sprite" },
           { "type": "chest", "gold": 25 },
           { "type": "rest", "healPercent": 25, "isSavePoint": true, "name": "Campsite", "nameCs": "Tábořiště" },
           { "type": "puzzle", "puzzleId": "balance_scale" },
-          { "type": "battle", "enemy": "forest_wolf" },
+          { "type": "battle", "encounterId": "forest-map-deep-wolf-1" },
           { "type": "rest", "healPercent": 20 },
-          { "type": "battle", "enemy": "forest_wolf" },
+          { "type": "battle", "encounterId": "forest-map-deep-wolf-2" },
           { "type": "rest", "healPercent": 40, "isSavePoint": true }
         ]
       },
@@ -45,7 +44,7 @@
         "background": "bg-ancient-grove",
         "encounters": [
           { "type": "puzzle", "puzzleId": "path_choice" },
-          { "type": "battle", "enemy": "elder_treant" },
+          { "type": "battle", "encounterId": "forest-map-grove-treant" },
           { "type": "chest", "gold": 40, "potionRefill": true },
           { "type": "rest", "healPercent": 100, "isSavePoint": true, "name": "Sacred Spring", "nameCs": "Posvátný pramen" }
         ]
@@ -57,7 +56,7 @@
         "background": "bg-guardian-lair",
         "encounters": [
           { "type": "puzzle", "puzzleId": "crystal_offering", "optional": true },
-          { "type": "boss", "enemy": "verdant_guardian" }
+          { "type": "boss", "encounterId": "forest-map-guardian-boss" }
         ]
       }
     ],

@@ -9,8 +9,15 @@ import { ProblemDatabase } from './ProblemDatabase';
 import { ManaSystem } from './ManaSystem';
 import { CrystalSystem } from './CrystalSystem';
 import { ProgressionSystem } from './ProgressionSystem';
+import { DailyProgressSystem } from './DailyProgressSystem';
 
 import { getThresholdsForSubAtom } from './MasteryThresholds';
+import { getPlayerAttackProblemCount } from './CombatAttackSystem';
+import {
+    calculateSubAtomExamProgress,
+    SubAtomExamProgress,
+    SUB_ATOM_EXAM_REQUIREMENTS,
+} from './ExamProgress';
 
 // Non-difficulty thresholds (stay global)
 const SLOW_POOL_THRESHOLD_MS = 15000;
@@ -24,9 +31,6 @@ const FORM_WEIGHTS: Record<string, Record<ProblemForm, number>> = {
     S:  { result_unknown: 30, missing_part: 30, compare_equation_vs_number: 40, compare_equation_vs_equation: 0  },
     FM: { result_unknown: 25, missing_part: 25, compare_equation_vs_number: 25, compare_equation_vs_equation: 25 },
 };
-
-// Max problems per attack turn (player.attack beyond this becomes attack power bonus)
-const MAX_PROBLEMS_PER_TURN = 5;
 
 // Stat rewards per exam tier (same values as old ProgressionSystem TRIAL_TIER_REWARDS)
 const MASTERY_EXAM_REWARDS: Record<TrialTier, { hp: number; atk: number; mana: number }> = {
@@ -126,16 +130,10 @@ export class MasterySystem {
         return `${band}1` as SubAtomId;
     }
 
-    /** Number of problems per attack turn = player.attack capped at 5 */
+    /** Number of base math problems in a solo attack. */
     getProblemsPerTurn(): number {
         const player = this.gameState.getPlayer();
-        return Math.min(player.attack, MAX_PROBLEMS_PER_TURN);
-    }
-
-    /** Bonus damage per correct answer when player.attack exceeds max problem cap (5) */
-    getAttackPowerBonus(): number {
-        const player = this.gameState.getPlayer();
-        return Math.max(0, player.attack - MAX_PROBLEMS_PER_TURN);
+        return getPlayerAttackProblemCount(player.attack);
     }
 
     /** Calculate player level from mastery progress */
@@ -192,7 +190,7 @@ export class MasterySystem {
     getMedianRT(subAtomId: SubAtomId): number {
         const attempts = this.getRecentFirstAttempts(subAtomId, 20);
         const correctTimes = attempts
-            .filter(a => a.correct && a.responseTimeMs <= RT_IGNORE_THRESHOLD_MS)
+            .filter(a => a.correct && a.context !== 'underwater_bell' && a.responseTimeMs <= RT_IGNORE_THRESHOLD_MS)
             .map(a => a.responseTimeMs);
 
         if (correctTimes.length === 0) return Infinity;
@@ -203,7 +201,7 @@ export class MasterySystem {
     getFormMedianRT(subAtomId: SubAtomId, form: ProblemForm): number {
         const attempts = this.getRecentFirstAttemptsForForm(subAtomId, form, 10);
         const correctTimes = attempts
-            .filter(a => a.correct && a.responseTimeMs <= RT_IGNORE_THRESHOLD_MS)
+            .filter(a => a.correct && a.context !== 'underwater_bell' && a.responseTimeMs <= RT_IGNORE_THRESHOLD_MS)
             .map(a => a.responseTimeMs);
 
         if (correctTimes.length === 0) return Infinity;
@@ -215,7 +213,7 @@ export class MasterySystem {
         const record = this.data.problemRecords[problemKey];
         if (!record || record.attempts.length === 0) return Infinity;
         const correctTimes = record.attempts
-            .filter(a => a.correct && a.responseTimeMs <= RT_IGNORE_THRESHOLD_MS)
+            .filter(a => a.correct && a.context !== 'underwater_bell' && a.responseTimeMs <= RT_IGNORE_THRESHOLD_MS)
             .map(a => a.responseTimeMs);
         if (correctTimes.length === 0) return Infinity;
         return correctTimes.reduce((sum, t) => sum + t, 0) / correctTimes.length;
@@ -247,9 +245,25 @@ export class MasterySystem {
         const sa = this.data.subAtoms[subAtomId];
         if (sa.state !== 'training') return false;
 
-        return sa.successfulSolves >= 20
-            && this.getLast20Accuracy(subAtomId) >= 0.70
-            && this.getFormsWithSolves(subAtomId, 4) >= 2;
+        return this.getSubAtomExamProgress(subAtomId).ready;
+    }
+
+    /** Progress toward the standard exam for one training sub-atom. */
+    getSubAtomExamProgress(subAtomId: SubAtomId): SubAtomExamProgress {
+        const sa = this.data.subAtoms[subAtomId];
+        return calculateSubAtomExamProgress(
+            subAtomId,
+            sa.successfulSolves,
+            this.getLast20Accuracy(subAtomId),
+            this.getFormsWithSolves(subAtomId, SUB_ATOM_EXAM_REQUIREMENTS.solvesPerForm),
+        );
+    }
+
+    /** Progress for the training sub-atom currently blocking the next exam. */
+    getNextSubAtomExamProgress(): SubAtomExamProgress | null {
+        const targetId = this.getFrontierSubAtom();
+        if (this.data.subAtoms[targetId].state !== 'training') return null;
+        return this.getSubAtomExamProgress(targetId);
     }
 
     /** Check if fluency challenge is available */
@@ -334,6 +348,7 @@ export class MasterySystem {
     }
 
     /** Compute exam tier from correct count using EXAM_CONFIGS thresholds.
+     *  Response time is recorded for learning analytics, but never affects the medal.
      *  For pass/fail exams (fluency, mastery, band_mastery), returns 'gold' on pass, 'none' on fail.
      */
     computeExamTier(correctCount: number, examType: ExamType): TrialTier {
@@ -343,7 +358,10 @@ export class MasterySystem {
             return correctCount >= config.passThreshold ? 'gold' : 'none';
         }
         // Medal exams
-        return this.computeTier(correctCount, config);
+        if (config.goldThreshold && correctCount >= config.goldThreshold) return 'gold';
+        if (config.silverThreshold && correctCount >= config.silverThreshold) return 'silver';
+        if (config.bronzeThreshold && correctCount >= config.bronzeThreshold) return 'bronze';
+        return 'none';
     }
 
     // ========================================
@@ -370,6 +388,12 @@ export class MasterySystem {
             }
             stateChanged = true;
             this.onSubAtomStateChange(subAtomId);
+            if (!sessionOnly) {
+                DailyProgressSystem.recordMilestone(
+                    this.gameState.getPlayer(),
+                    `${subAtomId}: ${sa.state === 'fluent' ? 'Plynulost' : 'Jistota'}`,
+                );
+            }
         }
 
         const statGains = (!sessionOnly && tier !== 'none')
@@ -384,7 +408,7 @@ export class MasterySystem {
     /** Apply result of fluency challenge */
     applyFluencyResult(subAtomId: SubAtomId, correctCount: number, sessionOnly: boolean = false): { passed: boolean; stateChanged: boolean; hpGain: number; attackGain: number; manaGain: number } {
         const config = EXAM_CONFIGS.fluency_challenge;
-        const passed = correctCount >= (config.passThreshold || 10);
+        const passed = correctCount >= (config.passThreshold ?? config.itemCount);
         const sa = this.data.subAtoms[subAtomId];
         let stateChanged = false;
 
@@ -394,6 +418,9 @@ export class MasterySystem {
             sa.state = 'fluent';
             stateChanged = true;
             this.onSubAtomStateChange(subAtomId);
+            if (!sessionOnly) {
+                DailyProgressSystem.recordMilestone(this.gameState.getPlayer(), `${subAtomId}: Plynulost`);
+            }
         }
 
         const statGains = (!sessionOnly && passed)
@@ -408,7 +435,7 @@ export class MasterySystem {
     /** Apply result of mastery challenge */
     applyMasteryResult(subAtomId: SubAtomId, correctCount: number, sessionOnly: boolean = false): { passed: boolean; stateChanged: boolean; hpGain: number; attackGain: number; manaGain: number; shardGain: number; coinGain: number } {
         const config = EXAM_CONFIGS.mastery_challenge;
-        const passed = correctCount >= (config.passThreshold || 11);
+        const passed = correctCount >= (config.passThreshold ?? config.itemCount);
         const sa = this.data.subAtoms[subAtomId];
         let stateChanged = false;
 
@@ -418,6 +445,9 @@ export class MasterySystem {
             sa.state = 'mastery';
             stateChanged = true;
             this.onSubAtomStateChange(subAtomId);
+            if (!sessionOnly) {
+                DailyProgressSystem.recordMilestone(this.gameState.getPlayer(), `${subAtomId}: Mistrovství`);
+            }
         }
 
         const masteryRewards = (!sessionOnly && passed)
@@ -444,6 +474,9 @@ export class MasterySystem {
             band.state = 'secure';
             stateChanged = true;
             this.onBandStateChange(bandId);
+            if (!sessionOnly) {
+                DailyProgressSystem.recordMilestone(this.gameState.getPlayer(), `Pásmo ${bandId}: Jistota`);
+            }
         }
 
         const statGains = (!sessionOnly && tier !== 'none')
@@ -458,7 +491,7 @@ export class MasterySystem {
     /** Apply result of band mastery challenge */
     applyBandMasteryResult(bandId: BandId, correctCount: number, sessionOnly: boolean = false): { passed: boolean; stateChanged: boolean; hpGain: number; attackGain: number; manaGain: number; shardGain: number; coinGain: number } {
         const config = EXAM_CONFIGS.band_mastery;
-        const passed = correctCount >= (config.passThreshold || 18);
+        const passed = correctCount >= (config.passThreshold ?? config.itemCount);
         const band = this.data.bands[bandId];
         let stateChanged = false;
 
@@ -467,6 +500,9 @@ export class MasterySystem {
         if (passed && band.state === 'fluent') {
             band.state = 'mastery';
             stateChanged = true;
+            if (!sessionOnly) {
+                DailyProgressSystem.recordMilestone(this.gameState.getPlayer(), `Pásmo ${bandId}: Mistrovství`);
+            }
         }
 
         const masteryRewards = (!sessionOnly && passed)
@@ -532,11 +568,12 @@ export class MasterySystem {
             data.retryPool = data.retryPool.filter(k => k !== problemKey);
         }
 
-        if (responseTimeMs > SLOW_POOL_THRESHOLD_MS && correct) {
+        // Planning, dragging and watching a water mechanism is application time, not fact retrieval latency.
+        if (context !== 'underwater_bell' && responseTimeMs > SLOW_POOL_THRESHOLD_MS && correct) {
             if (!data.slowPool.includes(problemKey)) {
                 data.slowPool.push(problemKey);
             }
-        } else if (correct && responseTimeMs <= SLOW_POOL_THRESHOLD_MS) {
+        } else if (context !== 'underwater_bell' && correct && responseTimeMs <= SLOW_POOL_THRESHOLD_MS) {
             // Remove from slow pool if answered fast enough
             data.slowPool = data.slowPool.filter(k => k !== problemKey);
         }
@@ -653,6 +690,38 @@ export class MasterySystem {
         return this.selectReviewProblems('mastery', count, new Set());
     }
 
+    /**
+     * Build a short, non-consuming preparation set at the player's current edge.
+     * Retry and slow items come first, followed by frontier and consolidation work.
+     */
+    drawPreparationProblems(count: number): string[] {
+        const targetCount = Math.max(0, Math.min(5, Math.round(count)));
+        if (targetCount === 0) return [];
+
+        const data = this.data;
+        const used = new Set<string>();
+        const result: string[] = [];
+        const add = (keys: string[]): void => {
+            for (const key of keys) {
+                if (result.length >= targetCount) break;
+                if (used.has(key) || !this.problemDb.getProblemByKey(key)) continue;
+                used.add(key);
+                result.push(key);
+            }
+        };
+
+        add(data.retryPool.slice(0, 2));
+        add(data.slowPool.slice(0, 2));
+
+        const frontier = this.getFrontierSubAtom();
+        add(this.selectCurrentProblems(frontier, targetCount - result.length, used, []));
+        add(this.selectImproveProblems(this.getCurrentBand(), targetCount - result.length, used));
+        add(this.selectReviewProblems('fluent', targetCount - result.length, used));
+        add(this.selectReviewProblems('mastery', targetCount - result.length, used));
+
+        return result.slice(0, targetCount);
+    }
+
     /** Expose mastery RT threshold for block quick-bonus calculation.
      *  Scales per sub-atom difficulty when masteryKey is provided. */
     getMasteryRTThreshold(masteryKey?: string): number {
@@ -715,65 +784,62 @@ export class MasterySystem {
     // Exam Problem Generation
     // ========================================
 
-    /** Generate problem keys for a sub-atom exam (10 items) */
+    /** Generate problem keys for a sub-atom exam (8 items) */
     generateSubAtomExamProblems(subAtomId: SubAtomId): string[] {
-        // 4 result_unknown + 3 missing_part + 3 compare_eq_vs_number (no compare_eq_vs_equation)
+        // 3 result_unknown + 3 missing_part + 2 compare_eq_vs_number (no compare_eq_vs_equation)
         const problems: string[] = [];
-        problems.push(...this.pickRandomProblems(subAtomId, 'result_unknown', 4));
+        problems.push(...this.pickRandomProblems(subAtomId, 'result_unknown', 3));
         problems.push(...this.pickRandomProblems(subAtomId, 'missing_part', 3));
-        problems.push(...this.pickRandomProblems(subAtomId, 'compare_equation_vs_number', 3));
+        problems.push(...this.pickRandomProblems(subAtomId, 'compare_equation_vs_number', 2));
         return this.shuffle(problems);
     }
 
-    /** Generate problem keys for fluency/mastery challenge (12 items, mixed forms) */
+    /** Generate a form-balanced fluency/mastery challenge of the requested length. */
     generateChallengeProblemKeys(subAtomId: SubAtomId, count: number, examType: ExamType = 'mastery_challenge'): string[] {
         // Fluency challenge: player is secure, hasn't seen compare_equation_vs_equation yet
         // Mastery challenge: player is fluent, all 4 forms available
         const forms: ProblemForm[] = examType === 'fluency_challenge'
             ? ['result_unknown', 'missing_part', 'compare_equation_vs_number']
             : ALL_PROBLEM_FORMS;
-        const perForm = Math.ceil(count / forms.length);
+        const perForm = Math.floor(count / forms.length);
+        const remainder = count % forms.length;
         const problems: string[] = [];
-        for (const form of forms) {
-            problems.push(...this.pickRandomProblems(subAtomId, form, perForm));
+        for (let i = 0; i < forms.length; i++) {
+            const formCount = perForm + (i < remainder ? 1 : 0);
+            problems.push(...this.pickRandomProblems(subAtomId, forms[i], formCount));
         }
-        return this.shuffle(problems).slice(0, count);
+        return this.shuffle(problems);
     }
 
-    /** Generate problem keys for band gate exam (16 items: 4 per sub-atom) */
+    /** Generate problem keys for band gate exam (12 items: 3 per sub-atom) */
     generateBandGateProblems(bandId: BandId): string[] {
         const problems: string[] = [];
         for (const num of ALL_SUB_ATOM_NUMBERS) {
             const subAtomId = `${bandId}${num}` as SubAtomId;
-            // 4 problems per sub-atom: 2 result_unknown + 1 missing_part + 1 compare_vs_number
-            problems.push(...this.pickRandomProblems(subAtomId, 'result_unknown', 2));
+            // 3 problems per sub-atom: one result, one missing part, one comparison
+            problems.push(...this.pickRandomProblems(subAtomId, 'result_unknown', 1));
             problems.push(...this.pickRandomProblems(subAtomId, 'missing_part', 1));
             problems.push(...this.pickRandomProblems(subAtomId, 'compare_equation_vs_number', 1));
         }
         return this.shuffle(problems);
     }
 
-    /** Generate problem keys for band mastery challenge (20 items) */
+    /** Generate a 14-item band mastery challenge with every sub-atom represented. */
     generateBandMasteryProblems(bandId: BandId): string[] {
         const problems: string[] = [];
-        // 4 addition + 4 subtraction + 4 comparison + 6 three-operand + 2 mixed
-        const sa1 = `${bandId}1` as SubAtomId;
-        const sa2 = `${bandId}2` as SubAtomId;
-        const sa3 = `${bandId}3` as SubAtomId;
-        const sa4 = `${bandId}4` as SubAtomId;
+        // Three core forms from every sub-atom (12), plus one advanced comparison
+        // from both the three-operand and mixed sub-atoms (2).
+        for (const num of ALL_SUB_ATOM_NUMBERS) {
+            const subAtomId = `${bandId}${num}` as SubAtomId;
+            problems.push(...this.pickRandomProblems(subAtomId, 'result_unknown', 1));
+            problems.push(...this.pickRandomProblems(subAtomId, 'missing_part', 1));
+            problems.push(...this.pickRandomProblems(subAtomId, 'compare_equation_vs_number', 1));
+        }
 
-        problems.push(...this.pickRandomProblems(sa1, 'result_unknown', 2));
-        problems.push(...this.pickRandomProblems(sa1, 'missing_part', 2));
-        problems.push(...this.pickRandomProblems(sa2, 'result_unknown', 2));
-        problems.push(...this.pickRandomProblems(sa2, 'missing_part', 2));
-        problems.push(...this.pickRandomProblems(sa3, 'result_unknown', 2));
-        problems.push(...this.pickRandomProblems(sa3, 'compare_equation_vs_number', 2));
-        problems.push(...this.pickRandomProblems(sa3, 'result_unknown', 2));
-        problems.push(...this.pickRandomProblems(sa3, 'compare_equation_vs_equation', 2));
-        problems.push(...this.pickRandomProblems(sa4, 'result_unknown', 1));
-        problems.push(...this.pickRandomProblems(sa4, 'missing_part', 1));
+        problems.push(...this.pickRandomProblems(`${bandId}3` as SubAtomId, 'compare_equation_vs_equation', 1));
+        problems.push(...this.pickRandomProblems(`${bandId}4` as SubAtomId, 'compare_equation_vs_equation', 1));
 
-        return this.shuffle(problems).slice(0, 20);
+        return this.shuffle(problems);
     }
 
     // ========================================
@@ -1020,7 +1086,7 @@ export class MasterySystem {
 
     private getScopedMedianRT(attempts: ScopedMasteryAttempt[]): number {
         const correctTimes = attempts
-            .filter(entry => entry.attempt.correct && entry.attempt.responseTimeMs <= RT_IGNORE_THRESHOLD_MS)
+            .filter(entry => entry.attempt.correct && entry.attempt.context !== 'underwater_bell' && entry.attempt.responseTimeMs <= RT_IGNORE_THRESHOLD_MS)
             .map(entry => entry.attempt.responseTimeMs);
 
         if (correctTimes.length === 0) return Infinity;

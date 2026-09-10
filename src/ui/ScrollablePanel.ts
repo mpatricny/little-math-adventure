@@ -35,8 +35,7 @@ export class ScrollablePanel {
         this.contentContainer = scene.add.container(viewport.x, viewport.y);
         parent.add(this.contentContainer);
 
-        // Geometry mask: world-space rectangle at viewport position
-        // Since parent is at (640,360), convert local coords to world coords
+        // Geometry mask: world-space rectangle at viewport position.
         this.maskGraphics = scene.make.graphics();
         this.updateMaskShape();
 
@@ -59,9 +58,8 @@ export class ScrollablePanel {
 
     private updateMaskShape(): void {
         // Compute world-space coordinates of the viewport
-        // The parent container is at (640, 360) so we add those offsets
-        const worldX = 640 + this.viewport.x;
-        const worldY = 360 + this.viewport.y;
+        const worldX = this.parentContainer.x + this.viewport.x;
+        const worldY = this.parentContainer.y + this.viewport.y;
 
         this.maskGraphics.clear();
         this.maskGraphics.fillStyle(0xffffff);
@@ -74,8 +72,8 @@ export class ScrollablePanel {
 
             // Check if pointer is within viewport (world space)
             const pointer = this.scene.input.activePointer;
-            const worldX = 640 + this.viewport.x;
-            const worldY = 360 + this.viewport.y;
+            const worldX = this.parentContainer.x + this.viewport.x;
+            const worldY = this.parentContainer.y + this.viewport.y;
 
             if (pointer.x >= worldX && pointer.x <= worldX + this.viewport.width &&
                 pointer.y >= worldY && pointer.y <= worldY + this.viewport.height) {

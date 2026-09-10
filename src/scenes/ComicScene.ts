@@ -1,3 +1,4 @@
+import { sfx } from '../audio/AudioDirector';
 import Phaser from 'phaser';
 
 /**
@@ -304,6 +305,9 @@ export class ComicScene extends Phaser.Scene {
      */
     private transitionToPanel(newIndex: number): void {
         if (this.isTransitioning) return;
+        if (newIndex === 1) sfx(this, 'story.ship_fault');
+        else if (newIndex === 2) sfx(this, 'story.ship_landing');
+        else sfx(this, 'ui.page');
         this.isTransitioning = true;
 
         const oldPanel = this.currentPanel;

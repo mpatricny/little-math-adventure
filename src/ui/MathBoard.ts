@@ -1,3 +1,4 @@
+import { sfx } from '../audio/AudioDirector';
 import Phaser from 'phaser';
 import { MathProblem } from '../types';
 import { formatMathProblem } from '../utils/formatMathProblem';
@@ -6,6 +7,8 @@ import { MasterySystem } from '../systems/MasterySystem';
 // Visual hint configuration
 const HINT_ITEM_COUNT = 8;      // Total items in spritesheet
 const HINT_APPEAR_DELAY = 5000; // 5 second delay before hints appear
+const PROBLEM_BUTTON_GAP = 12;  // Keep equations visually separate from answer buttons
+const PROBLEM_AREA_PADDING = 24;
 
 // Default layout configuration
 const DEFAULT_LAYOUT = {
@@ -46,6 +49,11 @@ export interface MathBoardLayout {
     boardMinHeight?: number;
 }
 
+export interface MathBoardRemoteSnapshot {
+    problem: string;
+    choices: Array<{ index: 0 | 1 | 2; label: string }>;
+}
+
 interface ProblemRow {
     container: Phaser.GameObjects.Container;
     problemText: Phaser.GameObjects.Text;
@@ -70,6 +78,8 @@ export class MathBoard {
     private advanceTimer: Phaser.Time.TimerEvent | null = null; // Track 400ms delay between problems
     private onWrongAnswer?: (problem: MathProblem, onDismiss: () => void) => void; // Optional wrong answer callback
     private speedChargeCallback?: (charges: number, type: 'swift' | 'lightning') => number; // Returns bonus damage from bar fills
+    private activeProblemChangedCallback?: (snapshot: MathBoardRemoteSnapshot | null) => void;
+    private damageDisplayEnabled = true;
 
     // Multi-problem state
     private problems: MathProblem[] = [];
@@ -105,6 +115,16 @@ export class MathBoard {
     /** Set callback for speed charge bar integration. Callback receives charges + type, returns bonus damage from bar fills. */
     setSpeedChargeCallback(cb: (charges: number, type: 'swift' | 'lightning') => number): void {
         this.speedChargeCallback = cb;
+    }
+
+    setActiveProblemChangedCallback(cb: (snapshot: MathBoardRemoteSnapshot | null) => void): void {
+        this.activeProblemChangedCallback = cb;
+    }
+
+    /** Hide combat-only damage UI when the board is reused for practice flows. */
+    setDamageDisplayEnabled(enabled: boolean): void {
+        this.damageDisplayEnabled = enabled;
+        this.damageText.setVisible(enabled && this.container.visible);
     }
 
     /**
@@ -231,6 +251,9 @@ export class MathBoard {
         const useTwoColumns = totalProblems > this.layout.twoColumnThreshold;
         const rowHeight = this.layout.rowHeight;
         const columnWidth = this.layout.columnWidth;
+        const buttonStartX = useTwoColumns ? this.layout.buttonStartXTwoCol : this.layout.buttonStartX;
+        const buttonSpacing = useTwoColumns ? this.layout.buttonSpacingTwoCol : this.layout.buttonSpacing;
+        const buttonScale = useTwoColumns ? this.layout.buttonScaleTwoCol : this.layout.buttonScale;
 
         // Calculate position
         let rowX = 0;
@@ -258,18 +281,40 @@ export class MathBoard {
 
         // Use smaller font for long problem strings (three-operand missing_part)
         const isLongString = problemString.length > 14;
-        const fontSize = useTwoColumns ? '22px' : (isLongString ? '24px' : '32px');
+        const fontSize = useTwoColumns ? 22 : (isLongString ? 24 : 32);
         const textX = useTwoColumns ? this.layout.problemTextXTwoCol : this.layout.problemTextX;
 
         // Determine text color based on source
         const textColor = this.getSourceTextColor(problem.source);
 
         const problemText = this.scene.add.text(textX, 0, problemString, {
-            fontSize: fontSize,
+            fontSize: `${fontSize}px`,
             fontFamily: 'Arial, sans-serif',
             color: textColor,
             fontStyle: 'bold',
         }).setOrigin(0, 0.5);
+
+        const buttonFrameWidth = this.scene.textures.getFrame('ui-button')?.width ?? 300;
+        const problemRightLimit = buttonStartX - (buttonFrameWidth * buttonScale / 2) - PROBLEM_BUTTON_GAP;
+        const problemAreaLeft = useTwoColumns
+            ? -columnWidth / 2 + PROBLEM_AREA_PADDING
+            : -this.layout.boardWidth / 2 + PROBLEM_AREA_PADDING;
+        const problemAreaWidth = Math.max(1, problemRightLimit - problemAreaLeft);
+
+        if (problemText.width > problemAreaWidth) {
+            const minimumFontSize = useTwoColumns ? 16 : 20;
+            const fittedFontSize = Math.max(
+                minimumFontSize,
+                Math.floor(fontSize * problemAreaWidth / problemText.width)
+            );
+            problemText.setFontSize(fittedFontSize);
+        }
+
+        let problemLeftX = textX;
+        if (problemText.x + problemText.width > problemRightLimit) {
+            problemText.setOrigin(1, 0.5).setX(problemRightLimit);
+            problemLeftX = problemRightLimit - problemText.width;
+        }
         rowContainer.add(problemText);
 
         // Source label (pet, sword, or attack power bonus indicator)
@@ -280,7 +325,7 @@ export class MathBoard {
             const labelFontSize = useTwoColumns ? '12px' : '14px';
             const labelY = useTwoColumns ? -22 : -28;
 
-            sourceLabel = this.scene.add.container(textX, labelY);
+            sourceLabel = this.scene.add.container(problemLeftX, labelY);
             const labelText = this.scene.add.text(0, 0, `${problem.damageMultiplier}× Síla`, {
                 fontSize: labelFontSize,
                 fontFamily: 'Arial, sans-serif',
@@ -296,7 +341,7 @@ export class MathBoard {
             const labelY = useTwoColumns ? -22 : -28;
             const iconScale = useTwoColumns ? 0.08 : 0.1;
 
-            sourceLabel = this.scene.add.container(textX, labelY);
+            sourceLabel = this.scene.add.container(problemLeftX, labelY);
 
             if (problem.source === 'sword') {
                 // Sword: use actual sword icon from shop-swords-sheet (frame 1 = iron sword)
@@ -330,19 +375,9 @@ export class MathBoard {
 
         // Answer buttons (3 buttons on right side) - use configurable spacing/scale
         const buttons: Phaser.GameObjects.Container[] = [];
-        const buttonStartX = useTwoColumns ? this.layout.buttonStartXTwoCol : this.layout.buttonStartX;
-        const buttonSpacing = useTwoColumns ? this.layout.buttonSpacingTwoCol : this.layout.buttonSpacing;
-        const buttonScale = useTwoColumns ? this.layout.buttonScaleTwoCol : this.layout.buttonScale;
 
         for (let i = 0; i < 3; i++) {
-            // For comparison problems, display symbols instead of numbers
-            let displayValue: string;
-            if (problem.problemType === 'comparison' || problem.problemType === 'comparison_eq_vs_eq') {
-                const comparisonSymbols = ['<', '=', '>'];
-                displayValue = comparisonSymbols[problem.choices[i]];
-            } else {
-                displayValue = problem.choices[i].toString();
-            }
+            const displayValue = this.getChoiceDisplayValue(problem, i);
 
             const btn = this.createAnswerButton(
                 buttonStartX + i * buttonSpacing,
@@ -359,7 +394,8 @@ export class MathBoard {
         }
 
         // Status icon (shows ✓ or ✗ after answering)
-        const statusX = useTwoColumns ? -185 : -210;
+        const defaultStatusX = useTwoColumns ? -185 : -210;
+        const statusX = Math.max(problemAreaLeft, Math.min(defaultStatusX, problemLeftX - 22));
         const statusIcon = this.scene.add.text(statusX, 0, '', {
             fontSize: useTwoColumns ? '20px' : '28px',
             fontFamily: 'Arial, sans-serif',
@@ -459,6 +495,14 @@ export class MathBoard {
         return container;
     }
 
+    private getChoiceDisplayValue(problem: MathProblem, choiceIndex: number): string {
+        if (problem.problemType === 'comparison' || problem.problemType === 'comparison_eq_vs_eq') {
+            const comparisonSymbols = ['<', '=', '>'];
+            return comparisonSymbols[problem.choices[choiceIndex]];
+        }
+        return problem.choices[choiceIndex].toString();
+    }
+
     private setRowEnabled(buttons: Phaser.GameObjects.Container[], enabled: boolean): void {
         buttons.forEach(btn => {
             const bg = btn.getData('bg') as Phaser.GameObjects.Image;
@@ -511,7 +555,7 @@ export class MathBoard {
         // Position damage text at bottom
         this.damageText.setY(boardHeight / 2 - this.layout.damageTextYOffset);
         this.damageText.setText(`Poškození: 0`);
-        this.damageText.setVisible(true);
+        this.damageText.setVisible(this.damageDisplayEnabled);
 
         // Position hint container (using configurable hintY offset)
         this.hintContainer.setY(this.layout.hintY);
@@ -525,6 +569,7 @@ export class MathBoard {
         this.container.setVisible(true);
         this.container.setAlpha(0);
         this.container.setScale(0.8);
+        this.notifyActiveProblemChanged();
 
         this.scene.tweens.add({
             targets: this.container,
@@ -640,6 +685,7 @@ export class MathBoard {
     private handleAnswer(rowIndex: number, buttonIndex: number, isCorrect: boolean): void {
         // Only handle if this is the current problem
         if (rowIndex !== this.currentProblemIndex) return;
+        sfx(this.scene, isCorrect ? 'math.correct' : 'math.retry');
 
         // Record response time for this problem
         const responseTimeMs = Date.now() - this.problemStartTime;
@@ -717,7 +763,7 @@ export class MathBoard {
         this.damageText.setText(`Poškození: ${this.damageDealt}`);
 
         // Animate damage text on correct
-        if (isCorrect) {
+        if (isCorrect && this.damageDisplayEnabled) {
             // Bigger bounce + gold flash when charge bar filled
             this.scene.tweens.add({
                 targets: this.damageText,
@@ -746,6 +792,33 @@ export class MathBoard {
         this.advanceAfterAnswer();
     }
 
+    submitChoice(choiceIndex: 0 | 1 | 2): void {
+        if (!this.container.visible) return;
+        const row = this.problemRows[this.currentProblemIndex];
+        if (!row || row.solved) return;
+        const button = row.buttons[choiceIndex];
+        if (!button) return;
+        this.handleAnswer(this.currentProblemIndex, choiceIndex, button.getData('isCorrect') === true);
+    }
+
+    getActiveProblemSnapshot(): MathBoardRemoteSnapshot | null {
+        if (!this.container.visible) return null;
+        const row = this.problemRows[this.currentProblemIndex];
+        if (!row || row.solved) return null;
+
+        return {
+            problem: formatMathProblem(row.problem, 'question'),
+            choices: row.buttons.map((button, index) => ({
+                index: index as 0 | 1 | 2,
+                label: (button.getData('text') as Phaser.GameObjects.Text).text,
+            })),
+        };
+    }
+
+    private notifyActiveProblemChanged(): void {
+        this.activeProblemChangedCallback?.(this.getActiveProblemSnapshot());
+    }
+
     /** Advance to next problem or complete (called after answer or after wrong-answer popup dismissed) */
     private advanceAfterAnswer(): void {
         this.advanceTimer = this.scene.time.delayedCall(400, () => {
@@ -766,6 +839,7 @@ export class MathBoard {
                 if (nextProblem.showVisualHint) {
                     this.showVisualHints(nextProblem);
                 }
+                this.notifyActiveProblemChanged();
 
                 // Highlight current row
                 this.scene.tweens.add({
@@ -821,6 +895,7 @@ export class MathBoard {
 
                 // Clear hints
                 this.hintContainer.removeAll(true);
+                this.notifyActiveProblemChanged();
             },
         });
     }

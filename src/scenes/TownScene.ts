@@ -1,5 +1,4 @@
 import Phaser from 'phaser';
-import { CharacterUI } from '../ui/CharacterUI';
 import { GameStateManager } from '../systems/GameStateManager';
 import { SceneDebugger } from '../systems/SceneDebugger';
 import { SceneBuilder } from '../systems/SceneBuilder';
@@ -11,8 +10,14 @@ import { PlacementInitializer } from '../systems/PlacementInitializer';
 import { LocalizationService } from '../systems/LocalizationService';
 import { uiTemplateLoader } from '../systems/UiTemplateLoader';
 import { getPlayerSpriteConfig } from '../utils/characterUtils';
-import { Crystal, PlayerState, TownProgress, BandId } from '../types';
+import { Crystal, PlayerState, TownProgress, BandId, EnemyDefinition } from '../types';
 import { CoopSessionManager } from '../systems/CoopSessionManager';
+import { createEncounterCatalog, EncounterCatalog } from '../systems/EncounterCatalog';
+import {
+    selectArenaEncounterProgress,
+} from '../systems/ArenaProgressSystem';
+import { getArenaChoiceOptions } from '../systems/ArenaChoiceSystem';
+import { WalkingSceneHud } from '../ui/WalkingSceneHud';
 
 /** Building unlock order — condition checked against player state */
 const BUILDING_UNLOCK_CONFIG: {
@@ -29,7 +34,6 @@ const BUILDING_UNLOCK_CONFIG: {
 
 export class TownScene extends Phaser.Scene {
     private sceneBuilder!: SceneBuilder;
-    private characterUI!: CharacterUI;
     private debugger!: SceneDebugger;
     private player!: Phaser.GameObjects.Sprite;
     private playerBSprite?: Phaser.GameObjects.Sprite;
@@ -39,6 +43,7 @@ export class TownScene extends Phaser.Scene {
     private groundCrystalsContainer?: Phaser.GameObjects.Container;
     private zyxGuides: Map<string, Phaser.GameObjects.Sprite> = new Map();
     private newBadges: Map<string, Phaser.GameObjects.Container> = new Map();
+    private encounterCatalog!: EncounterCatalog;
 
     constructor() {
         super({ key: 'TownScene' });
@@ -46,6 +51,9 @@ export class TownScene extends Phaser.Scene {
 
     create(): void {
         this.sceneBuilder = new SceneBuilder(this);
+        this.encounterCatalog = createEncounterCatalog(this.cache.json.get('encounters'), {
+            core: this.cache.json.get('enemies') as EnemyDefinition[],
+        });
 
         // Town entry: heal player(s) and regenerate potion(s)
         const gameState = GameStateManager.getInstance();
@@ -80,9 +88,6 @@ export class TownScene extends Phaser.Scene {
 
         // Build the scene from JSON
         this.sceneBuilder.buildScene('TownScene');
-
-        // Wire up "money mana" resource display
-        this.setupResourceDisplay(player);
 
         // Clear scene re-entry state
         this.zyxGuides = new Map();
@@ -135,19 +140,17 @@ export class TownScene extends Phaser.Scene {
         // Override building click handlers with walk animation
         this.setupBuildingTransitions();
 
-        // Create UI Overlays
-        this.characterUI = new CharacterUI(this);
-
-        // Visible character UI button (for mobile + desktop convenience)
-        const charBtnEl = this.sceneBuilder.get('characterButton') as Phaser.GameObjects.Container | undefined;
-        const charBtn = this.add.text(
-            charBtnEl?.x ?? 1240, charBtnEl?.y ?? 30, '\u2699',
-            { fontSize: '36px', color: '#ffffff' }
-        ).setOrigin(0.5)
-            .setInteractive({ useHandCursor: true })
-            .setDepth(charBtnEl?.depth ?? 500)
-            .setScrollFactor(0);
-        charBtn.on('pointerdown', () => this.characterUI.toggle());
+        // Replace the legacy menu/resource/gear controls with the shared
+        // editor-positioned walking HUD and production character book.
+        ['btnQuitToMenu', 'money mana', 'characterButton'].forEach((id) => {
+            const object = this.sceneBuilder.get(id) as
+                | (Phaser.GameObjects.GameObject & Phaser.GameObjects.Components.Visible)
+                | undefined;
+            object?.setVisible(false);
+        });
+        new WalkingSceneHud(this, {
+            onMenu: () => this.quitToMenu(),
+        });
 
         // Show guild notification if mastery exams are available AND guild is unlocked
         const guildNotification = this.sceneBuilder.get<Phaser.GameObjects.Container>('guild-notification');
@@ -211,6 +214,36 @@ export class TownScene extends Phaser.Scene {
         this.input.keyboard!.on('keydown-F', () => {
             console.log('Debug: Starting Forest Journey');
             this.scene.start('ForestAdventureStartScene', { debugMode: true });
+        });
+
+        // Debug: exercise the complete post-guardian story transition without
+        // touching the active save. Kept out of production builds and menus.
+        if (import.meta.env.DEV) {
+            this.input.keyboard!.on('keydown-G', () => this.startGuardianStoryTest());
+        }
+    }
+
+    private startGuardianStoryTest(): void {
+        const enemies = this.cache.json.get('enemies') as EnemyDefinition[];
+        const guardian = enemies.find(enemy => enemy.id === 'verdant_guardian');
+        if (!guardian) {
+            console.error('[TownScene] Verdant Guardian is missing from enemies.json');
+            return;
+        }
+
+        this.scene.start('BattleScene', {
+            enemyDefs: [{
+                ...guardian,
+                hp: 1,
+                attack: 0,
+                defense: 0,
+                goldReward: [0, 0] as [number, number],
+            }],
+            mode: 'journey',
+            backgroundKey: 'guardian-lair-mock-bg',
+            mockMode: true,
+            storyVictory: 'forest-crystal',
+            returnScene: 'TownScene',
         });
     }
 
@@ -470,8 +503,9 @@ export class TownScene extends Phaser.Scene {
 
         // Arena progress indicator
         const player = GameStateManager.getInstance().getPlayer();
+        const arenaWaveCount = this.encounterCatalog.getArena(player.arena.arenaLevel || 1).waves.length;
         const arenaProgress = player.arena.isActive
-            ? `${player.arena.currentBattle}/5`
+            ? `${player.arena.currentBattle}/${arenaWaveCount}`
             : 'Nový';
 
         const progressText = this.add.text(0, 70, arenaProgress, {
@@ -641,57 +675,61 @@ export class TownScene extends Phaser.Scene {
                     duration: 300,
                     onComplete: () => {
                         const player = GameStateManager.getInstance().getPlayer();
-                        let arenaLevel = player.arena.arenaLevel || 1;
-
-                        // Co-op: use the lower-level player's arena progress
                         const coopRef = CoopSessionManager.getInstance();
+                        const choicePlayers = [player];
                         if (coopRef.isCoopActive()) {
                             coopRef.activatePlayerB();
-                            const playerB = GameStateManager.getInstance().getPlayer();
-                            const levelB = playerB.arena.arenaLevel || 1;
+                            choicePlayers.push(GameStateManager.getInstance().getPlayer());
                             coopRef.activatePlayerA();
-                            arenaLevel = Math.min(arenaLevel, levelB);
                         }
 
-                        // Check if arena level has changed - if so, reset waveResults
-                        const previousArenaLevel = player.arena.waveResultsArenaLevel;
-                        const arenaLevelChanged = previousArenaLevel !== undefined && previousArenaLevel !== arenaLevel;
+                        // New content is always the recommended first option. Completed
+                        // imperfect waves remain separate, voluntary practice choices.
+                        const arenaChoices = getArenaChoiceOptions(
+                            this.encounterCatalog,
+                            choicePlayers,
+                            'mathoria',
+                        );
+                        const selectedChoice = arenaChoices[0];
 
                         console.log('[TownScene] Entering arena:', {
                             isActive: player.arena.isActive,
                             currentBattle: player.arena.currentBattle,
-                            arenaLevel,
-                            previousArenaLevel,
-                            arenaLevelChanged,
-                            waveResults: JSON.stringify(player.arena.waveResults)
+                            selectedChoice,
+                            arenaChoices,
                         });
 
-                        // Reset waveResults when entering a DIFFERENT arena level
-                        if (arenaLevelChanged || !player.arena.waveResults) {
-                            player.arena.waveResults = [];
+                        if (coopRef.isCoopActive()) {
+                            coopRef.forBothPlayers(() => {
+                                const activePlayer = GameStateManager.getInstance().getPlayer();
+                                selectArenaEncounterProgress(
+                                    activePlayer,
+                                    selectedChoice.arenaLevel,
+                                    selectedChoice.encounterId,
+                                    selectedChoice.waveIndex,
+                                );
+                                activePlayer.arena.isActive = true;
+                                activePlayer.arena.playerHpAtStart = activePlayer.hp;
+                            });
+                            coopRef.activatePlayerA();
+                        } else {
+                            selectArenaEncounterProgress(
+                                player,
+                                selectedChoice.arenaLevel,
+                                selectedChoice.encounterId,
+                                selectedChoice.waveIndex,
+                            );
+                            player.arena.isActive = true;
+                            player.arena.playerHpAtStart = player.hp;
+                            GameStateManager.getInstance().save();
                         }
 
-                        player.arena.waveResultsArenaLevel = arenaLevel;
-
-                        // Always allow arena entry — ArenaScene shows "completed" state if needed
-
-                        // Find first wave that isn't perfectly completed
-                        let wave = 0;
-                        if (player.arena.waveResults) {
-                            for (let i = 0; i < 5; i++) {
-                                const r = player.arena.waveResults[i];
-                                if (!r?.completed || !r?.perfectWave) {
-                                    wave = i;
-                                    break;
-                                }
-                            }
-                        }
-
-                        player.arena.isActive = true;
-                        player.arena.playerHpAtStart = player.hp;
-                        GameStateManager.getInstance().save();
-
-                        this.scene.start('ArenaScene', { arenaLevel, wave });
+                        this.scene.start('ArenaScene', {
+                            arenaChoiceId: selectedChoice.id,
+                            arenaLevel: selectedChoice.arenaLevel,
+                            wave: selectedChoice.waveIndex,
+                            encounterId: selectedChoice.encounterId,
+                        });
                     }
                 });
             }
@@ -1247,26 +1285,6 @@ export class TownScene extends Phaser.Scene {
             delay: 1000,
             onComplete: () => toast.destroy()
         });
-    }
-
-    private setupResourceDisplay(player: PlayerState): void {
-        const manaCount = ManaSystem.getMana(player);
-        const coinsCount = ProgressionSystem.getTotalCoinValue(player.coins);
-
-        const manaElement = this.sceneBuilder.get<Phaser.GameObjects.Container>('money mana');
-        if (manaElement) {
-            const textObjects = manaElement.getData('textObjects') as Map<string, { text: Phaser.GameObjects.Text }> | undefined;
-            if (textObjects) {
-                const manaTextEntry = textObjects.get('1770241846853-jfbnou0oe');
-                if (manaTextEntry) {
-                    manaTextEntry.text.setText(`${manaCount}`);
-                }
-                const coinsTextEntry = textObjects.get('1770241864666-yyygo6t26');
-                if (coinsTextEntry) {
-                    coinsTextEntry.text.setText(`${coinsCount}`);
-                }
-            }
-        }
     }
 
     private showStruggleDialog(_suggestedBand: BandId): void {

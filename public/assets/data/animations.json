@@ -756,6 +756,670 @@
                 "frameRate": 8,
                 "repeat": 0
             }
+        },
+        "bubble-crab": {
+            "bubble-crab-idle": {
+                "texture": "silverpond-bubble-crab-idle-sheet",
+                "frames": {
+                    "sequence": [
+                        0,
+                        1,
+                        2,
+                        3,
+                        4,
+                        5,
+                        6,
+                        7,
+                        8,
+                        9,
+                        10,
+                        11,
+                        12,
+                        11,
+                        10,
+                        9,
+                        8,
+                        7,
+                        6,
+                        5,
+                        4,
+                        3,
+                        2,
+                        1
+                    ]
+                },
+                "frameRate": 6,
+                "repeat": -1
+            },
+            "bubble-crab-attack": {
+                "texture": "silverpond-bubble-crab-attack-sheet",
+                "frames": {
+                    "start": 0,
+                    "end": 6
+                },
+                "frameRate": 6,
+                "repeat": 0
+            },
+            "bubble-crab-attack-anim": {
+                "texture": "silverpond-bubble-crab-attack-sheet",
+                "frames": {
+                    "start": 0,
+                    "end": 6
+                },
+                "frameRate": 6,
+                "repeat": 0,
+                "movement": {
+                    "type": "dash",
+                    "offsetX": -35,
+                    "duration": 350,
+                    "ease": "Power2"
+                }
+            },
+            "bubble-crab-defend": {
+                "texture": "silverpond-bubble-crab-defend-sheet",
+                "frames": {
+                    "start": 0,
+                    "end": 6
+                },
+                "frameRate": 6,
+                "repeat": 0
+            },
+            "bubble-crab-hurt": {
+                "texture": "silverpond-bubble-crab-defend-sheet",
+                "frames": {
+                    "start": 0,
+                    "end": 6
+                },
+                "frameRate": 6,
+                "repeat": 0
+            },
+            "bubble-crab-defeat": {
+                "texture": "silverpond-bubble-crab-defeat-sheet",
+                "frames": {
+                    "start": 0,
+                    "end": 6
+                },
+                "frameRate": 6,
+                "repeat": 0
+            },
+            "bubble-crab-death": {
+                "texture": "silverpond-bubble-crab-defeat-sheet",
+                "frames": {
+                    "start": 0,
+                    "end": 6
+                },
+                "frameRate": 6,
+                "repeat": 0
+            }
+        },
+        "bubble-fish": {
+            "bubble-fish-idle": {
+                "texture": "silverpond-bubble-fish-idle-sheet",
+                "frames": {
+                    "sequence": [
+                        0,
+                        1,
+                        2,
+                        3,
+                        4,
+                        5,
+                        6,
+                        7,
+                        8,
+                        9,
+                        10,
+                        11,
+                        12,
+                        11,
+                        10,
+                        9,
+                        8,
+                        7,
+                        6,
+                        5,
+                        4,
+                        3,
+                        2,
+                        1
+                    ]
+                },
+                "frameRate": 6,
+                "repeat": -1
+            },
+            "bubble-fish-attack": {
+                "texture": "silverpond-bubble-fish-attack-sheet",
+                "frames": {
+                    "start": 0,
+                    "end": 6
+                },
+                "frameRate": 6,
+                "repeat": 0
+            },
+            "bubble-fish-attack-anim": {
+                "texture": "silverpond-bubble-fish-attack-sheet",
+                "frames": {
+                    "start": 0,
+                    "end": 6
+                },
+                "frameRate": 6,
+                "repeat": 0,
+                "movement": {
+                    "type": "dash",
+                    "offsetX": -30,
+                    "duration": 320,
+                    "ease": "Power2"
+                }
+            },
+            "bubble-fish-defend": {
+                "texture": "silverpond-bubble-fish-defend-sheet",
+                "frames": {
+                    "start": 0,
+                    "end": 6
+                },
+                "frameRate": 6,
+                "repeat": 0
+            },
+            "bubble-fish-hurt": {
+                "texture": "silverpond-bubble-fish-defend-sheet",
+                "frames": {
+                    "start": 0,
+                    "end": 6
+                },
+                "frameRate": 6,
+                "repeat": 0
+            },
+            "bubble-fish-defeat": {
+                "texture": "silverpond-bubble-fish-defeat-sheet",
+                "frames": {
+                    "start": 0,
+                    "end": 6
+                },
+                "frameRate": 6,
+                "repeat": 0
+            },
+            "bubble-fish-death": {
+                "texture": "silverpond-bubble-fish-defeat-sheet",
+                "frames": {
+                    "start": 0,
+                    "end": 6
+                },
+                "frameRate": 6,
+                "repeat": 0
+            }
+        },
+        "mill-turtle": {
+            "mill-turtle-idle": {
+                "texture": "silverpond-mill-turtle-idle-sheet",
+                "frames": {
+                    "sequence": [
+                        0,
+                        1,
+                        2,
+                        3,
+                        4,
+                        5,
+                        6,
+                        7,
+                        8,
+                        9,
+                        10,
+                        11,
+                        12,
+                        11,
+                        10,
+                        9,
+                        8,
+                        7,
+                        6,
+                        5,
+                        4,
+                        3,
+                        2,
+                        1
+                    ]
+                },
+                "frameRate": 6,
+                "repeat": -1
+            },
+            "mill-turtle-attack": {
+                "texture": "silverpond-mill-turtle-attack-sheet",
+                "frames": {
+                    "start": 0,
+                    "end": 6
+                },
+                "frameRate": 6,
+                "repeat": 0
+            },
+            "mill-turtle-attack-anim": {
+                "texture": "silverpond-mill-turtle-attack-sheet",
+                "frames": {
+                    "start": 0,
+                    "end": 6
+                },
+                "frameRate": 6,
+                "repeat": 0,
+                "movement": {
+                    "type": "dash",
+                    "offsetX": -28,
+                    "duration": 340,
+                    "ease": "Power2"
+                }
+            },
+            "mill-turtle-defend": {
+                "texture": "silverpond-mill-turtle-defend-sheet",
+                "frames": {
+                    "start": 0,
+                    "end": 6
+                },
+                "frameRate": 6,
+                "repeat": 0
+            },
+            "mill-turtle-hurt": {
+                "texture": "silverpond-mill-turtle-defend-sheet",
+                "frames": {
+                    "start": 0,
+                    "end": 6
+                },
+                "frameRate": 6,
+                "repeat": 0
+            },
+            "mill-turtle-defeat": {
+                "texture": "silverpond-mill-turtle-defeat-sheet",
+                "frames": {
+                    "start": 0,
+                    "end": 6
+                },
+                "frameRate": 6,
+                "repeat": 0
+            },
+            "mill-turtle-death": {
+                "texture": "silverpond-mill-turtle-defeat-sheet",
+                "frames": {
+                    "start": 0,
+                    "end": 6
+                },
+                "frameRate": 6,
+                "repeat": 0
+            }
+        },
+        "ruin-axolotl": {
+            "ruin-axolotl-idle": {
+                "texture": "silverpond-ruin-axolotl-idle-sheet",
+                "frames": {
+                    "sequence": [
+                        0,
+                        1,
+                        2,
+                        3,
+                        4,
+                        5,
+                        6,
+                        7,
+                        8,
+                        9,
+                        10,
+                        11,
+                        12,
+                        11,
+                        10,
+                        9,
+                        8,
+                        7,
+                        6,
+                        5,
+                        4,
+                        3,
+                        2,
+                        1
+                    ]
+                },
+                "frameRate": 6,
+                "repeat": -1
+            },
+            "ruin-axolotl-attack": {
+                "texture": "silverpond-ruin-axolotl-attack-sheet",
+                "frames": {
+                    "start": 0,
+                    "end": 6
+                },
+                "frameRate": 6,
+                "repeat": 0
+            },
+            "ruin-axolotl-attack-anim": {
+                "texture": "silverpond-ruin-axolotl-attack-sheet",
+                "frames": {
+                    "start": 0,
+                    "end": 6
+                },
+                "frameRate": 6,
+                "repeat": 0,
+                "movement": {
+                    "type": "dash",
+                    "offsetX": -32,
+                    "duration": 340,
+                    "ease": "Power2"
+                }
+            },
+            "ruin-axolotl-defend": {
+                "texture": "silverpond-ruin-axolotl-defend-sheet",
+                "frames": {
+                    "start": 0,
+                    "end": 6
+                },
+                "frameRate": 6,
+                "repeat": 0
+            },
+            "ruin-axolotl-hurt": {
+                "texture": "silverpond-ruin-axolotl-defend-sheet",
+                "frames": {
+                    "start": 0,
+                    "end": 6
+                },
+                "frameRate": 6,
+                "repeat": 0
+            },
+            "ruin-axolotl-defeat": {
+                "texture": "silverpond-ruin-axolotl-defeat-sheet",
+                "frames": {
+                    "start": 0,
+                    "end": 6
+                },
+                "frameRate": 6,
+                "repeat": 0
+            },
+            "ruin-axolotl-death": {
+                "texture": "silverpond-ruin-axolotl-defeat-sheet",
+                "frames": {
+                    "start": 0,
+                    "end": 6
+                },
+                "frameRate": 6,
+                "repeat": 0
+            }
+        },
+        "rune-fox": {
+            "rune-fox-idle": {
+                "texture": "rune-fox-sheet",
+                "frames": {
+                    "start": 0,
+                    "end": 7
+                },
+                "frameRate": 8,
+                "repeat": -1
+            },
+            "rune-fox-attack-anim": {
+                "texture": "rune-fox-sheet",
+                "frames": {
+                    "start": 8,
+                    "end": 26
+                },
+                "frameRate": 8,
+                "repeat": 0
+            },
+            "rune-fox-hurt": {
+                "texture": "rune-fox-sheet",
+                "frames": {
+                    "sequence": [
+                        8,
+                        10,
+                        12,
+                        13,
+                        11
+                    ]
+                },
+                "frameRate": 8,
+                "repeat": 0
+            },
+            "rune-fox-death": {
+                "texture": "rune-fox-sheet",
+                "frames": {
+                    "start": 27,
+                    "end": 34
+                },
+                "frameRate": 8,
+                "repeat": 0
+            },
+            "rune-fox-freed": {
+                "texture": "rune-fox-sheet",
+                "frames": {
+                    "start": 30,
+                    "end": 44
+                },
+                "frameRate": 8,
+                "repeat": -1
+            }
+        },
+        "pearl-jellyfish": {
+            "pearl-jellyfish-idle": {
+                "texture": "silverpond-pearl-jellyfish-idle-sheet",
+                "frames": {
+                    "sequence": [
+                        0,
+                        1,
+                        2,
+                        3,
+                        4,
+                        5,
+                        6,
+                        7,
+                        8,
+                        9,
+                        10,
+                        11,
+                        12,
+                        11,
+                        10,
+                        9,
+                        8,
+                        7,
+                        6,
+                        5,
+                        4,
+                        3,
+                        2,
+                        1
+                    ]
+                },
+                "frameRate": 6,
+                "repeat": -1
+            },
+            "pearl-jellyfish-attack": {
+                "texture": "silverpond-pearl-jellyfish-attack-sheet",
+                "frames": {
+                    "start": 0,
+                    "end": 8
+                },
+                "frameRate": 6,
+                "repeat": 0,
+                "movement": {
+                    "type": "dash",
+                    "offsetX": -35,
+                    "duration": 400,
+                    "ease": "Power2"
+                }
+            },
+            "pearl-jellyfish-attack-anim": {
+                "texture": "silverpond-pearl-jellyfish-attack-sheet",
+                "frames": {
+                    "start": 0,
+                    "end": 8
+                },
+                "frameRate": 6,
+                "repeat": 0,
+                "movement": {
+                    "type": "dash",
+                    "offsetX": -35,
+                    "duration": 400,
+                    "ease": "Power2"
+                }
+            },
+            "pearl-jellyfish-defend": {
+                "texture": "silverpond-pearl-jellyfish-defend-sheet",
+                "frames": {
+                    "start": 0,
+                    "end": 6
+                },
+                "frameRate": 6,
+                "repeat": 0
+            },
+            "pearl-jellyfish-hurt": {
+                "texture": "silverpond-pearl-jellyfish-defend-sheet",
+                "frames": {
+                    "start": 0,
+                    "end": 6
+                },
+                "frameRate": 6,
+                "repeat": 0
+            },
+            "pearl-jellyfish-defeat": {
+                "texture": "silverpond-pearl-jellyfish-defeat-sheet",
+                "frames": {
+                    "start": 0,
+                    "end": 8
+                },
+                "frameRate": 6,
+                "repeat": 0
+            },
+            "pearl-jellyfish-death": {
+                "texture": "silverpond-pearl-jellyfish-defeat-sheet",
+                "frames": {
+                    "start": 0,
+                    "end": 8
+                },
+                "frameRate": 6,
+                "repeat": 0
+            }
+        },
+        "depth-guardian": {
+            "depth-guardian-idle": {
+                "texture": "silverpond-depth-guardian-idle-sheet",
+                "frames": {
+                    "sequence": [
+                        0,
+                        1,
+                        2,
+                        3,
+                        4,
+                        5,
+                        6,
+                        7,
+                        8,
+                        9,
+                        10,
+                        11,
+                        12,
+                        11,
+                        10,
+                        9,
+                        8,
+                        7,
+                        6,
+                        5,
+                        4,
+                        3,
+                        2,
+                        1
+                    ]
+                },
+                "frameRate": 6,
+                "repeat": -1
+            },
+            "depth-guardian-attack": {
+                "texture": "silverpond-depth-guardian-attack-sheet",
+                "frames": {
+                    "start": 0,
+                    "end": 8
+                },
+                "frameRate": 6,
+                "repeat": 0,
+                "movement": {
+                    "type": "dash",
+                    "offsetX": -35,
+                    "duration": 400,
+                    "ease": "Power2"
+                }
+            },
+            "depth-guardian-attack-anim": {
+                "texture": "silverpond-depth-guardian-attack-sheet",
+                "frames": {
+                    "start": 0,
+                    "end": 8
+                },
+                "frameRate": 6,
+                "repeat": 0,
+                "movement": {
+                    "type": "dash",
+                    "offsetX": -35,
+                    "duration": 400,
+                    "ease": "Power2"
+                }
+            },
+            "depth-guardian-attack-tide": {
+                "texture": "silverpond-depth-guardian-attack-tide-sheet",
+                "frames": {
+                    "start": 0,
+                    "end": 8
+                },
+                "frameRate": 6,
+                "repeat": 0,
+                "movement": {
+                    "type": "dash",
+                    "offsetX": -35,
+                    "duration": 400,
+                    "ease": "Power2"
+                }
+            },
+            "depth-guardian-attack-crystal": {
+                "texture": "silverpond-depth-guardian-attack-crystal-sheet",
+                "frames": {
+                    "start": 0,
+                    "end": 12
+                },
+                "frameRate": 6,
+                "repeat": 0,
+                "movement": {
+                    "type": "dash",
+                    "offsetX": -35,
+                    "duration": 400,
+                    "ease": "Power2"
+                }
+            },
+            "depth-guardian-defend": {
+                "texture": "silverpond-depth-guardian-defend-sheet",
+                "frames": {
+                    "start": 0,
+                    "end": 6
+                },
+                "frameRate": 6,
+                "repeat": 0
+            },
+            "depth-guardian-hurt": {
+                "texture": "silverpond-depth-guardian-defend-sheet",
+                "frames": {
+                    "start": 0,
+                    "end": 6
+                },
+                "frameRate": 6,
+                "repeat": 0
+            },
+            "depth-guardian-defeat": {
+                "texture": "silverpond-depth-guardian-defeat-sheet",
+                "frames": {
+                    "start": 0,
+                    "end": 8
+                },
+                "frameRate": 6,
+                "repeat": 0
+            },
+            "depth-guardian-death": {
+                "texture": "silverpond-depth-guardian-defeat-sheet",
+                "frames": {
+                    "start": 0,
+                    "end": 8
+                },
+                "frameRate": 6,
+                "repeat": 0
+            }
         }
     },
     "pets": {
@@ -942,9 +1606,63 @@
                 "frameRate": 10,
                 "repeat": 0
             }
+        },
+        "silverpond-frog": {
+            "silverpond-frog-enemy-idle": {
+                "texture": "silverpond-frog-enemy-idle-sheet",
+                "frames": {
+                    "sequence": [
+                        0,
+                        1,
+                        2,
+                        3,
+                        4,
+                        3,
+                        2,
+                        1
+                    ]
+                },
+                "frameRate": 6,
+                "repeat": -1
+            }
         }
     },
     "npcs": {
+        "depth-guardian-friendly": {
+            "depth-guardian-friendly-idle": {
+                "texture": "silverpond-depth-guardian-friendly-idle-sheet",
+                "frames": {
+                    "sequence": [
+                        0,
+                        1,
+                        2,
+                        3,
+                        4,
+                        5,
+                        6,
+                        7,
+                        8,
+                        9,
+                        10,
+                        11,
+                        12,
+                        11,
+                        10,
+                        9,
+                        8,
+                        7,
+                        6,
+                        5,
+                        4,
+                        3,
+                        2,
+                        1
+                    ]
+                },
+                "frameRate": 6,
+                "repeat": -1
+            }
+        },
         "zyx": {
             "zyx-idle": {
                 "texture": "spritesheet-zyx-transparent2-sheet",
@@ -954,6 +1672,54 @@
                 },
                 "frameRate": 8,
                 "repeat": -1
+            }
+        },
+        "silverpond-lake-fairy": {
+            "silverpond-lake-fairy-idle": {
+                "texture": "silverpond-lake-fairy-idle-sheet",
+                "frames": {
+                    "sequence": [
+                        0,
+                        1,
+                        2,
+                        3,
+                        4,
+                        5,
+                        6,
+                        7,
+                        8,
+                        9,
+                        10,
+                        11,
+                        12,
+                        13,
+                        14,
+                        13,
+                        12,
+                        11,
+                        10,
+                        9,
+                        8,
+                        7,
+                        6,
+                        5,
+                        4,
+                        3,
+                        2,
+                        1
+                    ]
+                },
+                "frameRate": 7.5,
+                "repeat": -1
+            },
+            "silverpond-lake-fairy-give": {
+                "texture": "silverpond-lake-fairy-give-sheet",
+                "frames": {
+                    "start": 0,
+                    "end": 7
+                },
+                "frameRate": 7.5,
+                "repeat": 0
             }
         }
     }

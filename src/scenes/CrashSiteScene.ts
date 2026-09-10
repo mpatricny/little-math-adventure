@@ -4,6 +4,7 @@ import { CrystalSystem } from '../systems/CrystalSystem';
 import { StorySystem } from '../systems/StorySystem';
 import { getPlayerSpriteConfig } from '../utils/characterUtils';
 import { PictureDialog, DialogContentItem } from '../ui/PictureDialog';
+import { WalkingSceneHud } from '../ui/WalkingSceneHud';
 
 /**
  * Scene initialization data
@@ -62,6 +63,7 @@ export class CrashSiteScene extends Phaser.Scene {
     private zyx: Phaser.GameObjects.Sprite | null = null;
     private slime: Phaser.GameObjects.Sprite | null = null;
     private exitArrow: Phaser.GameObjects.Container | null = null;
+    private walkingHud!: WalkingSceneHud;
 
     // Movement
     private isWalking = false;
@@ -127,6 +129,7 @@ export class CrashSiteScene extends Phaser.Scene {
 
         // Create UI
         this.createUI();
+        this.walkingHud = new WalkingSceneHud(this);
 
         // Handle post-battle state
         if (this.phase === TutorialPhase.BATTLE_WON) {
@@ -150,7 +153,7 @@ export class CrashSiteScene extends Phaser.Scene {
         this.cameras.main.fadeIn(400, 0, 0, 0);
 
         // Show title
-        this.add.text(640, 40, 'Místo havárie', {
+        this.add.text(850, 50, 'Místo havárie', {
             fontSize: '28px',
             fontFamily: 'Arial, sans-serif',
             color: '#ffffff',
@@ -424,8 +427,10 @@ export class CrashSiteScene extends Phaser.Scene {
             // Ignore clicks during walking
             if (this.isWalking) return;
 
-            // Ignore clicks on UI area (top)
-            if (pointer.y < 80) return;
+            // The tutorial characters are interactive only to show a hand cursor;
+            // their click must still flow through click-to-move. Block only the
+            // shared HUD area and the full-screen character book.
+            if (this.walkingHud.isBookOpen() || pointer.y < 135) return;
 
             // Get target X position
             let targetX = pointer.x;
@@ -536,6 +541,7 @@ export class CrashSiteScene extends Phaser.Scene {
         ];
 
         new PictureDialog(this, {
+            voiceId: 'vo.crash.hello',
             content,
             onDismiss: () => {
                 this.isDialogOpen = false;  // Re-enable movement
@@ -671,6 +677,7 @@ export class CrashSiteScene extends Phaser.Scene {
         ];
 
         new PictureDialog(this, {
+            voiceId: 'vo.crash.arena',
             content,
             onDismiss: () => {
                 this.isDialogOpen = false;  // Re-enable movement
@@ -729,27 +736,7 @@ export class CrashSiteScene extends Phaser.Scene {
      * Create UI elements
      */
     private createUI(): void {
-        // HP display
-        const player = this.gameState.getPlayer();
-        const hpPercent = player.hp / player.maxHp;
-
-        // HP bar background
-        this.add.rectangle(100, 30, 150, 20, 0x333333)
-            .setStrokeStyle(2, 0x666666)
-            .setDepth(100);
-
-        // HP bar fill
-        this.add.rectangle(27, 30, 146 * hpPercent, 16, 0x44aa44)
-            .setOrigin(0, 0.5)
-            .setDepth(100);
-
-        // HP text
-        this.add.text(100, 30, `HP: ${player.hp}/${player.maxHp}`, {
-            fontSize: '12px',
-            fontFamily: 'Arial, sans-serif',
-            color: '#ffffff',
-            fontStyle: 'bold',
-        }).setOrigin(0.5).setDepth(101);
+        // Shared world HUD owns health, resources and character details.
     }
 
     /**

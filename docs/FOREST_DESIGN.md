@@ -321,7 +321,8 @@ Better puzzle setup:
 
 ```
 public/assets/data/
-├── forest-enemies.json     # New enemy definitions
+├── enemies.json            # Shared base enemy definitions
+├── encounters.json         # Forest rosters and boss phase stats
 ├── forest-journey.json     # Stage/encounter structure
 └── forest-puzzles.json     # Puzzle configurations
 ```

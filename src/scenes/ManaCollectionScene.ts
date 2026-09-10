@@ -2,11 +2,11 @@ import Phaser from 'phaser';
 import { GameStateManager } from '../systems/GameStateManager';
 import { MathEngine } from '../systems/MathEngine';
 import { ManaSystem } from '../systems/ManaSystem';
-import { ProgressionSystem } from '../systems/ProgressionSystem';
 import { SceneBuilder } from '../systems/SceneBuilder';
 import { CoopSessionManager } from '../systems/CoopSessionManager';
 import { SaveSystem } from '../systems/SaveSystem';
-import { ManaPlayerLane, PlayerLaneConfig } from '../ui/ManaPlayerLane';
+import { MANA_REWARD_INTERVAL, ManaPlayerLane, PlayerLaneConfig } from '../ui/ManaPlayerLane';
+import { MedievalActionButton } from '../ui/MedievalActionButton';
 import { SaveSlotData } from '../types';
 
 /**
@@ -16,9 +16,7 @@ import { SaveSlotData } from '../types';
  * In co-op: split-screen with two side-by-side lanes, one per player.
  */
 
-const PLAY_COST = 3;
 const MAX_LIVES = 3;
-const BONUS_MANA_INTERVAL = 5;
 
 // Original single-player channel constants (used for SceneBuilder fallbacks)
 const CHANNEL_LEFT = 300;
@@ -30,6 +28,14 @@ const RIGHT_NUM_X = CHANNEL_RIGHT + 40;
 const PROBLEM_X = (CHANNEL_LEFT + CHANNEL_RIGHT) / 2;
 const NEXT_PREVIEW_X = 1100;
 const NEXT_PREVIEW_Y = 180;
+
+type ManaPopupHostLayout = {
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+    depth: number;
+};
 
 // Co-op lane configs
 const LANE_A_CONFIG: PlayerLaneConfig = {
@@ -52,6 +58,7 @@ const LANE_A_CONFIG: PlayerLaneConfig = {
     buttonY: 630,
     playerLabel: 'Hráč 1',
     playerIdentifier: 'A',
+    rewardMode: 'shared',
     resolveKey: 'X',
     fontScale: 0.85,
 };
@@ -76,6 +83,7 @@ const LANE_B_CONFIG: PlayerLaneConfig = {
     buttonY: 630,
     playerLabel: 'Hráč 2',
     playerIdentifier: 'B',
+    rewardMode: 'shared',
     resolveKey: 'M',
     fontScale: 0.85,
 };
@@ -195,6 +203,8 @@ export class ManaCollectionScene extends Phaser.Scene {
         const coop = CoopSessionManager.getInstance();
         const slotA = coop.getPlayerASlotIndex();
         const slotB = coop.getPlayerBSlotIndex();
+        const masteryA = coop.getPlayerAMasteryData() ?? saveA?.mathStats.masteryData;
+        const masteryB = coop.getPlayerBMasteryData() ?? saveB?.mathStats.masteryData;
 
         this.coopSaveA = saveA;
         this.coopSaveB = saveB;
@@ -209,18 +219,20 @@ export class ManaCollectionScene extends Phaser.Scene {
             initialStats: saveB?.mathStats,
             autoPersist: false,
         });
-        const poolA = ManaPlayerLane.buildManaPool(mathEngineA, saveA?.mathStats.masteryData);
-        const poolB = ManaPlayerLane.buildManaPool(mathEngineB, saveB?.mathStats.masteryData);
+        const poolA = ManaPlayerLane.buildManaPool(mathEngineA, masteryA);
+        const poolB = ManaPlayerLane.buildManaPool(mathEngineB, masteryB);
 
         this.persistCoopPlayerA = () => {
             if (!saveA || slotA < 0) return;
             const stats = mathEngineA.getStats();
+            if (masteryA) stats.masteryData = masteryA;
             saveA.mathStats = stats;
             SaveSystem.save(slotA, saveA.player, stats);
         };
         this.persistCoopPlayerB = () => {
             if (!saveB || slotB < 0) return;
             const stats = mathEngineB.getStats();
+            if (masteryB) stats.masteryData = masteryB;
             saveB.mathStats = stats;
             SaveSystem.save(slotB, saveB.player, stats);
         };
@@ -234,8 +246,8 @@ export class ManaCollectionScene extends Phaser.Scene {
             () => this.onLaneDead(),
             {
                 playerState: saveA?.player,
+                masteryData: masteryA,
                 persistProgress: this.persistCoopPlayerA,
-                sharedManaRewards: true,
             },
         );
         this.laneB = new ManaPlayerLane(
@@ -247,8 +259,8 @@ export class ManaCollectionScene extends Phaser.Scene {
             () => this.onLaneDead(),
             {
                 playerState: saveB?.player,
+                masteryData: masteryB,
                 persistProgress: this.persistCoopPlayerB,
-                sharedManaRewards: true,
             },
         );
     }
@@ -277,135 +289,126 @@ export class ManaCollectionScene extends Phaser.Scene {
     // ============ INTRO OVERLAY ============
 
     private showIntroOverlay(): void {
-        let canAfford: boolean;
+        const panelHost = this.getPopupHost('manaIntroPopupHost', {
+            x: 640, y: 360, width: 620, height: 485, depth: 100,
+        });
+        const titleHost = this.getPopupHost('manaIntroTitleHost', {
+            x: 640, y: 174, width: 410, height: 32, depth: 102,
+        });
+        const objectiveHost = this.getPopupHost('manaIntroObjectiveHost', {
+            x: 640, y: 232, width: 500, height: 48, depth: 102,
+        });
+        const rulesHost = this.getPopupHost('manaIntroRulesHost', {
+            x: 640, y: 332, width: 500, height: 145, depth: 102,
+        });
+        const rewardHost = this.getPopupHost('manaIntroRewardHost', {
+            x: 640, y: 442, width: 500, height: 44, depth: 102,
+        });
+        const backHost = this.getPopupHost('manaIntroBackHost', {
+            x: 505, y: 526, width: 190, height: 62, depth: 103,
+        });
+        const playHost = this.getPopupHost('manaIntroPlayHost', {
+            x: 745, y: 526, width: 250, height: 62, depth: 103,
+        });
 
-        if (this.isCoopMode) {
-            const playerA = this.coopSaveA?.player ?? this.getCoopSaveData('A')?.player;
-            const playerB = this.coopSaveB?.player ?? this.getCoopSaveData('B')?.player;
-            const canAffordA = ProgressionSystem.getTotalCoinValue(playerA?.coins ?? { copper: 0, silver: 0, gold: 0, pouch: 0 }) >= PLAY_COST;
-            const canAffordB = ProgressionSystem.getTotalCoinValue(playerB?.coins ?? { copper: 0, silver: 0, gold: 0, pouch: 0 }) >= PLAY_COST;
-            canAfford = canAffordA && canAffordB;
-        } else {
-            const player = this.gameState.getPlayer();
-            canAfford = ProgressionSystem.getTotalCoinValue(player.coins) >= PLAY_COST;
-        }
+        this.introOverlay = this.add.container(0, 0).setDepth(panelHost.depth);
 
-        this.introOverlay = this.add.container(640, 360);
-        this.introOverlay.setDepth(100);
-
-        const backdrop = this.add.rectangle(0, 0, 1280, 720, 0x000000, 0.7);
+        const backdrop = this.add.rectangle(640, 360, 1280, 720, 0x02070d, 0.78);
         backdrop.setInteractive();
 
-        const panel = this.add.rectangle(0, 0, 500, 380, 0x1e1810)
-            .setStrokeStyle(3, 0x8b6914);
-        const innerPanel = this.add.rectangle(0, 0, 490, 370, 0x000000, 0)
-            .setStrokeStyle(1, 0x5a4a2a);
+        const panel = this.add.image(panelHost.x, panelHost.y, 'mana-popup-frame-v2')
+            .setDisplaySize(panelHost.width, panelHost.height);
 
-        const titleLabel = this.isCoopMode ? '~ Sbírání many ~ (Co-op)' : '~ Sbírání many ~';
-        const title = this.add.text(0, -140, titleLabel, {
-            fontSize: '26px',
-            fontFamily: 'Arial, sans-serif',
-            color: '#d4aa44',
+        const titleLabel = this.isCoopMode ? 'SBÍRÁNÍ MANY · CO-OP' : 'SBÍRÁNÍ MANY';
+        const title = this.add.text(titleHost.x, titleHost.y, titleLabel, {
+            fontSize: '22px',
+            fontFamily: 'Palatino Linotype, Book Antiqua, Georgia, serif',
+            color: '#f7d57b',
             fontStyle: 'bold',
-        }).setOrigin(0.5);
+            align: 'center',
+        }).setOrigin(0.5).setResolution(2);
+        this.fitTextToHost(title, titleHost);
 
-        const rulesLines = [
-            'Příklady padají shora dolů kanálem.',
-            'Na stranách jsou čísla — výsledky.',
+        const objective = this.add.text(
+            objectiveHost.x,
+            objectiveHost.y,
             this.isCoopMode
-                ? 'Levý kanál vyhodnocuje klávesa X, pravý kanál klávesa M.'
-                : 'Stiskni VYHODNOTIT ve správný čas,',
-            this.isCoopMode
-                ? 'Kliknutí zůstává jako záloha, ale hlavní jsou klávesy.'
-                : 'aby se příklad zastavil u správného čísla.',
-            '',
-            `Máš ${MAX_LIVES} životy. Špatná odpověď = -1 ♥`,
-            'Příklady se postupně zrychlují!',
-        ];
+                ? 'KAŽDÝ HRÁČ OVLÁDÁ SVŮJ KANÁL'
+                : 'ZASTAV PŘÍKLAD U SPRÁVNÉHO VÝSLEDKU',
+            {
+                fontSize: '18px',
+                fontFamily: 'Arial, sans-serif',
+                color: '#69e6ef',
+                fontStyle: 'bold',
+                align: 'center',
+            },
+        ).setOrigin(0.5).setResolution(2);
+        this.fitTextToHost(objective, objectiveHost);
 
-        if (this.isCoopMode) {
-            rulesLines.push('', 'Oba hráči hrají současně!');
-            rulesLines.push(`Cena: ${PLAY_COST} mincí za hráče`);
-        } else {
-            rulesLines.push('', `Cena: ${PLAY_COST} mincí`);
-        }
+        const rulesLines = this.isCoopMode
+            ? [
+                'Příklady padají kanálem mezi výsledky.',
+                'Jen sčítání a odčítání se dvěma čísly.',
+                'Hráč 1 zastavuje klávesou X · Hráč 2 klávesou M.',
+                `Každý má ${MAX_LIVES} životy. Chyba stojí 1 život.`,
+                'Tempo se postupně zrychluje.',
+            ]
+            : [
+                'Příklady padají kanálem mezi výsledky.',
+                'Jen sčítání a odčítání se dvěma čísly.',
+                'Stiskni VYHODNOTIT ve správný okamžik.',
+                `Máš ${MAX_LIVES} životy. Chyba stojí 1 život.`,
+                'Tempo se postupně zrychluje.',
+            ];
 
-        const rules = this.add.text(0, -25, rulesLines.join('\n'), {
+        const rules = this.add.text(rulesHost.x, rulesHost.y, rulesLines.join('\n'), {
+            fontSize: '16px',
+            fontFamily: 'Arial, sans-serif',
+            color: '#e8dfce',
+            align: 'center',
+            lineSpacing: 5,
+        }).setOrigin(0.5).setResolution(2);
+        this.fitTextToHost(rules, rulesHost);
+
+        const rewardLabel = this.isCoopMode
+            ? `⚡ 1 MANA KAŽDÉMU ZA ${MANA_REWARD_INTERVAL} SPOLEČNÝCH SPRÁVNÝCH   ·   VSTUP ZDARMA`
+            : `⚡ 1 MANA ZA ${MANA_REWARD_INTERVAL} SPRÁVNÝCH   ·   VSTUP ZDARMA`;
+        const reward = this.add.text(rewardHost.x, rewardHost.y, rewardLabel, {
             fontSize: '15px',
             fontFamily: 'Arial, sans-serif',
-            color: '#b8a88a',
+            color: '#f7d57b',
+            fontStyle: 'bold',
             align: 'center',
-            lineSpacing: 4,
-        }).setOrigin(0.5);
+        }).setOrigin(0.5).setResolution(2);
+        this.fitTextToHost(reward, rewardHost);
 
-        // Buttons: ZPĚT | HRÁT
-        const btnY = 145;
-        const btnGap = 10;
-        const backW = 120;
-        const playW = 200;
-        const totalW = backW + btnGap + playW;
-        const startX = -totalW / 2;
+        const backButton = this.createPopupButton(backHost, 'ZPĚT', 0x8a755f, true, () => {
+            this.scene.start(this.returnScene);
+        });
+        const playButton = this.createPopupButton(
+            playHost,
+            'HRÁT',
+            0x5ee6ef,
+            true,
+            () => this.startGame(),
+        );
 
-        const backBg = this.add.rectangle(startX + backW / 2, btnY, backW, 52, 0x2a1a14)
-            .setStrokeStyle(2, 0x5a3a2a);
-        const backText = this.add.text(startX + backW / 2, btnY, 'ZPĚT', {
-            fontSize: '18px',
-            fontFamily: 'Arial, sans-serif',
-            color: '#9a8a7a',
-            fontStyle: 'bold',
-        }).setOrigin(0.5);
-        backBg.setInteractive({ useHandCursor: true });
-        backBg.on('pointerover', () => { backBg.setFillStyle(0x3a2a1e); backText.setColor('#c0b0a0'); });
-        backBg.on('pointerout', () => { backBg.setFillStyle(0x2a1a14); backText.setColor('#9a8a7a'); });
-        backBg.on('pointerdown', () => this.scene.start(this.returnScene));
-
-        const playColor = canAfford ? 0x2a3a1a : 0x333333;
-        const playBg = this.add.rectangle(startX + backW + btnGap + playW / 2, btnY, playW, 52, playColor)
-            .setStrokeStyle(3, canAfford ? 0x5a8a2a : 0x555555);
-        const playText = this.add.text(startX + backW + btnGap + playW / 2, btnY,
-            canAfford ? 'HRÁT' : 'NEDOSTATEK MINCÍ', {
-            fontSize: '22px',
-            fontFamily: 'Arial, sans-serif',
-            color: canAfford ? '#a0cc60' : '#666666',
-            fontStyle: 'bold',
-        }).setOrigin(0.5);
-
-        if (canAfford) {
-            playBg.setInteractive({ useHandCursor: true });
-            playBg.on('pointerover', () => { playBg.setFillStyle(0x3a4a24); playText.setColor('#c0ee80'); });
-            playBg.on('pointerout', () => { playBg.setFillStyle(0x2a3a1a); playText.setColor('#a0cc60'); });
-            playBg.on('pointerdown', () => this.startGame());
-        }
-
-        this.introOverlay.add([backdrop, panel, innerPanel, title, rules, backBg, backText, playBg, playText]);
+        this.introOverlay.add([
+            backdrop,
+            panel,
+            title,
+            objective,
+            rules,
+            reward,
+            backButton.root,
+            playButton.root,
+        ]);
     }
 
     // ============ START GAME ============
 
     private startGame(): void {
-        if (this.isCoopMode) {
-            const playerA = this.coopSaveA?.player;
-            const playerB = this.coopSaveB?.player;
-            if (!playerA || !playerB) {
-                return;
-            }
-
-            if (!ProgressionSystem.spendCoins(playerA, PLAY_COST) || !ProgressionSystem.spendCoins(playerB, PLAY_COST)) {
-                return;
-            }
-        } else {
-            const player = this.gameState.getPlayer();
-            if (!ProgressionSystem.spendCoins(player, PLAY_COST)) return;
-            this.gameState.save();
-        }
-
         this.ensureLanesCreated();
-
-        if (this.isCoopMode) {
-            this.persistCoopPlayerA?.();
-            this.persistCoopPlayerB?.();
-        }
-
         this.introOverlay.destroy();
 
         this.laneA!.startGame();
@@ -430,10 +433,10 @@ export class ManaCollectionScene extends Phaser.Scene {
         const resultsB = this.laneB?.getResults();
         const combinedCorrect = this.isCoopMode && resultsB ? resultsA.correctCount + resultsB.correctCount : resultsA.correctCount;
         const combinedProblems = this.isCoopMode && resultsB ? resultsA.problemCount + resultsB.problemCount : resultsA.problemCount;
-        const sharedManaReward = this.isCoopMode && resultsB ? Math.floor(combinedCorrect / BONUS_MANA_INTERVAL) : 0;
-        const bonusManaA = this.isCoopMode ? sharedManaReward : Math.floor(resultsA.correctCount / BONUS_MANA_INTERVAL);
+        const sharedManaReward = this.isCoopMode && resultsB ? Math.floor(combinedCorrect / MANA_REWARD_INTERVAL) : 0;
+        const earnedManaA = this.isCoopMode ? sharedManaReward : Math.floor(resultsA.correctCount / MANA_REWARD_INTERVAL);
 
-        // Award bonus mana
+        // Mana is awarded only from the minigame score, never from study-progress thresholds.
         if (this.isCoopMode && resultsB) {
             if (sharedManaReward > 0 && this.coopSaveA?.player) {
                 ManaSystem.add(this.coopSaveA.player, sharedManaReward);
@@ -443,35 +446,47 @@ export class ManaCollectionScene extends Phaser.Scene {
             }
             this.persistCoopPlayerA?.();
             this.persistCoopPlayerB?.();
+            // The lane engines save independently; reload the active slot before
+            // applying mastery rewards so an older in-memory state cannot replace it.
+            this.syncActiveCoopPlayerState();
+            CoopSessionManager.getInstance().applyAndPersistMasteryProgress();
         } else {
-            if (bonusManaA > 0) {
+            if (earnedManaA > 0) {
                 const player = this.gameState.getPlayer();
-                ManaSystem.add(player, bonusManaA);
+                ManaSystem.add(player, earnedManaA);
                 this.gameState.save();
             }
         }
 
-        // Build stats display
-        const totalManaA = resultsA.manaEarnedThreshold + bonusManaA;
+        const panelHost = this.getPopupHost('manaResultsPopupHost', {
+            x: 640, y: 360, width: 620, height: 485, depth: 100,
+        });
+        const titleHost = this.getPopupHost('manaResultsTitleHost', {
+            x: 640, y: 174, width: 410, height: 32, depth: 102,
+        });
+        const statsHost = this.getPopupHost('manaResultsStatsHost', {
+            x: 640, y: 338, width: 500, height: 245, depth: 102,
+        });
+        const continueHost = this.getPopupHost('manaResultsContinueHost', {
+            x: 640, y: 526, width: 240, height: 62, depth: 103,
+        });
 
-        this.gameOverOverlay = this.add.container(640, 360);
-        this.gameOverOverlay.setDepth(100);
+        this.gameOverOverlay = this.add.container(0, 0).setDepth(panelHost.depth);
 
-        const backdrop = this.add.rectangle(0, 0, 1280, 720, 0x000000, 0.7);
+        const backdrop = this.add.rectangle(640, 360, 1280, 720, 0x02070d, 0.78);
         backdrop.setInteractive();
 
-        const panelH = this.isCoopMode ? 420 : 360;
-        const panel = this.add.rectangle(0, 0, 500, panelH, 0x1e1810)
-            .setStrokeStyle(3, 0x8b6914);
-        const innerPanel = this.add.rectangle(0, 0, 490, panelH - 10, 0x000000, 0)
-            .setStrokeStyle(1, 0x5a4a2a);
+        const panel = this.add.image(panelHost.x, panelHost.y, 'mana-popup-frame-v2')
+            .setDisplaySize(panelHost.width, panelHost.height);
 
-        const title = this.add.text(0, -(panelH / 2 - 40), '~ Konec hry ~', {
-            fontSize: '28px',
-            fontFamily: 'Arial, sans-serif',
-            color: '#d4aa44',
+        const title = this.add.text(titleHost.x, titleHost.y, 'VÝSLEDEK SBĚRU', {
+            fontSize: '22px',
+            fontFamily: 'Palatino Linotype, Book Antiqua, Georgia, serif',
+            color: '#f7d57b',
             fontStyle: 'bold',
-        }).setOrigin(0.5);
+            align: 'center',
+        }).setOrigin(0.5).setResolution(2);
+        this.fitTextToHost(title, titleHost);
 
         let statsLines: string[];
 
@@ -483,42 +498,26 @@ export class ManaCollectionScene extends Phaser.Scene {
                 '',
                 `Dohromady správně: ${combinedCorrect}`,
                 `Dohromady odehráno: ${combinedProblems}`,
-                `Společná odměna: oba hráči získali ⚡ ${sharedManaReward}`,
+                `Společná odměna (1 mana / ${MANA_REWARD_INTERVAL} správně): oba hráči ⚡ ${sharedManaReward}`,
             ];
         } else {
             statsLines = [
                 `Správně: ${resultsA.correctCount} / ${resultsA.problemCount}`,
                 '',
-                `Mana ze studijních cílů: ⚡ ${resultsA.manaEarnedThreshold}`,
+                `Získaná mana (1 / ${MANA_REWARD_INTERVAL} správně): ⚡ ${earnedManaA}`,
             ];
-            if (bonusManaA > 0) {
-                statsLines.push(`Bonusová mana (${resultsA.correctCount} správně): ⚡ +${bonusManaA}`);
-            }
-            statsLines.push('', `Celkem mana: ⚡ ${totalManaA}`);
         }
 
-        const statsText = this.add.text(0, -10, statsLines.join('\n'), {
-            fontSize: '17px',
+        const statsText = this.add.text(statsHost.x, statsHost.y, statsLines.join('\n'), {
+            fontSize: this.isCoopMode ? '17px' : '20px',
             fontFamily: 'Arial, sans-serif',
-            color: '#b8a88a',
+            color: '#e8dfce',
             align: 'center',
-            lineSpacing: 5,
-        }).setOrigin(0.5);
+            lineSpacing: 8,
+        }).setOrigin(0.5).setResolution(2);
+        this.fitTextToHost(statsText, statsHost);
 
-        const btnY = panelH / 2 - 50;
-        const btnBg = this.add.rectangle(0, btnY, 200, 52, 0x2a1f14)
-            .setStrokeStyle(3, 0x8b6914);
-        const btnText = this.add.text(0, btnY, 'POKRAČOVAT', {
-            fontSize: '20px',
-            fontFamily: 'Arial, sans-serif',
-            color: '#d4aa44',
-            fontStyle: 'bold',
-        }).setOrigin(0.5);
-
-        btnBg.setInteractive({ useHandCursor: true });
-        btnBg.on('pointerover', () => { btnBg.setFillStyle(0x3d2e1c); btnText.setColor('#ffe066'); });
-        btnBg.on('pointerout', () => { btnBg.setFillStyle(0x2a1f14); btnText.setColor('#d4aa44'); });
-        btnBg.on('pointerdown', () => {
+        const continueButton = this.createPopupButton(continueHost, 'POKRAČOVAT', 0x5ee6ef, true, () => {
             if (this.isCoopMode) {
                 this.syncActiveCoopPlayerState();
             } else {
@@ -527,7 +526,52 @@ export class ManaCollectionScene extends Phaser.Scene {
             this.scene.start(this.returnScene);
         });
 
-        this.gameOverOverlay.add([backdrop, panel, innerPanel, title, statsText, btnBg, btnText]);
+        this.gameOverOverlay.add([backdrop, panel, title, statsText, continueButton.root]);
+    }
+
+    private getPopupHost(id: string, fallback: ManaPopupHostLayout): ManaPopupHostLayout {
+        const object = this.sceneBuilder.get<Phaser.GameObjects.Container>(id);
+        const definition = this.sceneBuilder.getElementDef(id) as Partial<ManaPopupHostLayout> | undefined;
+        return {
+            x: object?.x ?? definition?.x ?? fallback.x,
+            y: object?.y ?? definition?.y ?? fallback.y,
+            width: definition?.width ?? object?.width ?? fallback.width,
+            height: definition?.height ?? object?.height ?? fallback.height,
+            depth: object?.depth ?? definition?.depth ?? fallback.depth,
+        };
+    }
+
+    private fitTextToHost(text: Phaser.GameObjects.Text, host: ManaPopupHostLayout): void {
+        const scale = Math.min(
+            1,
+            text.width > 0 ? host.width / text.width : 1,
+            text.height > 0 ? host.height / text.height : 1,
+        );
+        text.setScale(scale);
+    }
+
+    private createPopupButton(
+        host: ManaPopupHostLayout,
+        label: string,
+        accent: number,
+        enabled: boolean,
+        onClick: () => void,
+    ): MedievalActionButton {
+        return new MedievalActionButton(this, {
+            x: host.x,
+            y: host.y,
+            depth: host.depth,
+            width: host.width,
+            height: host.height,
+            label,
+            labelFontSize: 18,
+            labelMaxWidth: host.width * 0.76,
+            labelMaxHeight: host.height * 0.48,
+            accent,
+            layout: 'text',
+            enabled,
+            onClick,
+        });
     }
 
     private cleanupScene(): void {

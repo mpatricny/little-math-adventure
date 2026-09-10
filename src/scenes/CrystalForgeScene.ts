@@ -1,3 +1,4 @@
+import { sfx, voice } from '../audio/AudioDirector';
 import Phaser from 'phaser';
 import { GameStateManager } from '../systems/GameStateManager';
 import { CrystalSystem } from '../systems/CrystalSystem';
@@ -29,9 +30,21 @@ import { CoopSwitchUI } from '../ui/CoopSwitchUI';
 
 type ForgeOperation = 'merge' | 'split' | 'createFragment' | 'splitFragment' | 'refine' | 'createPrism';
 
+export interface CrystalForgeSceneOptions {
+    key?: string;
+    backSceneKey?: string;
+    layoutSceneKey?: string;
+    backgroundTexture?: string;
+    persistChanges?: boolean;
+}
+
 export class CrystalForgeScene extends Phaser.Scene {
     private gameState = GameStateManager.getInstance();
     private sceneBuilder!: SceneBuilder;
+    private readonly backSceneKey: string;
+    private readonly layoutSceneKey: string;
+    private readonly backgroundTexture?: string;
+    private readonly persistChanges: boolean;
 
     // Forge state
     private selectedCrystals: (Crystal | null)[] = [null, null, null]; // Three slots (3rd for createFragment)
@@ -80,11 +93,18 @@ export class CrystalForgeScene extends Phaser.Scene {
     private readonly ROWS = 5;
     private readonly CRYSTALS_PER_PAGE = 20;  // 4x5 grid
 
-    constructor() {
-        super({ key: 'CrystalForgeScene' });
+    constructor(options: CrystalForgeSceneOptions = {}) {
+        const sceneKey = options.key ?? 'CrystalForgeScene';
+        super({ key: sceneKey });
+        this.backSceneKey = options.backSceneKey ?? 'TownScene';
+        this.layoutSceneKey = options.layoutSceneKey ?? sceneKey;
+        this.backgroundTexture = options.backgroundTexture;
+        this.persistChanges = options.persistChanges ?? true;
     }
 
     create(): void {
+        this.captureTransientState();
+
         // Check if advanced operations are unlocked (Boss I, II, III defeated)
         const player = this.gameState.getPlayer();
         this.fragmentOperationsUnlocked = CrystalSystem.hasFragmentOperationsUnlocked(player);
@@ -112,10 +132,13 @@ export class CrystalForgeScene extends Phaser.Scene {
 
         // Build scene from scenes.json (background, title, etc.)
         this.sceneBuilder = new SceneBuilder(this);
-        this.sceneBuilder.buildScene('CrystalForgeScene');
+        this.sceneBuilder.buildScene(this.layoutSceneKey);
+        this.applyBackgroundTexture();
 
         // Co-op: add player switch UI
-        new CoopSwitchUI(this, 300, 640);
+        if (this.persistChanges) {
+            new CoopSwitchUI(this, 300, 640);
+        }
 
         // Set title text in the "Load game" UI element
         this.setupTitle();
@@ -144,6 +167,34 @@ export class CrystalForgeScene extends Phaser.Scene {
             stroke: '#000000',
             strokeThickness: 4
         }).setOrigin(0.5).setAlpha(0).setDepth(100);
+    }
+
+    private captureTransientState(): void {
+        if (this.persistChanges) return;
+
+        const player = this.gameState.getPlayer();
+        const playerSnapshot = this.cloneState(player);
+
+        this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+            Object.assign(player, this.cloneState(playerSnapshot));
+        });
+    }
+
+    private cloneState<T>(state: T): T {
+        return JSON.parse(JSON.stringify(state)) as T;
+    }
+
+    private applyBackgroundTexture(): void {
+        if (!this.backgroundTexture) return;
+
+        const background = this.sceneBuilder.get<Phaser.GameObjects.Image>('crystal-forge-background');
+        background?.setTexture(this.backgroundTexture);
+    }
+
+    private saveState(): void {
+        if (this.persistChanges) {
+            this.gameState.save();
+        }
     }
 
     private setupTitle(): void {
@@ -1349,17 +1400,18 @@ export class CrystalForgeScene extends Phaser.Scene {
                 }
             }
 
-            this.gameState.save();
+            this.saveState();
 
         } else {
             // Wrong answer - costs mana
             ManaSystem.spend(player, manaCost);
-            this.gameState.save();
+            this.saveState();
             this.showFailureAnimation(manaCost);
         }
     }
 
     private showSuccessAnimation(crystals: Crystal | Crystal[]): void {
+        sfx(this, this.currentOperation?.includes('split') ? 'forge.split' : 'forge.merge');
         // Normalize to array
         const crystalArray = Array.isArray(crystals) ? crystals : [crystals];
 
@@ -1471,6 +1523,7 @@ export class CrystalForgeScene extends Phaser.Scene {
     }
 
     private showFailureAnimation(manaCost: number = 1): void {
+        sfx(this, 'math.retry');
         // Hide equation and answers
         this.hideAnswerButtons();
         this.equationText.setText('');  // Clear equation (template text, always visible)
@@ -1687,6 +1740,7 @@ export class CrystalForgeScene extends Phaser.Scene {
 
     private setOperation(op: ForgeOperation): void {
         if (this.equationVisible) return;
+        voice(this, String(op).includes('split') ? 'vo.forge.split' : 'vo.forge.merge', true);
 
         this.currentOperation = op;
 
@@ -1872,7 +1926,7 @@ export class CrystalForgeScene extends Phaser.Scene {
         // Back button is created by SceneBuilder from "Back button" UI element
         // Just need to bind the click handler
         this.sceneBuilder.bindClick('Back button', () => {
-            this.scene.start('TownScene');
+            this.scene.start(this.backSceneKey);
         });
     }
 

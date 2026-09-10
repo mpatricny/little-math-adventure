@@ -1,5 +1,13 @@
+import { sfx, voice } from '../audio/AudioDirector';
 import Phaser from 'phaser';
-import { ItemDefinition, ItemType } from '../types';
+import {
+    ItemDefinition,
+    ItemType,
+    MathProblem,
+    MathStats,
+    PlayerState,
+    PreparationKind,
+} from '../types';
 import { GameStateManager } from '../systems/GameStateManager';
 import { ProgressionSystem } from '../systems/ProgressionSystem';
 import { ManaSystem } from '../systems/ManaSystem';
@@ -7,6 +15,17 @@ import { SceneDebugger } from '../systems/SceneDebugger';
 import { SceneBuilder } from '../systems/SceneBuilder';
 import { LocalizationService } from '../systems/LocalizationService';
 import { CoopSwitchUI } from '../ui/CoopSwitchUI';
+import { MedievalActionButton } from '../ui/MedievalActionButton';
+import { PreparationChargeIndicator } from '../ui/PreparationChargeIndicator';
+import {
+    PreparationTrainingAttempt,
+    PreparationTrainingOverlay,
+    PreparationTrainingResult,
+} from '../ui/PreparationTrainingOverlay';
+import { MathEngine } from '../systems/MathEngine';
+import { MasterySystem } from '../systems/MasterySystem';
+import { PREPARATION_CONFIG, PreparationSystem } from '../systems/PreparationSystem';
+import { CoopSessionManager } from '../systems/CoopSessionManager';
 
 // Coin type definitions
 interface CoinType {
@@ -32,7 +51,19 @@ interface DraggableCoin extends Phaser.GameObjects.Image {
     inPaymentArea: boolean;
 }
 
+export interface ShopSceneOptions {
+    key?: string;
+    backSceneKey?: string;
+    layoutSceneKey?: string;
+    backgroundTexture?: string;
+    persistChanges?: boolean;
+}
+
 export class ShopScene extends Phaser.Scene {
+    private readonly backSceneKey: string;
+    private readonly layoutSceneKey: string;
+    private readonly backgroundTexture?: string;
+    private readonly persistChanges: boolean;
     private gameState!: GameStateManager;
     private allItems!: ItemDefinition[];
     private localization = LocalizationService.getInstance();
@@ -61,18 +92,30 @@ export class ShopScene extends Phaser.Scene {
     private itemContainers: Map<string, Phaser.GameObjects.Image> = new Map();
     private shieldWiggleEvents: Phaser.Time.TimerEvent[] = [];
 
+    // Optional battle preparation
+    private prepButtons = {} as Record<PreparationKind, MedievalActionButton>;
+    private prepStatus = {} as Record<PreparationKind, PreparationChargeIndicator>;
+    private preparationOverlay!: PreparationTrainingOverlay;
+    private prepMathEngine!: MathEngine;
+
     // Universal debugger
     private debugger!: SceneDebugger;
 
     // Scene Builder
-    private sceneBuilder!: SceneBuilder;
+    protected sceneBuilder!: SceneBuilder;
 
-    constructor() {
-        super({ key: 'ShopScene' });
+    constructor(options: ShopSceneOptions = {}) {
+        const sceneKey = options.key ?? 'ShopScene';
+        super({ key: sceneKey });
+        this.backSceneKey = options.backSceneKey ?? 'TownScene';
+        this.layoutSceneKey = options.layoutSceneKey ?? sceneKey;
+        this.backgroundTexture = options.backgroundTexture;
+        this.persistChanges = options.persistChanges ?? true;
     }
 
     create(): void {
         this.gameState = GameStateManager.getInstance();
+        this.captureTransientState();
         this.allItems = this.cache.json.get('items') as ItemDefinition[];
 
         // Reset arrays (important for scene re-entry)
@@ -87,6 +130,8 @@ export class ShopScene extends Phaser.Scene {
         this.paymentHintTween = null;
         this.itemContainers = new Map();
         this.shieldWiggleEvents = [];
+        this.prepButtons = {} as Record<PreparationKind, MedievalActionButton>;
+        this.prepStatus = {} as Record<PreparationKind, PreparationChargeIndicator>;
 
         // Ensure coins are normalized with current algorithm (handles pre-pouch saves)
         ProgressionSystem.normalizeCoins(this.gameState.getPlayer());
@@ -96,9 +141,10 @@ export class ShopScene extends Phaser.Scene {
 
         // Register handlers before building
         this.sceneBuilder.registerHandler('onBuy', () => this.attemptPurchase());
-        this.sceneBuilder.registerHandler('onBack', () => this.scene.start('TownScene'));
+        this.sceneBuilder.registerHandler('onBack', () => this.scene.start(this.backSceneKey));
 
-        this.sceneBuilder.buildScene();
+        this.sceneBuilder.buildScene(this.layoutSceneKey);
+        this.applyBackgroundTexture();
 
         // Co-op: add player switch UI
         new CoopSwitchUI(this, 300, 640);
@@ -108,6 +154,10 @@ export class ShopScene extends Phaser.Scene {
 
         // Get purchase panel from SceneBuilder and set up references
         this.setupPurchasePanel();
+
+        // Add the adaptive sword/shield preparation flow to the production shop.
+        this.setupPreparationFlow();
+        this.createMedievalBuyButton();
 
         // Get table elements
         const tablePouch = this.sceneBuilder.get('tablePouch') as Phaser.GameObjects.Image;
@@ -130,9 +180,277 @@ export class ShopScene extends Phaser.Scene {
         this.setupDebugger();
     }
 
+    private captureTransientState(): void {
+        if (this.persistChanges) return;
+
+        const player = this.gameState.getPlayer();
+        const playerSnapshot = this.cloneState(player);
+        const mathStatsSnapshot = this.cloneState(this.gameState.getMathStats());
+
+        this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+            Object.assign(player, this.cloneState(playerSnapshot));
+            this.gameState.setMathStats(this.cloneState(mathStatsSnapshot));
+            MasterySystem.destroyInstance();
+        });
+    }
+
+    private cloneState<T extends PlayerState | MathStats>(state: T): T {
+        return JSON.parse(JSON.stringify(state)) as T;
+    }
+
+    private applyBackgroundTexture(): void {
+        if (!this.backgroundTexture) return;
+
+        const background = this.sceneBuilder.get<Phaser.GameObjects.Image>('new-shop-bg');
+        background?.setTexture(this.backgroundTexture);
+    }
+
+    private saveState(): void {
+        if (this.persistChanges) {
+            this.gameState.save();
+        }
+    }
+
+    private setupPreparationFlow(): void {
+        const player = this.gameState.getPlayer();
+        this.registry.set('playerLevel', player.level);
+        this.prepMathEngine = new MathEngine(this.registry);
+
+        this.prepButtons.sword = this.createPrepButton({
+            kind: 'sword',
+            hostId: 'swordPrepHost',
+            label: 'NABROUSIT\nMEČ',
+            labelFontSize: 15,
+            labelLineSpacing: -4,
+            accent: 0xffb12b,
+            normalIcon: 'prep-sword-normal-v2',
+            activeIcon: 'prep-sword-active-v2',
+        });
+        this.prepButtons.shield = this.createPrepButton({
+            kind: 'shield',
+            hostId: 'shieldPrepHost',
+            label: 'NABÍT ŠTÍT',
+            labelFontSize: 16,
+            accent: 0x4bdcff,
+            normalIcon: 'prep-shield-normal-v2',
+            activeIcon: 'prep-shield-active-v2',
+            iconOffsetX: 4,
+        });
+
+        this.prepStatus.sword = this.createPrepStatus('sword', 'swordPrepStatusHost');
+        this.prepStatus.shield = this.createPrepStatus('shield', 'shieldPrepStatusHost');
+
+        const root = this.sceneBuilder.get<Phaser.GameObjects.Container>('prepOverlayHost')
+            ?? this.add.container(640, 360).setDepth(300);
+        if (PreparationSystem.hasRequiredEquipment(player, 'sword')
+            || PreparationSystem.hasRequiredEquipment(player, 'shield')) {
+            this.time.delayedCall(500, () => voice(this, 'vo.shop.prep', true));
+        }
+        this.preparationOverlay = new PreparationTrainingOverlay(this, {
+            root,
+            problemProvider: () => this.createPreparationProblems(),
+            layout: {
+                title: this.getOverlayPoint(root, 'prepOverlayTitleHost', 640, 100),
+                charges: this.getOverlayPoint(root, 'prepOverlayChargesHost', 640, 205),
+                mathBoard: this.getOverlayPoint(root, 'prepOverlayMathBoardHost', 640, 390),
+                attempts: this.getOverlayPoint(root, 'prepOverlayAttemptsHost', 640, 535),
+                message: this.getOverlayPoint(root, 'prepOverlayMessageHost', 640, 580),
+                cancelButton: this.getOverlayPoint(root, 'prepOverlayCancelHost', 145, 655),
+                doneButton: this.getOverlayPoint(root, 'prepOverlayDoneHost', 640, 655),
+            },
+            onAttempt: (attempt) => this.recordPreparationAttempt(attempt),
+            onComplete: (result) => this.applyPreparedState(result),
+        });
+
+        this.events.once('shutdown', () => MasterySystem.getInstance().setActiveData(null));
+
+        this.refreshPreparationUi();
+    }
+
+    private createPrepButton(config: {
+        kind: PreparationKind;
+        hostId: string;
+        label: string;
+        labelFontSize: number;
+        labelLineSpacing?: number;
+        accent: number;
+        normalIcon: string;
+        activeIcon: string;
+        iconOffsetX?: number;
+    }): MedievalActionButton {
+        const host = this.sceneBuilder.get<Phaser.GameObjects.Container>(config.hostId);
+        return new MedievalActionButton(this, {
+            name: `${config.kind}PrepButton`,
+            x: host?.x ?? (config.kind === 'sword' ? 158 : 425),
+            y: host?.y ?? 315,
+            depth: host?.depth ?? 20,
+            width: 250,
+            label: config.label,
+            labelFontSize: config.labelFontSize,
+            labelLineSpacing: config.labelLineSpacing,
+            accent: config.accent,
+            normalIcon: { texture: config.normalIcon },
+            activeIcon: { texture: config.activeIcon },
+            iconSize: 84,
+            iconOffsetX: config.iconOffsetX,
+            onClick: () => this.preparationOverlay.open(config.kind),
+        });
+    }
+
+    private createPrepStatus(kind: PreparationKind, hostId: string): PreparationChargeIndicator {
+        const host = this.sceneBuilder.get<Phaser.GameObjects.Container>(hostId)
+            ?? this.add.container(kind === 'sword' ? 158 : 425, 392).setDepth(22);
+        const indicator = new PreparationChargeIndicator(this, {
+            parent: host,
+            kind,
+            iconSize: 40,
+            spacing: 42,
+            showEmptySlots: false,
+            name: `${kind}PrepShopStatus`,
+        });
+        return indicator.setVisible(false);
+    }
+
+    private getOverlayPoint(
+        root: Phaser.GameObjects.Container,
+        hostId: string,
+        fallbackX: number,
+        fallbackY: number,
+    ): { x: number; y: number } {
+        const host = this.sceneBuilder.get<Phaser.GameObjects.Container>(hostId);
+        return {
+            x: (host?.x ?? fallbackX) - root.x,
+            y: (host?.y ?? fallbackY) - root.y,
+        };
+    }
+
+    private createPreparationProblems(): MathProblem[] {
+        const mastery = this.getPreparationMasterySystem();
+        const keys = mastery.drawPreparationProblems(PREPARATION_CONFIG.maxProblems);
+        const used = new Set(keys);
+
+        if (keys.length < PREPARATION_CONFIG.maxProblems) {
+            const fallbackKeys = mastery.drawFromPool(PREPARATION_CONFIG.maxProblems - keys.length);
+            for (const key of fallbackKeys) {
+                if (!used.has(key)) {
+                    used.add(key);
+                    keys.push(key);
+                }
+            }
+        }
+
+        const problems = keys
+            .map((key) => this.prepMathEngine.generateProblemFromKey(key))
+            .filter((problem): problem is MathProblem => Boolean(problem));
+
+        while (problems.length < PREPARATION_CONFIG.maxProblems) {
+            problems.push(this.prepMathEngine.generateProblem());
+        }
+        return problems;
+    }
+
+    private getPreparationMasterySystem(): MasterySystem {
+        const mastery = MasterySystem.getInstance();
+        const coop = CoopSessionManager.getInstance();
+        if (!coop.isCoopActive()) {
+            mastery.setActiveData(null);
+            return mastery;
+        }
+
+        mastery.setActiveData(
+            coop.getActivePlayer() === 'A'
+                ? coop.getPlayerAMasteryData()
+                : coop.getPlayerBMasteryData(),
+        );
+        return mastery;
+    }
+
+    private recordPreparationAttempt(attempt: PreparationTrainingAttempt): void {
+        const coop = CoopSessionManager.getInstance();
+        if (coop.isCoopActive()) this.prepMathEngine.reloadStats();
+        this.prepMathEngine.recordResultForProblem(attempt.problem.id, attempt.correct);
+
+        if (attempt.problem.masteryKey) {
+            this.getPreparationMasterySystem().recordSolve(
+                attempt.problem.masteryKey,
+                attempt.correct,
+                attempt.responseTimeMs,
+                attempt.kind === 'sword' ? 'shop_prep_sword' : 'shop_prep_shield',
+            );
+            this.saveState();
+        }
+    }
+
+    private applyPreparedState(result: PreparationTrainingResult): void {
+        if (result.charges > 0) { sfx(this, 'prep.charge'); voice(this, `vo.shop.${result.kind}`); }
+        if (result.charges > 0) {
+            PreparationSystem.prepare(this.gameState.getPlayer(), result.kind, result.charges);
+            this.saveState();
+        }
+        this.refreshPreparationUi();
+        this.events.emit('preparation-completed', result);
+    }
+
+    private refreshPreparationUi(): void {
+        const player = this.gameState.getPlayer();
+        const state = PreparationSystem.getState(player);
+
+        (['sword', 'shield'] as PreparationKind[]).forEach((kind) => {
+            const hasEquipment = PreparationSystem.hasRequiredEquipment(player, kind);
+            const selected = state.kind === kind && state.charges > 0;
+            const button = this.prepButtons[kind];
+            const status = this.prepStatus[kind];
+
+            if (selected) {
+                button.setLabel('PŘIPRAVENO', 14).setPresentationState('selected');
+                status.setCount(state.charges).setVisible(true);
+            } else if (!hasEquipment) {
+                button
+                    .setLabel(kind === 'sword' ? 'NEJDŘÍV\nKUP MEČ' : 'NEJDŘÍV\nKUP ŠTÍT', 13)
+                    .setPresentationState('disabled');
+                status.setVisible(false);
+            } else {
+                button
+                    .setLabel(kind === 'sword' ? 'NABROUSIT\nMEČ' : 'NABÍT ŠTÍT', kind === 'sword' ? 15 : 16)
+                    .setPresentationState('enabled');
+                status.setVisible(false);
+            }
+        });
+    }
+
+    private createMedievalBuyButton(): void {
+        const host = this.sceneBuilder.get<Phaser.GameObjects.Container>('buyButtonHost');
+        new MedievalActionButton(this, {
+            name: 'medievalBuyButton',
+            x: host?.x ?? 640,
+            y: host?.y ?? 665,
+            depth: host?.depth ?? 20,
+            width: 170,
+            label: 'KOUPIT',
+            labelFontSize: 24,
+            accent: 0xf5bd45,
+            layout: 'text',
+            onClick: () => this.attemptPurchase(),
+        });
+    }
+
     private setupAreas(tablePouch: Phaser.GameObjects.Image, tableTop: Phaser.GameObjects.Image, coinTray: Phaser.GameObjects.Image): void {
-        // Table area
-        if (tablePouch && tableTop) {
+        // Player-money table area — marker-3 is shared with the coin spawn area,
+        // so the Scene Editor controls both the initial layout and valid drops.
+        const tableDropZone = this.sceneBuilder.getMarker('marker-3');
+        if (tableDropZone) {
+            const centerX = tableDropZone.x + tableDropZone.width / 2;
+            const centerY = tableDropZone.y + tableDropZone.height / 2;
+            this.tableArea = this.add.rectangle(
+                centerX,
+                centerY,
+                tableDropZone.width,
+                tableDropZone.height,
+                0x000000,
+                0
+            );
+            this.tableContainer = this.add.container(centerX, centerY);
+        } else if (tablePouch && tableTop) {
             const minX = Math.min(tablePouch.x, tableTop.x) - 150;
             const maxX = Math.max(tablePouch.x, tableTop.x) + 150;
             const avgY = (tablePouch.y + tableTop.y) / 2;
@@ -156,8 +474,8 @@ export class ShopScene extends Phaser.Scene {
         } else if (coinTray) {
             // Fallback to coinTray-based positioning
             this.paymentTray = this.add.container(coinTray.x, coinTray.y);
-            const trayWidth = 280 * coinTray.scale;
-            const trayHeight = 200 * coinTray.scale;
+            const trayWidth = coinTray.displayWidth * 0.92;
+            const trayHeight = coinTray.displayHeight * 0.53;
             this.paymentArea = this.add.rectangle(coinTray.x, coinTray.y, trayWidth, trayHeight, 0x000000, 0);
         } else {
             this.paymentTray = this.add.container(300, 600);
@@ -207,7 +525,7 @@ export class ShopScene extends Phaser.Scene {
     }
 
     private setupDebugger(): void {
-        this.debugger = new SceneDebugger(this, 'ShopScene');
+        this.debugger = new SceneDebugger(this, this.layoutSceneKey);
     }
 
     private setupResourceDisplay(): void {
@@ -589,8 +907,9 @@ export class ShopScene extends Phaser.Scene {
         return equippedItem ? equippedItem.price >= item.price : false;
     }
 
-    private attemptPurchase(): void {
-        if (!this.selectedItem) return;
+    protected attemptPurchase(): void {
+        sfx(this, 'ui.confirm');
+        if (!this.selectedItem) { sfx(this, 'ui.unavailable'); return; }
 
         const paymentTotal = this.getPaymentTotal();
         const price = this.selectedItem.price;
@@ -600,12 +919,14 @@ export class ShopScene extends Phaser.Scene {
             this.completePurchase();
         } else {
             // Wrong payment - just show message and return coins
+            sfx(this, 'math.retry');
             this.showMessage('ŠPATNÁ ČÁSTKA!', '#ff6666');
             this.returnAllCoins();
         }
     }
 
     private completePurchase(): void {
+        sfx(this, 'reward.coins');
         if (!this.selectedItem) return;
         this.hidePaymentTrayHint();
 
@@ -626,7 +947,7 @@ export class ShopScene extends Phaser.Scene {
         this.equipItem(purchasedItem);
 
         // Save
-        this.gameState.save();
+        this.saveState();
 
         // Remove icons for the purchased item and any now-obsolete items of the same type
         const sameTypeItems = this.allItems.filter(i => i.type === purchasedItem.type);
@@ -649,6 +970,7 @@ export class ShopScene extends Phaser.Scene {
         this.spawnPlayerCoins();
         this.updatePaymentTotal();
         this.updateResourceDisplay();
+        this.refreshPreparationUi();
     }
 
     private returnAllCoins(): void {
@@ -668,6 +990,7 @@ export class ShopScene extends Phaser.Scene {
     }
 
     private equipItem(item: ItemDefinition): void {
+        sfx(this, 'item.equip');
         const player = this.gameState.getPlayer();
 
         switch (item.type) {

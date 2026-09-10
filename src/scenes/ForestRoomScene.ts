@@ -1,8 +1,14 @@
+import { sfx } from '../audio/AudioDirector';
 import Phaser from 'phaser';
 import { GameStateManager } from '../systems/GameStateManager';
 import { JourneySystem } from '../systems/JourneySystem';
 import { getPlayerSpriteConfig } from '../utils/characterUtils';
 import { CoopSessionManager } from '../systems/CoopSessionManager';
+import { createEncounterCatalog, type EncounterCatalog } from '../systems/EncounterCatalog';
+import type { EnemyDefinition } from '../types';
+import { WalkingSceneHud } from '../ui/WalkingSceneHud';
+import { resolveEnemyScenePresentation } from '../systems/EnemyPresentationSystem';
+import { resolveForestRoomSceneKey } from '../systems/ForestRoomRouting';
 
 /**
  * Room object definition from forest-rooms.json
@@ -13,9 +19,8 @@ interface RoomObject {
     x: number;
     y: number;
     sprite?: string;
-    enemyId?: string;
-    // Additional enemies that join the battle (multi-enemy encounters)
-    companions?: string[];
+    encounterId?: string;
+    visualEnemyId?: string;
     // Enemy aggro - triggers battle when player gets within this radius
     aggroRadius?: number;
     flipX?: boolean;
@@ -32,6 +37,7 @@ interface RoomObject {
     puzzleId?: string;
     // Hidden object support
     scale?: number;
+    depth?: number;
     hidden?: boolean;
     appearsAfter?: {
         objectDefeated?: string;    // Show after this enemy is defeated
@@ -63,6 +69,7 @@ interface RoomConfig {
     id: string;
     name: string;
     nameCs: string;
+    sceneClass?: string;
     background: string;
     battleBackground?: string;
     isWaypoint?: boolean;
@@ -101,6 +108,7 @@ export class ForestRoomScene extends Phaser.Scene {
 
     private roomsData!: { rooms: Record<string, RoomConfig>; startRoom: string; waypoints: string[] };
     private currentRoom!: RoomConfig;
+    private encounterCatalog!: EncounterCatalog;
 
     private player!: Phaser.GameObjects.Sprite;
     private playerBSprite: Phaser.GameObjects.Sprite | null = null;
@@ -147,6 +155,25 @@ export class ForestRoomScene extends Phaser.Scene {
         }
 
         this.currentRoom = this.roomsData.rooms[this.roomId];
+
+        // ForestRoomScene is also the common return target for battles, puzzles,
+        // and save points. Redirect custom rooms before the generic renderer can
+        // instantiate their legacy object sprites.
+        const configuredScene = resolveForestRoomSceneKey(this.roomsData, this.roomId);
+        if (configuredScene !== this.sys.settings.key) {
+            this.scene.start(configuredScene, {
+                roomId: this.roomId,
+                fromDirection: this.fromDirection,
+                battleWon: this.battleWon,
+                defeatedObjectId: this.defeatedObjectId,
+                puzzleSolved: this.puzzleSolved,
+                solvedObjectId: this.solvedObjectId,
+            });
+            return;
+        }
+        this.encounterCatalog = createEncounterCatalog(this.cache.json.get('encounters'), {
+            core: this.cache.json.get('enemies') as EnemyDefinition[],
+        });
 
         // Update journey system with current room
         this.journeySystem.setCurrentRoom(this.roomId);
@@ -207,6 +234,7 @@ export class ForestRoomScene extends Phaser.Scene {
         this.createObjects();
         this.createExits();
         this.createUI();
+        new WalkingSceneHud(this);
         this.setupClickToMove();
 
         // Listen for puzzle solved events from overlay scenes
@@ -266,7 +294,7 @@ export class ForestRoomScene extends Phaser.Scene {
         }
 
         // Room name
-        this.add.text(640, 30, this.currentRoom.nameCs, {
+        this.add.text(850, 52, this.currentRoom.nameCs, {
             fontSize: '28px',
             fontFamily: 'Arial, sans-serif',
             color: '#ffffff',
@@ -450,41 +478,41 @@ export class ForestRoomScene extends Phaser.Scene {
 
     private createObjectSprite(obj: RoomObject): Phaser.GameObjects.Container {
         const container = this.add.container(obj.x, obj.y);
-        container.setDepth(5);
+        const isEnemy = obj.type === 'enemy' || obj.type === 'boss';
 
-        // Try to use actual sprite, fall back to placeholder
-        if (obj.sprite && this.textures.exists(obj.sprite)) {
-            const sprite = this.add.sprite(0, 0, obj.sprite).setScale(obj.scale ?? 0.8);
-            if (obj.flipX) sprite.setFlipX(true);
-            container.add(sprite);
-
-            // For enemies, apply scale and play idle animation from enemies.json or forest-enemies.json
-            if (obj.enemyId) {
-                const enemies = this.cache.json.get('enemies') as any[];
-                let enemyDef = enemies?.find((e: any) => e.id === obj.enemyId);
-
-                // Fallback to forest enemies
-                if (!enemyDef && this.cache.json.has('forestEnemies')) {
-                    const forestData = this.cache.json.get('forestEnemies') as any;
-                    const fe = forestData?.enemies?.[obj.enemyId];
-                    if (fe) {
-                        enemyDef = { ...fe, attack: fe.atk, animPrefix: fe.animPrefix || fe.spriteKey?.replace('-sheet', '') };
-                    }
-                }
-
-                if (enemyDef) {
-                    if (enemyDef.scale) {
-                        sprite.setScale(enemyDef.scale);
-                    }
-                    if (enemyDef.animPrefix) {
-                        const idleAnim = `${enemyDef.animPrefix}-idle`;
-                        if (this.anims.exists(idleAnim)) {
-                            sprite.play(idleAnim);
-                        }
-                    }
-                }
+        if (isEnemy) {
+            if (!obj.visualEnemyId) {
+                throw new Error(`Enemy object ${obj.id} is missing visualEnemyId`);
             }
+            const enemyDef = this.encounterCatalog.resolveEnemy({
+                source: 'core',
+                enemyId: obj.visualEnemyId,
+            });
+            const presentation = resolveEnemyScenePresentation(
+                { ...obj, visualEnemyId: obj.visualEnemyId },
+                enemyDef,
+                { scale: 0.8, depth: 5 },
+            );
+            container.setDepth(presentation.depth);
+            if (this.textures.exists(presentation.spriteKey)) {
+                const sprite = this.add.sprite(0, 0, presentation.spriteKey)
+                    .setScale(presentation.scale)
+                    .setFlipX(presentation.flipX);
+                container.add(sprite);
+                if (presentation.idleAnimation && this.anims.exists(presentation.idleAnimation)) {
+                    sprite.play(presentation.idleAnimation);
+                }
+            } else {
+                container.add(this.createPlaceholder(obj));
+            }
+        } else if (obj.sprite && this.textures.exists(obj.sprite)) {
+            container.setDepth(obj.depth ?? 5);
+            const sprite = this.add.sprite(0, 0, obj.sprite)
+                .setScale(obj.scale ?? 0.8)
+                .setFlipX(obj.flipX ?? false);
+            container.add(sprite);
         } else {
+            container.setDepth(obj.depth ?? 5);
             // Placeholder based on type
             const placeholder = this.createPlaceholder(obj);
             container.add(placeholder);
@@ -764,25 +792,6 @@ export class ForestRoomScene extends Phaser.Scene {
     }
 
     private createUI(): void {
-        // HP Bar at top
-        const player = this.gameState.getPlayer();
-        const hpPercent = player.hp / player.maxHp;
-
-        const hpBarBg = this.add.rectangle(150, 70, 200, 20, 0x333333)
-            .setStrokeStyle(2, 0x666666)
-            .setDepth(100);
-
-        const hpBarFill = this.add.rectangle(52, 70, 196 * hpPercent, 16, 0x44aa44)
-            .setOrigin(0, 0.5)
-            .setDepth(100);
-
-        const hpText = this.add.text(150, 70, `HP: ${player.hp}/${player.maxHp}`, {
-            fontSize: '14px',
-            fontFamily: 'Arial, sans-serif',
-            color: '#ffffff',
-            fontStyle: 'bold'
-        }).setOrigin(0.5).setDepth(101);
-
         // Back to town button
         const backBtn = this.add.container(80, 680).setDepth(100);
         const backBg = this.add.rectangle(0, 0, 120, 40, 0x664444)
@@ -807,6 +816,7 @@ export class ForestRoomScene extends Phaser.Scene {
         this.input.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
             // Only respond to clicks on empty space (not objects or UI)
             if (this.isWalking) return;
+            if (this.input.hitTestPointer(pointer).length > 0) return;
 
             // Check if click is in the walkable area (y >= 620 to stay on ground)
             if (pointer.y >= 620 && pointer.y < 700) {
@@ -1044,84 +1054,35 @@ export class ForestRoomScene extends Phaser.Scene {
     }
 
     private startBattle(obj: RoomObject): void {
-        if (!obj.enemyId) {
-            console.error('Enemy object missing enemyId');
+        if (!obj.encounterId) {
+            console.error('Enemy object missing encounterId');
             return;
+        }
+
+        const mappedEncounter = this.encounterCatalog.getForestRoomEncounter(this.roomId, obj.id);
+        if (mappedEncounter.id !== obj.encounterId) {
+            throw new Error(
+                `Forest room ${this.roomId}/${obj.id} points to ${obj.encounterId}, expected ${mappedEncounter.id}`,
+            );
         }
 
         // Use room's battle background if available, otherwise fall back to regular background
         const battleBg = this.currentRoom.battleBackground || this.currentRoom.background;
 
-        // Build multi-enemy encounter if companions are defined
-        if (obj.companions && obj.companions.length > 0) {
-            const allEnemyIds = [obj.enemyId, ...obj.companions];
-            const enemyDefs = allEnemyIds.map(id => this.resolveForestEnemy(id)).filter(Boolean) as import('../types').EnemyDefinition[];
-
-            if (enemyDefs.length > 0) {
-                this.scene.start('BattleScene', {
-                    mode: 'journey',
-                    enemyDefs,
-                    returnScene: 'ForestRoomScene',
-                    returnData: {
-                        roomId: this.roomId,
-                        defeatedObjectId: obj.id
-                    },
-                    backgroundKey: battleBg,
-                    isBoss: obj.type === 'boss',
-                    useForestEnemy: true
-                });
-                return;
-            }
-        }
-
         this.scene.start('BattleScene', {
             mode: 'journey',
-            enemyId: obj.enemyId,
+            encounterId: obj.encounterId,
             returnScene: 'ForestRoomScene',
             returnData: {
                 roomId: this.roomId,
                 defeatedObjectId: obj.id
             },
             backgroundKey: battleBg,
-            isBoss: obj.type === 'boss',
-            useForestEnemy: true
         });
     }
 
-    private resolveForestEnemy(enemyId: string): import('../types').EnemyDefinition | null {
-        // Try forest enemies first (they have full definitions with phases, proper stats, etc.)
-        if (this.cache.json.has('forestEnemies')) {
-            const forestData = this.cache.json.get('forestEnemies') as any;
-            const fe = forestData?.enemies?.[enemyId];
-            if (fe) {
-                const goldMin = fe.goldMin || 5;
-                const goldMax = fe.goldMax || goldMin + 5;
-                return {
-                    id: fe.id,
-                    name: fe.nameCs || fe.name,
-                    hp: fe.hp,
-                    attack: fe.atk || 3,
-                    defense: fe.defense ?? 0,
-                    goldReward: [goldMin, goldMax],
-                    difficulty: fe.difficulty || 5,
-                    spriteKey: fe.spriteKey,
-                    animPrefix: fe.animPrefix || fe.spriteKey?.replace('-sheet', '') || 'slime',
-                    scale: fe.scale,
-                    battleOffsetY: fe.battleOffsetY
-                } as import('../types').EnemyDefinition;
-            }
-        }
-
-        // Fall back to main enemies list
-        const enemies = this.cache.json.get('enemies') as any[];
-        const mainEnemy = enemies?.find((e: any) => e.id === enemyId);
-        if (mainEnemy) return mainEnemy;
-
-        console.warn(`[ForestRoomScene] Could not resolve enemy: ${enemyId}`);
-        return null;
-    }
-
     private openChest(obj: RoomObject): void {
+        sfx(this, 'chest.open');
         // Mark as looted
         this.journeySystem.setObjectState(this.roomId, obj.id, {
             interacted: true,
@@ -1210,6 +1171,7 @@ export class ForestRoomScene extends Phaser.Scene {
      * Handle puzzle solved event from overlay scene
      */
     private handlePuzzleSolved(objectId: string): void {
+        sfx(this, 'puzzle.solved');
         // Remove the solved object from the scene
         const sprite = this.objectSprites.get(objectId);
         if (sprite) {
@@ -1244,8 +1206,7 @@ export class ForestRoomScene extends Phaser.Scene {
                 direction === 'up' ? 'down' : 'up';
 
         // Check if target room has a custom scene class
-        const targetRoomConfig = this.roomsData.rooms[targetRoom] as RoomConfig & { sceneClass?: string };
-        const sceneKey = targetRoomConfig?.sceneClass || 'ForestRoomScene';
+        const sceneKey = resolveForestRoomSceneKey(this.roomsData, targetRoom);
 
         // Fade out
         this.cameras.main.fadeOut(300, 0, 0, 0);

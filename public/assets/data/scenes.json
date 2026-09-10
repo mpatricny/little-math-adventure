@@ -1,5 +1,3489 @@
 {
   "scenes": {
+    "UnderwaterChestReward": {
+      "viewport": {
+        "width": 1280,
+        "height": 720
+      },
+      "elements": [
+        {
+          "id": "chestRewardPanelHost",
+          "asset": "ui.containers.empty",
+          "x": 640,
+          "y": 230,
+          "width": 650,
+          "height": 160,
+          "depth": 285
+        },
+        {
+          "id": "chestRewardSafeHost",
+          "asset": "ui.containers.empty",
+          "x": 640,
+          "y": 230,
+          "width": 500,
+          "height": 86,
+          "depth": 285
+        },
+        {
+          "id": "chestRewardTitleHost",
+          "asset": "ui.containers.empty",
+          "x": 640,
+          "y": 202,
+          "width": 440,
+          "height": 28,
+          "depth": 286
+        },
+        {
+          "id": "chestRewardCoinIconHost",
+          "asset": "ui.containers.empty",
+          "x": 500,
+          "y": 248,
+          "width": 44,
+          "height": 44,
+          "depth": 286
+        },
+        {
+          "id": "chestRewardCoinsHost",
+          "asset": "ui.containers.empty",
+          "x": 575,
+          "y": 248,
+          "width": 94,
+          "height": 44,
+          "depth": 286
+        },
+        {
+          "id": "chestRewardManaIconHost",
+          "asset": "ui.containers.empty",
+          "x": 684,
+          "y": 248,
+          "width": 36,
+          "height": 44,
+          "depth": 286
+        },
+        {
+          "id": "chestRewardManaHost",
+          "asset": "ui.containers.empty",
+          "x": 760,
+          "y": 248,
+          "width": 94,
+          "height": 44,
+          "depth": 286
+        }
+      ]
+    },
+    "UnderwaterRevelation": {
+      "viewport": {
+        "width": 1280,
+        "height": 720
+      },
+      "elements": [
+        {
+          "id": "revealShadeHost",
+          "asset": "ui.containers.empty",
+          "x": 640,
+          "y": 360,
+          "width": 1280,
+          "height": 720,
+          "depth": 100
+        },
+        {
+          "id": "revealSealHost",
+          "asset": "ui.containers.empty",
+          "x": 640,
+          "y": 330,
+          "width": 190,
+          "height": 190,
+          "depth": 110
+        }
+      ]
+    },
+    "UnderwaterGlowGrotto": {
+      "viewport": {
+        "width": 1280,
+        "height": 720
+      },
+      "elements": [
+        {
+          "id": "background",
+          "asset": "underwater.glow-grotto",
+          "x": 640,
+          "y": 360,
+          "width": 1280,
+          "height": 720,
+          "depth": -10
+        },
+        {
+          "id": "waterEffectsHost",
+          "asset": "ui.containers.empty",
+          "x": 640,
+          "y": 360,
+          "width": 1280,
+          "height": 720,
+          "depth": 30
+        },
+        {
+          "id": "partyHost",
+          "asset": "ui.containers.empty",
+          "x": 330,
+          "y": 570,
+          "width": 145,
+          "height": 190,
+          "depth": 45
+        },
+        {
+          "id": "exitCanalHost",
+          "asset": "ui.containers.empty",
+          "x": 155,
+          "y": 365,
+          "width": 150,
+          "height": 245,
+          "depth": 32
+        },
+        {
+          "id": "guardianHost",
+          "asset": "ui.containers.empty",
+          "x": 942,
+          "y": 554,
+          "width": 300,
+          "height": 315,
+          "depth": 23
+        },
+        {
+          "id": "guardianEscortHost",
+          "asset": "ui.containers.empty",
+          "x": 1040,
+          "y": 570,
+          "width": 115,
+          "height": 130,
+          "depth": 22
+        },
+        {
+          "id": "mechanismHost",
+          "asset": "ui.containers.empty",
+          "x": 605,
+          "y": 450,
+          "width": 136,
+          "height": 120,
+          "depth": 26
+        },
+        {
+          "id": "restoredFlowHost",
+          "asset": "ui.containers.empty",
+          "x": 675,
+          "y": 425,
+          "width": 720,
+          "height": 170,
+          "depth": 18
+        }
+      ],
+      "zones": [
+        {
+          "id": "path0",
+          "x": 100,
+          "y": 568,
+          "asset": "points.player-spawn-town"
+        },
+        {
+          "id": "path1",
+          "x": 435,
+          "y": 580,
+          "asset": "points.player-spawn-town"
+        },
+        {
+          "id": "path2",
+          "x": 820,
+          "y": 576,
+          "asset": "points.player-spawn-town"
+        },
+        {
+          "id": "path3",
+          "x": 1190,
+          "y": 565,
+          "asset": "points.player-spawn-town"
+        },
+        {
+          "id": "canal",
+          "x": 290,
+          "y": 568,
+          "asset": "points.player-spawn-town"
+        }
+      ]
+    },
+    "UnderwaterDepthGate": {
+      "viewport": {
+        "width": 1280,
+        "height": 720
+      },
+      "elements": [
+        {
+          "id": "background",
+          "asset": "underwater.depth-gate",
+          "x": 640,
+          "y": 360,
+          "width": 1280,
+          "height": 720,
+          "depth": -10
+        },
+        {
+          "id": "waterEffectsHost",
+          "asset": "ui.containers.empty",
+          "x": 640,
+          "y": 360,
+          "width": 1280,
+          "height": 720,
+          "depth": 30
+        },
+        {
+          "id": "partyHost",
+          "asset": "ui.containers.empty",
+          "x": 330,
+          "y": 570,
+          "width": 145,
+          "height": 190,
+          "depth": 45
+        },
+        {
+          "id": "exitBellHost",
+          "asset": "ui.containers.empty",
+          "x": 154,
+          "y": 396,
+          "width": 118,
+          "height": 218,
+          "depth": 32
+        },
+        {
+          "id": "exitHeartHost",
+          "asset": "ui.containers.empty",
+          "x": 1052,
+          "y": 364,
+          "width": 200,
+          "height": 260,
+          "depth": 32
+        },
+        {
+          "id": "restHost",
+          "asset": "ui.containers.empty",
+          "x": 367,
+          "y": 425,
+          "width": 115,
+          "height": 143,
+          "depth": 32
+        },
+        {
+          "id": "guardianHost",
+          "asset": "ui.containers.empty",
+          "x": 784,
+          "y": 558,
+          "width": 170,
+          "height": 185,
+          "depth": 23
+        },
+        {
+          "id": "guardianEscortHost",
+          "asset": "ui.containers.empty",
+          "x": 900,
+          "y": 575,
+          "width": 140,
+          "height": 142,
+          "depth": 22
+        }
+      ],
+      "zones": [
+        {
+          "id": "path0",
+          "x": 100,
+          "y": 568,
+          "asset": "points.player-spawn-town"
+        },
+        {
+          "id": "path1",
+          "x": 435,
+          "y": 580,
+          "asset": "points.player-spawn-town"
+        },
+        {
+          "id": "path2",
+          "x": 820,
+          "y": 576,
+          "asset": "points.player-spawn-town"
+        },
+        {
+          "id": "path3",
+          "x": 1190,
+          "y": 565,
+          "asset": "points.player-spawn-town"
+        },
+        {
+          "id": "bell",
+          "x": 290,
+          "y": 570,
+          "asset": "points.player-spawn-town"
+        },
+        {
+          "id": "heart",
+          "x": 945,
+          "y": 570,
+          "asset": "points.player-spawn-town"
+        }
+      ]
+    },
+    "UnderwaterLakeHeart": {
+      "viewport": {
+        "width": 1280,
+        "height": 720
+      },
+      "elements": [
+        {
+          "id": "background",
+          "asset": "underwater.lake-heart",
+          "x": 640,
+          "y": 360,
+          "width": 1280,
+          "height": 720,
+          "depth": -10
+        },
+        {
+          "id": "waterEffectsHost",
+          "asset": "ui.containers.empty",
+          "x": 640,
+          "y": 360,
+          "width": 1280,
+          "height": 720,
+          "depth": 30
+        },
+        {
+          "id": "partyHost",
+          "asset": "ui.containers.empty",
+          "x": 330,
+          "y": 570,
+          "width": 145,
+          "height": 190,
+          "depth": 45
+        },
+        {
+          "id": "exitGateHost",
+          "asset": "ui.containers.empty",
+          "x": 166,
+          "y": 363,
+          "width": 145,
+          "height": 190,
+          "depth": 32
+        },
+        {
+          "id": "guardianHost",
+          "asset": "ui.containers.empty",
+          "x": 838,
+          "y": 437,
+          "width": 480,
+          "height": 480,
+          "depth": 24
+        },
+        {
+          "id": "depthCrystalHost",
+          "asset": "ui.containers.empty",
+          "x": 960,
+          "y": 348,
+          "width": 100,
+          "height": 150,
+          "depth": 26
+        },
+        {
+          "id": "calmGuardianHost",
+          "asset": "ui.containers.empty",
+          "x": 650,
+          "y": 260,
+          "width": 240,
+          "height": 240,
+          "depth": 24
+        },
+        {
+          "id": "calmGuardianArrivalHost",
+          "asset": "ui.containers.empty",
+          "x": 780,
+          "y": 245,
+          "width": 240,
+          "height": 240,
+          "depth": 24
+        }
+      ],
+      "zones": [
+        {
+          "id": "path0",
+          "x": 100,
+          "y": 568,
+          "asset": "points.player-spawn-town"
+        },
+        {
+          "id": "path1",
+          "x": 435,
+          "y": 580,
+          "asset": "points.player-spawn-town"
+        },
+        {
+          "id": "path2",
+          "x": 820,
+          "y": 576,
+          "asset": "points.player-spawn-town"
+        },
+        {
+          "id": "path3",
+          "x": 1190,
+          "y": 565,
+          "asset": "points.player-spawn-town"
+        },
+        {
+          "id": "gate",
+          "x": 300,
+          "y": 570,
+          "asset": "points.player-spawn-town"
+        }
+      ]
+    },
+    "UnderwaterLight": {
+      "viewport": {
+        "width": 1280,
+        "height": 720
+      },
+      "elements": [
+        {
+          "id": "iconCloseHost",
+          "asset": "ui.containers.empty",
+          "x": 1060,
+          "y": 165,
+          "width": 72,
+          "height": 72,
+          "depth": 805
+        },
+        {
+          "id": "lightTitleHost",
+          "asset": "ui.containers.empty",
+          "x": 600,
+          "y": 155,
+          "width": 770,
+          "height": 45,
+          "depth": 805
+        },
+        {
+          "id": "lightBoardHost",
+          "asset": "ui.containers.empty",
+          "x": 620,
+          "y": 320,
+          "width": 720,
+          "height": 230,
+          "depth": 803
+        },
+        {
+          "id": "lightSourceHost",
+          "asset": "ui.containers.empty",
+          "x": 245,
+          "y": 405,
+          "width": 60,
+          "height": 60,
+          "depth": 805
+        },
+        {
+          "id": "lightTargetHost",
+          "asset": "ui.containers.empty",
+          "x": 1035,
+          "y": 405,
+          "width": 60,
+          "height": 60,
+          "depth": 805
+        },
+        {
+          "id": "lightMirror0Host",
+          "asset": "ui.containers.empty",
+          "x": 470,
+          "y": 405,
+          "width": 52,
+          "height": 52,
+          "depth": 805
+        },
+        {
+          "id": "lightMirror1Host",
+          "asset": "ui.containers.empty",
+          "x": 470,
+          "y": 275,
+          "width": 52,
+          "height": 52,
+          "depth": 805
+        },
+        {
+          "id": "lightMirror2Host",
+          "asset": "ui.containers.empty",
+          "x": 810,
+          "y": 275,
+          "width": 52,
+          "height": 52,
+          "depth": 805
+        },
+        {
+          "id": "lightMirror3Host",
+          "asset": "ui.containers.empty",
+          "x": 810,
+          "y": 405,
+          "width": 52,
+          "height": 52,
+          "depth": 805
+        },
+        {
+          "id": "lightLamp0Host",
+          "asset": "ui.containers.empty",
+          "x": 585,
+          "y": 275,
+          "width": 45,
+          "height": 45,
+          "depth": 805
+        },
+        {
+          "id": "lightLamp1Host",
+          "asset": "ui.containers.empty",
+          "x": 695,
+          "y": 275,
+          "width": 45,
+          "height": 45,
+          "depth": 805
+        },
+        {
+          "id": "lightFeedbackHost",
+          "asset": "ui.containers.empty",
+          "x": 560,
+          "y": 492,
+          "width": 650,
+          "height": 32,
+          "depth": 805
+        },
+        {
+          "id": "lightHintHost",
+          "asset": "ui.containers.empty",
+          "x": 980,
+          "y": 525,
+          "width": 72,
+          "height": 72,
+          "depth": 805
+        },
+        {
+          "id": "lightRunHost",
+          "asset": "ui.containers.empty",
+          "x": 640,
+          "y": 552,
+          "width": 330,
+          "height": 78,
+          "depth": 805
+        },
+        {
+          "id": "lightHintHostStatus",
+          "asset": "ui.containers.empty",
+          "x": 980,
+          "y": 573,
+          "width": 116,
+          "height": 22,
+          "depth": 805
+        }
+      ]
+    },
+    "UnderwaterDescent": {
+      "viewport": {
+        "width": 1280,
+        "height": 720
+      },
+      "elements": [
+        {
+          "id": "descentBackdropHost",
+          "asset": "ui.containers.empty",
+          "x": 640,
+          "y": 1137,
+          "width": 1280,
+          "height": 2274,
+          "depth": -10
+        },
+        {
+          "id": "descentPartyHost",
+          "asset": "ui.containers.empty",
+          "x": 640,
+          "y": 280,
+          "width": 110,
+          "height": 148,
+          "depth": 40
+        },
+        {
+          "id": "descentFish0Host",
+          "asset": "ui.containers.empty",
+          "x": 750,
+          "y": 730,
+          "width": 110,
+          "height": 100,
+          "depth": 18
+        },
+        {
+          "id": "descentFish1Host",
+          "asset": "ui.containers.empty",
+          "x": 500,
+          "y": 1190,
+          "width": 85,
+          "height": 80,
+          "depth": 18
+        },
+        {
+          "id": "descentFish2Host",
+          "asset": "ui.containers.empty",
+          "x": 770,
+          "y": 1660,
+          "width": 140,
+          "height": 125,
+          "depth": 44
+        },
+        {
+          "id": "descentMotesHost",
+          "asset": "ui.containers.empty",
+          "x": 640,
+          "y": 1137,
+          "width": 1280,
+          "height": 2274,
+          "depth": 35
+        },
+        {
+          "id": "descentSkipHost",
+          "asset": "ui.containers.empty",
+          "x": 1030,
+          "y": 660,
+          "width": 420,
+          "height": 78,
+          "depth": 90
+        },
+        {
+          "id": "descentFish3Host",
+          "asset": "ui.containers.empty",
+          "x": 730,
+          "y": 1950,
+          "width": 125,
+          "height": 120,
+          "depth": 44
+        },
+        {
+          "id": "descentSteeringHost",
+          "asset": "ui.containers.empty",
+          "x": 440,
+          "y": 660,
+          "width": 560,
+          "height": 50,
+          "depth": 90
+        },
+        {
+          "id": "descentHealthHost",
+          "asset": "ui.containers.empty",
+          "x": 160,
+          "y": 70,
+          "width": 250,
+          "height": 45,
+          "depth": 90
+        }
+      ],
+      "zones": [
+        {
+          "id": "descent0",
+          "x": 640,
+          "y": 290,
+          "asset": "points.player-spawn-town"
+        },
+        {
+          "id": "descent1",
+          "x": 660,
+          "y": 700,
+          "asset": "points.player-spawn-town"
+        },
+        {
+          "id": "descent2",
+          "x": 580,
+          "y": 1170,
+          "asset": "points.player-spawn-town"
+        },
+        {
+          "id": "descent3",
+          "x": 690,
+          "y": 1650,
+          "asset": "points.player-spawn-town"
+        },
+        {
+          "id": "descent4",
+          "x": 745,
+          "y": 2080,
+          "asset": "points.player-spawn-town"
+        }
+      ]
+    },
+    "UnderwaterBossHud": {
+      "viewport": {
+        "width": 1280,
+        "height": 720
+      },
+      "elements": [
+        {
+          "id": "bossPhaseHost",
+          "asset": "ui.containers.empty",
+          "x": 640,
+          "y": 165,
+          "width": 490,
+          "height": 60,
+          "depth": 92
+        },
+        {
+          "id": "bossWaveHost",
+          "asset": "ui.containers.empty",
+          "x": 640,
+          "y": 211,
+          "width": 530,
+          "height": 38,
+          "depth": 93
+        },
+        {
+          "id": "bossTransitionShadeHost",
+          "asset": "ui.containers.empty",
+          "x": 640,
+          "y": 360,
+          "width": 1280,
+          "height": 720,
+          "depth": 105
+        },
+        {
+          "id": "bossTransitionFrameHost",
+          "asset": "ui.containers.empty",
+          "x": 640,
+          "y": 360,
+          "width": 740,
+          "height": 415,
+          "depth": 106
+        },
+        {
+          "id": "bossTransitionTitleHost",
+          "asset": "ui.containers.empty",
+          "x": 640,
+          "y": 280,
+          "width": 560,
+          "height": 66,
+          "depth": 107
+        },
+        {
+          "id": "bossTransitionHelpHost",
+          "asset": "ui.containers.empty",
+          "x": 640,
+          "y": 365,
+          "width": 540,
+          "height": 64,
+          "depth": 107
+        },
+        {
+          "id": "bossTransitionHealHost",
+          "asset": "ui.containers.empty",
+          "x": 640,
+          "y": 435,
+          "width": 500,
+          "height": 50,
+          "depth": 107
+        }
+      ]
+    },
+    "UnderwaterShallows": {
+      "viewport": {
+        "width": 1280,
+        "height": 720
+      },
+      "elements": [
+        {
+          "id": "background",
+          "asset": "underwater.shallows",
+          "x": 640,
+          "y": 360,
+          "width": 1280,
+          "height": 720,
+          "depth": -10
+        },
+        {
+          "id": "waterEffectsHost",
+          "asset": "ui.containers.empty",
+          "x": 640,
+          "y": 360,
+          "width": 1280,
+          "height": 720,
+          "depth": 30
+        },
+        {
+          "id": "partyHost",
+          "asset": "ui.containers.empty",
+          "x": 320,
+          "y": 510,
+          "width": 145,
+          "height": 190,
+          "depth": 45
+        },
+        {
+          "id": "guardianHost",
+          "asset": "ui.containers.empty",
+          "x": 845,
+          "y": 505,
+          "width": 200,
+          "height": 185,
+          "depth": 22
+        },
+        {
+          "id": "chestHost",
+          "asset": "ui.containers.empty",
+          "x": 480,
+          "y": 555,
+          "width": 110,
+          "height": 110,
+          "depth": 23
+        },
+        {
+          "id": "exitLeftHost",
+          "asset": "ui.containers.empty",
+          "x": 247,
+          "y": 318,
+          "width": 200,
+          "height": 260,
+          "depth": 32
+        },
+        {
+          "id": "exitRightHost",
+          "asset": "ui.containers.empty",
+          "x": 975,
+          "y": 364,
+          "width": 140,
+          "height": 192,
+          "depth": 32
+        }
+      ],
+      "zones": [
+        {
+          "id": "surface",
+          "x": 295,
+          "y": 515,
+          "asset": "points.player-spawn-town"
+        },
+        {
+          "id": "bell",
+          "x": 1030,
+          "y": 530,
+          "asset": "points.player-spawn-town"
+        },
+        {
+          "id": "path0",
+          "x": 100,
+          "y": 515,
+          "asset": "points.player-spawn-town"
+        },
+        {
+          "id": "path1",
+          "x": 430,
+          "y": 560,
+          "asset": "points.player-spawn-town"
+        },
+        {
+          "id": "path2",
+          "x": 800,
+          "y": 540,
+          "asset": "points.player-spawn-town"
+        },
+        {
+          "id": "path3",
+          "x": 1180,
+          "y": 530,
+          "asset": "points.player-spawn-town"
+        }
+      ]
+    },
+    "UnderwaterBellHub": {
+      "viewport": {
+        "width": 1280,
+        "height": 720
+      },
+      "elements": [
+        {
+          "id": "background",
+          "asset": "underwater.bell",
+          "x": 640,
+          "y": 360,
+          "width": 1280,
+          "height": 720,
+          "depth": -10
+        },
+        {
+          "id": "waterEffectsHost",
+          "asset": "ui.containers.empty",
+          "x": 640,
+          "y": 360,
+          "width": 1280,
+          "height": 720,
+          "depth": 30
+        },
+        {
+          "id": "partyHost",
+          "asset": "ui.containers.empty",
+          "x": 310,
+          "y": 550,
+          "width": 145,
+          "height": 190,
+          "depth": 45
+        },
+        {
+          "id": "bellHost",
+          "asset": "ui.containers.empty",
+          "x": 658,
+          "y": 316,
+          "width": 95,
+          "height": 110,
+          "depth": 32
+        },
+        {
+          "id": "bellProgressHost",
+          "asset": "ui.containers.empty",
+          "x": 753,
+          "y": 346,
+          "width": 70,
+          "height": 20,
+          "depth": 32
+        },
+        {
+          "id": "exitGardenHost",
+          "asset": "ui.containers.empty",
+          "x": 658,
+          "y": 414,
+          "width": 82,
+          "height": 76,
+          "depth": 31
+        },
+        {
+          "id": "restHost",
+          "asset": "ui.containers.empty",
+          "x": 895,
+          "y": 474,
+          "width": 70,
+          "height": 92,
+          "depth": 32
+        },
+        {
+          "id": "branchRightHost",
+          "asset": "ui.containers.empty",
+          "x": 1090,
+          "y": 411,
+          "width": 135,
+          "height": 212,
+          "depth": 32
+        },
+        {
+          "id": "exitLeftHost",
+          "asset": "ui.containers.empty",
+          "x": 209,
+          "y": 406,
+          "width": 108,
+          "height": 206,
+          "depth": 32
+        },
+        {
+          "id": "shellSealHost",
+          "asset": "ui.containers.empty",
+          "x": 562,
+          "y": 443,
+          "width": 54,
+          "height": 54,
+          "depth": 33
+        },
+        {
+          "id": "currentSealHost",
+          "asset": "ui.containers.empty",
+          "x": 748,
+          "y": 446,
+          "width": 54,
+          "height": 54,
+          "depth": 33
+        },
+        {
+          "id": "exitDepthsHost",
+          "asset": "ui.containers.empty",
+          "x": 423,
+          "y": 405,
+          "width": 82,
+          "height": 140,
+          "depth": 32
+        },
+        {
+          "id": "arrivalShellHost",
+          "asset": "ui.containers.empty",
+          "x": 80,
+          "y": 480,
+          "width": 84,
+          "height": 106,
+          "depth": 32
+        },
+        {
+          "id": "arrivalCurrentHost",
+          "asset": "ui.containers.empty",
+          "x": 1206,
+          "y": 480,
+          "width": 80,
+          "height": 100,
+          "depth": 32
+        }
+      ],
+      "zones": [
+        {
+          "id": "shallows",
+          "x": 325,
+          "y": 550,
+          "asset": "points.player-spawn-town"
+        },
+        {
+          "id": "garden",
+          "x": 670,
+          "y": 555,
+          "asset": "points.player-spawn-town"
+        },
+        {
+          "id": "canal",
+          "x": 1030,
+          "y": 555,
+          "asset": "points.player-spawn-town"
+        },
+        {
+          "id": "path0",
+          "x": 100,
+          "y": 550,
+          "asset": "points.player-spawn-town"
+        },
+        {
+          "id": "path1",
+          "x": 450,
+          "y": 555,
+          "asset": "points.player-spawn-town"
+        },
+        {
+          "id": "path2",
+          "x": 820,
+          "y": 550,
+          "asset": "points.player-spawn-town"
+        },
+        {
+          "id": "path3",
+          "x": 1180,
+          "y": 560,
+          "asset": "points.player-spawn-town"
+        },
+        {
+          "id": "shrine_return",
+          "x": 205,
+          "y": 550,
+          "asset": "points.player-spawn-town"
+        },
+        {
+          "id": "chamber_return",
+          "x": 1100,
+          "y": 558,
+          "asset": "points.player-spawn-town"
+        },
+        {
+          "id": "depths",
+          "x": 440,
+          "y": 553,
+          "asset": "points.player-spawn-town"
+        }
+      ]
+    },
+    "UnderwaterReedGarden": {
+      "viewport": {
+        "width": 1280,
+        "height": 720
+      },
+      "elements": [
+        {
+          "id": "background",
+          "asset": "underwater.reed-garden",
+          "x": 640,
+          "y": 360,
+          "width": 1280,
+          "height": 720,
+          "depth": -10
+        },
+        {
+          "id": "waterEffectsHost",
+          "asset": "ui.containers.empty",
+          "x": 640,
+          "y": 360,
+          "width": 1280,
+          "height": 720,
+          "depth": 30
+        },
+        {
+          "id": "partyHost",
+          "asset": "ui.containers.empty",
+          "x": 330,
+          "y": 570,
+          "width": 145,
+          "height": 190,
+          "depth": 45
+        },
+        {
+          "id": "guardianHost",
+          "asset": "ui.containers.empty",
+          "x": 860,
+          "y": 536,
+          "width": 185,
+          "height": 175,
+          "depth": 23
+        },
+        {
+          "id": "guardianEscortHost",
+          "asset": "ui.containers.empty",
+          "x": 975,
+          "y": 556,
+          "width": 142,
+          "height": 137,
+          "depth": 22
+        },
+        {
+          "id": "exitLeftHost",
+          "asset": "ui.containers.empty",
+          "x": 170,
+          "y": 413,
+          "width": 110,
+          "height": 184,
+          "depth": 32
+        },
+        {
+          "id": "exitRightHost",
+          "asset": "ui.containers.empty",
+          "x": 1155,
+          "y": 430,
+          "width": 102,
+          "height": 174,
+          "depth": 32
+        },
+        {
+          "id": "restoredFlowHost",
+          "asset": "ui.containers.empty",
+          "x": 650,
+          "y": 510,
+          "width": 700,
+          "height": 140,
+          "depth": 18
+        },
+        {
+          "id": "mechanismHost",
+          "asset": "ui.containers.empty",
+          "x": 650,
+          "y": 478,
+          "width": 145,
+          "height": 92,
+          "depth": 28
+        },
+        {
+          "id": "exitShrineHost",
+          "asset": "ui.containers.empty",
+          "x": 640,
+          "y": 382,
+          "width": 76,
+          "height": 90,
+          "depth": 32
+        }
+      ],
+      "zones": [
+        {
+          "id": "bell",
+          "x": 315,
+          "y": 568,
+          "asset": "points.player-spawn-town"
+        },
+        {
+          "id": "canal",
+          "x": 1040,
+          "y": 572,
+          "asset": "points.player-spawn-town"
+        },
+        {
+          "id": "path0",
+          "x": 100,
+          "y": 568,
+          "asset": "points.player-spawn-town"
+        },
+        {
+          "id": "path1",
+          "x": 435,
+          "y": 580,
+          "asset": "points.player-spawn-town"
+        },
+        {
+          "id": "path2",
+          "x": 820,
+          "y": 576,
+          "asset": "points.player-spawn-town"
+        },
+        {
+          "id": "path3",
+          "x": 1190,
+          "y": 565,
+          "asset": "points.player-spawn-town"
+        },
+        {
+          "id": "shrine",
+          "x": 650,
+          "y": 576,
+          "asset": "points.player-spawn-town"
+        }
+      ]
+    },
+    "UnderwaterSunkenCanal": {
+      "viewport": {
+        "width": 1280,
+        "height": 720
+      },
+      "elements": [
+        {
+          "id": "background",
+          "asset": "underwater.sunken-canal",
+          "x": 640,
+          "y": 360,
+          "width": 1280,
+          "height": 720,
+          "depth": -10
+        },
+        {
+          "id": "waterEffectsHost",
+          "asset": "ui.containers.empty",
+          "x": 640,
+          "y": 360,
+          "width": 1280,
+          "height": 720,
+          "depth": 30
+        },
+        {
+          "id": "partyHost",
+          "asset": "ui.containers.empty",
+          "x": 330,
+          "y": 570,
+          "width": 145,
+          "height": 190,
+          "depth": 45
+        },
+        {
+          "id": "guardianHost",
+          "asset": "ui.containers.empty",
+          "x": 860,
+          "y": 536,
+          "width": 185,
+          "height": 175,
+          "depth": 23
+        },
+        {
+          "id": "guardianEscortHost",
+          "asset": "ui.containers.empty",
+          "x": 975,
+          "y": 556,
+          "width": 142,
+          "height": 137,
+          "depth": 22
+        },
+        {
+          "id": "exitLeftHost",
+          "asset": "ui.containers.empty",
+          "x": 170,
+          "y": 413,
+          "width": 110,
+          "height": 184,
+          "depth": 32
+        },
+        {
+          "id": "exitRightHost",
+          "asset": "ui.containers.empty",
+          "x": 1120,
+          "y": 430,
+          "width": 102,
+          "height": 174,
+          "depth": 32
+        },
+        {
+          "id": "restoredFlowHost",
+          "asset": "ui.containers.empty",
+          "x": 650,
+          "y": 510,
+          "width": 700,
+          "height": 140,
+          "depth": 18
+        },
+        {
+          "id": "mechanismHost",
+          "asset": "ui.containers.empty",
+          "x": 650,
+          "y": 362,
+          "width": 258,
+          "height": 258,
+          "depth": 26
+        },
+        {
+          "id": "chestHost",
+          "asset": "ui.containers.empty",
+          "x": 445,
+          "y": 575,
+          "width": 112,
+          "height": 108,
+          "depth": 24
+        },
+        {
+          "id": "exitChamberHost",
+          "asset": "ui.containers.empty",
+          "x": 877,
+          "y": 379,
+          "width": 80,
+          "height": 130,
+          "depth": 32
+        },
+        {
+          "id": "exitGrottoHost",
+          "asset": "ui.containers.empty",
+          "x": 357,
+          "y": 410,
+          "width": 82,
+          "height": 140,
+          "depth": 32
+        }
+      ],
+      "zones": [
+        {
+          "id": "bell",
+          "x": 315,
+          "y": 568,
+          "asset": "points.player-spawn-town"
+        },
+        {
+          "id": "garden",
+          "x": 1040,
+          "y": 572,
+          "asset": "points.player-spawn-town"
+        },
+        {
+          "id": "path0",
+          "x": 100,
+          "y": 568,
+          "asset": "points.player-spawn-town"
+        },
+        {
+          "id": "path1",
+          "x": 435,
+          "y": 580,
+          "asset": "points.player-spawn-town"
+        },
+        {
+          "id": "path2",
+          "x": 820,
+          "y": 576,
+          "asset": "points.player-spawn-town"
+        },
+        {
+          "id": "path3",
+          "x": 1190,
+          "y": 565,
+          "asset": "points.player-spawn-town"
+        },
+        {
+          "id": "chamber",
+          "x": 890,
+          "y": 574,
+          "asset": "points.player-spawn-town"
+        },
+        {
+          "id": "grotto",
+          "x": 395,
+          "y": 575,
+          "asset": "points.player-spawn-town"
+        }
+      ]
+    },
+    "UnderwaterCurrents": {
+      "viewport": {
+        "width": 1280,
+        "height": 720
+      },
+      "elements": [
+        {
+          "id": "iconCloseHost",
+          "asset": "ui.containers.empty",
+          "x": 1060,
+          "y": 165,
+          "width": 72,
+          "height": 72,
+          "depth": 805
+        },
+        {
+          "id": "iconCurrentHintHost",
+          "asset": "ui.containers.empty",
+          "x": 840,
+          "y": 169,
+          "width": 72,
+          "height": 72,
+          "depth": 805
+        },
+        {
+          "id": "currentTitleHost",
+          "asset": "ui.containers.empty",
+          "x": 520,
+          "y": 155,
+          "width": 560,
+          "height": 45,
+          "depth": 805
+        },
+        {
+          "id": "currentSource0Host",
+          "asset": "ui.containers.empty",
+          "x": 285,
+          "y": 260,
+          "width": 112,
+          "height": 116,
+          "depth": 805
+        },
+        {
+          "id": "currentSource1Host",
+          "asset": "ui.containers.empty",
+          "x": 285,
+          "y": 407,
+          "width": 112,
+          "height": 116,
+          "depth": 805
+        },
+        {
+          "id": "currentStep0Host",
+          "asset": "ui.containers.empty",
+          "x": 510,
+          "y": 335,
+          "width": 110,
+          "height": 124,
+          "depth": 805
+        },
+        {
+          "id": "currentStep1Host",
+          "asset": "ui.containers.empty",
+          "x": 730,
+          "y": 252,
+          "width": 110,
+          "height": 124,
+          "depth": 805
+        },
+        {
+          "id": "currentStep2Host",
+          "asset": "ui.containers.empty",
+          "x": 730,
+          "y": 380,
+          "width": 110,
+          "height": 124,
+          "depth": 805
+        },
+        {
+          "id": "currentTarget0Host",
+          "asset": "ui.containers.empty",
+          "x": 990,
+          "y": 255,
+          "width": 112,
+          "height": 100,
+          "depth": 805
+        },
+        {
+          "id": "currentTarget1Host",
+          "asset": "ui.containers.empty",
+          "x": 990,
+          "y": 395,
+          "width": 112,
+          "height": 100,
+          "depth": 805
+        },
+        {
+          "id": "currentFeedbackHost",
+          "asset": "ui.containers.empty",
+          "x": 640,
+          "y": 465,
+          "width": 560,
+          "height": 28,
+          "depth": 805
+        },
+        {
+          "id": "currentCard0Host",
+          "asset": "ui.containers.empty",
+          "x": 255,
+          "y": 527,
+          "width": 100,
+          "height": 92,
+          "depth": 805
+        },
+        {
+          "id": "currentCard1Host",
+          "asset": "ui.containers.empty",
+          "x": 375,
+          "y": 527,
+          "width": 100,
+          "height": 92,
+          "depth": 805
+        },
+        {
+          "id": "currentCard2Host",
+          "asset": "ui.containers.empty",
+          "x": 495,
+          "y": 527,
+          "width": 100,
+          "height": 92,
+          "depth": 805
+        },
+        {
+          "id": "currentCard3Host",
+          "asset": "ui.containers.empty",
+          "x": 615,
+          "y": 527,
+          "width": 100,
+          "height": 92,
+          "depth": 805
+        },
+        {
+          "id": "currentCard4Host",
+          "asset": "ui.containers.empty",
+          "x": 735,
+          "y": 527,
+          "width": 100,
+          "height": 92,
+          "depth": 805
+        },
+        {
+          "id": "currentCard5Host",
+          "asset": "ui.containers.empty",
+          "x": 855,
+          "y": 527,
+          "width": 100,
+          "height": 92,
+          "depth": 805
+        },
+        {
+          "id": "iconCurrentRunHost",
+          "asset": "ui.containers.empty",
+          "x": 1025,
+          "y": 527,
+          "width": 84,
+          "height": 84,
+          "depth": 805
+        },
+        {
+          "id": "iconCurrentHintHostStatus",
+          "asset": "ui.containers.empty",
+          "x": 840,
+          "y": 220,
+          "width": 108,
+          "height": 24,
+          "depth": 805
+        }
+      ]
+    },
+    "UnderwaterPump": {
+      "viewport": {
+        "width": 1280,
+        "height": 720
+      },
+      "elements": [
+        {
+          "id": "iconCloseHost",
+          "asset": "ui.containers.empty",
+          "x": 1060,
+          "y": 165,
+          "width": 72,
+          "height": 72,
+          "depth": 805
+        },
+        {
+          "id": "pumpTitleHost",
+          "asset": "ui.containers.empty",
+          "x": 545,
+          "y": 158,
+          "width": 650,
+          "height": 45,
+          "depth": 805
+        },
+        {
+          "id": "pumpRotor0Host",
+          "asset": "ui.containers.empty",
+          "x": 400,
+          "y": 380,
+          "width": 182,
+          "height": 182,
+          "depth": 805
+        },
+        {
+          "id": "pumpRotor1Host",
+          "asset": "ui.containers.empty",
+          "x": 650,
+          "y": 380,
+          "width": 182,
+          "height": 182,
+          "depth": 805
+        },
+        {
+          "id": "pumpRotor2Host",
+          "asset": "ui.containers.empty",
+          "x": 900,
+          "y": 380,
+          "width": 182,
+          "height": 182,
+          "depth": 805
+        },
+        {
+          "id": "pumpReading0Host",
+          "asset": "ui.containers.empty",
+          "x": 260,
+          "y": 245,
+          "width": 84,
+          "height": 84,
+          "depth": 805
+        },
+        {
+          "id": "pumpReading1Host",
+          "asset": "ui.containers.empty",
+          "x": 525,
+          "y": 245,
+          "width": 84,
+          "height": 84,
+          "depth": 805
+        },
+        {
+          "id": "pumpReading2Host",
+          "asset": "ui.containers.empty",
+          "x": 775,
+          "y": 245,
+          "width": 84,
+          "height": 84,
+          "depth": 805
+        },
+        {
+          "id": "pumpReading3Host",
+          "asset": "ui.containers.empty",
+          "x": 1035,
+          "y": 245,
+          "width": 84,
+          "height": 84,
+          "depth": 805
+        },
+        {
+          "id": "pumpValue0Host",
+          "asset": "ui.containers.empty",
+          "x": 400,
+          "y": 491,
+          "width": 90,
+          "height": 34,
+          "depth": 805
+        },
+        {
+          "id": "pumpValue1Host",
+          "asset": "ui.containers.empty",
+          "x": 650,
+          "y": 491,
+          "width": 90,
+          "height": 34,
+          "depth": 805
+        },
+        {
+          "id": "pumpValue2Host",
+          "asset": "ui.containers.empty",
+          "x": 900,
+          "y": 491,
+          "width": 90,
+          "height": 34,
+          "depth": 805
+        },
+        {
+          "id": "pumpFeedbackHost",
+          "asset": "ui.containers.empty",
+          "x": 580,
+          "y": 552,
+          "width": 600,
+          "height": 34,
+          "depth": 805
+        },
+        {
+          "id": "iconPumpHintHost",
+          "asset": "ui.containers.empty",
+          "x": 930,
+          "y": 169,
+          "width": 72,
+          "height": 72,
+          "depth": 805
+        },
+        {
+          "id": "iconPumpRunHost",
+          "asset": "ui.containers.empty",
+          "x": 1060,
+          "y": 550,
+          "width": 72,
+          "height": 72,
+          "depth": 805
+        },
+        {
+          "id": "iconPumpHintHostStatus",
+          "asset": "ui.containers.empty",
+          "x": 930,
+          "y": 220,
+          "width": 108,
+          "height": 24,
+          "depth": 805
+        }
+      ]
+    },
+    "UnderwaterOverlay": {
+      "viewport": {
+        "width": 1280,
+        "height": 720
+      },
+      "elements": [
+        {
+          "id": "titleHost",
+          "asset": "ui.containers.empty",
+          "x": 640,
+          "y": 131,
+          "width": 640,
+          "height": 42,
+          "depth": 185
+        },
+        {
+          "id": "objectiveHost",
+          "asset": "ui.containers.empty",
+          "x": 640,
+          "y": 173,
+          "width": 860,
+          "height": 34,
+          "depth": 185
+        },
+        {
+          "id": "toastHost",
+          "asset": "ui.containers.empty",
+          "x": 640,
+          "y": 229,
+          "width": 950,
+          "height": 68,
+          "depth": 220
+        },
+        {
+          "id": "modalShadeHost",
+          "asset": "ui.containers.empty",
+          "x": 640,
+          "y": 360,
+          "width": 1280,
+          "height": 720,
+          "depth": 800
+        },
+        {
+          "id": "modalPanelHost",
+          "asset": "ui.containers.empty",
+          "x": 640,
+          "y": 360,
+          "width": 1120,
+          "height": 600,
+          "depth": 802
+        },
+        {
+          "id": "modalSafeAreaHost",
+          "asset": "ui.containers.empty",
+          "x": 640,
+          "y": 356,
+          "width": 920,
+          "height": 488,
+          "depth": 802
+        },
+        {
+          "id": "modalTitleHost",
+          "asset": "ui.containers.empty",
+          "x": 640,
+          "y": 153,
+          "width": 840,
+          "height": 50,
+          "depth": 803
+        },
+        {
+          "id": "modalPortraitHost",
+          "asset": "ui.containers.empty",
+          "x": 315,
+          "y": 337,
+          "width": 200,
+          "height": 240,
+          "depth": 803
+        },
+        {
+          "id": "puzzleNotesHost",
+          "asset": "ui.containers.empty",
+          "x": 640,
+          "y": 343,
+          "width": 110,
+          "height": 24,
+          "depth": 803
+        },
+        {
+          "id": "modalTextHost",
+          "asset": "ui.containers.empty",
+          "x": 760,
+          "y": 337,
+          "width": 570,
+          "height": 216,
+          "depth": 803
+        },
+        {
+          "id": "modalNextHost",
+          "asset": "ui.containers.empty",
+          "x": 820,
+          "y": 552,
+          "width": 340,
+          "height": 86,
+          "depth": 804
+        },
+        {
+          "id": "modalCloseHost",
+          "asset": "ui.containers.empty",
+          "x": 400,
+          "y": 552,
+          "width": 340,
+          "height": 86,
+          "depth": 804
+        },
+        {
+          "id": "puzzleInstructionHost",
+          "asset": "ui.containers.empty",
+          "x": 640,
+          "y": 223,
+          "width": 800,
+          "height": 72,
+          "depth": 803
+        },
+        {
+          "id": "puzzleEquationHost",
+          "asset": "ui.containers.empty",
+          "x": 640,
+          "y": 292,
+          "width": 700,
+          "height": 60,
+          "depth": 803
+        },
+        {
+          "id": "puzzleChoice0Host",
+          "asset": "ui.containers.empty",
+          "x": 390,
+          "y": 413,
+          "width": 112,
+          "height": 98,
+          "depth": 804
+        },
+        {
+          "id": "puzzleChoice1Host",
+          "asset": "ui.containers.empty",
+          "x": 640,
+          "y": 413,
+          "width": 112,
+          "height": 98,
+          "depth": 804
+        },
+        {
+          "id": "puzzleChoice2Host",
+          "asset": "ui.containers.empty",
+          "x": 890,
+          "y": 413,
+          "width": 112,
+          "height": 98,
+          "depth": 804
+        },
+        {
+          "id": "puzzleFeedbackHost",
+          "asset": "ui.containers.empty",
+          "x": 640,
+          "y": 486,
+          "width": 860,
+          "height": 36,
+          "depth": 804
+        },
+        {
+          "id": "loadingProgressHost",
+          "asset": "ui.containers.empty",
+          "x": 640,
+          "y": 405,
+          "width": 580,
+          "height": 34,
+          "depth": 804
+        }
+      ]
+    },
+    "UnderwaterFlow": {
+      "viewport": {
+        "width": 1280,
+        "height": 720
+      },
+      "elements": [
+        {
+          "id": "iconCloseHost",
+          "asset": "ui.containers.empty",
+          "x": 1060,
+          "y": 165,
+          "width": 72,
+          "height": 72,
+          "depth": 805
+        },
+        {
+          "id": "iconFlowHintHost",
+          "asset": "ui.containers.empty",
+          "x": 840,
+          "y": 169,
+          "width": 72,
+          "height": 72,
+          "depth": 805
+        },
+        {
+          "id": "flowHintHost",
+          "asset": "ui.containers.empty",
+          "x": 530,
+          "y": 160,
+          "width": 530,
+          "height": 45,
+          "depth": 805
+        },
+        {
+          "id": "puzzleSolverHost",
+          "asset": "ui.containers.empty",
+          "x": 228,
+          "y": 210,
+          "width": 65,
+          "height": 82,
+          "depth": 805
+        },
+        {
+          "id": "flowStartHost",
+          "asset": "ui.containers.empty",
+          "x": 270,
+          "y": 335,
+          "width": 145,
+          "height": 160,
+          "depth": 805
+        },
+        {
+          "id": "flowStartValueHost",
+          "asset": "ui.containers.empty",
+          "x": 270,
+          "y": 323,
+          "width": 76,
+          "height": 48,
+          "depth": 805
+        },
+        {
+          "id": "flowStep0Host",
+          "asset": "ui.containers.empty",
+          "x": 490,
+          "y": 335,
+          "width": 126,
+          "height": 140,
+          "depth": 805
+        },
+        {
+          "id": "flowStep1Host",
+          "asset": "ui.containers.empty",
+          "x": 690,
+          "y": 335,
+          "width": 126,
+          "height": 140,
+          "depth": 805
+        },
+        {
+          "id": "bellInstrumentHost",
+          "asset": "ui.containers.empty",
+          "x": 940,
+          "y": 335,
+          "width": 225,
+          "height": 220,
+          "depth": 804
+        },
+        {
+          "id": "bellTargetHost",
+          "asset": "ui.containers.empty",
+          "x": 940,
+          "y": 342,
+          "width": 80,
+          "height": 64,
+          "depth": 805
+        },
+        {
+          "id": "flowProgressHost",
+          "asset": "ui.containers.empty",
+          "x": 640,
+          "y": 212,
+          "width": 104,
+          "height": 22,
+          "depth": 805
+        },
+        {
+          "id": "flowFeedbackHost",
+          "asset": "ui.containers.empty",
+          "x": 640,
+          "y": 435,
+          "width": 750,
+          "height": 45,
+          "depth": 805
+        },
+        {
+          "id": "flowCard0Host",
+          "asset": "ui.containers.empty",
+          "x": 380,
+          "y": 522,
+          "width": 104,
+          "height": 104,
+          "depth": 805
+        },
+        {
+          "id": "flowCard1Host",
+          "asset": "ui.containers.empty",
+          "x": 550,
+          "y": 522,
+          "width": 104,
+          "height": 104,
+          "depth": 805
+        },
+        {
+          "id": "flowCard2Host",
+          "asset": "ui.containers.empty",
+          "x": 720,
+          "y": 522,
+          "width": 104,
+          "height": 104,
+          "depth": 805
+        },
+        {
+          "id": "flowCard3Host",
+          "asset": "ui.containers.empty",
+          "x": 890,
+          "y": 522,
+          "width": 104,
+          "height": 104,
+          "depth": 805
+        },
+        {
+          "id": "iconFlowHintHostStatus",
+          "asset": "ui.containers.empty",
+          "x": 840,
+          "y": 220,
+          "width": 108,
+          "height": 24,
+          "depth": 805
+        }
+      ]
+    },
+    "UnderwaterPostWreck": {
+      "viewport": {
+        "width": 1280,
+        "height": 720
+      },
+      "elements": [
+        {
+          "id": "background",
+          "asset": "underwater.post-wreck",
+          "x": 640,
+          "y": 360,
+          "width": 1280,
+          "height": 720,
+          "depth": -10
+        },
+        {
+          "id": "waterEffectsHost",
+          "asset": "ui.containers.empty",
+          "x": 640,
+          "y": 360,
+          "width": 1280,
+          "height": 720,
+          "depth": 30
+        },
+        {
+          "id": "partyHost",
+          "asset": "ui.containers.empty",
+          "x": 330,
+          "y": 570,
+          "width": 145,
+          "height": 190,
+          "depth": 45
+        },
+        {
+          "id": "exitGardenHost",
+          "asset": "ui.containers.empty",
+          "x": 101,
+          "y": 418,
+          "width": 112,
+          "height": 202,
+          "depth": 32
+        },
+        {
+          "id": "exitCanalHost",
+          "asset": "ui.containers.empty",
+          "x": 1162,
+          "y": 420,
+          "width": 110,
+          "height": 195,
+          "depth": 32
+        },
+        {
+          "id": "exitHoldHost",
+          "asset": "ui.containers.empty",
+          "x": 775,
+          "y": 421,
+          "width": 138,
+          "height": 186,
+          "depth": 32
+        },
+        {
+          "id": "guardianHost",
+          "asset": "ui.containers.empty",
+          "x": 918,
+          "y": 574,
+          "width": 166,
+          "height": 144,
+          "depth": 23
+        },
+        {
+          "id": "guardianEscortHost",
+          "asset": "ui.containers.empty",
+          "x": 1043,
+          "y": 579,
+          "width": 115,
+          "height": 116,
+          "depth": 22
+        },
+        {
+          "id": "chestHost",
+          "asset": "ui.containers.empty",
+          "x": 456,
+          "y": 551,
+          "width": 126,
+          "height": 116,
+          "depth": 24
+        }
+      ],
+      "zones": [
+        {
+          "id": "path0",
+          "x": 100,
+          "y": 568,
+          "asset": "points.player-spawn-town"
+        },
+        {
+          "id": "path1",
+          "x": 435,
+          "y": 580,
+          "asset": "points.player-spawn-town"
+        },
+        {
+          "id": "path2",
+          "x": 820,
+          "y": 576,
+          "asset": "points.player-spawn-town"
+        },
+        {
+          "id": "path3",
+          "x": 1190,
+          "y": 565,
+          "asset": "points.player-spawn-town"
+        },
+        {
+          "id": "garden",
+          "x": 246,
+          "y": 572,
+          "asset": "points.player-spawn-town"
+        },
+        {
+          "id": "canal",
+          "x": 1070,
+          "y": 572,
+          "asset": "points.player-spawn-town"
+        },
+        {
+          "id": "hold",
+          "x": 770,
+          "y": 575,
+          "asset": "points.player-spawn-town"
+        }
+      ]
+    },
+    "UnderwaterWreckHold": {
+      "viewport": {
+        "width": 1280,
+        "height": 720
+      },
+      "elements": [
+        {
+          "id": "background",
+          "asset": "underwater.wreck-hold",
+          "x": 640,
+          "y": 360,
+          "width": 1280,
+          "height": 720,
+          "depth": -10
+        },
+        {
+          "id": "waterEffectsHost",
+          "asset": "ui.containers.empty",
+          "x": 640,
+          "y": 360,
+          "width": 1280,
+          "height": 720,
+          "depth": 30
+        },
+        {
+          "id": "partyHost",
+          "asset": "ui.containers.empty",
+          "x": 330,
+          "y": 570,
+          "width": 145,
+          "height": 190,
+          "depth": 45
+        },
+        {
+          "id": "exitWreckHost",
+          "asset": "ui.containers.empty",
+          "x": 205,
+          "y": 346,
+          "width": 202,
+          "height": 318,
+          "depth": 32
+        },
+        {
+          "id": "chestHost",
+          "asset": "ui.containers.empty",
+          "x": 858,
+          "y": 428,
+          "width": 195,
+          "height": 176,
+          "depth": 24
+        }
+      ],
+      "zones": [
+        {
+          "id": "path0",
+          "x": 100,
+          "y": 568,
+          "asset": "points.player-spawn-town"
+        },
+        {
+          "id": "path1",
+          "x": 435,
+          "y": 580,
+          "asset": "points.player-spawn-town"
+        },
+        {
+          "id": "path2",
+          "x": 820,
+          "y": 576,
+          "asset": "points.player-spawn-town"
+        },
+        {
+          "id": "path3",
+          "x": 1190,
+          "y": 565,
+          "asset": "points.player-spawn-town"
+        },
+        {
+          "id": "wreck",
+          "x": 340,
+          "y": 575,
+          "asset": "points.player-spawn-town"
+        }
+      ]
+    },
+    "VictoryScene": {
+      "viewport": {
+        "width": 1280,
+        "height": 720
+      },
+      "elements": [
+        {
+          "id": "victoryShadeHost",
+          "asset": "ui.containers.empty",
+          "x": 640,
+          "y": 360,
+          "width": 1280,
+          "height": 720,
+          "depth": 99
+        },
+        {
+          "id": "victoryFrameHost",
+          "asset": "ui.containers.empty",
+          "x": 640,
+          "y": 360,
+          "width": 1120,
+          "height": 610,
+          "depth": 100
+        },
+        {
+          "id": "victorySafeHost",
+          "asset": "ui.containers.empty",
+          "x": 640,
+          "y": 360,
+          "width": 870,
+          "height": 480,
+          "depth": 101
+        },
+        {
+          "id": "victoryTitleHost",
+          "asset": "ui.containers.empty",
+          "x": 640,
+          "y": 156,
+          "width": 780,
+          "height": 52,
+          "depth": 102
+        },
+        {
+          "id": "victorySubtitleHost",
+          "asset": "ui.containers.empty",
+          "x": 640,
+          "y": 208,
+          "width": 800,
+          "height": 34,
+          "depth": 102
+        },
+        {
+          "id": "victoryNamesHost",
+          "asset": "ui.containers.empty",
+          "x": 640,
+          "y": 244,
+          "width": 760,
+          "height": 30,
+          "depth": 102
+        },
+        {
+          "id": "victoryCoinsHost",
+          "asset": "ui.containers.empty",
+          "x": 640,
+          "y": 287,
+          "width": 460,
+          "height": 42,
+          "depth": 102
+        },
+        {
+          "id": "victoryPetTitleHost",
+          "asset": "ui.containers.empty",
+          "x": 333,
+          "y": 333,
+          "width": 225,
+          "height": 24,
+          "depth": 102
+        },
+        {
+          "id": "victoryPetHost",
+          "asset": "ui.containers.empty",
+          "x": 333,
+          "y": 386,
+          "width": 108,
+          "height": 76,
+          "depth": 102
+        },
+        {
+          "id": "victoryPetNameHost",
+          "asset": "ui.containers.empty",
+          "x": 333,
+          "y": 442,
+          "width": 224,
+          "height": 30,
+          "depth": 102
+        },
+        {
+          "id": "victoryStatusHost",
+          "asset": "ui.containers.empty",
+          "x": 640,
+          "y": 487,
+          "width": 810,
+          "height": 48,
+          "depth": 102
+        },
+        {
+          "id": "victoryContinueHost",
+          "asset": "ui.containers.empty",
+          "x": 640,
+          "y": 556,
+          "width": 388,
+          "height": 86,
+          "depth": 102
+        },
+        {
+          "id": "victoryPageHost",
+          "asset": "ui.containers.empty",
+          "x": 1044,
+          "y": 336,
+          "width": 56,
+          "height": 25,
+          "depth": 102
+        },
+        {
+          "id": "victorySealHost",
+          "asset": "ui.containers.empty",
+          "x": 640,
+          "y": 386,
+          "width": 138,
+          "height": 138,
+          "depth": 102
+        },
+        {
+          "id": "victoryNextHost",
+          "asset": "ui.containers.empty",
+          "x": 1044,
+          "y": 397,
+          "width": 62,
+          "height": 62,
+          "depth": 102
+        },
+        {
+          "id": "victoryCrystal0Host",
+          "asset": "ui.containers.empty",
+          "x": 445,
+          "y": 360,
+          "width": 86,
+          "height": 86,
+          "depth": 102
+        },
+        {
+          "id": "victoryCrystalLabel0Host",
+          "asset": "ui.containers.empty",
+          "x": 445,
+          "y": 428,
+          "width": 120,
+          "height": 45,
+          "depth": 102
+        },
+        {
+          "id": "victoryPetCrystal0Host",
+          "asset": "ui.containers.empty",
+          "x": 508,
+          "y": 360,
+          "width": 86,
+          "height": 86,
+          "depth": 102
+        },
+        {
+          "id": "victoryPetCrystalLabel0Host",
+          "asset": "ui.containers.empty",
+          "x": 508,
+          "y": 428,
+          "width": 120,
+          "height": 45,
+          "depth": 102
+        },
+        {
+          "id": "victoryCrystal1Host",
+          "asset": "ui.containers.empty",
+          "x": 575,
+          "y": 360,
+          "width": 86,
+          "height": 86,
+          "depth": 102
+        },
+        {
+          "id": "victoryCrystalLabel1Host",
+          "asset": "ui.containers.empty",
+          "x": 575,
+          "y": 428,
+          "width": 120,
+          "height": 45,
+          "depth": 102
+        },
+        {
+          "id": "victoryPetCrystal1Host",
+          "asset": "ui.containers.empty",
+          "x": 638,
+          "y": 360,
+          "width": 86,
+          "height": 86,
+          "depth": 102
+        },
+        {
+          "id": "victoryPetCrystalLabel1Host",
+          "asset": "ui.containers.empty",
+          "x": 638,
+          "y": 428,
+          "width": 120,
+          "height": 45,
+          "depth": 102
+        },
+        {
+          "id": "victoryCrystal2Host",
+          "asset": "ui.containers.empty",
+          "x": 705,
+          "y": 360,
+          "width": 86,
+          "height": 86,
+          "depth": 102
+        },
+        {
+          "id": "victoryCrystalLabel2Host",
+          "asset": "ui.containers.empty",
+          "x": 705,
+          "y": 428,
+          "width": 120,
+          "height": 45,
+          "depth": 102
+        },
+        {
+          "id": "victoryPetCrystal2Host",
+          "asset": "ui.containers.empty",
+          "x": 768,
+          "y": 360,
+          "width": 86,
+          "height": 86,
+          "depth": 102
+        },
+        {
+          "id": "victoryPetCrystalLabel2Host",
+          "asset": "ui.containers.empty",
+          "x": 768,
+          "y": 428,
+          "width": 120,
+          "height": 45,
+          "depth": 102
+        },
+        {
+          "id": "victoryCrystal3Host",
+          "asset": "ui.containers.empty",
+          "x": 835,
+          "y": 360,
+          "width": 86,
+          "height": 86,
+          "depth": 102
+        },
+        {
+          "id": "victoryCrystalLabel3Host",
+          "asset": "ui.containers.empty",
+          "x": 835,
+          "y": 428,
+          "width": 120,
+          "height": 45,
+          "depth": 102
+        },
+        {
+          "id": "victoryPetCrystal3Host",
+          "asset": "ui.containers.empty",
+          "x": 898,
+          "y": 360,
+          "width": 86,
+          "height": 86,
+          "depth": 102
+        },
+        {
+          "id": "victoryPetCrystalLabel3Host",
+          "asset": "ui.containers.empty",
+          "x": 898,
+          "y": 428,
+          "width": 120,
+          "height": 45,
+          "depth": 102
+        }
+      ]
+    },
+    "UnderwaterCipher": {
+      "viewport": {
+        "width": 1280,
+        "height": 720
+      },
+      "elements": [
+        {
+          "id": "iconCloseHost",
+          "asset": "ui.containers.empty",
+          "x": 1060,
+          "y": 165,
+          "width": 72,
+          "height": 72,
+          "depth": 805
+        },
+        {
+          "id": "iconClueHost",
+          "asset": "ui.containers.empty",
+          "x": 980,
+          "y": 525,
+          "width": 72,
+          "height": 72,
+          "depth": 805
+        },
+        {
+          "id": "cipherHintHost",
+          "asset": "ui.containers.empty",
+          "x": 625,
+          "y": 147,
+          "width": 720,
+          "height": 36,
+          "depth": 805
+        },
+        {
+          "id": "cipherClue0Host",
+          "asset": "ui.containers.empty",
+          "x": 330,
+          "y": 246,
+          "width": 144,
+          "height": 144,
+          "depth": 805
+        },
+        {
+          "id": "cipherClue1Host",
+          "asset": "ui.containers.empty",
+          "x": 485,
+          "y": 246,
+          "width": 144,
+          "height": 144,
+          "depth": 805
+        },
+        {
+          "id": "cipherClue2Host",
+          "asset": "ui.containers.empty",
+          "x": 640,
+          "y": 246,
+          "width": 144,
+          "height": 144,
+          "depth": 805
+        },
+        {
+          "id": "cipherClue3Host",
+          "asset": "ui.containers.empty",
+          "x": 795,
+          "y": 246,
+          "width": 144,
+          "height": 144,
+          "depth": 805
+        },
+        {
+          "id": "cipherClue4Host",
+          "asset": "ui.containers.empty",
+          "x": 950,
+          "y": 246,
+          "width": 144,
+          "height": 144,
+          "depth": 805
+        },
+        {
+          "id": "wordWheel0Host",
+          "asset": "ui.containers.empty",
+          "x": 468,
+          "y": 428,
+          "width": 86,
+          "height": 136,
+          "depth": 805
+        },
+        {
+          "id": "wordWheel1Host",
+          "asset": "ui.containers.empty",
+          "x": 554,
+          "y": 428,
+          "width": 86,
+          "height": 136,
+          "depth": 805
+        },
+        {
+          "id": "wordWheel2Host",
+          "asset": "ui.containers.empty",
+          "x": 640,
+          "y": 428,
+          "width": 86,
+          "height": 136,
+          "depth": 805
+        },
+        {
+          "id": "wordWheel3Host",
+          "asset": "ui.containers.empty",
+          "x": 726,
+          "y": 428,
+          "width": 86,
+          "height": 136,
+          "depth": 805
+        },
+        {
+          "id": "wordWheel4Host",
+          "asset": "ui.containers.empty",
+          "x": 812,
+          "y": 428,
+          "width": 86,
+          "height": 136,
+          "depth": 805
+        },
+        {
+          "id": "iconUnlockHost",
+          "asset": "ui.containers.empty",
+          "x": 640,
+          "y": 552,
+          "width": 330,
+          "height": 86,
+          "depth": 805
+        },
+        {
+          "id": "wordBackingHost",
+          "asset": "ui.containers.empty",
+          "x": 640,
+          "y": 428,
+          "width": 568,
+          "height": 154,
+          "depth": 804
+        },
+        {
+          "id": "iconClueHostStatus",
+          "asset": "ui.containers.empty",
+          "x": 980,
+          "y": 573,
+          "width": 116,
+          "height": 22,
+          "depth": 805
+        }
+      ]
+    },
+    "UnderwaterShellShrine": {
+      "viewport": {
+        "width": 1280,
+        "height": 720
+      },
+      "elements": [
+        {
+          "id": "background",
+          "asset": "underwater.shell-shrine",
+          "x": 640,
+          "y": 360,
+          "width": 1280,
+          "height": 720,
+          "depth": -10
+        },
+        {
+          "id": "waterEffectsHost",
+          "asset": "ui.containers.empty",
+          "x": 640,
+          "y": 360,
+          "width": 1280,
+          "height": 720,
+          "depth": 30
+        },
+        {
+          "id": "partyHost",
+          "asset": "ui.containers.empty",
+          "x": 330,
+          "y": 570,
+          "width": 145,
+          "height": 190,
+          "depth": 45
+        },
+        {
+          "id": "exitLeftHost",
+          "asset": "ui.containers.empty",
+          "x": 224,
+          "y": 407,
+          "width": 140,
+          "height": 230,
+          "depth": 32
+        },
+        {
+          "id": "mechanismHost",
+          "asset": "ui.containers.empty",
+          "x": 842,
+          "y": 445,
+          "width": 150,
+          "height": 112,
+          "depth": 28
+        },
+        {
+          "id": "restoredFlowHost",
+          "asset": "ui.containers.empty",
+          "x": 760,
+          "y": 530,
+          "width": 700,
+          "height": 130,
+          "depth": 18
+        },
+        {
+          "id": "sealHost",
+          "asset": "ui.containers.empty",
+          "x": 842,
+          "y": 335,
+          "width": 72,
+          "height": 72,
+          "depth": 29
+        },
+        {
+          "id": "exitReturnHost",
+          "asset": "ui.containers.empty",
+          "x": 1188,
+          "y": 421,
+          "width": 118,
+          "height": 185,
+          "depth": 32
+        }
+      ],
+      "zones": [
+        {
+          "id": "garden",
+          "x": 335,
+          "y": 568,
+          "asset": "points.player-spawn-town"
+        },
+        {
+          "id": "path0",
+          "x": 100,
+          "y": 568,
+          "asset": "points.player-spawn-town"
+        },
+        {
+          "id": "path1",
+          "x": 435,
+          "y": 580,
+          "asset": "points.player-spawn-town"
+        },
+        {
+          "id": "path2",
+          "x": 820,
+          "y": 576,
+          "asset": "points.player-spawn-town"
+        },
+        {
+          "id": "path3",
+          "x": 1190,
+          "y": 565,
+          "asset": "points.player-spawn-town"
+        }
+      ]
+    },
+    "UnderwaterCurrentChamber": {
+      "viewport": {
+        "width": 1280,
+        "height": 720
+      },
+      "elements": [
+        {
+          "id": "background",
+          "asset": "underwater.current-chamber",
+          "x": 640,
+          "y": 360,
+          "width": 1280,
+          "height": 720,
+          "depth": -10
+        },
+        {
+          "id": "waterEffectsHost",
+          "asset": "ui.containers.empty",
+          "x": 640,
+          "y": 360,
+          "width": 1280,
+          "height": 720,
+          "depth": 30
+        },
+        {
+          "id": "partyHost",
+          "asset": "ui.containers.empty",
+          "x": 330,
+          "y": 570,
+          "width": 145,
+          "height": 190,
+          "depth": 45
+        },
+        {
+          "id": "exitLeftHost",
+          "asset": "ui.containers.empty",
+          "x": 224,
+          "y": 407,
+          "width": 140,
+          "height": 230,
+          "depth": 32
+        },
+        {
+          "id": "mechanismHost",
+          "asset": "ui.containers.empty",
+          "x": 820,
+          "y": 480,
+          "width": 150,
+          "height": 112,
+          "depth": 28
+        },
+        {
+          "id": "restoredFlowHost",
+          "asset": "ui.containers.empty",
+          "x": 760,
+          "y": 530,
+          "width": 700,
+          "height": 130,
+          "depth": 18
+        },
+        {
+          "id": "sealHost",
+          "asset": "ui.containers.empty",
+          "x": 820,
+          "y": 370,
+          "width": 72,
+          "height": 72,
+          "depth": 29
+        },
+        {
+          "id": "guardianHost",
+          "asset": "ui.containers.empty",
+          "x": 580,
+          "y": 536,
+          "width": 190,
+          "height": 175,
+          "depth": 23
+        },
+        {
+          "id": "guardianEscortHost",
+          "asset": "ui.containers.empty",
+          "x": 1010,
+          "y": 556,
+          "width": 150,
+          "height": 140,
+          "depth": 22
+        },
+        {
+          "id": "exitReturnHost",
+          "asset": "ui.containers.empty",
+          "x": 1169,
+          "y": 410,
+          "width": 100,
+          "height": 190,
+          "depth": 32
+        }
+      ],
+      "zones": [
+        {
+          "id": "canal",
+          "x": 335,
+          "y": 568,
+          "asset": "points.player-spawn-town"
+        },
+        {
+          "id": "path0",
+          "x": 100,
+          "y": 568,
+          "asset": "points.player-spawn-town"
+        },
+        {
+          "id": "path1",
+          "x": 435,
+          "y": 580,
+          "asset": "points.player-spawn-town"
+        },
+        {
+          "id": "path2",
+          "x": 820,
+          "y": 576,
+          "asset": "points.player-spawn-town"
+        },
+        {
+          "id": "path3",
+          "x": 1190,
+          "y": 565,
+          "asset": "points.player-spawn-town"
+        }
+      ]
+    },
+    "UnderwaterReverse": {
+      "viewport": {
+        "width": 1280,
+        "height": 720
+      },
+      "elements": [
+        {
+          "id": "iconCloseHost",
+          "asset": "ui.containers.empty",
+          "x": 1060,
+          "y": 165,
+          "width": 72,
+          "height": 72,
+          "depth": 805
+        },
+        {
+          "id": "iconReverseHintHost",
+          "asset": "ui.containers.empty",
+          "x": 840,
+          "y": 169,
+          "width": 72,
+          "height": 72,
+          "depth": 805
+        },
+        {
+          "id": "reverseTitleHost",
+          "asset": "ui.containers.empty",
+          "x": 520,
+          "y": 155,
+          "width": 560,
+          "height": 45,
+          "depth": 805
+        },
+        {
+          "id": "reverseProgressHost",
+          "asset": "ui.containers.empty",
+          "x": 640,
+          "y": 208,
+          "width": 116,
+          "height": 22,
+          "depth": 805
+        },
+        {
+          "id": "reverseFeedbackHost",
+          "asset": "ui.containers.empty",
+          "x": 640,
+          "y": 464,
+          "width": 830,
+          "height": 30,
+          "depth": 805
+        },
+        {
+          "id": "reverseCard0Host",
+          "asset": "ui.containers.empty",
+          "x": 255,
+          "y": 527,
+          "width": 100,
+          "height": 92,
+          "depth": 805
+        },
+        {
+          "id": "reverseCard1Host",
+          "asset": "ui.containers.empty",
+          "x": 375,
+          "y": 527,
+          "width": 100,
+          "height": 92,
+          "depth": 805
+        },
+        {
+          "id": "reverseCard2Host",
+          "asset": "ui.containers.empty",
+          "x": 495,
+          "y": 527,
+          "width": 100,
+          "height": 92,
+          "depth": 805
+        },
+        {
+          "id": "reverseCard3Host",
+          "asset": "ui.containers.empty",
+          "x": 615,
+          "y": 527,
+          "width": 100,
+          "height": 92,
+          "depth": 805
+        },
+        {
+          "id": "reverseCard4Host",
+          "asset": "ui.containers.empty",
+          "x": 735,
+          "y": 527,
+          "width": 100,
+          "height": 92,
+          "depth": 805
+        },
+        {
+          "id": "reverseCard5Host",
+          "asset": "ui.containers.empty",
+          "x": 855,
+          "y": 527,
+          "width": 100,
+          "height": 92,
+          "depth": 805
+        },
+        {
+          "id": "iconReverseRunHost",
+          "asset": "ui.containers.empty",
+          "x": 1025,
+          "y": 527,
+          "width": 84,
+          "height": 84,
+          "depth": 805
+        },
+        {
+          "id": "reverseSourceHost",
+          "asset": "ui.containers.empty",
+          "x": 285,
+          "y": 335,
+          "width": 110,
+          "height": 140,
+          "depth": 805
+        },
+        {
+          "id": "reverseStep0Host",
+          "asset": "ui.containers.empty",
+          "x": 500,
+          "y": 335,
+          "width": 110,
+          "height": 122,
+          "depth": 805
+        },
+        {
+          "id": "reverseStep1Host",
+          "asset": "ui.containers.empty",
+          "x": 720,
+          "y": 335,
+          "width": 110,
+          "height": 122,
+          "depth": 805
+        },
+        {
+          "id": "reverseTarget0Host",
+          "asset": "ui.containers.empty",
+          "x": 970,
+          "y": 335,
+          "width": 116,
+          "height": 116,
+          "depth": 805
+        },
+        {
+          "id": "iconReverseHintHostStatus",
+          "asset": "ui.containers.empty",
+          "x": 840,
+          "y": 220,
+          "width": 108,
+          "height": 24,
+          "depth": 805
+        }
+      ]
+    },
+    "UnderwaterReverseSplit": {
+      "viewport": {
+        "width": 1280,
+        "height": 720
+      },
+      "elements": [
+        {
+          "id": "iconCloseHost",
+          "asset": "ui.containers.empty",
+          "x": 1060,
+          "y": 165,
+          "width": 72,
+          "height": 72,
+          "depth": 805
+        },
+        {
+          "id": "iconReverseHintHost",
+          "asset": "ui.containers.empty",
+          "x": 840,
+          "y": 169,
+          "width": 72,
+          "height": 72,
+          "depth": 805
+        },
+        {
+          "id": "reverseTitleHost",
+          "asset": "ui.containers.empty",
+          "x": 520,
+          "y": 155,
+          "width": 560,
+          "height": 45,
+          "depth": 805
+        },
+        {
+          "id": "reverseProgressHost",
+          "asset": "ui.containers.empty",
+          "x": 640,
+          "y": 208,
+          "width": 116,
+          "height": 22,
+          "depth": 805
+        },
+        {
+          "id": "reverseFeedbackHost",
+          "asset": "ui.containers.empty",
+          "x": 640,
+          "y": 464,
+          "width": 830,
+          "height": 30,
+          "depth": 805
+        },
+        {
+          "id": "reverseCard0Host",
+          "asset": "ui.containers.empty",
+          "x": 255,
+          "y": 527,
+          "width": 100,
+          "height": 92,
+          "depth": 805
+        },
+        {
+          "id": "reverseCard1Host",
+          "asset": "ui.containers.empty",
+          "x": 375,
+          "y": 527,
+          "width": 100,
+          "height": 92,
+          "depth": 805
+        },
+        {
+          "id": "reverseCard2Host",
+          "asset": "ui.containers.empty",
+          "x": 495,
+          "y": 527,
+          "width": 100,
+          "height": 92,
+          "depth": 805
+        },
+        {
+          "id": "reverseCard3Host",
+          "asset": "ui.containers.empty",
+          "x": 615,
+          "y": 527,
+          "width": 100,
+          "height": 92,
+          "depth": 805
+        },
+        {
+          "id": "reverseCard4Host",
+          "asset": "ui.containers.empty",
+          "x": 735,
+          "y": 527,
+          "width": 100,
+          "height": 92,
+          "depth": 805
+        },
+        {
+          "id": "reverseCard5Host",
+          "asset": "ui.containers.empty",
+          "x": 855,
+          "y": 527,
+          "width": 100,
+          "height": 92,
+          "depth": 805
+        },
+        {
+          "id": "iconReverseRunHost",
+          "asset": "ui.containers.empty",
+          "x": 1025,
+          "y": 527,
+          "width": 84,
+          "height": 84,
+          "depth": 805
+        },
+        {
+          "id": "reverseSourceHost",
+          "asset": "ui.containers.empty",
+          "x": 300,
+          "y": 335,
+          "width": 110,
+          "height": 140,
+          "depth": 805
+        },
+        {
+          "id": "reverseStep0Host",
+          "asset": "ui.containers.empty",
+          "x": 620,
+          "y": 272,
+          "width": 110,
+          "height": 100,
+          "depth": 805
+        },
+        {
+          "id": "reverseStep1Host",
+          "asset": "ui.containers.empty",
+          "x": 620,
+          "y": 396,
+          "width": 110,
+          "height": 100,
+          "depth": 805
+        },
+        {
+          "id": "reverseTarget0Host",
+          "asset": "ui.containers.empty",
+          "x": 960,
+          "y": 267,
+          "width": 116,
+          "height": 102,
+          "depth": 805
+        },
+        {
+          "id": "reverseTarget1Host",
+          "asset": "ui.containers.empty",
+          "x": 960,
+          "y": 394,
+          "width": 116,
+          "height": 102,
+          "depth": 805
+        },
+        {
+          "id": "iconReverseHintHostStatus",
+          "asset": "ui.containers.empty",
+          "x": 840,
+          "y": 220,
+          "width": 108,
+          "height": 24,
+          "depth": 805
+        }
+      ]
+    },
+    "UnderwaterRouting": {
+      "viewport": {
+        "width": 1280,
+        "height": 720
+      },
+      "elements": [
+        {
+          "id": "iconCloseHost",
+          "asset": "ui.containers.empty",
+          "x": 1060,
+          "y": 165,
+          "width": 72,
+          "height": 72,
+          "depth": 805
+        },
+        {
+          "id": "routingTitleHost",
+          "asset": "ui.containers.empty",
+          "x": 600,
+          "y": 155,
+          "width": 760,
+          "height": 45,
+          "depth": 805
+        },
+        {
+          "id": "routingSource0Host",
+          "asset": "ui.containers.empty",
+          "x": 225,
+          "y": 270,
+          "width": 72,
+          "height": 82,
+          "depth": 805
+        },
+        {
+          "id": "routingSource1Host",
+          "asset": "ui.containers.empty",
+          "x": 225,
+          "y": 400,
+          "width": 72,
+          "height": 82,
+          "depth": 805
+        },
+        {
+          "id": "routingTarget0Host",
+          "asset": "ui.containers.empty",
+          "x": 1045,
+          "y": 270,
+          "width": 86,
+          "height": 92,
+          "depth": 805
+        },
+        {
+          "id": "routingTarget1Host",
+          "asset": "ui.containers.empty",
+          "x": 1045,
+          "y": 400,
+          "width": 86,
+          "height": 92,
+          "depth": 805
+        },
+        {
+          "id": "routingSwitch0Host",
+          "asset": "ui.containers.empty",
+          "x": 345,
+          "y": 335,
+          "width": 112,
+          "height": 230,
+          "depth": 805
+        },
+        {
+          "id": "routingSwitch1Host",
+          "asset": "ui.containers.empty",
+          "x": 635,
+          "y": 335,
+          "width": 112,
+          "height": 230,
+          "depth": 805
+        },
+        {
+          "id": "routingSwitch2Host",
+          "asset": "ui.containers.empty",
+          "x": 925,
+          "y": 335,
+          "width": 112,
+          "height": 230,
+          "depth": 805
+        },
+        {
+          "id": "routingChange00Host",
+          "asset": "ui.containers.empty",
+          "x": 490,
+          "y": 270,
+          "width": 112,
+          "height": 70,
+          "depth": 805
+        },
+        {
+          "id": "routingChange01Host",
+          "asset": "ui.containers.empty",
+          "x": 490,
+          "y": 400,
+          "width": 112,
+          "height": 70,
+          "depth": 805
+        },
+        {
+          "id": "routingChange10Host",
+          "asset": "ui.containers.empty",
+          "x": 780,
+          "y": 270,
+          "width": 112,
+          "height": 70,
+          "depth": 805
+        },
+        {
+          "id": "routingChange11Host",
+          "asset": "ui.containers.empty",
+          "x": 780,
+          "y": 400,
+          "width": 112,
+          "height": 70,
+          "depth": 805
+        },
+        {
+          "id": "routingFeedbackHost",
+          "asset": "ui.containers.empty",
+          "x": 540,
+          "y": 535,
+          "width": 640,
+          "height": 56,
+          "depth": 805
+        },
+        {
+          "id": "iconRoutingHintHost",
+          "asset": "ui.containers.empty",
+          "x": 940,
+          "y": 540,
+          "width": 72,
+          "height": 72,
+          "depth": 805
+        },
+        {
+          "id": "iconRoutingRunHost",
+          "asset": "ui.containers.empty",
+          "x": 1060,
+          "y": 540,
+          "width": 72,
+          "height": 72,
+          "depth": 805
+        },
+        {
+          "id": "iconRoutingHintHostStatus",
+          "asset": "ui.containers.empty",
+          "x": 940,
+          "y": 588,
+          "width": 116,
+          "height": 22,
+          "depth": 805
+        }
+      ]
+    },
+    "UnderwaterHandsOn": {
+      "viewport": {
+        "width": 1280,
+        "height": 720
+      },
+      "elements": [
+        {
+          "id": "iconDiveHost",
+          "asset": "ui.containers.empty",
+          "x": 960,
+          "y": 510,
+          "width": 90,
+          "height": 90,
+          "depth": 805
+        },
+        {
+          "id": "introScaleHost",
+          "asset": "ui.containers.empty",
+          "x": 735,
+          "y": 350,
+          "width": 220,
+          "height": 225,
+          "depth": 804
+        }
+      ]
+    },
     "SaveSlotScene": {
       "viewport": {
         "width": 1280,
@@ -290,59 +3774,228 @@
         "width": 1280,
         "height": 720
       },
+      "elements": [
+        {
+          "id": "menuBackground",
+          "asset": "environments.backgrounds.menu-mathoria",
+          "x": 640,
+          "y": 360,
+          "depth": -20,
+          "width": 1280,
+          "height": 720
+        }
+      ],
       "ui": [
         {
           "id": "title",
           "asset": "ui.labels.game-title",
           "x": 640,
-          "y": 180
+          "y": 92,
+          "depth": 20
         },
         {
           "id": "subtitle",
           "asset": "ui.labels.game-subtitle",
           "x": 640,
-          "y": 230
+          "y": 151,
+          "depth": 20
         },
         {
           "id": "btnContinue",
-          "asset": "ui.buttons.attack-button",
+          "asset": "ui.containers.empty",
           "x": 640,
-          "y": 360,
-          "text": "$ui.buttons.BTN_004",
-          "events": {
-            "click": "onContinue"
-          },
-          "visible": false
+          "y": 280,
+          "depth": 30
         },
         {
           "id": "btnNewGame",
-          "asset": "ui.buttons.attack-button",
+          "asset": "ui.containers.empty",
           "x": 640,
-          "y": 420,
-          "text": "$ui.buttons.BTN_005",
-          "events": {
-            "click": "onNewGame"
-          }
-        },
-        {
-          "id": "btnTestScene",
-          "asset": "ui.buttons.attack-button",
-          "x": 640,
-          "y": 480,
-          "text": "Test Scene",
-          "events": {
-            "click": "onTestScene"
-          }
+          "y": 390,
+          "depth": 30
         },
         {
           "id": "btnCoop",
-          "asset": "ui.buttons.attack-button",
+          "asset": "ui.containers.empty",
           "x": 640,
-          "y": 540,
-          "text": "Co-op",
-          "events": {
-            "click": "onCoop"
-          }
+          "y": 500,
+          "depth": 30
+        },
+        {
+          "id": "btnNewGameNoSave",
+          "asset": "ui.containers.empty",
+          "x": 640,
+          "y": 330,
+          "depth": 30
+        },
+        {
+          "id": "btnCoopNoSave",
+          "asset": "ui.containers.empty",
+          "x": 640,
+          "y": 450,
+          "depth": 30
+        },
+        {
+          "id": "btnFullscreenHost",
+          "asset": "ui.containers.empty",
+          "x": 1110,
+          "y": 60,
+          "depth": 40,
+          "width": 270,
+          "height": 62
+        },
+        {
+          "id": "btnExportSavesHost",
+          "asset": "ui.containers.empty",
+          "x": 500,
+          "y": 625,
+          "depth": 40,
+          "width": 210,
+          "height": 62
+        },
+        {
+          "id": "btnImportSavesHost",
+          "asset": "ui.containers.empty",
+          "x": 740,
+          "y": 625,
+          "depth": 40,
+          "width": 210,
+          "height": 62
+        },
+        {
+          "id": "btnImportSavesOnlyHost",
+          "asset": "ui.containers.empty",
+          "x": 640,
+          "y": 570,
+          "depth": 40,
+          "width": 230,
+          "height": 62
+        },
+        {
+          "id": "saveTransferNoticeHost",
+          "asset": "ui.containers.empty",
+          "x": 640,
+          "y": 205,
+          "depth": 50,
+          "width": 720,
+          "height": 48
+        },
+        {
+          "id": "btnSilverpondFairyReward",
+          "asset": "ui.containers.empty",
+          "x": 1060,
+          "y": 510,
+          "depth": 31,
+          "width": 350,
+          "height": 62
+        },
+        {
+          "id": "btnSilverpondBattleMock",
+          "asset": "ui.containers.empty",
+          "x": 1060,
+          "y": 580,
+          "depth": 31,
+          "width": 350,
+          "height": 62
+        },
+        {
+          "id": "btnUnderwaterAdventure",
+          "asset": "ui.containers.empty",
+          "x": 1060,
+          "y": 650,
+          "depth": 31,
+          "width": 350,
+          "height": 62
+        }
+      ]
+    },
+    "TvPairingScene": {
+      "viewport": {
+        "width": 1280,
+        "height": 720
+      },
+      "elements": [],
+      "ui": [
+        {
+          "id": "tvPairingBackgroundHost",
+          "asset": "ui.containers.empty",
+          "x": 640,
+          "y": 360,
+          "depth": 0,
+          "width": 1280,
+          "height": 720
+        },
+        {
+          "id": "tvPairingPanelHost",
+          "asset": "ui.containers.empty",
+          "x": 640,
+          "y": 360,
+          "depth": 1,
+          "width": 860,
+          "height": 500
+        },
+        {
+          "id": "tvPairingTitleHost",
+          "asset": "ui.containers.empty",
+          "x": 640,
+          "y": 155,
+          "depth": 2,
+          "width": 760,
+          "height": 60
+        },
+        {
+          "id": "tvPairingStatusHost",
+          "asset": "ui.containers.empty",
+          "x": 640,
+          "y": 225,
+          "depth": 2,
+          "width": 760,
+          "height": 60
+        },
+        {
+          "id": "tvPairingRoomHost",
+          "asset": "ui.containers.empty",
+          "x": 640,
+          "y": 315,
+          "depth": 2,
+          "width": 760,
+          "height": 90
+        },
+        {
+          "id": "tvPairingUrlHost",
+          "asset": "ui.containers.empty",
+          "x": 640,
+          "y": 430,
+          "depth": 2,
+          "width": 760,
+          "height": 80
+        },
+        {
+          "id": "tvPairingHelpHost",
+          "asset": "ui.containers.empty",
+          "x": 640,
+          "y": 560,
+          "depth": 2,
+          "width": 780,
+          "height": 60
+        },
+        {
+          "id": "tvPairingBackButtonHost",
+          "asset": "ui.containers.empty",
+          "x": 165,
+          "y": 52,
+          "depth": 20,
+          "width": 250,
+          "height": 54
+        },
+        {
+          "id": "tvPairingFullscreenButtonHost",
+          "asset": "ui.containers.empty",
+          "x": 1090,
+          "y": 52,
+          "depth": 20,
+          "width": 300,
+          "height": 54
         }
       ]
     },
@@ -362,10 +4015,23 @@
         },
         {
           "id": "pauseButton",
-          "asset": "ui.containers.empty",
-          "x": 1240,
-          "y": 30,
-          "depth": 500,
+          "asset": "misc.battle-hud.pause-button",
+          "x": 1225,
+          "y": 54,
+          "depth": 95,
+          "width": 96,
+          "height": 99,
+          "visible": true
+        },
+        {
+          "id": "battleTargetSwordHost",
+          "asset": "misc.prep-sword-normal-v2",
+          "x": 772,
+          "y": 270,
+          "depth": 83,
+          "width": 58,
+          "height": 58,
+          "rotation": 135,
           "visible": true
         }
       ],
@@ -385,22 +4051,202 @@
       ],
       "ui": [
         {
-          "id": "attackBtn",
-          "asset": "ui.buttons.attack-button",
-          "x": 640,
-          "y": 660,
-          "depth": 50,
-          "events": {
-            "click": "onAttack"
-          },
-          "visible": true
+          "id": "battlePlayerStatusHostA",
+          "asset": "misc.battle-hud.status-frame-v2",
+          "x": 239,
+          "y": 312,
+          "depth": 80,
+          "width": 150,
+          "height": 34
         },
         {
-          "id": "potionBtn",
+          "id": "battlePlayerStatusHostB",
+          "asset": "misc.battle-hud.status-frame-v2",
+          "x": 340,
+          "y": 370,
+          "depth": 80,
+          "width": 150,
+          "height": 34
+        },
+        {
+          "id": "battleEnemyStatusHost1",
+          "asset": "misc.battle-hud.status-frame-v2",
+          "x": 772,
+          "y": 316,
+          "depth": 80,
+          "width": 118,
+          "height": 28
+        },
+        {
+          "id": "battleEnemyStatusHost2",
+          "asset": "misc.battle-hud.status-frame-v2",
+          "x": 822,
+          "y": 402,
+          "depth": 80,
+          "width": 118,
+          "height": 28
+        },
+        {
+          "id": "battleEnemyStatusHost3",
+          "asset": "misc.battle-hud.status-frame-v2",
+          "x": 981,
+          "y": 354,
+          "depth": 80,
+          "width": 118,
+          "height": 28
+        },
+        {
+          "id": "battleEnemyStatusHost4",
+          "asset": "misc.battle-hud.status-frame-v2",
+          "x": 1000,
+          "y": 409,
+          "depth": 80,
+          "width": 118,
+          "height": 28
+        },
+        {
+          "id": "battleActionDockFrame",
+          "asset": "misc.battle-hud.action-dock-frame",
+          "x": 640,
+          "y": 646,
+          "depth": 80,
+          "width": 520,
+          "height": 158
+        },
+        {
+          "id": "battlePotionActionHost",
           "asset": "ui.containers.empty",
-          "x": 480,
+          "x": 499,
+          "y": 664,
+          "depth": 83,
+          "width": 50,
+          "height": 50
+        },
+        {
+          "id": "battlePotionBadgeHost",
+          "asset": "ui.containers.empty",
+          "x": 534,
+          "y": 677,
+          "depth": 84,
+          "width": 32,
+          "height": 32
+        },
+        {
+          "id": "battleSwordActionHost",
+          "asset": "ui.containers.empty",
+          "x": 640,
+          "y": 648,
+          "depth": 84,
+          "width": 84,
+          "height": 84
+        },
+        {
+          "id": "battlePetActionHost",
+          "asset": "ui.containers.empty",
+          "x": 782,
           "y": 660,
-          "visible": true
+          "depth": 83,
+          "width": 60,
+          "height": 60
+        },
+        {
+          "id": "battlePetBadgeHost",
+          "asset": "ui.containers.empty",
+          "x": 822,
+          "y": 677,
+          "depth": 84,
+          "width": 32,
+          "height": 32
+        },
+        {
+          "id": "battlePreparationHost",
+          "asset": "misc.battle-hud.preparation-frame",
+          "x": 96,
+          "y": 640,
+          "depth": 80,
+          "width": 112,
+          "height": 116
+        },
+        {
+          "id": "battlePauseHoverHost",
+          "asset": "ui.containers.empty",
+          "x": 1225,
+          "y": 54,
+          "depth": 94,
+          "width": 82,
+          "height": 82
+        },
+        {
+          "id": "battlePauseOverlayHost",
+          "asset": "ui.containers.empty",
+          "x": 640,
+          "y": 360,
+          "depth": 9998,
+          "width": 1280,
+          "height": 720
+        },
+        {
+          "id": "battlePausePanelHost",
+          "asset": "ui.containers.empty",
+          "x": 640,
+          "y": 360,
+          "depth": 9999,
+          "width": 430,
+          "height": 460
+        },
+        {
+          "id": "battlePauseTitleHost",
+          "asset": "ui.containers.empty",
+          "x": 640,
+          "y": 180,
+          "depth": 10000,
+          "width": 320,
+          "height": 50
+        },
+        {
+          "id": "battlePauseResumeHost",
+          "asset": "ui.containers.empty",
+          "x": 640,
+          "y": 260,
+          "depth": 10000,
+          "width": 300,
+          "height": 52
+        },
+        {
+          "id": "battlePauseFullscreenHost",
+          "asset": "ui.containers.empty",
+          "x": 640,
+          "y": 330,
+          "depth": 10000,
+          "width": 300,
+          "height": 52
+        },
+        {
+          "id": "battlePauseTvHost",
+          "asset": "ui.containers.empty",
+          "x": 640,
+          "y": 400,
+          "depth": 10000,
+          "width": 300,
+          "height": 52
+        },
+        {
+          "id": "battlePauseQuitHost",
+          "asset": "ui.containers.empty",
+          "x": 640,
+          "y": 470,
+          "depth": 10000,
+          "width": 300,
+          "height": 52
+        },
+        {
+          "id": "battleBlockBannerHost",
+          "asset": "ui.containers.empty",
+          "x": 640,
+          "y": 82,
+          "depth": 90,
+          "width": 380,
+          "height": 72
         }
       ],
       "spawnPoints": {
@@ -734,7 +4580,7 @@
         }
       ]
     },
-    "ShopScene": {
+    "ShopSceneLegacy": {
       "viewport": {
         "width": 1280,
         "height": 720
@@ -942,6 +4788,296 @@
         }
       ]
     },
+    "ShopScene": {
+      "viewport": {
+        "width": 1280,
+        "height": 720
+      },
+      "elements": [
+        {
+          "id": "coinTray",
+          "asset": "environments.props.shop-coin-tray",
+          "x": 493,
+          "y": 589,
+          "depth": 5,
+          "scaleX": 0.765,
+          "scaleY": 0.765,
+          "visible": true
+        },
+        {
+          "id": "new-shop-bg",
+          "asset": "misc.new-shop-bg",
+          "x": 640,
+          "y": 360,
+          "depth": -10
+        },
+        {
+          "id": "coin-pouch",
+          "asset": "misc.coin-pouch",
+          "x": 1181,
+          "y": 515,
+          "scaleX": 0.5,
+          "scaleY": 0.5
+        },
+        {
+          "id": "shop-label",
+          "asset": "misc.shop-label",
+          "x": 158,
+          "y": 62,
+          "scaleX": 0.7,
+          "scaleY": 0.6
+        },
+        {
+          "id": "shop-label_1",
+          "asset": "misc.shop-label-1",
+          "x": 425,
+          "y": 62,
+          "scaleX": 0.7,
+          "scaleY": 0.6
+        },
+        {
+          "id": "item-container",
+          "asset": "misc.item-container",
+          "x": 89,
+          "y": 170,
+          "scaleX": 0.7,
+          "scaleY": 0.65
+        },
+        {
+          "id": "item-container-1",
+          "asset": "misc.item-container",
+          "x": 217,
+          "y": 170,
+          "scaleX": 0.7,
+          "scaleY": 0.65
+        },
+        {
+          "id": "item-container-2",
+          "asset": "misc.item-container",
+          "x": 369,
+          "y": 170,
+          "scaleX": 0.7,
+          "scaleY": 0.65
+        },
+        {
+          "id": "item-container-3",
+          "asset": "misc.item-container",
+          "x": 499,
+          "y": 170,
+          "scaleX": 0.7,
+          "scaleY": 0.65
+        },
+        {
+          "id": "swordPrepHost",
+          "asset": "ui.containers.empty",
+          "x": 158,
+          "y": 315,
+          "depth": 20
+        },
+        {
+          "id": "shieldPrepHost",
+          "asset": "ui.containers.empty",
+          "x": 425,
+          "y": 315,
+          "depth": 20
+        },
+        {
+          "id": "swordPrepStatusHost",
+          "asset": "ui.containers.empty",
+          "x": 158,
+          "y": 392,
+          "depth": 22
+        },
+        {
+          "id": "shieldPrepStatusHost",
+          "asset": "ui.containers.empty",
+          "x": 425,
+          "y": 392,
+          "depth": 22
+        },
+        {
+          "id": "prepOverlayHost",
+          "asset": "ui.containers.empty",
+          "x": 640,
+          "y": 360,
+          "depth": 300
+        },
+        {
+          "id": "prepOverlayTitleHost",
+          "asset": "ui.containers.empty",
+          "x": 640,
+          "y": 100,
+          "depth": 310
+        },
+        {
+          "id": "prepOverlayChargesHost",
+          "asset": "ui.containers.empty",
+          "x": 640,
+          "y": 205,
+          "depth": 310
+        },
+        {
+          "id": "prepOverlayMathBoardHost",
+          "asset": "ui.containers.empty",
+          "x": 640,
+          "y": 390,
+          "depth": 310
+        },
+        {
+          "id": "prepOverlayAttemptsHost",
+          "asset": "ui.containers.empty",
+          "x": 640,
+          "y": 535,
+          "depth": 310
+        },
+        {
+          "id": "prepOverlayMessageHost",
+          "asset": "ui.containers.empty",
+          "x": 640,
+          "y": 580,
+          "depth": 310
+        },
+        {
+          "id": "prepOverlayCancelHost",
+          "asset": "ui.containers.empty",
+          "x": 145,
+          "y": 655,
+          "depth": 310
+        },
+        {
+          "id": "prepOverlayDoneHost",
+          "asset": "ui.containers.empty",
+          "x": 640,
+          "y": 655,
+          "depth": 310
+        },
+        {
+          "id": "buyButtonHost",
+          "asset": "ui.containers.empty",
+          "x": 640,
+          "y": 665,
+          "depth": 20
+        }
+      ],
+      "ui": [
+        {
+          "id": "purchasePanel",
+          "asset": "ui.panels.shop-purchase-panel",
+          "x": 174,
+          "y": 520,
+          "depth": 25,
+          "width": 280,
+          "height": 80,
+          "visible": false
+        },
+        {
+          "id": "purchaseName",
+          "asset": "ui.labels.gold-label",
+          "x": 175,
+          "y": 502,
+          "depth": 26,
+          "text": "",
+          "visible": false
+        },
+        {
+          "id": "purchasePrice",
+          "asset": "ui.labels.gold-label",
+          "x": 175,
+          "y": 550,
+          "depth": 26,
+          "text": "",
+          "visible": false,
+          "color": "#ffaa00"
+        },
+        {
+          "id": "labelPlayerCoins",
+          "asset": "ui.labels.gold-label",
+          "x": 935,
+          "y": 507,
+          "depth": 10,
+          "text": "TVOJE PENÍZE",
+          "visible": true
+        },
+        {
+          "id": "labelPayment",
+          "asset": "ui.labels.gold-label",
+          "x": 505,
+          "y": 488,
+          "depth": 10,
+          "text": "PLATBA",
+          "visible": true
+        },
+        {
+          "id": "labelTotal",
+          "asset": "ui.labels.gold-label",
+          "x": 449,
+          "y": 669,
+          "depth": 10,
+          "text": "CELKEM: 0 měďáků",
+          "visible": true,
+          "color": "#ffffff"
+        },
+        {
+          "id": "money mana",
+          "asset": "money mana",
+          "x": 1145,
+          "y": 52,
+          "scale": 1.1,
+          "uiElement": {
+            "templateId": "1770241522996-hufl4bbhq"
+          }
+        },
+        {
+          "id": "Black-frmae-Forest",
+          "asset": "Black-frmae-Forest",
+          "x": 1140,
+          "y": 246,
+          "scaleX": 0.4,
+          "scaleY": 0.5,
+          "uiElement": {
+            "templateId": "1770645244366-9dcdse47n"
+          }
+        },
+        {
+          "id": "Back button",
+          "asset": "Back button",
+          "x": 74,
+          "y": 639,
+          "uiElement": {
+            "templateId": "1768730825297-e6lnuaoyj"
+          },
+          "events": {
+            "click": "onBack"
+          }
+        }
+      ],
+      "markers": [
+        {
+          "id": "tINYwL3EHIaz3F0MQ7joW",
+          "name": "marker-2",
+          "x": 320,
+          "y": 489,
+          "width": 359,
+          "height": 208
+        },
+        {
+          "id": "8O2En88JqZWtrQnGJrKWe",
+          "name": "marker-1",
+          "x": 1039,
+          "y": 159,
+          "width": 203,
+          "height": 165
+        },
+        {
+          "id": "p2Q6xkC3EJPGF3zJ1bgIP",
+          "name": "marker-3",
+          "x": 771,
+          "y": 531,
+          "width": 331,
+          "height": 180
+        }
+      ]
+    },
     "GuildScene": {
       "viewport": {
         "width": 1280,
@@ -959,237 +5095,207 @@
           "visible": true
         },
         {
-          "id": "overlay",
-          "asset": "ui.panels.dark-overlay",
+          "id": "zyxGuide",
+          "asset": "characters.npcs.zyx",
+          "x": 270,
+          "y": 529,
+          "depth": 20,
+          "scaleX": 0.53,
+          "scaleY": 0.53,
+          "visible": true
+        },
+        {
+          "id": "nextExamProgressHost",
+          "asset": "ui.containers.empty",
+          "x": 232,
+          "y": 282,
+          "depth": 30,
+          "width": 300,
+          "height": 72
+        },
+        {
+          "id": "challengePanelHost",
+          "asset": "ui.containers.empty",
+          "x": 658,
+          "y": 328,
+          "depth": 30,
+          "width": 256,
+          "height": 196
+        },
+        {
+          "id": "challengeActionHost",
+          "asset": "ui.containers.empty",
+          "x": 658,
+          "y": 402,
+          "depth": 42,
+          "width": 220,
+          "height": 46
+        },
+        {
+          "id": "manaSpringHost",
+          "asset": "ui.containers.empty",
+          "x": 1000,
+          "y": 465,
+          "depth": 28,
+          "width": 220,
+          "height": 210
+        },
+        {
+          "id": "manaSpringLabelHost",
+          "asset": "ui.containers.empty",
+          "x": 1000,
+          "y": 540,
+          "depth": 32,
+          "width": 210,
+          "height": 48
+        },
+        {
+          "id": "catacombDoorHost",
+          "asset": "ui.containers.empty",
+          "x": 1190,
+          "y": 366,
+          "depth": 28,
+          "width": 128,
+          "height": 270
+        },
+        {
+          "id": "catacombLabelHost",
+          "asset": "ui.containers.empty",
+          "x": 1190,
+          "y": 535,
+          "depth": 33,
+          "width": 160,
+          "height": 48
+        },
+        {
+          "id": "learningButtonHost",
+          "asset": "ui.containers.empty",
+          "x": 485,
+          "y": 640,
+          "depth": 60,
+          "width": 280,
+          "height": 78
+        },
+        {
+          "id": "dailyProgressButtonHost",
+          "asset": "ui.containers.empty",
+          "x": 780,
+          "y": 640,
+          "depth": 60,
+          "width": 280,
+          "height": 78
+        },
+        {
+          "id": "learningMapOverlayHost",
+          "asset": "ui.containers.empty",
           "x": 640,
           "y": 360,
-          "depth": -5,
-          "width": 1280,
-          "height": 720,
-          "visible": true,
-          "alpha": 0.3
+          "depth": 10000,
+          "width": 1150,
+          "height": 610
         },
         {
-          "id": "resultsTable",
-          "asset": "ui.tables.results-table",
-          "x": 893,
-          "y": 383,
-          "scaleX": 1.5,
-          "depth": 5,
-          "visible": true
-        },
-        {
-          "id": "listPanel",
+          "id": "dailyProgressOverlayHost",
           "asset": "ui.containers.empty",
-          "x": 940,
-          "y": 333,
-          "depth": 6,
-          "visible": true
+          "x": 640,
+          "y": 360,
+          "depth": 10000,
+          "width": 1160,
+          "height": 620
         },
         {
-          "id": "Frame metalic-small",
-          "asset": "misc.frame-metalic-small",
-          "x": 181,
-          "y": 194,
-          "scaleX": 1.752990236511134,
-          "scaleY": 1.7529902365111338
+          "id": "coopSwitchHost",
+          "asset": "ui.containers.empty",
+          "x": 1070,
+          "y": 654,
+          "depth": 80,
+          "width": 260,
+          "height": 45
         },
         {
-          "id": "Zyx1",
-          "asset": "misc.zyx1",
-          "x": 177,
-          "y": 176,
-          "scale": 0.4
+          "id": "toastHost",
+          "asset": "ui.containers.empty",
+          "x": 640,
+          "y": 575,
+          "depth": 150,
+          "width": 500,
+          "height": 42
+        },
+        {
+          "id": "silverpondQuestMarkerHost",
+          "asset": "ui.containers.empty",
+          "x": 270,
+          "y": 353,
+          "depth": 90,
+          "width": 56,
+          "height": 56
+        },
+        {
+          "id": "silverpondQuestZyxHitHost",
+          "asset": "ui.containers.empty",
+          "x": 270,
+          "y": 462,
+          "depth": 91,
+          "width": 150,
+          "height": 250
+        },
+        {
+          "id": "silverpondQuestOverlayHost",
+          "asset": "ui.containers.empty",
+          "x": 640,
+          "y": 360,
+          "depth": 1000,
+          "width": 1280,
+          "height": 720
+        },
+        {
+          "id": "silverpondQuestDialogHost",
+          "asset": "ui.containers.empty",
+          "x": 640,
+          "y": 515,
+          "depth": 1010,
+          "width": 1180,
+          "height": 315
+        },
+        {
+          "id": "silverpondQuestSymbolHost",
+          "asset": "ui.containers.empty",
+          "x": 440,
+          "y": 535,
+          "depth": 1012,
+          "width": 160,
+          "height": 137
+        },
+        {
+          "id": "silverpondQuestTextHost",
+          "asset": "ui.containers.empty",
+          "x": 552,
+          "y": 472,
+          "depth": 1012,
+          "width": 520,
+          "height": 140
+        },
+        {
+          "id": "silverpondQuestButtonHost",
+          "asset": "ui.containers.empty",
+          "x": 1035,
+          "y": 655,
+          "depth": 1020,
+          "width": 320,
+          "height": 74
         }
       ],
       "ui": [
-        {
-          "id": "title",
-          "asset": "ui.labels.title-label",
-          "x": 890,
-          "y": 39,
-          "depth": 10,
-          "text": "PŘEHLED UČENÍ",
-          "visible": true
-        },
-        {
-          "id": "statsPanel",
-          "asset": "ui.panels.info-panel",
-          "x": 891,
-          "y": 86,
-          "depth": 5,
-          "width": 300,
-          "height": 50,
-          "visible": true
-        },
-        {
-          "id": "totalStatsPanel",
-          "asset": "ui.panels.info-panel",
-          "x": 848,
-          "y": 577,
-          "depth": 6,
-          "width": 350,
-          "height": 80,
-          "visible": true
-        },
-        {
-          "id": "collectButton",
-          "asset": "ui.buttons.collect-button",
-          "x": 1041,
-          "y": 574,
-          "depth": 15,
-          "text": "SBÍRAT",
-          "visible": true
-        },
-        {
-          "id": "masteryButton",
-          "asset": "Masery button",
-          "x": 250,
-          "y": 500,
-          "scale": 0.45,
-          "depth": 50,
-          "uiElement": {
-            "templateId": "1773681235506-t2v74fsf7"
-          }
-        },
-        {
-          "id": "trialDialog",
-          "asset": "ui.labels.title-label",
-          "x": 203,
-          "y": 267,
-          "depth": 10,
-          "text": "VIDÍM, ŽE JSI ZESÍLIL.\nUKAŽ MI, CO UMÍŠ!",
-          "visible": false,
-          "fontSize": "14px"
-        },
-        {
-          "id": "trialStartButton",
-          "asset": "ui.buttons.exam-button",
-          "x": 210,
-          "y": 410,
-          "depth": 50,
-          "text": "ZAČÍT ZKOUŠKU",
-          "visible": false
-        },
         {
           "id": "trialOverlay",
           "asset": "ui.panels.dark-overlay",
           "x": 640,
           "y": 360,
-          "depth": -5,
+          "depth": 200,
           "width": 1280,
           "height": 720,
           "visible": false,
-          "alpha": 0.9
-        },
-        {
-          "id": "trialTitle",
-          "asset": "ui.labels.title-label",
-          "x": 640,
-          "y": 110,
-          "depth": 10,
-          "text": "ZKOUŠKA HRDINY",
-          "visible": false,
-          "fontSize": "36px"
-        },
-        {
-          "id": "timerFrame",
-          "asset": "ui.frames.timer-frame",
-          "x": 640,
-          "y": 173,
-          "scaleX": 0.606,
-          "scaleY": 0.548,
-          "depth": 200,
-          "width": 365,
-          "height": 91,
-          "visible": false
-        },
-        {
-          "id": "timerBar",
-          "asset": "ui.bars.exam-timer-bar",
-          "x": 639,
-          "y": 175,
-          "depth": 199,
-          "width": 400,
-          "height": 48,
-          "visible": false
-        },
-        {
-          "id": "scoreText",
-          "asset": "ui.labels.title-label",
-          "x": 640,
-          "y": 240,
-          "depth": 10,
-          "text": "SKÓRE: 0 / 10",
-          "visible": false,
-          "fontSize": "24px"
-        },
-        {
-          "id": "problemText",
-          "asset": "ui.labels.title-label",
-          "x": 640,
-          "y": 360,
-          "depth": 10,
-          "text": "5 + 3 = ?",
-          "visible": false,
-          "fontSize": "64px"
-        },
-        {
-          "id": "answerButton1",
-          "asset": "ui.buttons.answer-button",
-          "x": 490,
-          "y": 480,
-          "depth": 200,
-          "text": "8",
-          "visible": false
-        },
-        {
-          "id": "answerButton2",
-          "asset": "ui.buttons.answer-button",
-          "x": 640,
-          "y": 480,
-          "depth": 200,
-          "text": "7",
-          "visible": false
-        },
-        {
-          "id": "answerButton3",
-          "asset": "ui.buttons.answer-button",
-          "x": 790,
-          "y": 480,
-          "depth": 200,
-          "text": "9",
-          "visible": false
-        },
-        {
-          "id": "resultsTitle",
-          "asset": "ui.labels.title-label",
-          "x": 640,
-          "y": 260,
-          "depth": 10,
-          "text": "ZKOUŠKA SPLNĚNA!",
-          "visible": false,
-          "fontSize": "48px"
-        },
-        {
-          "id": "resultsMessage",
-          "asset": "ui.labels.title-label",
-          "x": 774,
-          "y": 361,
-          "depth": 10,
-          "text": "Gratuluji! Prokázal jsi své schopnosti.",
-          "visible": false,
-          "color": "#cccccc",
-          "fontSize": "24px"
-        },
-        {
-          "id": "continueButton",
-          "asset": "ui.buttons.back-button",
-          "x": 640,
-          "y": 478,
-          "depth": 50,
-          "text": "POKRAČOVAT",
-          "visible": false
+          "alpha": 0.76
         },
         {
           "id": "overviewOverlay",
@@ -1200,7 +5306,7 @@
           "width": 1280,
           "height": 720,
           "visible": false,
-          "alpha": 0.92
+          "alpha": 0.76
         },
         {
           "id": "feedbackOverlay",
@@ -1211,27 +5317,230 @@
           "width": 1280,
           "height": 720,
           "visible": false,
-          "alpha": 0.85
+          "alpha": 0.76
         },
         {
-          "id": "progressDots",
+          "id": "resultsOverlay",
+          "asset": "ui.panels.dark-overlay",
+          "x": 640,
+          "y": 360,
+          "depth": 200,
+          "width": 1280,
+          "height": 720,
+          "visible": false,
+          "alpha": 0.76
+        },
+        {
+          "id": "trialBoardHost",
           "asset": "ui.containers.empty",
           "x": 640,
-          "y": 80,
+          "y": 360,
           "depth": 201,
+          "width": 1080,
+          "height": 610,
+          "visible": false
+        },
+        {
+          "id": "trialHeaderHost",
+          "asset": "ui.containers.empty",
+          "x": 640,
+          "y": 103,
+          "depth": 203,
+          "width": 760,
+          "height": 74,
+          "visible": false
+        },
+        {
+          "id": "trialProgressHost",
+          "asset": "ui.containers.empty",
+          "x": 640,
+          "y": 165,
+          "depth": 204,
+          "width": 760,
+          "height": 48,
+          "visible": false
+        },
+        {
+          "id": "trialProblemHost",
+          "asset": "ui.containers.empty",
+          "x": 640,
+          "y": 305,
+          "depth": 204,
+          "width": 860,
+          "height": 150,
+          "visible": false
+        },
+        {
+          "id": "answerButton1",
+          "asset": "ui.containers.empty",
+          "x": 320,
+          "y": 475,
+          "depth": 205,
+          "width": 292,
+          "height": 88,
+          "visible": false
+        },
+        {
+          "id": "answerButton2",
+          "asset": "ui.containers.empty",
+          "x": 640,
+          "y": 475,
+          "depth": 205,
+          "width": 292,
+          "height": 88,
+          "visible": false
+        },
+        {
+          "id": "answerButton3",
+          "asset": "ui.containers.empty",
+          "x": 960,
+          "y": 475,
+          "depth": 205,
+          "width": 292,
+          "height": 88,
+          "visible": false
+        },
+        {
+          "id": "trialHintHost",
+          "asset": "ui.containers.empty",
+          "x": 640,
+          "y": 575,
+          "depth": 204,
+          "width": 760,
+          "height": 42,
+          "visible": false
+        },
+        {
+          "id": "trialMedalsHost",
+          "asset": "ui.containers.empty",
+          "x": 640,
+          "y": 452,
+          "depth": 204,
+          "width": 720,
+          "height": 82,
+          "visible": false
+        },
+        {
+          "id": "trialOverviewActionHost",
+          "asset": "ui.containers.empty",
+          "x": 640,
+          "y": 585,
+          "depth": 205,
+          "width": 340,
+          "height": 82,
+          "visible": false
+        },
+        {
+          "id": "trialCancelHost",
+          "asset": "ui.containers.empty",
+          "x": 1040,
+          "y": 105,
+          "depth": 205,
+          "width": 170,
+          "height": 54,
+          "visible": false
+        },
+        {
+          "id": "trialFeedbackHeaderHost",
+          "asset": "ui.containers.empty",
+          "x": 640,
+          "y": 120,
+          "depth": 213,
+          "width": 780,
+          "height": 90,
+          "visible": false
+        },
+        {
+          "id": "trialFeedbackVisualHost",
+          "asset": "ui.containers.empty",
+          "x": 640,
+          "y": 355,
+          "depth": 213,
+          "width": 820,
+          "height": 310,
+          "visible": false
+        },
+        {
+          "id": "trialFeedbackActionHost",
+          "asset": "ui.containers.empty",
+          "x": 640,
+          "y": 585,
+          "depth": 214,
+          "width": 310,
+          "height": 78,
+          "visible": false
+        },
+        {
+          "id": "trialResultsHeaderHost",
+          "asset": "ui.containers.empty",
+          "x": 640,
+          "y": 115,
+          "depth": 203,
+          "width": 800,
+          "height": 110,
+          "visible": false
+        },
+        {
+          "id": "trialResultsScoreHost",
+          "asset": "ui.containers.empty",
+          "x": 640,
+          "y": 205,
+          "depth": 203,
+          "width": 720,
+          "height": 48,
+          "visible": false
+        },
+        {
+          "id": "trialResultsGridHost",
+          "asset": "ui.containers.empty",
+          "x": 640,
+          "y": 355,
+          "depth": 203,
+          "width": 790,
+          "height": 220,
+          "visible": false
+        },
+        {
+          "id": "trialRewardHost",
+          "asset": "ui.containers.empty",
+          "x": 640,
+          "y": 500,
+          "depth": 204,
+          "width": 820,
+          "height": 54,
+          "visible": false
+        },
+        {
+          "id": "trialResultMessageHost",
+          "asset": "ui.containers.empty",
+          "x": 640,
+          "y": 545,
+          "depth": 204,
+          "width": 760,
+          "height": 42,
+          "visible": false
+        },
+        {
+          "id": "trialResultsActionHost",
+          "asset": "ui.containers.empty",
+          "x": 640,
+          "y": 605,
+          "depth": 205,
+          "width": 310,
+          "height": 76,
           "visible": false
         },
         {
           "id": "backButton",
           "asset": "Back button",
           "x": 74,
-          "y": 639,
-          "depth": 50,
+          "y": 650,
+          "depth": 80,
           "uiElement": {
             "templateId": "1768730825297-e6lnuaoyj"
           },
           "events": {
-            "click": "enterScene:TownScene"
+            "click": "onBack"
           },
           "visible": true
         }
@@ -1307,34 +5616,121 @@
           "color": "#ffffff"
         },
         {
-          "id": "startBattleButton",
-          "asset": "ui.buttons.attack-button",
-          "x": 890,
-          "y": 655,
+          "id": "arenaOptionPrevious",
+          "asset": "misc.newarrow",
+          "x": 700,
+          "y": 180,
           "depth": 50,
-          "text": "ZAČÍT BOJ",
-          "events": {
-            "click": "startBattle"
+          "scale": 0.4,
+          "visible": false,
+          "uiElement": {
+            "templateId": "1769722721277-p7d9kn6kj"
           },
-          "visible": true
+          "events": {
+            "click": "selectPreviousArena"
+          }
+        },
+        {
+          "id": "arenaOptionStatus",
+          "asset": "ui.labels.title-label",
+          "x": 889,
+          "y": 155,
+          "depth": 10,
+          "fontSize": "18px",
+          "text": "VÝBĚR ARÉNY",
+          "visible": false
+        },
+        {
+          "id": "arenaOptionNext",
+          "asset": "misc.newarrow-1",
+          "x": 1078,
+          "y": 180,
+          "depth": 50,
+          "scale": 0.4,
+          "flipX": true,
+          "visible": false,
+          "uiElement": {
+            "templateId": "1769722721277-p7d9kn6kj"
+          },
+          "events": {
+            "click": "selectNextArena"
+          }
+        },
+        {
+          "id": "arenaCompletionText",
+          "asset": "ui.labels.title-label",
+          "x": 640,
+          "y": 400,
+          "depth": 10,
+          "fontSize": "36px",
+          "text": "DOKONČENO",
+          "visible": false
+        },
+        {
+          "id": "arenaResourceHudHost",
+          "asset": "ui.containers.empty",
+          "x": 1120,
+          "y": 42,
+          "width": 258,
+          "height": 74,
+          "depth": 72
+        },
+        {
+          "id": "arenaPlayerASinglePodHost",
+          "asset": "ui.containers.empty",
+          "x": 368,
+          "y": 547,
+          "width": 178,
+          "height": 78,
+          "depth": 72
+        },
+        {
+          "id": "arenaPlayerACoopPodHost",
+          "asset": "ui.containers.empty",
+          "x": 470,
+          "y": 500,
+          "width": 178,
+          "height": 78,
+          "depth": 72
+        },
+        {
+          "id": "arenaPlayerBPodHost",
+          "asset": "ui.containers.empty",
+          "x": 89,
+          "y": 630,
+          "width": 176,
+          "height": 77,
+          "depth": 72
+        },
+        {
+          "id": "startBattleButton",
+          "asset": "ui.containers.empty",
+          "x": 980,
+          "y": 654,
+          "width": 276,
+          "height": 110,
+          "depth": 80
         },
         {
           "id": "leaveButton",
-          "asset": "ui.buttons.back-button",
-          "x": 1065,
-          "y": 655,
-          "depth": 50,
-          "text": "ODEJÍT",
+          "asset": "Back button",
+          "x": 1188,
+          "y": 650,
+          "scale": 0.68,
+          "depth": 80,
+          "uiElement": {
+            "templateId": "1768730825297-e6lnuaoyj"
+          },
           "events": {
             "click": "leaveArena"
-          },
-          "visible": true
+          }
         },
         {
           "id": "ARENA WITH TITLE",
           "asset": "misc.arena-with-title",
           "x": 227,
           "y": 238,
+          "depth": 10,
           "uiElement": {
             "templateId": "1769790026152-n7qtn1nyx"
           }
@@ -2072,6 +6468,29 @@
           "uiElement": {
             "templateId": "1770148975856-yjwesk53a"
           }
+        },
+        {
+          "id": "bridgeGap0Host",
+          "asset": "ui.containers.empty",
+          "x": 469.5,
+          "y": 625,
+          "depth": 50
+        },
+        {
+          "id": "bridgeGap1Host",
+          "asset": "ui.containers.empty",
+          "x": 830,
+          "y": 625,
+          "depth": 50
+        },
+        {
+          "id": "bridgeInstructionHost",
+          "asset": "ui.containers.empty",
+          "x": 640,
+          "y": 136,
+          "width": 900,
+          "height": 40,
+          "depth": 100
         }
       ],
       "zones": [
@@ -2099,7 +6518,7 @@
         {
           "id": "mana-icon",
           "asset": "misc.mana-icon",
-          "x": 257,
+          "x": 141,
           "y": 165,
           "scale": 0.3,
           "depth": 1
@@ -2107,7 +6526,7 @@
         {
           "id": "mana-icon_copy",
           "asset": "misc.mana-icon-copy",
-          "x": 424,
+          "x": 308,
           "y": 164,
           "scale": 0.3,
           "depth": 1
@@ -2115,7 +6534,7 @@
         {
           "id": "mana-icon_copy_copy",
           "asset": "misc.mana-icon-copy-copy",
-          "x": 438,
+          "x": 322,
           "y": 165,
           "scale": 0.3,
           "depth": 1
@@ -2123,7 +6542,7 @@
         {
           "id": "mana-icon_copy_copy_copy",
           "asset": "misc.mana-icon-copy-copy-copy",
-          "x": 614,
+          "x": 498,
           "y": 171,
           "scale": 0.3,
           "depth": 2
@@ -2131,7 +6550,7 @@
         {
           "id": "mana-icon_copy_copy_copy_copy",
           "asset": "misc.mana-icon-copy-copy-copy-copy",
-          "x": 601,
+          "x": 485,
           "y": 165,
           "scale": 0.3,
           "depth": 1
@@ -2139,7 +6558,7 @@
         {
           "id": "mana-icon_copy_copy_copy_copy_copy",
           "asset": "misc.mana-icon-copy-copy-copy-copy-copy",
-          "x": 627,
+          "x": 511,
           "y": 164,
           "scale": 0.3,
           "depth": 1
@@ -2204,21 +6623,21 @@
         {
           "id": "forge-btn-merge",
           "asset": "misc.forge-btn-merge",
-          "x": 259,
+          "x": 143,
           "y": 212,
           "scale": 0.5
         },
         {
           "id": "forge-btn-split",
           "asset": "misc.forge-btn-split",
-          "x": 258,
+          "x": 142,
           "y": 273,
           "scale": 0.5
         },
         {
           "id": "forge-btn-create-fragment",
           "asset": "misc.forge-btn-create-fragment",
-          "x": 439,
+          "x": 323,
           "y": 272,
           "scaleX": 0.5,
           "scaleY": 0.54
@@ -2226,14 +6645,14 @@
         {
           "id": "forge-btn-split-fragment",
           "asset": "misc.forge-btn-split-fragment",
-          "x": 438,
+          "x": 322,
           "y": 211,
           "scale": 0.5
         },
         {
           "id": "forge-btn-refine",
           "asset": "misc.forge-btn-refine",
-          "x": 620,
+          "x": 504,
           "y": 211,
           "scaleX": 0.5,
           "scaleY": 0.48
@@ -2241,7 +6660,7 @@
         {
           "id": "forge-btn-create-prism",
           "asset": "misc.forge-btn-create-prism",
-          "x": 620,
+          "x": 504,
           "y": 273,
           "scaleX": 0.5,
           "scaleY": 0.47
@@ -2327,7 +6746,7 @@
         {
           "id": "Black-frmae-Diamonds-forge",
           "asset": "misc.black-frmae-diamonds-forge",
-          "x": 441,
+          "x": 325,
           "y": 253,
           "depth": -1,
           "uiElement": {
@@ -2485,18 +6904,2361 @@
       "elements": [],
       "ui": []
     },
-    "CatacombTrialScene": {
+    "ArenaUiMockScene": {
+      "viewport": {
+        "width": 1280,
+        "height": 720
+      },
+      "elements": [
+        {
+          "id": "arenaMockBackground",
+          "asset": "environments.backgrounds.arena",
+          "x": 640,
+          "y": 360,
+          "depth": -10,
+          "width": 1280,
+          "height": 720
+        },
+        {
+          "id": "arenaMockEnemyAHost",
+          "asset": "ui.containers.empty",
+          "x": 840,
+          "y": 500,
+          "scale": 0.86,
+          "depth": 5
+        },
+        {
+          "id": "arenaMockEnemyBHost",
+          "asset": "ui.containers.empty",
+          "x": 1005,
+          "y": 530,
+          "scale": 0.82,
+          "depth": 6
+        },
+        {
+          "id": "arenaMockHeroAHost",
+          "asset": "ui.containers.empty",
+          "x": 318,
+          "y": 516,
+          "scale": 1,
+          "depth": 8
+        },
+        {
+          "id": "arenaMockPetAHost",
+          "asset": "ui.containers.empty",
+          "x": 423,
+          "y": 598,
+          "scale": 0.5,
+          "depth": 7
+        },
+        {
+          "id": "arenaMockHeroBHost",
+          "asset": "ui.containers.empty",
+          "x": 176,
+          "y": 572,
+          "scale": 1.35,
+          "depth": 9
+        },
+        {
+          "id": "arenaMockPetBHost",
+          "asset": "ui.containers.empty",
+          "x": 276,
+          "y": 659,
+          "scale": 0.5,
+          "depth": 8
+        }
+      ],
+      "ui": [
+        {
+          "id": "arenaMockFrame",
+          "asset": "misc.arena-with-title",
+          "x": 227,
+          "y": 255,
+          "depth": 10,
+          "uiElement": {
+            "templateId": "1769790026152-n7qtn1nyx"
+          }
+        },
+        {
+          "id": "arenaMockWaveListHost",
+          "asset": "ui.containers.empty",
+          "x": 227,
+          "y": 255,
+          "depth": 12
+        },
+        {
+          "id": "arenaMockChoiceStatusHost",
+          "asset": "ui.containers.empty",
+          "x": 805,
+          "y": 144,
+          "depth": 30
+        },
+        {
+          "id": "arenaMockWaveTitleHost",
+          "asset": "ui.containers.empty",
+          "x": 805,
+          "y": 190,
+          "depth": 30
+        },
+        {
+          "id": "arenaMockPreviousButton",
+          "asset": "misc.newarrow",
+          "x": 608,
+          "y": 178,
+          "scale": 0.36,
+          "depth": 50,
+          "uiElement": {
+            "templateId": "1769722721277-p7d9kn6kj"
+          },
+          "events": {
+            "click": "arenaMockPrevious"
+          }
+        },
+        {
+          "id": "arenaMockNextButton",
+          "asset": "misc.newarrow-1",
+          "x": 994,
+          "y": 178,
+          "scale": 0.36,
+          "flipX": true,
+          "depth": 50,
+          "uiElement": {
+            "templateId": "1769722721277-p7d9kn6kj"
+          },
+          "events": {
+            "click": "arenaMockNext"
+          }
+        },
+        {
+          "id": "arenaMockResourceHost",
+          "asset": "ui.containers.empty",
+          "x": 1120,
+          "y": 42,
+          "width": 258,
+          "height": 74,
+          "depth": 72
+        },
+        {
+          "id": "arenaMockPlayerAPodHost",
+          "asset": "ui.containers.empty",
+          "x": 470,
+          "y": 500,
+          "width": 178,
+          "height": 78,
+          "depth": 72
+        },
+        {
+          "id": "arenaMockPlayerBPodHost",
+          "asset": "ui.containers.empty",
+          "x": 89,
+          "y": 630,
+          "width": 176,
+          "height": 77,
+          "depth": 72
+        },
+        {
+          "id": "arenaMockStartHost",
+          "asset": "ui.containers.empty",
+          "x": 980,
+          "y": 654,
+          "width": 276,
+          "height": 110,
+          "depth": 80
+        },
+        {
+          "id": "arenaMockBackButton",
+          "asset": "Back button",
+          "x": 1188,
+          "y": 650,
+          "scale": 0.68,
+          "depth": 80,
+          "uiElement": {
+            "templateId": "1768730825297-e6lnuaoyj"
+          },
+          "events": {
+            "click": "arenaMockBack"
+          }
+        },
+        {
+          "id": "arenaMockCaptionHost",
+          "asset": "ui.containers.empty",
+          "x": 640,
+          "y": 18,
+          "depth": 90
+        }
+      ]
+    },
+    "BattleUiMockScene": {
+      "viewport": {
+        "width": 1280,
+        "height": 720
+      },
+      "elements": [
+        {
+          "id": "battleMockBackground",
+          "asset": "library.image.silverpond-water-arena-1-battle",
+          "x": 640,
+          "y": 360,
+          "depth": -10,
+          "width": 1280,
+          "height": 720
+        },
+        {
+          "id": "battleMockHero",
+          "asset": "characters.sprites.knight_idle",
+          "x": 239,
+          "y": 445,
+          "scale": 1,
+          "depth": 10
+        },
+        {
+          "id": "battleMockPet",
+          "asset": "characters.sprites.slime",
+          "x": 429,
+          "y": 466,
+          "scale": 0.5,
+          "depth": 11
+        },
+        {
+          "id": "battleMockHeroB",
+          "asset": "characters.sprites.boy_knight_idle",
+          "x": 340,
+          "y": 539,
+          "scale": 1.35,
+          "depth": 10
+        },
+        {
+          "id": "battleMockPetB",
+          "asset": "characters.sprites.pink_idle",
+          "x": 444,
+          "y": 584,
+          "scale": 0.5,
+          "depth": 11
+        },
+        {
+          "id": "battleMockEnemy",
+          "asset": "characters.sprites.silverpond_frog_enemy_idle",
+          "x": 772,
+          "y": 437,
+          "scale": 0.42,
+          "depth": 10
+        },
+        {
+          "id": "battleMockEnemy2",
+          "asset": "characters.sprites.pink_idle",
+          "x": 822,
+          "y": 523,
+          "scale": 1,
+          "depth": 10
+        },
+        {
+          "id": "battleMockEnemy3",
+          "asset": "characters.sprites.leafy_idle",
+          "x": 981,
+          "y": 475,
+          "scale": 1,
+          "depth": 10
+        },
+        {
+          "id": "battleMockTargetSword",
+          "asset": "misc.prep-sword-normal-v2",
+          "x": 772,
+          "y": 270,
+          "depth": 83,
+          "width": 58,
+          "height": 58,
+          "rotation": 135
+        }
+      ],
+      "ui": [
+        {
+          "id": "battleMockPlayerVitalsFrame",
+          "asset": "misc.battle-hud.status-frame-v2",
+          "x": 239,
+          "y": 312,
+          "depth": 80,
+          "width": 150,
+          "height": 34
+        },
+        {
+          "id": "battleMockPlayerHpHost",
+          "asset": "ui.containers.empty",
+          "x": 239,
+          "y": 312,
+          "depth": 81,
+          "width": 115,
+          "height": 9
+        },
+        {
+          "id": "battleMockSpeedRune1Host",
+          "asset": "ui.containers.empty",
+          "x": 207.5,
+          "y": 337,
+          "depth": 82,
+          "width": 18,
+          "height": 18
+        },
+        {
+          "id": "battleMockSpeedRune2Host",
+          "asset": "ui.containers.empty",
+          "x": 228.5,
+          "y": 337,
+          "depth": 82,
+          "width": 18,
+          "height": 18
+        },
+        {
+          "id": "battleMockSpeedRune3Host",
+          "asset": "ui.containers.empty",
+          "x": 249.5,
+          "y": 337,
+          "depth": 82,
+          "width": 18,
+          "height": 18
+        },
+        {
+          "id": "battleMockSpeedRune4Host",
+          "asset": "ui.containers.empty",
+          "x": 270.5,
+          "y": 337,
+          "depth": 82,
+          "width": 18,
+          "height": 18
+        },
+        {
+          "id": "battleMockPlayerBVitalsFrame",
+          "asset": "misc.battle-hud.status-frame-v2",
+          "x": 340,
+          "y": 370,
+          "depth": 80,
+          "width": 150,
+          "height": 34
+        },
+        {
+          "id": "battleMockPlayerBHpHost",
+          "asset": "ui.containers.empty",
+          "x": 340,
+          "y": 370,
+          "depth": 81,
+          "width": 115,
+          "height": 9
+        },
+        {
+          "id": "battleMockSpeedRuneB1Host",
+          "asset": "ui.containers.empty",
+          "x": 308.5,
+          "y": 395,
+          "depth": 82,
+          "width": 18,
+          "height": 18
+        },
+        {
+          "id": "battleMockSpeedRuneB2Host",
+          "asset": "ui.containers.empty",
+          "x": 329.5,
+          "y": 395,
+          "depth": 82,
+          "width": 18,
+          "height": 18
+        },
+        {
+          "id": "battleMockSpeedRuneB3Host",
+          "asset": "ui.containers.empty",
+          "x": 350.5,
+          "y": 395,
+          "depth": 82,
+          "width": 18,
+          "height": 18
+        },
+        {
+          "id": "battleMockSpeedRuneB4Host",
+          "asset": "ui.containers.empty",
+          "x": 371.5,
+          "y": 395,
+          "depth": 82,
+          "width": 18,
+          "height": 18
+        },
+        {
+          "id": "battleMockEnemyVitalsFrame",
+          "asset": "misc.battle-hud.status-frame-v2",
+          "x": 772,
+          "y": 316,
+          "depth": 80,
+          "width": 118,
+          "height": 28
+        },
+        {
+          "id": "battleMockEnemyHpHost",
+          "asset": "ui.containers.empty",
+          "x": 772,
+          "y": 316,
+          "depth": 81,
+          "width": 86,
+          "height": 7
+        },
+        {
+          "id": "battleMockEnemyGroup2VitalsFrame",
+          "asset": "misc.battle-hud.status-frame-v2",
+          "x": 822,
+          "y": 402,
+          "depth": 80,
+          "width": 118,
+          "height": 28
+        },
+        {
+          "id": "battleMockEnemyGroup2HpHost",
+          "asset": "ui.containers.empty",
+          "x": 822,
+          "y": 402,
+          "depth": 81,
+          "width": 86,
+          "height": 7
+        },
+        {
+          "id": "battleMockEnemyGroup3VitalsFrame",
+          "asset": "misc.battle-hud.status-frame-v2",
+          "x": 981,
+          "y": 354,
+          "depth": 80,
+          "width": 118,
+          "height": 28
+        },
+        {
+          "id": "battleMockEnemyGroup3HpHost",
+          "asset": "ui.containers.empty",
+          "x": 981,
+          "y": 354,
+          "depth": 81,
+          "width": 86,
+          "height": 7
+        },
+        {
+          "id": "battleMockActionDockFrame",
+          "asset": "misc.battle-hud.action-dock-frame",
+          "x": 640,
+          "y": 646,
+          "depth": 80,
+          "width": 520,
+          "height": 158
+        },
+        {
+          "id": "battleMockPotionActionHost",
+          "asset": "ui.containers.empty",
+          "x": 499,
+          "y": 664,
+          "depth": 83,
+          "width": 50,
+          "height": 50
+        },
+        {
+          "id": "battleMockPotionBadgeHost",
+          "asset": "ui.containers.empty",
+          "x": 534,
+          "y": 677,
+          "depth": 84,
+          "width": 32,
+          "height": 32
+        },
+        {
+          "id": "battleMockSwordActionHost",
+          "asset": "ui.containers.empty",
+          "x": 640,
+          "y": 648,
+          "depth": 84,
+          "width": 84,
+          "height": 84
+        },
+        {
+          "id": "battleMockPetActionHost",
+          "asset": "ui.containers.empty",
+          "x": 782,
+          "y": 660,
+          "depth": 83,
+          "width": 60,
+          "height": 60
+        },
+        {
+          "id": "battleMockPetBadgeHost",
+          "asset": "ui.containers.empty",
+          "x": 822,
+          "y": 677,
+          "depth": 84,
+          "width": 32,
+          "height": 32
+        },
+        {
+          "id": "battleMockPreparationFrame",
+          "asset": "misc.battle-hud.preparation-frame",
+          "x": 96,
+          "y": 640,
+          "depth": 80,
+          "width": 112,
+          "height": 116
+        },
+        {
+          "id": "battleMockPreparationIconHost",
+          "asset": "ui.containers.empty",
+          "x": 95,
+          "y": 632,
+          "depth": 82,
+          "width": 48,
+          "height": 48
+        },
+        {
+          "id": "battleMockPreparationHoverHost",
+          "asset": "ui.containers.empty",
+          "x": 99,
+          "y": 620,
+          "scale": 0.7,
+          "depth": 81,
+          "width": 86,
+          "height": 86
+        },
+        {
+          "id": "battleMockPreparationRune1Host",
+          "asset": "ui.containers.empty",
+          "x": 69,
+          "y": 678,
+          "depth": 82,
+          "width": 21,
+          "height": 21
+        },
+        {
+          "id": "battleMockPreparationRune2Host",
+          "asset": "ui.containers.empty",
+          "x": 96,
+          "y": 678,
+          "depth": 82,
+          "width": 21,
+          "height": 21
+        },
+        {
+          "id": "battleMockPreparationRune3Host",
+          "asset": "ui.containers.empty",
+          "x": 123,
+          "y": 678,
+          "depth": 82,
+          "width": 21,
+          "height": 21
+        },
+        {
+          "id": "battleMockPauseHost",
+          "asset": "misc.battle-hud.pause-button",
+          "x": 1225,
+          "y": 54,
+          "depth": 95,
+          "width": 96,
+          "height": 99
+        },
+        {
+          "id": "battleMockPauseHoverHost",
+          "asset": "ui.containers.empty",
+          "x": 1225,
+          "y": 54,
+          "depth": 94,
+          "width": 82,
+          "height": 82
+        },
+        {
+          "id": "battleMockPauseOverlayHost",
+          "asset": "ui.containers.empty",
+          "x": 640,
+          "y": 360,
+          "depth": 200
+        },
+        {
+          "id": "battleMockModePanelHost",
+          "asset": "ui.containers.empty",
+          "x": 285,
+          "y": 50,
+          "depth": 90,
+          "width": 260,
+          "height": 54
+        },
+        {
+          "id": "battleMockSingleModeHost",
+          "asset": "ui.containers.empty",
+          "x": 275,
+          "y": 50,
+          "depth": 92,
+          "width": 82,
+          "height": 38
+        },
+        {
+          "id": "battleMockCoopModeHost",
+          "asset": "ui.containers.empty",
+          "x": 367,
+          "y": 50,
+          "depth": 92,
+          "width": 82,
+          "height": 38
+        },
+        {
+          "id": "battleMockEnemyCountPanelHost",
+          "asset": "ui.containers.empty",
+          "x": 640,
+          "y": 50,
+          "depth": 90,
+          "width": 280,
+          "height": 54
+        },
+        {
+          "id": "battleMockEnemyCount1Host",
+          "asset": "ui.containers.empty",
+          "x": 625,
+          "y": 50,
+          "depth": 92,
+          "width": 40,
+          "height": 40
+        },
+        {
+          "id": "battleMockEnemyCount2Host",
+          "asset": "ui.containers.empty",
+          "x": 680,
+          "y": 50,
+          "depth": 92,
+          "width": 40,
+          "height": 40
+        },
+        {
+          "id": "battleMockEnemyCount3Host",
+          "asset": "ui.containers.empty",
+          "x": 735,
+          "y": 50,
+          "depth": 92,
+          "width": 40,
+          "height": 40
+        }
+      ]
+    },
+    "WalkingHudOverlay": {
       "viewport": {
         "width": 1280,
         "height": 720
       },
       "elements": [],
-      "spawnPoints": {
-        "creature": {
+      "ui": [
+        {
+          "id": "menuHudHost",
+          "asset": "ui.panels.town-hud-a-menu",
+          "x": 58,
+          "y": 58,
+          "depth": 180,
+          "width": 85,
+          "height": 81
+        },
+        {
+          "id": "playerAHudHost",
+          "asset": "ui.panels.town-hud-a-player-panel",
+          "x": 245,
+          "y": 65,
+          "depth": 180,
+          "width": 299,
+          "height": 106
+        },
+        {
+          "id": "playerBHudHost",
+          "asset": "ui.panels.town-hud-a-player-panel",
+          "x": 550,
+          "y": 65,
+          "depth": 180,
+          "width": 299,
+          "height": 106,
+          "visible": false
+        },
+        {
+          "id": "resourceHudHost",
+          "asset": "ui.panels.town-hud-a-resources",
+          "x": 1140,
+          "y": 56,
+          "depth": 180,
+          "width": 258,
+          "height": 74
+        },
+        {
+          "id": "walkingMenuOverlayHost",
+          "asset": "ui.containers.empty",
+          "x": 640,
+          "y": 360,
+          "depth": 9998,
+          "width": 1280,
+          "height": 720
+        },
+        {
+          "id": "walkingMenuPanelHost",
+          "asset": "ui.containers.empty",
+          "x": 640,
+          "y": 360,
+          "depth": 9999,
+          "width": 430,
+          "height": 390
+        },
+        {
+          "id": "walkingMenuTitleHost",
+          "asset": "ui.containers.empty",
+          "x": 640,
+          "y": 215,
+          "depth": 10000,
+          "width": 320,
+          "height": 50
+        },
+        {
+          "id": "walkingMenuResumeHost",
+          "asset": "ui.containers.empty",
+          "x": 640,
+          "y": 298,
+          "depth": 10000,
+          "width": 300,
+          "height": 52
+        },
+        {
+          "id": "walkingMenuFullscreenHost",
+          "asset": "ui.containers.empty",
+          "x": 640,
+          "y": 373,
+          "depth": 10000,
+          "width": 300,
+          "height": 52
+        },
+        {
+          "id": "walkingMenuQuitHost",
+          "asset": "ui.containers.empty",
+          "x": 640,
+          "y": 448,
+          "depth": 10000,
+          "width": 300,
+          "height": 52
+        },
+        {
+          "id": "characterBookHost",
+          "asset": "ui.panels.character-book-frame",
+          "x": 640,
+          "y": 370,
+          "depth": 600,
+          "width": 1080,
+          "height": 648
+        },
+        {
+          "id": "characterBookHeroHost",
+          "asset": "ui.panels.character-book-editor-hero",
+          "x": 425,
+          "y": 192,
+          "depth": 602,
+          "width": 204,
+          "height": 204
+        },
+        {
+          "id": "characterBookNameHost",
+          "asset": "ui.labels.character-book-name",
+          "x": 423,
+          "y": 312,
+          "depth": 604,
+          "width": 312,
+          "height": 43,
+          "text": "Rytířka"
+        },
+        {
+          "id": "characterBookLevelHost",
+          "asset": "ui.labels.character-book-level",
+          "x": 423,
+          "y": 347,
+          "depth": 604,
+          "width": 140,
+          "height": 24,
+          "text": "LEVEL 5"
+        },
+        {
+          "id": "characterBookSwordLabelHost",
+          "asset": "ui.labels.character-book-label",
+          "x": 323,
+          "y": 382,
+          "depth": 604,
+          "width": 90,
+          "height": 22,
+          "text": "MEČ"
+        },
+        {
+          "id": "characterBookSwordHost",
+          "asset": "ui.panels.character-book-editor-sword",
+          "x": 323,
+          "y": 448,
+          "depth": 602,
+          "width": 116,
+          "height": 116
+        },
+        {
+          "id": "characterBookSwordValueHost",
+          "asset": "ui.labels.character-book-value",
+          "x": 323,
+          "y": 519,
+          "depth": 604,
+          "width": 100,
+          "height": 28,
+          "text": "+2 DMG"
+        },
+        {
+          "id": "characterBookShieldLabelHost",
+          "asset": "ui.labels.character-book-label",
+          "x": 513,
+          "y": 382,
+          "depth": 604,
+          "width": 90,
+          "height": 22,
+          "text": "ŠTÍT"
+        },
+        {
+          "id": "characterBookShieldHost",
+          "asset": "ui.panels.character-book-editor-shield",
+          "x": 513,
+          "y": 448,
+          "depth": 602,
+          "width": 116,
+          "height": 116
+        },
+        {
+          "id": "characterBookShieldValueHost",
+          "asset": "ui.labels.character-book-value",
+          "x": 513,
+          "y": 519,
+          "depth": 604,
+          "width": 100,
+          "height": 28,
+          "text": "−2 DMG"
+        },
+        {
+          "id": "characterBookTitleHost",
+          "asset": "ui.labels.character-book-title",
+          "x": 867,
+          "y": 114,
+          "depth": 604,
+          "width": 280,
+          "height": 30,
+          "text": "BOJOVÝ PŘEHLED"
+        },
+        {
+          "id": "characterBookHpHeartHost",
+          "asset": "ui.panels.character-book-editor-hp-heart",
+          "x": 283,
+          "y": 589,
+          "depth": 602,
+          "width": 72,
+          "height": 72
+        },
+        {
+          "id": "characterBookHpBarHost",
+          "asset": "ui.panels.character-book-editor-hp-bar",
+          "x": 455,
+          "y": 590,
+          "depth": 602,
+          "width": 255,
+          "height": 48
+        },
+        {
+          "id": "characterBookHpValueHost",
+          "asset": "ui.labels.character-book-hp-value",
+          "x": 455,
+          "y": 590,
+          "depth": 604,
+          "width": 110,
+          "height": 30,
+          "text": "12 / 12"
+        },
+        {
+          "id": "characterBookCloseHoverHost",
+          "asset": "ui.panels.character-book-editor-close-hover",
+          "x": 1057,
+          "y": 96,
+          "scaleX": 0.9730980585730028,
+          "scaleY": 0.957427331320662,
+          "depth": 620,
+          "width": 96,
+          "height": 96
+        },
+        {
+          "id": "characterBookDividerGearHost",
+          "asset": "ui.panels.character-book-editor-divider",
+          "x": 420,
+          "y": 366,
+          "scaleX": 0.95,
+          "depth": 601,
+          "width": 387,
+          "height": 8
+        },
+        {
+          "id": "characterBookDividerItemsHost",
+          "asset": "ui.panels.character-book-editor-divider",
+          "x": 856,
+          "y": 294,
+          "depth": 601,
+          "width": 384,
+          "height": 8
+        },
+        {
+          "id": "characterBookDividerPreparationHost",
+          "asset": "ui.panels.character-book-editor-divider",
+          "x": 858,
+          "y": 494,
+          "depth": 601,
+          "width": 384,
+          "height": 8
+        },
+        {
+          "id": "characterBookAttacksTitleHost",
+          "asset": "ui.labels.character-book-label",
+          "x": 868,
+          "y": 144,
+          "depth": 604,
+          "width": 110,
+          "height": 22,
+          "text": "ÚTOKY"
+        },
+        {
+          "id": "characterBookAttack1Host",
+          "asset": "ui.panels.character-book-editor-attack",
+          "x": 758,
+          "y": 202,
+          "depth": 602,
+          "width": 88,
+          "height": 88
+        },
+        {
+          "id": "characterBookAttack1ValueHost",
+          "asset": "ui.labels.character-book-value",
+          "x": 758,
+          "y": 260,
+          "depth": 604,
+          "width": 42,
+          "height": 28,
+          "text": "2"
+        },
+        {
+          "id": "characterBookAttack2Host",
+          "asset": "ui.panels.character-book-editor-attack",
+          "x": 868,
+          "y": 202,
+          "depth": 602,
+          "width": 88,
+          "height": 88
+        },
+        {
+          "id": "characterBookAttack2ValueHost",
+          "asset": "ui.labels.character-book-value",
+          "x": 868,
+          "y": 260,
+          "depth": 604,
+          "width": 42,
+          "height": 28,
+          "text": "2"
+        },
+        {
+          "id": "characterBookAttack3Host",
+          "asset": "ui.panels.character-book-editor-attack",
+          "x": 978,
+          "y": 202,
+          "depth": 602,
+          "width": 88,
+          "height": 88
+        },
+        {
+          "id": "characterBookAttack3ValueHost",
+          "asset": "ui.labels.character-book-value",
+          "x": 978,
+          "y": 260,
+          "depth": 604,
+          "width": 42,
+          "height": 28,
+          "text": "1"
+        },
+        {
+          "id": "characterBookPotionLabelHost",
+          "asset": "ui.labels.character-book-label",
+          "x": 795,
+          "y": 314,
+          "depth": 604,
+          "width": 110,
+          "height": 22,
+          "text": "LEKTVAR"
+        },
+        {
+          "id": "characterBookPotionHost",
+          "asset": "ui.panels.character-book-editor-potion",
+          "x": 795,
+          "y": 372,
+          "depth": 602,
+          "width": 91,
+          "height": 91
+        },
+        {
+          "id": "characterBookPotionStatusHost",
+          "asset": "ui.labels.character-book-label",
+          "x": 795,
+          "y": 427,
+          "depth": 604,
+          "width": 100,
+          "height": 24,
+          "text": "PLNÝ · 1"
+        },
+        {
+          "id": "characterBookPetLabelHost",
+          "asset": "ui.labels.character-book-label",
+          "x": 925,
+          "y": 318,
+          "depth": 604,
+          "width": 140,
+          "height": 22,
+          "text": "AKTIVNÍ PET"
+        },
+        {
+          "id": "characterBookPetHost",
+          "asset": "ui.panels.character-book-editor-pet",
+          "x": 925,
+          "y": 375,
+          "depth": 602,
+          "width": 105,
+          "height": 105
+        },
+        {
+          "id": "characterBookPetNameHost",
+          "asset": "ui.labels.character-book-label",
+          "x": 925,
+          "y": 431,
+          "depth": 604,
+          "width": 130,
+          "height": 22,
+          "text": "SLIZÁČEK"
+        },
+        {
+          "id": "characterBookPetValueHost",
+          "asset": "ui.labels.character-book-value",
+          "x": 925,
+          "y": 462,
+          "depth": 604,
+          "width": 80,
+          "height": 28,
+          "text": "1 DMG"
+        },
+        {
+          "id": "characterBookPreparationLabelHost",
+          "asset": "ui.labels.character-book-label",
+          "x": 871,
+          "y": 520,
+          "depth": 604,
+          "width": 180,
+          "height": 22,
+          "text": "PŘÍPRAVA · MEČ"
+        },
+        {
+          "id": "characterBookPreparationHost",
+          "asset": "ui.panels.character-book-editor-preparation",
+          "x": 871,
+          "y": 564,
+          "depth": 602,
+          "width": 220,
+          "height": 70
+        },
+        {
+          "id": "characterBookTabAHost",
+          "asset": "ui.panels.character-book-editor-tab-a",
+          "x": 1140,
+          "y": 296,
+          "depth": 605,
+          "width": 82,
+          "height": 82
+        },
+        {
+          "id": "characterBookTabBHost",
+          "asset": "ui.panels.character-book-editor-tab-b",
+          "x": 1140,
+          "y": 424,
+          "depth": 605,
+          "width": 82,
+          "height": 82
+        }
+      ]
+    },
+    "SilverpondTownMockScene": {
+      "viewport": {
+        "width": 1280,
+        "height": 720
+      },
+      "elements": [
+        {
+          "id": "underwaterEntryHost",
+          "asset": "ui.containers.empty",
+          "x": 720,
+          "y": 597,
+          "width": 260,
+          "height": 66,
+          "depth": 85
+        },
+        {
+          "id": "background",
+          "asset": "library.image.silverpond-town-hub-mock",
+          "x": 640,
+          "y": 360,
+          "depth": -10,
+          "width": 1280,
+          "height": 720
+        },
+        {
+          "id": "shopDoorHost",
+          "asset": "ui.containers.empty",
+          "x": 168,
+          "y": 443,
+          "scaleX": 0.4999999999999997,
+          "scaleY": 0.9024390243902355,
+          "depth": 12,
+          "width": 92,
+          "height": 80
+        },
+        {
+          "id": "guildDoorHost",
+          "asset": "ui.containers.empty",
+          "x": 444,
+          "y": 417,
+          "scaleX": 0.6777777777777734,
+          "scaleY": 0.7384615384615443,
+          "depth": 12,
+          "width": 88,
+          "height": 128
+        },
+        {
+          "id": "workshopDoorHost",
+          "asset": "ui.containers.empty",
+          "x": 687,
+          "y": 437,
+          "scaleX": 0.8999999999999985,
+          "scaleY": 0.8478260869565145,
+          "depth": 12,
+          "width": 58,
+          "height": 90
+        },
+        {
+          "id": "forgeDoorHost",
+          "asset": "ui.containers.empty",
+          "x": 931,
+          "y": 439,
+          "scaleX": 0.7065217391304335,
+          "scaleY": 0.7019230769230818,
+          "depth": 12,
+          "width": 90,
+          "height": 102
+        },
+        {
+          "id": "arenaGateHost",
+          "asset": "ui.containers.empty",
+          "x": 1167,
+          "y": 365,
+          "scaleX": 0.7909090909090933,
+          "scaleY": 0.8351063829787255,
+          "depth": 12,
+          "width": 108,
+          "height": 186
+        }
+      ],
+      "ui": [
+        {
+          "id": "guildNotificationHost",
+          "asset": "ui.containers.empty",
+          "x": 526,
+          "y": 370,
+          "scale": 0.29,
+          "depth": 70,
+          "width": 72,
+          "height": 72
+        },
+        {
+          "id": "menuButtonHost",
+          "asset": "ui.containers.empty",
+          "x": 72,
+          "y": 45,
+          "depth": 80,
+          "width": 110,
+          "height": 42
+        },
+        {
+          "id": "toastHost",
+          "asset": "ui.containers.empty",
+          "x": 640,
+          "y": 674,
+          "depth": 100
+        },
+        {
+          "id": "depthShipEntryHost",
+          "asset": "ui.containers.empty",
+          "x": 425,
+          "y": 597,
+          "width": 270,
+          "height": 74,
+          "depth": 85
+        }
+      ],
+      "zones": [
+        {
+          "id": "playerSpawn",
+          "x": 640,
+          "y": 548
+        }
+      ]
+    },
+    "SilverpondFairyRewardScene": {
+      "viewport": {
+        "width": 1280,
+        "height": 720
+      },
+      "elements": [
+        {
+          "id": "fairyRewardBackground",
+          "asset": "library.image.silverpond-fairy-reward",
+          "x": 640,
+          "y": 360,
+          "depth": -10,
+          "width": 1280,
+          "height": 720
+        },
+        {
+          "id": "fairyRewardFairy",
+          "asset": "characters.npcs.silverpond_lake_fairy",
+          "x": 770,
+          "y": 335,
+          "depth": 24,
+          "scale": 1
+        },
+        {
+          "id": "fairyRewardPlayerHost",
+          "asset": "ui.containers.empty",
+          "x": 270,
+          "y": 655,
+          "depth": 24,
+          "width": 200,
+          "height": 220
+        },
+        {
+          "id": "fairyRewardOverlayHost",
+          "asset": "ui.containers.empty",
+          "x": 640,
+          "y": 425,
+          "depth": 100,
+          "width": 1040,
+          "height": 500
+        },
+        {
+          "id": "fairyRewardDialogHost",
+          "asset": "ui.containers.empty",
+          "x": 640,
+          "y": 602,
+          "depth": 100,
+          "width": 1030,
+          "height": 178
+        },
+        {
+          "id": "fairyRewardPortraitHost",
+          "asset": "ui.containers.empty",
+          "x": 770,
+          "y": 335,
+          "depth": 102,
+          "width": 512,
+          "height": 512
+        },
+        {
+          "id": "fairyRewardSymbolHost",
+          "asset": "ui.containers.empty",
+          "x": 395,
+          "y": 500,
+          "depth": 102,
+          "width": 230,
+          "height": 230
+        },
+        {
+          "id": "fairyRewardTextHost",
+          "asset": "ui.containers.empty",
+          "x": 545,
+          "y": 405,
+          "depth": 102,
+          "width": 500,
+          "height": 165
+        },
+        {
+          "id": "fairyRewardButtonHost",
+          "asset": "ui.containers.empty",
           "x": 900,
-          "y": 400
+          "y": 620,
+          "depth": 110,
+          "width": 405,
+          "height": 92
+        },
+        {
+          "id": "fairyRewardTitleHost",
+          "asset": "ui.containers.empty",
+          "x": 640,
+          "y": 82,
+          "depth": 100,
+          "width": 790,
+          "height": 138
+        },
+        {
+          "id": "fairyRewardQuestHost",
+          "asset": "ui.containers.empty",
+          "x": 1090,
+          "y": 76,
+          "depth": 84,
+          "width": 340,
+          "height": 72
+        }
+      ],
+      "ui": []
+    },
+    "GuardianLairScene": {
+      "viewport": {
+        "width": 1280,
+        "height": 720
+      },
+      "elements": [
+        {
+          "id": "background",
+          "asset": "library.image.guardian-lair-mock",
+          "x": 640,
+          "y": 360,
+          "depth": -10
+        },
+        {
+          "id": "roomPlayerHost",
+          "asset": "ui.containers.empty",
+          "x": 235,
+          "y": 555,
+          "depth": 10
+        },
+        {
+          "id": "roomGuardianHost",
+          "asset": "ui.containers.empty",
+          "x": 1035,
+          "y": 475,
+          "depth": 8,
+          "scale": 0.66
+        },
+        {
+          "id": "roomGuardianAwakenedHost",
+          "asset": "ui.containers.empty",
+          "x": 1035,
+          "y": 475,
+          "depth": 8,
+          "scale": 0.82
+        },
+        {
+          "id": "altarInteractionHost",
+          "asset": "ui.containers.empty",
+          "x": 465,
+          "y": 585,
+          "depth": 10
+        },
+        {
+          "id": "altarSealHost",
+          "asset": "ui.containers.empty",
+          "x": 640,
+          "y": 283,
+          "depth": 12
+        },
+        {
+          "id": "battlePlayerHost",
+          "asset": "ui.containers.empty",
+          "x": 267,
+          "y": 478,
+          "depth": 10
+        },
+        {
+          "id": "battleGuardianHost",
+          "asset": "ui.containers.empty",
+          "x": 899,
+          "y": 484,
+          "depth": 9,
+          "scale": 0.82
+        },
+        {
+          "id": "ritualTargetHost",
+          "asset": "ui.containers.empty",
+          "x": 640,
+          "y": 283,
+          "depth": 22
+        },
+        {
+          "id": "ritualCrystal0Host",
+          "asset": "ui.containers.empty",
+          "x": 530,
+          "y": 361,
+          "depth": 25
+        },
+        {
+          "id": "ritualCrystal1Host",
+          "asset": "ui.containers.empty",
+          "x": 585,
+          "y": 361,
+          "depth": 25
+        },
+        {
+          "id": "ritualCrystal2Host",
+          "asset": "ui.containers.empty",
+          "x": 640,
+          "y": 361,
+          "depth": 25
+        },
+        {
+          "id": "ritualCrystal3Host",
+          "asset": "ui.containers.empty",
+          "x": 695,
+          "y": 361,
+          "depth": 25
+        },
+        {
+          "id": "ritualCrystal4Host",
+          "asset": "ui.containers.empty",
+          "x": 750,
+          "y": 361,
+          "depth": 25
+        },
+        {
+          "id": "ritualCrystal5Host",
+          "asset": "ui.containers.empty",
+          "x": 640,
+          "y": 430,
+          "depth": 25
+        }
+      ],
+      "ui": [
+        {
+          "id": "hintHost",
+          "asset": "ui.containers.empty",
+          "x": 640,
+          "y": 126,
+          "depth": 100
+        },
+        {
+          "id": "ritualButtonHost",
+          "asset": "ui.containers.empty",
+          "x": 720,
+          "y": 635,
+          "width": 300,
+          "height": 62,
+          "depth": 50
+        }
+      ],
+      "zones": [
+        {
+          "id": "altarInteractionZone",
+          "x": 640,
+          "y": 355,
+          "width": 350,
+          "height": 300
+        }
+      ]
+    },
+    "ForestCrystalRewardScene": {
+      "viewport": {
+        "width": 1280,
+        "height": 720
+      },
+      "elements": [
+        {
+          "id": "background",
+          "asset": "library.image.guardian-lair-mock",
+          "x": 640,
+          "y": 360,
+          "depth": -10,
+          "width": 1280,
+          "height": 720
+        },
+        {
+          "id": "aftermathPlayerHost",
+          "asset": "ui.containers.empty",
+          "x": 285,
+          "y": 625,
+          "depth": 20
+        },
+        {
+          "id": "rocketExitHost",
+          "asset": "ui.containers.empty",
+          "x": 1140,
+          "y": 555,
+          "depth": 70
+        }
+      ],
+      "ui": [
+        {
+          "id": "rewardOverlayHost",
+          "asset": "ui.containers.empty",
+          "x": 640,
+          "y": 360,
+          "depth": 90
+        },
+        {
+          "id": "rewardTitleHost",
+          "asset": "ui.containers.empty",
+          "x": 640,
+          "y": 78,
+          "depth": 100
+        },
+        {
+          "id": "forestCrystalHost",
+          "asset": "ui.containers.empty",
+          "x": 640,
+          "y": 270,
+          "depth": 104
+        },
+        {
+          "id": "rewardStoryPanelHost",
+          "asset": "ui.containers.empty",
+          "x": 640,
+          "y": 530,
+          "depth": 101
+        },
+        {
+          "id": "claimCrystalButtonHost",
+          "asset": "ui.containers.empty",
+          "x": 1080,
+          "y": 666,
+          "depth": 110
+        },
+        {
+          "id": "forestCrystalQuestHost",
+          "asset": "ui.containers.empty",
+          "x": 1080,
+          "y": 72,
+          "depth": 80
+        }
+      ]
+    },
+    "ZyxRocketInterludeScene": {
+      "viewport": {
+        "width": 1280,
+        "height": 720
+      },
+      "elements": [
+        {
+          "id": "background",
+          "asset": "library.image.zyx-rocket-interlude",
+          "x": 640,
+          "y": 360,
+          "depth": -10,
+          "width": 1280,
+          "height": 720
+        },
+        {
+          "id": "rocketPlayerEntryHost",
+          "asset": "ui.containers.empty",
+          "x": 1220,
+          "y": 625,
+          "depth": 20
+        },
+        {
+          "id": "rocketPlayerTalkHost",
+          "asset": "ui.containers.empty",
+          "x": 850,
+          "y": 625,
+          "depth": 20
+        },
+        {
+          "id": "rocketZyxHost",
+          "asset": "ui.containers.empty",
+          "x": 635,
+          "y": 602,
+          "depth": 18
+        }
+      ],
+      "ui": [
+        {
+          "id": "zyxDialogueHost",
+          "asset": "ui.containers.empty",
+          "x": 640,
+          "y": 568,
+          "depth": 100
+        },
+        {
+          "id": "zyxDialogueButtonHost",
+          "asset": "ui.containers.empty",
+          "x": 1030,
+          "y": 666,
+          "depth": 110
+        },
+        {
+          "id": "rocketSilverpondExitHost",
+          "asset": "ui.containers.empty",
+          "x": 1160,
+          "y": 510,
+          "depth": 70
+        },
+        {
+          "id": "depthShipPlayerHost",
+          "asset": "ui.containers.empty",
+          "x": 850,
+          "y": 625,
+          "width": 150,
+          "height": 190,
+          "depth": 20
+        },
+        {
+          "id": "depthShipGuestHost",
+          "asset": "ui.containers.empty",
+          "x": 1020,
+          "y": 625,
+          "width": 150,
+          "height": 190,
+          "depth": 21
+        },
+        {
+          "id": "depthShipHatchArrival",
+          "asset": "ui.containers.empty",
+          "x": 470,
+          "y": 525,
+          "width": 150,
+          "height": 190,
+          "depth": 20
+        },
+        {
+          "id": "depthShipGuestHatchArrival",
+          "asset": "ui.containers.empty",
+          "x": 580,
+          "y": 550,
+          "width": 150,
+          "height": 190,
+          "depth": 21
+        },
+        {
+          "id": "depthShipMessageFrame",
+          "asset": "ui.containers.empty",
+          "x": 970,
+          "y": 135,
+          "width": 590,
+          "height": 170,
+          "depth": 70
+        },
+        {
+          "id": "depthShipMessageText",
+          "asset": "ui.containers.empty",
+          "x": 970,
+          "y": 135,
+          "width": 390,
+          "height": 64,
+          "depth": 71
+        },
+        {
+          "id": "depthShipHatchHost",
+          "asset": "ui.containers.empty",
+          "x": 347,
+          "y": 318,
+          "width": 116,
+          "height": 142,
+          "depth": 40
+        },
+        {
+          "id": "depthShipCrystalHost",
+          "asset": "ui.containers.empty",
+          "x": 347,
+          "y": 318,
+          "width": 58,
+          "height": 90,
+          "depth": 41
+        },
+        {
+          "id": "depthShipNextCityHost",
+          "asset": "ui.containers.empty",
+          "x": 1040,
+          "y": 254,
+          "width": 340,
+          "height": 96,
+          "depth": 70
+        },
+        {
+          "id": "depthShipReturnHost",
+          "asset": "ui.containers.empty",
+          "x": 970,
+          "y": 400,
+          "width": 300,
+          "height": 90,
+          "depth": 70
+        }
+      ]
+    },
+    "ZyxCrystalMachineScene": {
+      "viewport": {
+        "width": 1280,
+        "height": 720
+      },
+      "elements": [
+        {
+          "id": "background",
+          "asset": "library.image.zyx-crystal-machine",
+          "x": 640,
+          "y": 360,
+          "depth": -10,
+          "width": 1280,
+          "height": 720
+        }
+      ],
+      "ui": [
+        {
+          "id": "machineTitleHost",
+          "asset": "ui.containers.empty",
+          "x": 640,
+          "y": 38,
+          "depth": 40,
+          "width": 380,
+          "height": 44
+        },
+        {
+          "id": "machineQuestSlotHost",
+          "asset": "ui.containers.empty",
+          "x": 450,
+          "y": 155,
+          "depth": 72
+        },
+        {
+          "id": "machineNode1Host",
+          "asset": "ui.containers.empty",
+          "x": 390,
+          "y": 363,
+          "depth": 60
+        },
+        {
+          "id": "machineNode2Host",
+          "asset": "ui.containers.empty",
+          "x": 636,
+          "y": 363,
+          "depth": 60
+        },
+        {
+          "id": "machineNode3Host",
+          "asset": "ui.containers.empty",
+          "x": 883,
+          "y": 363,
+          "depth": 60
+        },
+        {
+          "id": "machineOperator1Host",
+          "asset": "ui.containers.empty",
+          "x": 514,
+          "y": 363,
+          "depth": 60
+        },
+        {
+          "id": "machineOperator2Host",
+          "asset": "ui.containers.empty",
+          "x": 764,
+          "y": 363,
+          "depth": 60
+        },
+        {
+          "id": "machineEqualsHost",
+          "asset": "ui.containers.empty",
+          "x": 1000,
+          "y": 363,
+          "depth": 60
+        },
+        {
+          "id": "machineTargetHost",
+          "asset": "ui.containers.empty",
+          "x": 1110,
+          "y": 363,
+          "depth": 60
+        },
+        {
+          "id": "machineNumber1Host",
+          "asset": "ui.containers.empty",
+          "x": 340,
+          "y": 594,
+          "depth": 70
+        },
+        {
+          "id": "machineNumber2Host",
+          "asset": "ui.containers.empty",
+          "x": 450,
+          "y": 594,
+          "depth": 70
+        },
+        {
+          "id": "machineNumber3Host",
+          "asset": "ui.containers.empty",
+          "x": 560,
+          "y": 594,
+          "depth": 70
+        },
+        {
+          "id": "machineNumber4Host",
+          "asset": "ui.containers.empty",
+          "x": 670,
+          "y": 594,
+          "depth": 70
+        },
+        {
+          "id": "machineCrystalHost",
+          "asset": "ui.containers.empty",
+          "x": 210,
+          "y": 578,
+          "depth": 76
+        },
+        {
+          "id": "machineActionHost",
+          "asset": "ui.containers.empty",
+          "x": 1095,
+          "y": 598,
+          "depth": 85
+        },
+        {
+          "id": "machineNumber5Host",
+          "asset": "ui.containers.empty",
+          "x": 780,
+          "y": 594,
+          "depth": 70
+        },
+        {
+          "id": "machineNumber6Host",
+          "asset": "ui.containers.empty",
+          "x": 890,
+          "y": 594,
+          "depth": 70
+        },
+        {
+          "id": "machineDepthSlotHost",
+          "asset": "ui.containers.empty",
+          "x": 638,
+          "y": 165,
+          "width": 132,
+          "height": 158,
+          "depth": 72
+        },
+        {
+          "id": "machineForestInstalledHost",
+          "asset": "ui.containers.empty",
+          "x": 450,
+          "y": 153,
+          "width": 100,
+          "height": 132,
+          "depth": 73
+        }
+      ]
+    },
+    "CatacombTrialScene": {
+      "viewport": {
+        "width": 1280,
+        "height": 720
+      },
+      "elements": [
+        {
+          "id": "catacombBattleBackground",
+          "asset": "environments.backgrounds.catacomb-rune-chamber",
+          "x": 640,
+          "y": 360,
+          "depth": -10,
+          "width": 1280,
+          "height": 720
+        }
+      ],
+      "ui": [
+        {
+          "id": "catacombCreatureStatusHost",
+          "asset": "misc.battle-hud.status-frame-v2",
+          "x": 930,
+          "y": 230,
+          "depth": 80,
+          "width": 118,
+          "height": 28
+        },
+        {
+          "id": "catacombBackdrop",
+          "asset": "ui.containers.empty",
+          "x": 640,
+          "y": 360,
+          "width": 1280,
+          "height": 720,
+          "depth": 199,
+          "visible": false
+        },
+        {
+          "id": "catacombModal",
+          "asset": "ui.containers.empty",
+          "x": 640,
+          "y": 360,
+          "width": 880,
+          "height": 556,
+          "depth": 200,
+          "visible": false
+        },
+        {
+          "id": "catacombEyebrow",
+          "asset": "ui.containers.empty",
+          "x": 640,
+          "y": 132,
+          "width": 600,
+          "height": 20,
+          "depth": 201,
+          "visible": false
+        },
+        {
+          "id": "catacombTitle",
+          "asset": "ui.containers.empty",
+          "x": 640,
+          "y": 177,
+          "width": 700,
+          "height": 48,
+          "depth": 201,
+          "visible": false
+        },
+        {
+          "id": "catacombSubtitle",
+          "asset": "ui.containers.empty",
+          "x": 640,
+          "y": 220,
+          "width": 700,
+          "height": 28,
+          "depth": 201,
+          "visible": false
+        },
+        {
+          "id": "catacombPortrait",
+          "asset": "ui.containers.empty",
+          "x": 403,
+          "y": 360,
+          "width": 230,
+          "height": 230,
+          "depth": 201,
+          "visible": false
+        },
+        {
+          "id": "catacombBody",
+          "asset": "ui.containers.empty",
+          "x": 775,
+          "y": 355,
+          "width": 420,
+          "height": 168,
+          "depth": 201,
+          "visible": false
+        },
+        {
+          "id": "catacombStats",
+          "asset": "ui.containers.empty",
+          "x": 640,
+          "y": 505,
+          "width": 710,
+          "height": 40,
+          "depth": 201,
+          "visible": false
+        },
+        {
+          "id": "catacombPrimary",
+          "asset": "ui.containers.empty",
+          "x": 797,
+          "y": 573,
+          "width": 280,
+          "height": 68,
+          "depth": 202,
+          "visible": false
+        },
+        {
+          "id": "catacombSecondary",
+          "asset": "ui.containers.empty",
+          "x": 480,
+          "y": 573,
+          "width": 230,
+          "height": 62,
+          "depth": 202,
+          "visible": false
+        },
+        {
+          "id": "catacombQuestionPanel",
+          "asset": "ui.containers.empty",
+          "x": 640,
+          "y": 600,
+          "width": 840,
+          "height": 210,
+          "depth": 90,
+          "visible": false
+        },
+        {
+          "id": "catacombQuestionLabel",
+          "asset": "ui.containers.empty",
+          "x": 640,
+          "y": 517,
+          "width": 720,
+          "height": 22,
+          "depth": 91,
+          "visible": false
+        },
+        {
+          "id": "catacombQuestion",
+          "asset": "ui.containers.empty",
+          "x": 640,
+          "y": 558,
+          "width": 720,
+          "height": 50,
+          "depth": 91,
+          "visible": false
+        },
+        {
+          "id": "catacombFeedback",
+          "asset": "ui.containers.empty",
+          "x": 640,
+          "y": 684,
+          "width": 720,
+          "height": 25,
+          "depth": 91,
+          "visible": false
+        },
+        {
+          "id": "catacombAnswer1",
+          "asset": "ui.containers.empty",
+          "x": 398,
+          "y": 625,
+          "width": 205,
+          "height": 68,
+          "depth": 92,
+          "visible": false
+        },
+        {
+          "id": "catacombAnswer2",
+          "asset": "ui.containers.empty",
+          "x": 640,
+          "y": 625,
+          "width": 205,
+          "height": 68,
+          "depth": 92,
+          "visible": false
+        },
+        {
+          "id": "catacombAnswer3",
+          "asset": "ui.containers.empty",
+          "x": 882,
+          "y": 625,
+          "width": 205,
+          "height": 68,
+          "depth": 92,
+          "visible": false
+        },
+        {
+          "id": "catacombLivesHost",
+          "asset": "ui.containers.empty",
+          "x": 240,
+          "y": 111,
+          "width": 240,
+          "height": 68,
+          "depth": 80,
+          "visible": false
+        },
+        {
+          "id": "catacombTimerHost",
+          "asset": "ui.containers.empty",
+          "x": 930,
+          "y": 122,
+          "width": 220,
+          "height": 12,
+          "depth": 80,
+          "visible": false
+        },
+        {
+          "id": "catacombTimerLabel",
+          "asset": "ui.containers.empty",
+          "x": 930,
+          "y": 93,
+          "width": 260,
+          "height": 26,
+          "depth": 80,
+          "visible": false
+        },
+        {
+          "id": "catacombHeadingHost",
+          "asset": "ui.containers.empty",
+          "x": 640,
+          "y": 68,
+          "width": 600,
+          "height": 45,
+          "depth": 80,
+          "visible": false
+        }
+      ],
+      "spawnPoints": {
+        "players": {
+          "single": {
+            "player": {
+              "x": 301,
+              "y": 380
+            },
+            "pet": {
+              "x": 371,
+              "y": 450
+            }
+          }
+        },
+        "enemies": {
+          "1": [
+            {
+              "x": 930,
+              "y": 360
+            }
+          ]
         }
       }
+    },
+    "GuildExamMockScene": {
+      "viewport": {
+        "width": 1280,
+        "height": 720
+      },
+      "elements": [
+        {
+          "id": "guildExamMockBackground",
+          "asset": "environments.interiors.guild-interior",
+          "x": 640,
+          "y": 360,
+          "depth": -10,
+          "width": 1280,
+          "height": 720,
+          "visible": true
+        }
+      ],
+      "ui": [
+        {
+          "id": "trialOverlay",
+          "asset": "ui.panels.dark-overlay",
+          "x": 640,
+          "y": 360,
+          "depth": 200,
+          "width": 1280,
+          "height": 720,
+          "visible": false,
+          "alpha": 0.76
+        },
+        {
+          "id": "overviewOverlay",
+          "asset": "ui.panels.dark-overlay",
+          "x": 640,
+          "y": 360,
+          "depth": 200,
+          "width": 1280,
+          "height": 720,
+          "visible": false,
+          "alpha": 0.76
+        },
+        {
+          "id": "feedbackOverlay",
+          "asset": "ui.panels.dark-overlay",
+          "x": 640,
+          "y": 360,
+          "depth": 210,
+          "width": 1280,
+          "height": 720,
+          "visible": false,
+          "alpha": 0.76
+        },
+        {
+          "id": "resultsOverlay",
+          "asset": "ui.panels.dark-overlay",
+          "x": 640,
+          "y": 360,
+          "depth": 200,
+          "width": 1280,
+          "height": 720,
+          "visible": false,
+          "alpha": 0.76
+        },
+        {
+          "id": "trialBoardHost",
+          "asset": "ui.containers.empty",
+          "x": 640,
+          "y": 360,
+          "depth": 201,
+          "width": 1080,
+          "height": 610,
+          "visible": false
+        },
+        {
+          "id": "trialHeaderHost",
+          "asset": "ui.containers.empty",
+          "x": 640,
+          "y": 103,
+          "depth": 203,
+          "width": 760,
+          "height": 74,
+          "visible": false
+        },
+        {
+          "id": "trialProgressHost",
+          "asset": "ui.containers.empty",
+          "x": 640,
+          "y": 165,
+          "depth": 204,
+          "width": 760,
+          "height": 48,
+          "visible": false
+        },
+        {
+          "id": "trialProblemHost",
+          "asset": "ui.containers.empty",
+          "x": 640,
+          "y": 305,
+          "depth": 204,
+          "width": 860,
+          "height": 150,
+          "visible": false
+        },
+        {
+          "id": "answerButton1",
+          "asset": "ui.containers.empty",
+          "x": 320,
+          "y": 475,
+          "depth": 205,
+          "width": 292,
+          "height": 88,
+          "visible": false
+        },
+        {
+          "id": "answerButton2",
+          "asset": "ui.containers.empty",
+          "x": 640,
+          "y": 475,
+          "depth": 205,
+          "width": 292,
+          "height": 88,
+          "visible": false
+        },
+        {
+          "id": "answerButton3",
+          "asset": "ui.containers.empty",
+          "x": 960,
+          "y": 475,
+          "depth": 205,
+          "width": 292,
+          "height": 88,
+          "visible": false
+        },
+        {
+          "id": "trialHintHost",
+          "asset": "ui.containers.empty",
+          "x": 640,
+          "y": 575,
+          "depth": 204,
+          "width": 760,
+          "height": 42,
+          "visible": false
+        },
+        {
+          "id": "trialMedalsHost",
+          "asset": "ui.containers.empty",
+          "x": 640,
+          "y": 452,
+          "depth": 204,
+          "width": 720,
+          "height": 82,
+          "visible": false
+        },
+        {
+          "id": "trialOverviewActionHost",
+          "asset": "ui.containers.empty",
+          "x": 640,
+          "y": 585,
+          "depth": 205,
+          "width": 340,
+          "height": 82,
+          "visible": false
+        },
+        {
+          "id": "trialCancelHost",
+          "asset": "ui.containers.empty",
+          "x": 1040,
+          "y": 105,
+          "depth": 205,
+          "width": 170,
+          "height": 54,
+          "visible": false
+        },
+        {
+          "id": "trialFeedbackHeaderHost",
+          "asset": "ui.containers.empty",
+          "x": 640,
+          "y": 120,
+          "depth": 213,
+          "width": 780,
+          "height": 90,
+          "visible": false
+        },
+        {
+          "id": "trialFeedbackVisualHost",
+          "asset": "ui.containers.empty",
+          "x": 640,
+          "y": 355,
+          "depth": 213,
+          "width": 820,
+          "height": 310,
+          "visible": false
+        },
+        {
+          "id": "trialFeedbackActionHost",
+          "asset": "ui.containers.empty",
+          "x": 640,
+          "y": 585,
+          "depth": 214,
+          "width": 310,
+          "height": 78,
+          "visible": false
+        },
+        {
+          "id": "trialResultsHeaderHost",
+          "asset": "ui.containers.empty",
+          "x": 640,
+          "y": 135,
+          "depth": 203,
+          "width": 800,
+          "height": 110,
+          "visible": false
+        },
+        {
+          "id": "trialResultsScoreHost",
+          "asset": "ui.containers.empty",
+          "x": 640,
+          "y": 205,
+          "depth": 203,
+          "width": 720,
+          "height": 48,
+          "visible": false
+        },
+        {
+          "id": "trialResultsGridHost",
+          "asset": "ui.containers.empty",
+          "x": 640,
+          "y": 355,
+          "depth": 203,
+          "width": 790,
+          "height": 220,
+          "visible": false
+        },
+        {
+          "id": "trialRewardHost",
+          "asset": "ui.containers.empty",
+          "x": 640,
+          "y": 500,
+          "depth": 204,
+          "width": 820,
+          "height": 54,
+          "visible": false
+        },
+        {
+          "id": "trialResultMessageHost",
+          "asset": "ui.containers.empty",
+          "x": 640,
+          "y": 545,
+          "depth": 204,
+          "width": 760,
+          "height": 42,
+          "visible": false
+        },
+        {
+          "id": "trialResultsActionHost",
+          "asset": "ui.containers.empty",
+          "x": 640,
+          "y": 605,
+          "depth": 205,
+          "width": 310,
+          "height": 76,
+          "visible": false
+        }
+      ]
     },
     "ManaCollectionScene": {
       "viewport": {
@@ -2538,6 +9300,284 @@
           "x": 600,
           "y": 0,
           "depth": 15
+        },
+        {
+          "id": "manaIntroPopupHost",
+          "asset": "ui.containers.empty",
+          "x": 640,
+          "y": 360,
+          "depth": 100,
+          "width": 620,
+          "height": 485
+        },
+        {
+          "id": "manaIntroTitleHost",
+          "asset": "ui.containers.empty",
+          "x": 640,
+          "y": 174,
+          "depth": 102,
+          "width": 410,
+          "height": 32
+        },
+        {
+          "id": "manaIntroObjectiveHost",
+          "asset": "ui.containers.empty",
+          "x": 640,
+          "y": 232,
+          "depth": 102,
+          "width": 500,
+          "height": 48
+        },
+        {
+          "id": "manaIntroRulesHost",
+          "asset": "ui.containers.empty",
+          "x": 640,
+          "y": 332,
+          "depth": 102,
+          "width": 500,
+          "height": 145
+        },
+        {
+          "id": "manaIntroRewardHost",
+          "asset": "ui.containers.empty",
+          "x": 640,
+          "y": 442,
+          "depth": 102,
+          "width": 500,
+          "height": 44
+        },
+        {
+          "id": "manaIntroBackHost",
+          "asset": "ui.containers.empty",
+          "x": 505,
+          "y": 526,
+          "depth": 103,
+          "width": 190,
+          "height": 62
+        },
+        {
+          "id": "manaIntroPlayHost",
+          "asset": "ui.containers.empty",
+          "x": 745,
+          "y": 526,
+          "depth": 103,
+          "width": 250,
+          "height": 62
+        },
+        {
+          "id": "manaResultsPopupHost",
+          "asset": "ui.containers.empty",
+          "x": 640,
+          "y": 360,
+          "depth": 100,
+          "width": 620,
+          "height": 485
+        },
+        {
+          "id": "manaResultsTitleHost",
+          "asset": "ui.containers.empty",
+          "x": 640,
+          "y": 174,
+          "depth": 102,
+          "width": 410,
+          "height": 32
+        },
+        {
+          "id": "manaResultsStatsHost",
+          "asset": "ui.containers.empty",
+          "x": 640,
+          "y": 338,
+          "depth": 102,
+          "width": 500,
+          "height": 245
+        },
+        {
+          "id": "manaResultsContinueHost",
+          "asset": "ui.containers.empty",
+          "x": 640,
+          "y": 526,
+          "depth": 103,
+          "width": 240,
+          "height": 62
+        }
+      ]
+    },
+    "AudioSettingsScene": {
+      "viewport": {
+        "width": 1280,
+        "height": 720
+      },
+      "elements": [
+        {
+          "id": "audioPanel",
+          "asset": "ui.containers.empty",
+          "x": 640,
+          "y": 360,
+          "depth": 100
+        },
+        {
+          "id": "audioTitle",
+          "asset": "ui.containers.empty",
+          "x": 640,
+          "y": 170,
+          "depth": 101
+        },
+        {
+          "id": "audioHelp",
+          "asset": "ui.containers.empty",
+          "x": 640,
+          "y": 214,
+          "depth": 101
+        },
+        {
+          "id": "audioPreview",
+          "asset": "ui.containers.empty",
+          "x": 500,
+          "y": 505,
+          "depth": 101
+        },
+        {
+          "id": "audioClose",
+          "asset": "ui.containers.empty",
+          "x": 780,
+          "y": 505,
+          "depth": 101
+        },
+        {
+          "id": "audiomusicLabel",
+          "asset": "ui.containers.empty",
+          "x": 430,
+          "y": 290,
+          "depth": 101
+        },
+        {
+          "id": "audiomusicMinus",
+          "asset": "ui.containers.empty",
+          "x": 540,
+          "y": 290,
+          "depth": 101
+        },
+        {
+          "id": "audiomusicValue",
+          "asset": "ui.containers.empty",
+          "x": 630,
+          "y": 290,
+          "depth": 101
+        },
+        {
+          "id": "audiomusicPlus",
+          "asset": "ui.containers.empty",
+          "x": 720,
+          "y": 290,
+          "depth": 101
+        },
+        {
+          "id": "audiomusicMute",
+          "asset": "ui.containers.empty",
+          "x": 840,
+          "y": 290,
+          "depth": 101
+        },
+        {
+          "id": "audiovoiceLabel",
+          "asset": "ui.containers.empty",
+          "x": 430,
+          "y": 365,
+          "depth": 101
+        },
+        {
+          "id": "audiovoiceMinus",
+          "asset": "ui.containers.empty",
+          "x": 540,
+          "y": 365,
+          "depth": 101
+        },
+        {
+          "id": "audiovoiceValue",
+          "asset": "ui.containers.empty",
+          "x": 630,
+          "y": 365,
+          "depth": 101
+        },
+        {
+          "id": "audiovoicePlus",
+          "asset": "ui.containers.empty",
+          "x": 720,
+          "y": 365,
+          "depth": 101
+        },
+        {
+          "id": "audiovoiceMute",
+          "asset": "ui.containers.empty",
+          "x": 840,
+          "y": 365,
+          "depth": 101
+        },
+        {
+          "id": "audioeffectsLabel",
+          "asset": "ui.containers.empty",
+          "x": 430,
+          "y": 440,
+          "depth": 101
+        },
+        {
+          "id": "audioeffectsMinus",
+          "asset": "ui.containers.empty",
+          "x": 540,
+          "y": 440,
+          "depth": 101
+        },
+        {
+          "id": "audioeffectsValue",
+          "asset": "ui.containers.empty",
+          "x": 630,
+          "y": 440,
+          "depth": 101
+        },
+        {
+          "id": "audioeffectsPlus",
+          "asset": "ui.containers.empty",
+          "x": 720,
+          "y": 440,
+          "depth": 101
+        },
+        {
+          "id": "audioeffectsMute",
+          "asset": "ui.containers.empty",
+          "x": 840,
+          "y": 440,
+          "depth": 101
+        },
+        {
+          "id": "audioBackdrop",
+          "asset": "ui.containers.empty",
+          "x": 640,
+          "y": 360,
+          "depth": 99,
+          "width": 1280,
+          "height": 720
+        }
+      ]
+    },
+    "AudioControlHosts": {
+      "viewport": {
+        "width": 1280,
+        "height": 720
+      },
+      "elements": [
+        {
+          "id": "audioOpen",
+          "asset": "ui.containers.empty",
+          "x": 115,
+          "y": 60,
+          "depth": 10010
+        },
+        {
+          "id": "audioPauseOpen",
+          "asset": "ui.containers.empty",
+          "x": 640,
+          "y": 640,
+          "depth": 10010
         }
       ]
     }

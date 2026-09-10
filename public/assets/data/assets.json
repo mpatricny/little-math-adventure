@@ -1,5 +1,95 @@
 {
     "version": "1.0",
+  "underwater": {
+    "glow-grotto": {
+      "type": "image",
+      "texture": "underwater-glow-grotto-bg"
+    },
+    "depth-gate": {
+      "type": "image",
+      "texture": "underwater-depth-gate-bg"
+    },
+    "lake-heart": {
+      "type": "image",
+      "texture": "underwater-lake-heart-bg"
+    },
+    "descent": {
+      "type": "image",
+      "texture": "underwater-descent-bg"
+    },
+    "shallows": {
+      "type": "image",
+      "texture": "underwater-shallows-bg"
+    },
+    "bell": {
+      "type": "image",
+      "texture": "underwater-bell-bg"
+    },
+    "bell-instrument": {
+      "type": "image",
+      "texture": "underwater-bell-instrument"
+    },
+    "pearl-shell": {
+      "type": "image",
+      "texture": "underwater-pearl-shell"
+    },
+    "sealed-kelp": {
+      "type": "image",
+      "texture": "underwater-sealed-kelp"
+    },
+    "pearl-nacre": {
+      "type": "image",
+      "texture": "underwater-pearl-nacre"
+    },
+    "reed-garden": {
+      "type": "image",
+      "texture": "underwater-reed-garden-bg"
+    },
+    "sunken-canal": {
+      "type": "image",
+      "texture": "underwater-sunken-canal-bg"
+    },
+    "pump-impeller": {
+      "type": "image",
+      "texture": "underwater-pump-impeller"
+    },
+    "lock-left": {
+      "type": "image",
+      "texture": "underwater-lock-left"
+    },
+    "lock-middle": {
+      "type": "image",
+      "texture": "underwater-lock-middle"
+    },
+    "lock-right": {
+      "type": "image",
+      "texture": "underwater-lock-right"
+    },
+    "lock-drum": {
+      "type": "image",
+      "texture": "underwater-lock-drum"
+    },
+    "lock-backing": {
+      "type": "image",
+      "texture": "underwater-lock-backing"
+    },
+    "shell-shrine": {
+      "type": "image",
+      "texture": "underwater-shell-shrine-bg"
+    },
+    "current-chamber": {
+      "type": "image",
+      "texture": "underwater-current-chamber-bg"
+    },
+    "post-wreck": {
+      "type": "image",
+      "texture": "underwater-post-wreck-bg"
+    },
+    "wreck-hold": {
+      "type": "image",
+      "texture": "underwater-wreck-hold-bg"
+    }
+  },
     "characters": {
         "player": {
             "girl_knight": {
@@ -54,127 +144,421 @@
             }
         },
         "enemies": {
-            "slime": {
-                "type": "animatedSprite",
-                "category": "enemy",
-                "nameKey": "$characters.enemies.ENM_001",
-                "origin": [
-                    0.5,
-                    0.5
-                ],
-                "scale": {
-                    "default": 1,
-                    "battle": 1,
-                    "arena": 1
-                },
-                "depth": 5,
-                "defaultTexture": "slime-sheet",
-                "animations": {
-                    "idle": "slime-idle",
-                    "attack": "slime-attack-anim",
-                    "hurt": "slime-hurt",
-                    "death": "slime-death"
-                },
-                "defaultAnimation": "idle"
+          "slime": {
+            "type": "animatedSprite",
+            "category": "enemy",
+            "nameKey": "$characters.enemies.ENM_001",
+            "origin": [
+              0.5,
+              0.5
+            ],
+            "scale": {
+              "default": 1,
+              "battle": 1,
+              "arena": 1
             },
-            "pink": {
-                "type": "animatedSprite",
-                "category": "enemy",
-                "nameKey": "$characters.enemies.ENM_002",
-                "origin": [
-                    0.5,
-                    0.5
-                ],
-                "scale": {
-                    "default": 1,
-                    "battle": 1,
-                    "arena": 1
-                },
-                "depth": 5,
-                "defaultTexture": "pink-idle-sheet",
-                "animations": {
-                    "idle": "pink-idle",
-                    "attack": "pink-attack-anim",
-                    "hurt": "pink-hurt",
-                    "death": "pink-death"
-                },
-                "defaultAnimation": "idle"
+            "depth": 5,
+            "defaultTexture": "slime-sheet",
+            "animations": {
+              "idle": "slime-idle",
+              "attack": "slime-attack-anim",
+              "hurt": "slime-hurt",
+              "death": "slime-death"
             },
-            "purple": {
-                "type": "animatedSprite",
-                "category": "enemy",
-                "nameKey": "$characters.enemies.ENM_003",
-                "origin": [
-                    0.5,
-                    0.5
-                ],
-                "scale": {
-                    "default": 1,
-                    "battle": 1,
-                    "arena": 1
-                },
-                "depth": 5,
-                "defaultTexture": "purple-attack-sheet",
-                "animations": {
-                    "idle": "purple-idle",
-                    "attack": "purple-attack-anim",
-                    "hurt": "purple-hurt",
-                    "death": "purple-death"
-                },
-                "defaultAnimation": "idle"
+            "defaultAnimation": "idle"
+          },
+          "pink": {
+            "type": "animatedSprite",
+            "category": "enemy",
+            "nameKey": "$characters.enemies.ENM_002",
+            "origin": [
+              0.5,
+              0.5
+            ],
+            "scale": {
+              "default": 1,
+              "battle": 1,
+              "arena": 1
             },
-            "leafy": {
-                "type": "animatedSprite",
-                "category": "enemy",
-                "nameKey": "$characters.enemies.ENM_004",
-                "origin": [
-                    0.5,
-                    0.5
-                ],
-                "scale": {
-                    "default": 1,
-                    "battle": 1,
-                    "arena": 1
-                },
-                "depth": 5,
-                "defaultTexture": "leafy-idle-sheet",
-                "animations": {
-                    "idle": "leafy-idle",
-                    "attack": "leafy-attack-anim",
-                    "hurt": "leafy-hurt",
-                    "death": "leafy-death"
-                },
-                "defaultAnimation": "idle"
-            }
+            "depth": 5,
+            "defaultTexture": "pink-idle-sheet",
+            "animations": {
+              "idle": "pink-idle",
+              "attack": "pink-attack-anim",
+              "hurt": "pink-hurt",
+              "death": "pink-death"
+            },
+            "defaultAnimation": "idle"
+          },
+          "purple": {
+            "type": "animatedSprite",
+            "category": "enemy",
+            "nameKey": "$characters.enemies.ENM_003",
+            "origin": [
+              0.5,
+              0.5
+            ],
+            "scale": {
+              "default": 1,
+              "battle": 1,
+              "arena": 1
+            },
+            "depth": 5,
+            "defaultTexture": "purple-attack-sheet",
+            "animations": {
+              "idle": "purple-idle",
+              "attack": "purple-attack-anim",
+              "hurt": "purple-hurt",
+              "death": "purple-death"
+            },
+            "defaultAnimation": "idle"
+          },
+          "leafy": {
+            "type": "animatedSprite",
+            "category": "enemy",
+            "nameKey": "$characters.enemies.ENM_004",
+            "origin": [
+              0.5,
+              0.5
+            ],
+            "scale": {
+              "default": 1,
+              "battle": 1,
+              "arena": 1
+            },
+            "depth": 5,
+            "defaultTexture": "leafy-idle-sheet",
+            "animations": {
+              "idle": "leafy-idle",
+              "attack": "leafy-attack-anim",
+              "hurt": "leafy-hurt",
+              "death": "leafy-death"
+            },
+            "defaultAnimation": "idle"
+          },
+          "bubble_crab": {
+            "type": "animatedSprite",
+            "category": "enemy",
+            "nameKey": "$characters.enemies.ENM_005",
+            "origin": [
+              0.5,
+              0.5
+            ],
+            "scale": {
+              "default": 0.45,
+              "battle": 0.65,
+              "arena": 0.55
+            },
+            "depth": 5,
+            "defaultTexture": "silverpond-bubble-crab-idle-sheet",
+            "animations": {
+              "idle": "bubble-crab-idle",
+              "attack": "bubble-crab-attack",
+              "hurt": "bubble-crab-hurt",
+              "death": "bubble-crab-death"
+            },
+            "defaultAnimation": "idle"
+          },
+          "bubble_fish": {
+            "type": "animatedSprite",
+            "category": "enemy",
+            "nameKey": "$characters.enemies.ENM_006",
+            "origin": [
+              0.5,
+              0.5
+            ],
+            "scale": {
+              "default": 0.45,
+              "battle": 0.65,
+              "arena": 0.55
+            },
+            "depth": 5,
+            "defaultTexture": "silverpond-bubble-fish-idle-sheet",
+            "animations": {
+              "idle": "bubble-fish-idle",
+              "attack": "bubble-fish-attack",
+              "hurt": "bubble-fish-hurt",
+              "death": "bubble-fish-death"
+            },
+            "defaultAnimation": "idle"
+          },
+          "mill_turtle": {
+            "type": "animatedSprite",
+            "category": "enemy",
+            "nameKey": "$characters.enemies.ENM_007",
+            "origin": [
+              0.5,
+              0.5
+            ],
+            "scale": {
+              "default": 0.45,
+              "battle": 0.65,
+              "arena": 0.55
+            },
+            "depth": 5,
+            "defaultTexture": "silverpond-mill-turtle-idle-sheet",
+            "animations": {
+              "idle": "mill-turtle-idle",
+              "attack": "mill-turtle-attack",
+              "hurt": "mill-turtle-hurt",
+              "death": "mill-turtle-death"
+            },
+            "defaultAnimation": "idle"
+          },
+          "ruin_axolotl": {
+            "type": "animatedSprite",
+            "category": "enemy",
+            "nameKey": "$characters.enemies.ENM_008",
+            "origin": [
+              0.5,
+              0.5
+            ],
+            "scale": {
+              "default": 0.45,
+              "battle": 0.65,
+              "arena": 0.55
+            },
+            "depth": 5,
+            "defaultTexture": "silverpond-ruin-axolotl-idle-sheet",
+            "animations": {
+              "idle": "ruin-axolotl-idle",
+              "attack": "ruin-axolotl-attack",
+              "hurt": "ruin-axolotl-hurt",
+              "death": "ruin-axolotl-death"
+            },
+            "defaultAnimation": "idle"
+          },
+          "pearl_jellyfish": {
+            "type": "animatedSprite",
+            "category": "enemy",
+            "nameKey": "$characters.enemies.ENM_009",
+            "origin": [
+              0.5,
+              0.5
+            ],
+            "scale": {
+              "default": 0.8,
+              "battle": 0.9,
+              "arena": 0.8
+            },
+            "depth": 5,
+            "defaultTexture": "silverpond-pearl-jellyfish-idle-sheet",
+            "animations": {
+              "idle": "pearl-jellyfish-idle",
+              "attack": "pearl-jellyfish-attack",
+              "hurt": "pearl-jellyfish-hurt",
+              "death": "pearl-jellyfish-death"
+            },
+            "defaultAnimation": "idle"
+          },
+          "depth_guardian": {
+            "type": "animatedSprite",
+            "category": "enemy",
+            "nameKey": "$characters.enemies.ENM_010",
+            "origin": [
+              0.5,
+              0.5
+            ],
+            "scale": {
+              "default": 1.03,
+              "battle": 1.03,
+              "arena": 1.03
+            },
+            "depth": 5,
+            "defaultTexture": "silverpond-depth-guardian-idle-sheet",
+            "animations": {
+              "idle": "depth-guardian-idle",
+              "attack": "depth-guardian-attack",
+              "hurt": "depth-guardian-hurt",
+              "death": "depth-guardian-death"
+            },
+            "defaultAnimation": "idle"
+          }
         },
         "npcs": {
-            "blacksmith": {
-                "type": "staticImage",
-                "category": "npc",
-                "nameKey": "$characters.npcs.NPC_001",
-                "texture": "npc-blacksmith",
-                "origin": [
-                    0.5,
-                    1
-                ],
-                "scale": {
-                    "default": 1
-                },
-                "depth": 5
+          "blacksmith": {
+            "type": "staticImage",
+            "category": "npc",
+            "nameKey": "$characters.npcs.NPC_001",
+            "texture": "npc-blacksmith",
+            "origin": [
+              0.5,
+              1
+            ],
+            "scale": {
+              "default": 1
             },
-            "guildmaster": {
-                "type": "staticImage",
-                "category": "npc",
-                "nameKey": "$characters.npcs.NPC_002",
-                "texture": "npc-guildmaster",
+            "depth": 5
+          },
+          "guildmaster": {
+            "type": "staticImage",
+            "category": "npc",
+            "nameKey": "$characters.npcs.NPC_002",
+            "texture": "npc-guildmaster",
+            "origin": [
+              0.5,
+              0.5
+            ],
+            "scale": {
+              "default": 0.4
+            },
+            "depth": 10
+          },
+          "zyx": {
+            "type": "animatedSprite",
+            "category": "npc",
+            "nameKey": "Zyx",
+            "defaultTexture": "spritesheet-zyx-transparent2-sheet",
+            "animations": {
+              "idle": "zyx-idle"
+            },
+            "defaultAnimation": "idle",
+            "origin": [
+              0.5,
+              1
+            ],
+            "scale": {
+              "default": 0.53
+            },
+            "depth": 20
+          },
+          "silverpond_lake_fairy": {
+            "type": "animatedSprite",
+            "category": "npc",
+            "nameKey": "Jezerní víla",
+            "defaultTexture": "silverpond-lake-fairy-idle-sheet",
+            "animations": {
+              "idle": "silverpond-lake-fairy-idle",
+              "give": "silverpond-lake-fairy-give"
+            },
+            "defaultAnimation": "idle",
+            "origin": [
+              0.5,
+              0.5
+            ],
+            "scale": {
+              "default": 1
+            },
+            "depth": 24
+          },
+          "depth_guardian_friendly": {
+            "type": "animatedSprite",
+            "category": "npc",
+            "nameKey": "$characters.enemies.ENM_010",
+            "defaultTexture": "silverpond-depth-guardian-friendly-idle-sheet",
+            "animations": {
+              "idle": "depth-guardian-friendly-idle"
+            },
+            "defaultAnimation": "idle",
+            "origin": [
+              0.5,
+              0.5
+            ],
+            "scale": {
+              "default": 0.47
+            },
+            "depth": 24
+          }
+        },
+        "sprites": {
+            "knight_idle": {
+                "type": "sprite",
+                "defaultTexture": "knight-idle-sheet",
                 "origin": [
                     0.5,
                     0.5
                 ],
-                "scale": {
-                    "default": 0.4
-                },
-                "depth": 10
+                "scale": 0.86
+            },
+            "boy_knight_idle": {
+                "type": "sprite",
+                "defaultTexture": "boy-knight-idle-sheet",
+                "origin": [
+                    0.5,
+                    0.5
+                ],
+                "scale": 1.35
+            },
+            "slime": {
+                "type": "sprite",
+                "defaultTexture": "slime-sheet",
+                "origin": [
+                    0.5,
+                    0.5
+                ],
+                "scale": 0.58
+            },
+            "purple_attack": {
+                "type": "sprite",
+                "defaultTexture": "purple-attack-sheet",
+                "origin": [
+                    0.5,
+                    0.5
+                ],
+                "scale": 0.78
+            },
+            "pink_idle": {
+                "type": "sprite",
+                "defaultTexture": "pink-idle-sheet",
+                "origin": [
+                    0.5,
+                    0.5
+                ],
+                "scale": 0.74
+            },
+            "leafy_idle": {
+                "type": "sprite",
+                "defaultTexture": "leafy-idle-sheet",
+                "origin": [
+                    0.5,
+                    0.5
+                ],
+                "scale": 0.72
+            },
+            "silverpond_frog_enemy_idle": {
+                "type": "sprite",
+                "defaultTexture": "silverpond-frog-enemy-idle-sheet",
+                "origin": [
+                    0.5,
+                    0.5
+                ],
+                "scale": 0.42
+            },
+            "silverpond_bubble_crab_enemy_idle": {
+                "type": "sprite",
+                "defaultTexture": "silverpond-bubble-crab-idle-sheet",
+                "origin": [
+                    0.5,
+                    0.5
+                ],
+                "scale": 0.45
+            },
+            "silverpond_bubble_fish_enemy_idle": {
+                "type": "sprite",
+                "defaultTexture": "silverpond-bubble-fish-idle-sheet",
+                "origin": [
+                    0.5,
+                    0.5
+                ],
+                "scale": 0.45
+            },
+            "silverpond_mill_turtle_enemy_idle": {
+                "type": "sprite",
+                "defaultTexture": "silverpond-mill-turtle-idle-sheet",
+                "origin": [
+                    0.5,
+                    0.5
+                ],
+                "scale": 0.45
+            },
+            "silverpond_ruin_axolotl_enemy_idle": {
+                "type": "sprite",
+                "defaultTexture": "silverpond-ruin-axolotl-idle-sheet",
+                "origin": [
+                    0.5,
+                    0.5
+                ],
+                "scale": 0.45
             }
         }
     },
@@ -184,6 +568,34 @@
                 "type": "staticImage",
                 "category": "background",
                 "texture": "bg-battle",
+                "origin": [
+                    0.5,
+                    0.5
+                ],
+                "displaySize": [
+                    1280,
+                    720
+                ],
+                "depth": -10
+            },
+            "battle-ui-static-v3": {
+                "type": "staticImage",
+                "category": "background",
+                "texture": "battle-ui-static-v3",
+                "origin": [
+                    0.5,
+                    0.5
+                ],
+                "displaySize": [
+                    1280,
+                    720
+                ],
+                "depth": -10
+            },
+            "battle-ui-static-v4": {
+                "type": "staticImage",
+                "category": "background",
+                "texture": "battle-ui-static-v4",
                 "origin": [
                     0.5,
                     0.5
@@ -218,6 +630,30 @@
                 ],
                 "depth": -10,
                 "scrollFactor": 0
+            },
+            "menu-mathoria": {
+                "type": "staticImage",
+                "category": "background",
+                "texture": "bg-menu-mathoria",
+                "origin": [
+                    0.5,
+                    0.5
+                ],
+                "displaySize": [
+                    1280,
+                    720
+                ],
+                "depth": -20
+            },
+            "catacomb-rune-chamber": {
+                "type": "staticImage",
+                "category": "background",
+                "texture": "catacomb-rune-chamber",
+                "origin": [
+                    0.5,
+                    0.5
+                ],
+                "depth": -10
             }
         },
         "terrain": {
@@ -718,9 +1154,293 @@
                     "width": 3
                 },
                 "depth": 25
+            },
+            "town-hud-a-menu": {
+                "type": "staticImage",
+                "category": "ui.panel",
+                "texture": "town-hud-a-menu",
+                "origin": [
+                    0.5,
+                    0.5
+                ],
+                "depth": 80
+            },
+            "town-hud-a-player-panel": {
+                "type": "staticImage",
+                "category": "ui.panel",
+                "texture": "town-hud-a-player-panel",
+                "origin": [
+                    0.5,
+                    0.5
+                ],
+                "depth": 80
+            },
+            "town-hud-a-resources": {
+                "type": "staticImage",
+                "category": "ui.panel",
+                "texture": "town-hud-a-resources",
+                "origin": [
+                    0.5,
+                    0.5
+                ],
+                "depth": 70
+            },
+            "character-book-frame": {
+                "type": "staticImage",
+                "category": "ui.panel",
+                "texture": "character-book-frame",
+                "origin": [
+                    0.5,
+                    0.5
+                ],
+                "depth": 200
+            },
+            "character-book-editor-hero": {
+                "type": "staticImage",
+                "category": "ui.panel",
+                "texture": "character-book-editor-hero",
+                "origin": [
+                    0.5,
+                    0.5
+                ],
+                "depth": 202
+            },
+            "character-book-editor-sword": {
+                "type": "staticImage",
+                "category": "ui.panel",
+                "texture": "character-book-editor-sword",
+                "origin": [
+                    0.5,
+                    0.5
+                ],
+                "depth": 202
+            },
+            "character-book-editor-shield": {
+                "type": "staticImage",
+                "category": "ui.panel",
+                "texture": "character-book-editor-shield",
+                "origin": [
+                    0.5,
+                    0.5
+                ],
+                "depth": 202
+            },
+            "character-book-editor-attack": {
+                "type": "staticImage",
+                "category": "ui.panel",
+                "texture": "character-book-editor-attack",
+                "origin": [
+                    0.5,
+                    0.5
+                ],
+                "depth": 202
+            },
+            "character-book-editor-potion": {
+                "type": "staticImage",
+                "category": "ui.panel",
+                "texture": "character-book-editor-potion",
+                "origin": [
+                    0.5,
+                    0.5
+                ],
+                "depth": 202
+            },
+            "character-book-editor-pet": {
+                "type": "staticImage",
+                "category": "ui.panel",
+                "texture": "character-book-editor-pet",
+                "origin": [
+                    0.5,
+                    0.5
+                ],
+                "depth": 202
+            },
+            "character-book-editor-hp": {
+                "type": "staticImage",
+                "category": "ui.panel",
+                "texture": "character-book-editor-hp",
+                "origin": [
+                    0.5,
+                    0.5
+                ],
+                "depth": 202
+            },
+            "character-book-editor-hp-heart": {
+                "type": "staticImage",
+                "category": "ui.panel",
+                "texture": "character-book-editor-hp-heart",
+                "origin": [
+                    0.5,
+                    0.5
+                ],
+                "depth": 202
+            },
+            "character-book-editor-hp-bar": {
+                "type": "staticImage",
+                "category": "ui.panel",
+                "texture": "character-book-editor-hp-bar",
+                "origin": [
+                    0.5,
+                    0.5
+                ],
+                "depth": 202
+            },
+            "character-book-editor-close-hover": {
+                "type": "staticImage",
+                "category": "ui.panel",
+                "texture": "character-book-editor-close-hover",
+                "origin": [
+                    0.5,
+                    0.5
+                ],
+                "depth": 220
+            },
+            "character-book-editor-divider": {
+                "type": "staticImage",
+                "category": "ui.panel",
+                "texture": "character-book-editor-divider",
+                "origin": [
+                    0.5,
+                    0.5
+                ],
+                "depth": 201
+            },
+            "character-book-editor-preparation": {
+                "type": "staticImage",
+                "category": "ui.panel",
+                "texture": "character-book-editor-preparation",
+                "origin": [
+                    0.5,
+                    0.5
+                ],
+                "depth": 202
+            },
+            "character-book-editor-tab-a": {
+                "type": "staticImage",
+                "category": "ui.panel",
+                "texture": "character-book-editor-tab-a",
+                "origin": [
+                    0.5,
+                    0.5
+                ],
+                "depth": 205
+            },
+            "character-book-editor-tab-b": {
+                "type": "staticImage",
+                "category": "ui.panel",
+                "texture": "character-book-editor-tab-b",
+                "origin": [
+                    0.5,
+                    0.5
+                ],
+                "depth": 205
             }
         },
         "labels": {
+            "character-book-title": {
+                "type": "text",
+                "category": "ui.label",
+                "style": {
+                    "fontSize": "19px",
+                    "fontFamily": "Palatino Linotype, Book Antiqua, Georgia, serif",
+                    "color": "#3b2518",
+                    "fontStyle": "bold",
+                    "align": "center"
+                },
+                "origin": [
+                    0.5,
+                    0.5
+                ],
+                "depth": 204
+            },
+            "character-book-label": {
+                "type": "text",
+                "category": "ui.label",
+                "style": {
+                    "fontSize": "13px",
+                    "fontFamily": "Palatino Linotype, Book Antiqua, Georgia, serif",
+                    "color": "#725039",
+                    "fontStyle": "bold",
+                    "align": "center"
+                },
+                "origin": [
+                    0.5,
+                    0.5
+                ],
+                "depth": 204
+            },
+            "character-book-name": {
+                "type": "text",
+                "category": "ui.label",
+                "style": {
+                    "fontSize": "23px",
+                    "fontFamily": "Palatino Linotype, Book Antiqua, Georgia, serif",
+                    "color": "#f6d58a",
+                    "fontStyle": "bold",
+                    "stroke": "#28150e",
+                    "strokeThickness": 4,
+                    "backgroundColor": "#38251b",
+                    "align": "center"
+                },
+                "origin": [
+                    0.5,
+                    0.5
+                ],
+                "depth": 204
+            },
+            "character-book-level": {
+                "type": "text",
+                "category": "ui.label",
+                "style": {
+                    "fontSize": "15px",
+                    "fontFamily": "Palatino Linotype, Book Antiqua, Georgia, serif",
+                    "color": "#725039",
+                    "fontStyle": "bold",
+                    "align": "center"
+                },
+                "origin": [
+                    0.5,
+                    0.5
+                ],
+                "depth": 204
+            },
+            "character-book-value": {
+                "type": "text",
+                "category": "ui.label",
+                "style": {
+                    "fontSize": "15px",
+                    "fontFamily": "Palatino Linotype, Book Antiqua, Georgia, serif",
+                    "color": "#f4cb72",
+                    "fontStyle": "bold",
+                    "stroke": "#28150e",
+                    "strokeThickness": 4,
+                    "backgroundColor": "#35251e",
+                    "align": "center"
+                },
+                "origin": [
+                    0.5,
+                    0.5
+                ],
+                "depth": 204
+            },
+            "character-book-hp-value": {
+                "type": "text",
+                "category": "ui.label",
+                "style": {
+                    "fontSize": "18px",
+                    "fontFamily": "Palatino Linotype, Book Antiqua, Georgia, serif",
+                    "color": "#fff6db",
+                    "fontStyle": "bold",
+                    "stroke": "#371d10",
+                    "strokeThickness": 4,
+                    "align": "center"
+                },
+                "origin": [
+                    0.5,
+                    0.5
+                ],
+                "depth": 204
+            },
             "title-label": {
                 "type": "text",
                 "category": "ui.label",
@@ -743,10 +1463,14 @@
                 "category": "ui.label",
                 "textKey": "$ui.titles.TTL_GAME_TITLE",
                 "style": {
-                    "fontSize": "48px",
-                    "fontFamily": "Arial, sans-serif",
-                    "color": "#ffffff",
-                    "fontStyle": "bold"
+                    "fontSize": "52px",
+                    "fontFamily": "Chalkboard SE, Comic Sans MS, Trebuchet MS, cursive",
+                    "color": "#fff0b8",
+                    "fontStyle": "bold",
+                    "align": "center",
+                    "lineSpacing": -10,
+                    "stroke": "#3b2818",
+                    "strokeThickness": 5
                 },
                 "origin": [
                     0.5,
@@ -759,9 +1483,12 @@
                 "category": "ui.label",
                 "textKey": "$ui.titles.TTL_GAME_SUBTITLE",
                 "style": {
-                    "fontSize": "24px",
-                    "fontFamily": "Arial, sans-serif",
-                    "color": "#aaaaaa"
+                    "fontSize": "18px",
+                    "fontFamily": "Chalkboard SE, Comic Sans MS, Trebuchet MS, cursive",
+                    "color": "#fff8dc",
+                    "fontStyle": "bold",
+                    "stroke": "#3b2818",
+                    "strokeThickness": 2
                 },
                 "origin": [
                     0.5,
@@ -1250,6 +1977,114 @@
             "guardian_lair": {
                 "type": "staticImage",
                 "texture": "guardian-lair",
+                "origin": [
+                    0.5,
+                    0.5
+                ],
+                "scale": 1
+            },
+            "guardian-lair-mock": {
+                "type": "staticImage",
+                "texture": "guardian-lair-mock-bg",
+                "origin": [
+                    0.5,
+                    0.5
+                ],
+                "scale": 1
+            },
+            "zyx-rocket-interlude": {
+                "type": "staticImage",
+                "texture": "zyx-rocket-interlude-bg",
+                "origin": [
+                    0.5,
+                    0.5
+                ],
+                "scale": 1
+            },
+            "zyx-crystal-machine": {
+                "type": "staticImage",
+                "texture": "zyx-crystal-machine-bg",
+                "origin": [
+                    0.5,
+                    0.5
+                ],
+                "scale": 1
+            },
+            "silverpond-town-hub-mock": {
+                "type": "staticImage",
+                "texture": "silverpond-town-hub-mock-bg",
+                "origin": [
+                    0.5,
+                    0.5
+                ],
+                "scale": 1
+            },
+            "silverpond-shop-interior-mock": {
+                "type": "staticImage",
+                "texture": "silverpond-shop-interior-mock-bg",
+                "origin": [
+                    0.5,
+                    0.5
+                ],
+                "scale": 1
+            },
+            "silverpond-pythia-workshop-mock": {
+                "type": "staticImage",
+                "texture": "silverpond-pythia-workshop-mock-bg",
+                "origin": [
+                    0.5,
+                    0.5
+                ],
+                "scale": 1
+            },
+            "silverpond-crystal-forge-mock": {
+                "type": "staticImage",
+                "texture": "silverpond-crystal-forge-mock-bg",
+                "origin": [
+                    0.5,
+                    0.5
+                ],
+                "scale": 1
+            },
+            "silverpond-water-arena-mock": {
+                "type": "staticImage",
+                "texture": "silverpond-water-arena-mock-bg",
+                "origin": [
+                    0.5,
+                    0.5
+                ],
+                "scale": 1
+            },
+            "silverpond-water-arena-1-battle": {
+                "type": "staticImage",
+                "texture": "silverpond-water-arena-1-battle-bg",
+                "origin": [
+                    0.5,
+                    0.5
+                ],
+                "scale": 1
+            },
+            "silverpond-water-arena-2-battle": {
+                "type": "staticImage",
+                "texture": "silverpond-water-arena-2-battle-bg",
+                "origin": [
+                    0.5,
+                    0.5
+                ],
+                "scale": 1
+            },
+            "silverpond-water-arena-3-battle": {
+                "type": "staticImage",
+                "texture": "silverpond-water-arena-3-battle-bg",
+                "origin": [
+                    0.5,
+                    0.5
+                ],
+                "scale": 1
+            },
+            "silverpond-fairy-reward": {
+                "type": "staticImage",
+                "texture": "silverpond-fairy-reward-bg",
                 "origin": [
                     0.5,
                     0.5
@@ -2102,6 +2937,247 @@
                 0.5
             ],
             "scale": 0.4
+        },
+        "prep-shield-charge-normal": {
+            "type": "interactiveImage",
+            "texture": "prep-shield-charge-normal",
+            "origin": [
+                0.5,
+                0.5
+            ],
+            "interactive": {
+                "useHandCursor": true
+            },
+            "depth": 20
+        },
+        "prep-shield-charge-hover": {
+            "type": "interactiveImage",
+            "texture": "prep-shield-charge-hover",
+            "origin": [
+                0.5,
+                0.5
+            ],
+            "interactive": {
+                "useHandCursor": true
+            },
+            "depth": 20
+        },
+        "prep-sword-sharpen-normal": {
+            "type": "interactiveImage",
+            "texture": "prep-sword-sharpen-normal",
+            "origin": [
+                0.5,
+                0.5
+            ],
+            "interactive": {
+                "useHandCursor": true
+            },
+            "depth": 20
+        },
+        "prep-sword-sharpen-hover": {
+            "type": "interactiveImage",
+            "texture": "prep-sword-sharpen-hover",
+            "origin": [
+                0.5,
+                0.5
+            ],
+            "interactive": {
+                "useHandCursor": true
+            },
+            "depth": 20
+        },
+        "prep-icon-shield": {
+            "type": "staticImage",
+            "texture": "prep-icon-shield",
+            "origin": [
+                0.5,
+                0.5
+            ],
+            "depth": 22
+        },
+        "prep-icon-sword": {
+            "type": "staticImage",
+            "texture": "prep-icon-sword",
+            "origin": [
+                0.5,
+                0.5
+            ],
+            "depth": 22
+        },
+        "prep-frame-v2": {
+            "type": "staticImage",
+            "texture": "prep-frame-v2",
+            "origin": [
+                0.5,
+                0.5
+            ],
+            "depth": 20
+        },
+        "prep-frame-cap-v2": {
+            "type": "staticImage",
+            "texture": "prep-frame-cap-v2",
+            "origin": [
+                0.5,
+                0.5
+            ],
+            "depth": 20
+        },
+        "prep-frame-rail-v2": {
+            "type": "staticImage",
+            "texture": "prep-frame-rail-v2",
+            "origin": [
+                0.5,
+                0.5
+            ],
+            "depth": 20
+        },
+        "prep-shield-normal-v2": {
+            "type": "staticImage",
+            "texture": "prep-shield-normal-v2",
+            "origin": [
+                0.5,
+                0.5
+            ],
+            "depth": 22
+        },
+        "prep-shield-active-v2": {
+            "type": "staticImage",
+            "texture": "prep-shield-active-v2",
+            "origin": [
+                0.5,
+                0.5
+            ],
+            "depth": 22
+        },
+        "prep-sword-normal-v2": {
+            "type": "staticImage",
+            "texture": "prep-sword-normal-v2",
+            "origin": [
+                0.5,
+                0.5
+            ],
+            "depth": 22
+        },
+        "prep-sword-active-v2": {
+            "type": "staticImage",
+            "texture": "prep-sword-active-v2",
+            "origin": [
+                0.5,
+                0.5
+            ],
+            "depth": 22
+        },
+        "battle-hud": {
+            "status-frame-v2": {
+                "type": "staticImage",
+                "texture": "battle-hud-status-frame-v2",
+                "origin": [
+                    0.5,
+                    0.5
+                ],
+                "depth": 80
+            },
+            "player-vitals-frame": {
+                "type": "staticImage",
+                "texture": "battle-hud-player-vitals-v1",
+                "origin": [
+                    0.5,
+                    0.5
+                ],
+                "depth": 80
+            },
+            "enemy-vitals-frame": {
+                "type": "staticImage",
+                "texture": "battle-hud-enemy-vitals-v1",
+                "origin": [
+                    0.5,
+                    0.5
+                ],
+                "depth": 80
+            },
+            "action-dock-frame": {
+                "type": "staticImage",
+                "texture": "battle-hud-action-dock-v1",
+                "origin": [
+                    0.5,
+                    0.5
+                ],
+                "depth": 80
+            },
+            "preparation-frame": {
+                "type": "staticImage",
+                "texture": "battle-hud-preparation-frame-v1",
+                "origin": [
+                    0.5,
+                    0.5
+                ],
+                "depth": 80
+            },
+            "pause-button": {
+                "type": "staticImage",
+                "texture": "battle-hud-pause-v1",
+                "origin": [
+                    0.5,
+                    0.5
+                ],
+                "depth": 95
+            }
+        },
+        "arena-entry": {
+            "health-frame": {
+                "type": "staticImage",
+                "texture": "arena-entry-health-v1",
+                "origin": [
+                    0.5,
+                    0.5
+                ],
+                "depth": 72
+            },
+            "potion-frame": {
+                "type": "staticImage",
+                "texture": "arena-entry-potion-v1",
+                "origin": [
+                    0.5,
+                    0.5
+                ],
+                "depth": 72
+            },
+            "start-frame": {
+                "type": "staticImage",
+                "texture": "arena-entry-start-v1",
+                "origin": [
+                    0.5,
+                    0.5
+                ],
+                "depth": 80
+            },
+            "crossed-swords-normal": {
+                "type": "staticImage",
+                "texture": "arena-entry-crossed-swords-normal-v1",
+                "origin": [
+                    0.5,
+                    0.5
+                ],
+                "depth": 81
+            },
+            "crossed-swords-active": {
+                "type": "staticImage",
+                "texture": "arena-entry-crossed-swords-active-v1",
+                "origin": [
+                    0.5,
+                    0.5
+                ],
+                "depth": 81
+            },
+            "player-status-pod": {
+                "type": "staticImage",
+                "texture": "arena-player-status-pod-v1",
+                "origin": [
+                    0.5,
+                    0.5
+                ],
+                "depth": 72
+            }
         }
     }
 }

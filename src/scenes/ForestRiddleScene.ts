@@ -1,3 +1,7 @@
+import { sfx, voice } from '../audio/AudioDirector';
+import { acquirePuzzle, recordPuzzleAnswer } from '../systems/puzzles/PuzzleService';
+import { bridgePuzzle, isCurrentBridgePuzzle } from '../systems/puzzles/PuzzleCatalog';
+import type { PuzzleInstance } from '../types/puzzles';
 import Phaser from 'phaser';
 import { SceneBuilder } from '../systems/SceneBuilder';
 import { JourneySystem } from '../systems/JourneySystem';
@@ -5,6 +9,11 @@ import { GameStateManager } from '../systems/GameStateManager';
 import { ManaSystem } from '../systems/ManaSystem';
 import { getPlayerSpriteConfig } from '../utils/characterUtils';
 import { CoopSessionManager } from '../systems/CoopSessionManager';
+import { createEncounterCatalog, type EncounterCatalog } from '../systems/EncounterCatalog';
+import type { EnemyDefinition } from '../types';
+import { WalkingSceneHud } from '../ui/WalkingSceneHud';
+import { resolveEnemyScenePresentation } from '../systems/EnemyPresentationSystem';
+import { resolveForestRoomSceneKey } from '../systems/ForestRoomRouting';
 
 /**
  * Scene initialization data
@@ -22,10 +31,14 @@ interface SceneData {
 interface RoomObject {
     id: string;
     type: string;
-    enemyId?: string;
+    encounterId?: string;
+    visualEnemyId?: string;
     x: number;
     y: number;
     sprite?: string;
+    scale?: number;
+    depth?: number;
+    flipX?: boolean;
     aggroRadius?: number;
     hidden?: boolean;
     appearsAfter?: {
@@ -85,7 +98,7 @@ interface SteppingStone {
  * Key mechanics:
  * - Player can walk around the room
  * - Bridge blocks passage until puzzle is solved
- * - Validation only triggers when BOTH drop zones are filled
+ * - Validation only triggers when all active drop zones are filled
  * - Wrong answers: screen shake, red flash, -1 HP, rocks reset
  * - Correct answer: blue particles, +3 mana, bridge unlocks
  */
@@ -93,60 +106,19 @@ export class ForestRiddleScene extends Phaser.Scene {
     private sceneBuilder!: SceneBuilder;
     private journeySystem = JourneySystem.getInstance();
     private gameState = GameStateManager.getInstance();
+    private encounterCatalog!: EncounterCatalog;
 
-    // Puzzle configs keyed by roomId — allows reuse of this scene for multiple bridge riddles
-    private static PUZZLE_CONFIGS: Record<string, {
-        sequence: number[];
-        fixedIndices: number[];
-        distractors: number[];
-        stoneDisplayValues: number[];
-        dropZoneConfig: { expectedValue: number; sequenceIndex: number }[];
-        floatingRockValues: number[];
-    }> = {
-        'forest_riddle': {
-            sequence: [2, 4, 6, 8, 10, 12, 14],
-            fixedIndices: [0, 2, 3, 4, 6],
-            distractors: [3, 5, 7],
-            stoneDisplayValues: [2, 6, 8, 10, 14],
-            dropZoneConfig: [
-                { expectedValue: 4, sequenceIndex: 1 },
-                { expectedValue: 12, sequenceIndex: 5 }
-            ],
-            floatingRockValues: [4, 12, 3, 7, 5]
-        },
-        'ancient_bridge': {
-            sequence: [3, 6, 9, 12, 15, 18, 21],
-            fixedIndices: [0, 2, 3, 4, 6],
-            distractors: [5, 10, 14],
-            stoneDisplayValues: [3, 9, 12, 15, 21],
-            dropZoneConfig: [
-                { expectedValue: 6, sequenceIndex: 1 },
-                { expectedValue: 18, sequenceIndex: 5 }
-            ],
-            floatingRockValues: [5, 18, 14, 6, 10]
-        }
-    };
-
+    private puzzleInstance!: PuzzleInstance<ReturnType<typeof bridgePuzzle>>;
     // Scene data
     private roomId = 'forest_riddle';
     private fromDirection?: 'left' | 'right';
 
-    // Puzzle configuration (selected from PUZZLE_CONFIGS in init())
-    private config: RiddleConfig = {
-        sequence: [2, 4, 6, 8, 10, 12, 14],
-        fixedIndices: [0, 2, 3, 4, 6],
-        distractors: [3, 5, 7],
-        manaReward: 3,
-        wrongAnswerDamage: 1
-    };
+    private config!: RiddleConfig;
 
     // Values driven by selected puzzle config
-    private stoneDisplayValues = [2, 6, 8, 10, 14];
+    private stoneDisplayValues: number[] = [];
 
-    private dropZoneConfig = [
-        { expectedValue: 4, sequenceIndex: 1 },
-        { expectedValue: 12, sequenceIndex: 5 },
-    ];
+    private dropZoneConfig: { expectedValue: number; sequenceIndex: number; gap: number }[] = [];
 
     // Floating rock element IDs from scenes.json (shared visual layout)
     private floatingRockIds = [
@@ -157,7 +129,7 @@ export class ForestRiddleScene extends Phaser.Scene {
         'rock with number_4',
     ];
 
-    private floatingRockValues = [4, 12, 3, 7, 5];
+    private floatingRockValues: number[] = [];
 
     // Game state
     private floatingRocks: FloatingRock[] = [];
@@ -169,6 +141,7 @@ export class ForestRiddleScene extends Phaser.Scene {
     private player!: Phaser.GameObjects.Sprite;
     private playerBSprite: Phaser.GameObjects.Sprite | null = null;
     private playerBWalkTween: Phaser.Tweens.Tween | null = null;
+    private walkingHud!: WalkingSceneHud;
     private isWalking = false;
     private hasCrossedBridge = false;  // Once crossed, no going back
 
@@ -231,19 +204,13 @@ export class ForestRiddleScene extends Phaser.Scene {
         this.mushroomSprite = null;
         this.mushroomDefeated = false;
 
-        // Select puzzle config based on roomId
-        const puzzleConfig = ForestRiddleScene.PUZZLE_CONFIGS[this.roomId]
-            ?? ForestRiddleScene.PUZZLE_CONFIGS['forest_riddle'];
-        this.config = {
-            sequence: puzzleConfig.sequence,
-            fixedIndices: puzzleConfig.fixedIndices,
-            distractors: puzzleConfig.distractors,
-            manaReward: 3,
-            wrongAnswerDamage: 1
-        };
-        this.stoneDisplayValues = puzzleConfig.stoneDisplayValues;
-        this.dropZoneConfig = puzzleConfig.dropZoneConfig;
-        this.floatingRockValues = puzzleConfig.floatingRockValues;
+        this.puzzleInstance = acquirePuzzle(this.journeySystem.getPuzzleStore(), `${this.roomId}:bridge`, 'sequence', bridgePuzzle,
+            undefined, false, isCurrentBridgePuzzle);
+        const puzzle = this.puzzleInstance.payload;
+        this.config = { sequence: puzzle.full, fixedIndices: [], distractors: [], manaReward: 3, wrongAnswerDamage: 1 };
+        this.stoneDisplayValues = puzzle.stoneDisplayValues;
+        this.dropZoneConfig = puzzle.dropZoneConfig;
+        this.floatingRockValues = puzzle.floatingRockValues;
 
         // Check if puzzle was already solved in this journey
         const state = this.journeySystem.getObjectState(this.roomId, 'bridge_riddle');
@@ -281,7 +248,8 @@ export class ForestRiddleScene extends Phaser.Scene {
             // Find the right exit's target room to redirect back to
             const rightExit = this.roomData?.exits?.find((e: any) => e.direction === 'right');
             const redirectRoom = rightExit?.targetRoom || 'deep_forest';
-            this.scene.start('ForestRoomScene', {
+            const forestRooms = this.cache.json.get('forestRooms');
+            this.scene.start(resolveForestRoomSceneKey(forestRooms, redirectRoom), {
                 roomId: redirectRoom,
                 fromDirection: 'left'
             });
@@ -289,6 +257,10 @@ export class ForestRiddleScene extends Phaser.Scene {
     }
 
     create(): void {
+        this.encounterCatalog = createEncounterCatalog(this.cache.json.get('encounters'), {
+            core: this.cache.json.get('enemies') as EnemyDefinition[],
+        });
+
         // Build scene from JSON (background + floating rocks from scene editor)
         this.sceneBuilder = new SceneBuilder(this);
         this.sceneBuilder.buildScene('ForestRiddleScene');
@@ -305,7 +277,15 @@ export class ForestRiddleScene extends Phaser.Scene {
         // Initialize floating rocks (draggables) - only if puzzle not solved
         if (!this.puzzleSolved) {
             this.setupFloatingRocks();
+            this.time.delayedCall(500, () => voice(this, 'vo.bridge.intro', true));
             this.setupDragEvents();
+            const placed = this.puzzleInstance.state.placed as Array<number | null> | undefined;
+            if (placed) placed.forEach((value, slot) => {
+                if (value !== null && this.steppingStones[slot]) {
+                    const rock = this.floatingRocks.find(r => r.value === value && r.placedInSlot === null);
+                    if (rock) this.placeRockInSlot(rock, this.steppingStones[slot]);
+                }
+            });
         } else {
             // Puzzle already solved - place correct rocks in drop zones, destroy distractors
             this.placeCorrectRocksInSolvedState();
@@ -321,12 +301,13 @@ export class ForestRiddleScene extends Phaser.Scene {
 
         // Create UI
         this.createUI();
+        this.walkingHud = new WalkingSceneHud(this);
 
         // Setup click to move
         this.setupClickToMove();
 
         // Add title
-        this.add.text(640, 50, 'Most s hádankou', {
+        this.add.text(850, 42, 'Most s hádankou', {
             fontSize: '36px',
             fontFamily: 'Arial, sans-serif',
             color: '#ffffff',
@@ -337,12 +318,14 @@ export class ForestRiddleScene extends Phaser.Scene {
 
         // Add instruction if puzzle not solved
         if (!this.puzzleSolved) {
-            this.add.text(640, 100, 'Doplň správná čísla na kameny', {
-                fontSize: '20px',
+            const host = this.sceneBuilder.get<Phaser.GameObjects.Container>('bridgeInstructionHost')!;
+            this.add.text(host.x, host.y, `Doplň oba kameny. ${this.puzzleInstance.payload.pattern}`, {
+                resolution: 2, fontSize: '20px',
                 fontFamily: 'Arial, sans-serif',
                 color: '#aaffaa',
+                stroke: '#102016', strokeThickness: 4,
                 fontStyle: 'italic'
-            }).setOrigin(0.5).setDepth(100);
+            }).setOrigin(0.5).setDepth(host.depth).setName('bridgeInstruction');
         }
 
         // Fade in
@@ -448,16 +431,6 @@ export class ForestRiddleScene extends Phaser.Scene {
         // Get the background container to update its text areas
         const bgContainer = this.sceneBuilder.get<Phaser.GameObjects.Container>('Forest Riddle');
 
-        // Stepping stone positions (from template text areas)
-        // These 5 positions show fixed numbers on the stream rocks
-        const stonePositions = [
-            { x: 359 + 23, y: 592 + 23 },  // Stone 0 - shows "2"
-            { x: 534 + 23, y: 587 + 23 },  // Stone 1 - shows "6"
-            { x: 629 + 23, y: 590 + 23 },  // Stone 2 - shows "8"
-            { x: 727 + 23, y: 587 + 23 },  // Stone 3 - shows "10"
-            { x: 887 + 23, y: 588 + 23 },  // Stone 4 - shows "14"
-        ];
-
         // Update the text areas in the background template to show correct numbers
         if (bgContainer) {
             const textObjects = bgContainer.getData('textObjects') as Map<string, { text: Phaser.GameObjects.Text; parentLayerId: string | null }> | undefined;
@@ -465,25 +438,17 @@ export class ForestRiddleScene extends Phaser.Scene {
                 let stoneIndex = 0;
                 for (const [, info] of textObjects) {
                     if (stoneIndex < this.stoneDisplayValues.length) {
-                        info.text.setText(this.stoneDisplayValues[stoneIndex].toString());
+                        info.text.setText(this.stoneDisplayValues[stoneIndex]?.toString() ?? '');
                         stoneIndex++;
                     }
                 }
             }
         }
 
-        // Calculate drop zone positions (in the GAPS between stepping stones)
-        // Drop zone 0: between stone 0 (x:382) and stone 1 (x:557) - midpoint ~470
-        // Drop zone 1: between stone 3 (x:750) and stone 4 (x:910) - midpoint ~830
-        // Y position lowered to fit rocks properly between the stepping stones
-        const dropZonePositions = [
-            { x: (stonePositions[0].x + stonePositions[1].x) / 2, y: 625 },  // Gap between 2 and 6
-            { x: (stonePositions[3].x + stonePositions[4].x) / 2, y: 625 },  // Gap between 10 and 14
-        ];
-
         // Create drop zone data structures
         this.dropZoneConfig.forEach((dzConfig, dropIndex) => {
-            const pos = dropZonePositions[dropIndex];
+            const host = this.sceneBuilder.get<Phaser.GameObjects.Container>(`bridgeGap${dzConfig.gap}Host`)!;
+            const pos = { x: host.x, y: host.y };
 
             const stone: SteppingStone = {
                 slotIndex: dropIndex,
@@ -499,20 +464,20 @@ export class ForestRiddleScene extends Phaser.Scene {
                 const zone = this.add.zone(pos.x, pos.y, 70, 70)
                     .setRectangleDropZone(70, 70)
                     .setData('slotIndex', dropIndex)
-                    .setDepth(50);
+                    .setDepth(host.depth);
 
                 stone.zone = zone;
 
                 // Visual indicator for drop zone (question mark with glow)
                 this.add.text(pos.x, pos.y, '?', {
-                    fontSize: '44px',
+                    resolution: 2, fontSize: '44px',
                     fontFamily: 'Arial',
                     color: '#88ccff',
                     fontStyle: 'bold'
-                }).setOrigin(0.5).setDepth(55).setData('slotIndex', dropIndex).setName(`dropZoneText_${dropIndex}`);
+                }).setOrigin(0.5).setDepth(host.depth + 1).setData('slotIndex', dropIndex).setName(`dropZoneText_${dropIndex}`);
 
                 // Add subtle glow effect to drop zone
-                const glow = this.add.circle(pos.x, pos.y, 35, 0x88ccff, 0.2).setDepth(45);
+                const glow = this.add.circle(pos.x, pos.y, 35, 0x88ccff, 0.2).setDepth(host.depth - 1);
                 this.tweens.add({
                     targets: glow,
                     alpha: 0.4,
@@ -576,33 +541,22 @@ export class ForestRiddleScene extends Phaser.Scene {
      * Destroys distractor rocks, keeps and positions correct answer rocks
      */
     private placeCorrectRocksInSolvedState(): void {
-        // Calculate drop zone positions (same logic as setupSteppingStones)
-        const stonePositions = [
-            { x: 359 + 23, y: 592 + 23 },  // Stone 0
-            { x: 534 + 23, y: 587 + 23 },  // Stone 1
-            { x: 629 + 23, y: 590 + 23 },  // Stone 2
-            { x: 727 + 23, y: 587 + 23 },  // Stone 3
-            { x: 887 + 23, y: 588 + 23 },  // Stone 4
-        ];
-
-        const dropZonePositions = [
-            { x: (stonePositions[0].x + stonePositions[1].x) / 2, y: 625 },
-            { x: (stonePositions[3].x + stonePositions[4].x) / 2, y: 625 },
-        ];
-
         // Match rocks to drop zones by value (correct answers can be at any index)
         const expectedValues = this.dropZoneConfig.map(dz => dz.expectedValue);
+        const filled = new Set<number>();
 
         this.floatingRockIds.forEach((id, index) => {
             const container = this.sceneBuilder.get<Phaser.GameObjects.Container>(id);
             if (!container) return;
 
             const rockValue = this.floatingRockValues[index];
-            const dropZoneIndex = expectedValues.indexOf(rockValue);
+            const dropZoneIndex = expectedValues.findIndex((value, slot) => value === rockValue && !filled.has(slot));
 
             if (dropZoneIndex !== -1) {
+                filled.add(dropZoneIndex);
+                this.steppingStones[dropZoneIndex].currentValue = rockValue;
                 // Correct answer rock - position it in the matching drop zone
-                const dropZonePos = dropZonePositions[dropZoneIndex];
+                const dropZonePos = this.sceneBuilder.get<Phaser.GameObjects.Container>(`bridgeGap${this.dropZoneConfig[dropZoneIndex].gap}Host`)!;
                 container.setPosition(dropZonePos.x, dropZonePos.y);
                 container.setScale(0.7);  // Scaled down like when placed
                 container.setDepth(60);
@@ -666,6 +620,7 @@ export class ForestRiddleScene extends Phaser.Scene {
                     textObj.setVisible(true);
                 }
                 rock.placedInSlot = null;
+                this.puzzleInstance.state.placed = this.steppingStones.map(s => s.currentValue);
             }
 
             // Bring to front
@@ -741,6 +696,7 @@ export class ForestRiddleScene extends Phaser.Scene {
      * Place a rock in a stepping stone slot
      */
     private placeRockInSlot(rock: FloatingRock, stone: SteppingStone): void {
+        sfx(this, 'puzzle.place');
         // If rock was in another slot, clear that slot
         if (rock.placedInSlot !== null) {
             const prevStone = this.steppingStones[rock.placedInSlot];
@@ -777,6 +733,7 @@ export class ForestRiddleScene extends Phaser.Scene {
             textObj.setVisible(false);
         }
 
+        this.puzzleInstance.state.placed = this.steppingStones.map(s => s.currentValue);
         // Check solution after placement (deferred validation)
         this.checkSolution();
     }
@@ -797,6 +754,7 @@ export class ForestRiddleScene extends Phaser.Scene {
                 textObj.setVisible(true);
             }
             rock.placedInSlot = null;
+                this.puzzleInstance.state.placed = this.steppingStones.map(s => s.currentValue);
         }
 
         // Animate back to origin
@@ -846,6 +804,8 @@ export class ForestRiddleScene extends Phaser.Scene {
      * Handle wrong answer - gentle shake, subtle flash, damage, reset rocks
      */
     private onWrongAnswer(): void {
+        sfx(this, 'math.retry');
+        recordPuzzleAnswer(this.puzzleInstance, false);
         // 1. Gentle screen shake (reduced intensity)
         this.cameras.main.shake(200, 0.004);
 
@@ -862,6 +822,7 @@ export class ForestRiddleScene extends Phaser.Scene {
         const player = this.gameState.getPlayer();
         player.hp = Math.max(0, player.hp - this.config.wrongAnswerDamage);
         this.gameState.save();
+        this.walkingHud.refresh();
 
         // Show damage text at player position
         this.showFloatingText(`-${this.config.wrongAnswerDamage} HP`, '#ff4444', this.player.x, this.player.y - 50);
@@ -885,12 +846,16 @@ export class ForestRiddleScene extends Phaser.Scene {
                 stone.currentValue = null;
             }
         });
+        this.puzzleInstance.state.placed = this.steppingStones.map(() => null);
     }
 
     /**
      * Handle puzzle solved - victory effects and unlock bridge
      */
     private onPuzzleSolved(): void {
+        sfx(this, 'puzzle.solved');
+        this.time.delayedCall(500, () => sfx(this, 'puzzle.stone_move'));
+        recordPuzzleAnswer(this.puzzleInstance, true);
         this.puzzleSolved = true;
         this.bridgeUnlocked = true;
 
@@ -923,6 +888,8 @@ export class ForestRiddleScene extends Phaser.Scene {
                 // This rock is part of the completed bridge - keep it visible
                 // Stop any floating animation and settle it in place
                 this.tweens.killTweensOf(rock.container);
+                const slot = this.steppingStones[rock.placedInSlot];
+                rock.container.setPosition(slot.x, slot.y).setScale(0.7);
             }
         });
 
@@ -961,42 +928,27 @@ export class ForestRiddleScene extends Phaser.Scene {
             return;
         }
 
-        // Create container for enemy
-        const container = this.add.container(mushroomObj.x, mushroomObj.y);
-
-        // Use the sprite from room data
-        const spriteKey = mushroomObj.sprite || 'spritesheet--36--sheet';
+        if (!mushroomObj.visualEnemyId) {
+            throw new Error('Enemy object mushroom_1 is missing visualEnemyId');
+        }
+        const enemyDef = this.encounterCatalog.resolveEnemy({
+            source: 'core',
+            enemyId: mushroomObj.visualEnemyId,
+        });
+        const presentation = resolveEnemyScenePresentation(
+            { ...mushroomObj, visualEnemyId: mushroomObj.visualEnemyId },
+            enemyDef,
+            { depth: 8 },
+        );
+        const container = this.add.container(presentation.x, presentation.y);
         let enemySprite: Phaser.GameObjects.Sprite | Phaser.GameObjects.Circle;
 
-        if (this.textures.exists(spriteKey)) {
-            enemySprite = this.add.sprite(0, 0, spriteKey);
-            enemySprite.setScale(1.5);
-
-            // Apply scale and play idle animation from enemies.json or forest-enemies.json
-            if (mushroomObj.enemyId) {
-                const enemies = this.cache.json.get('enemies') as any[];
-                let enemyDef = enemies?.find((e: any) => e.id === mushroomObj.enemyId);
-
-                // Fallback to forest enemies
-                if (!enemyDef && this.cache.json.has('forestEnemies')) {
-                    const forestData = this.cache.json.get('forestEnemies') as any;
-                    const fe = forestData?.enemies?.[mushroomObj.enemyId];
-                    if (fe) {
-                        enemyDef = { ...fe, attack: fe.atk, animPrefix: fe.animPrefix || fe.spriteKey?.replace('-sheet', '') };
-                    }
-                }
-
-                if (enemyDef) {
-                    if (enemyDef.scale) {
-                        enemySprite.setScale(enemyDef.scale);
-                    }
-                    if (enemyDef.animPrefix) {
-                        const idleAnim = `${enemyDef.animPrefix}-idle`;
-                        if (this.anims.exists(idleAnim)) {
-                            enemySprite.play(idleAnim);
-                        }
-                    }
-                }
+        if (this.textures.exists(presentation.spriteKey)) {
+            enemySprite = this.add.sprite(0, 0, presentation.spriteKey)
+                .setScale(presentation.scale)
+                .setFlipX(presentation.flipX);
+            if (presentation.idleAnimation && this.anims.exists(presentation.idleAnimation)) {
+                enemySprite.play(presentation.idleAnimation);
             }
         } else {
             // Fallback placeholder
@@ -1004,7 +956,7 @@ export class ForestRiddleScene extends Phaser.Scene {
         }
 
         container.add(enemySprite);
-        container.setDepth(8);
+        container.setDepth(presentation.depth);
         container.setSize(80, 100);
 
         // Store reference
@@ -1043,20 +995,26 @@ export class ForestRiddleScene extends Phaser.Scene {
      */
     private startMushroomBattle(): void {
         const mushroomObj = this.roomData?.objects?.find(o => o.id === 'mushroom_1');
-        if (!mushroomObj?.enemyId) return;
+        if (!mushroomObj?.encounterId) return;
+
+        const mappedEncounter = this.encounterCatalog.getForestRoomEncounter(this.roomId, mushroomObj.id);
+        if (mappedEncounter.id !== mushroomObj.encounterId) {
+            throw new Error(
+                `Forest riddle ${this.roomId}/${mushroomObj.id} points to ${mushroomObj.encounterId}, expected ${mappedEncounter.id}`,
+            );
+        }
 
         const battleBg = this.roomData?.battleBackground || 'bg-battle';
 
         this.scene.start('BattleScene', {
             mode: 'journey',
-            enemyId: mushroomObj.enemyId,
+            encounterId: mushroomObj.encounterId,
             returnScene: 'ForestRiddleScene',
             returnData: {
                 roomId: this.roomId,
                 defeatedObjectId: mushroomObj.id
             },
             backgroundKey: battleBg,
-            isBoss: false
         });
     }
 
@@ -1107,7 +1065,8 @@ export class ForestRiddleScene extends Phaser.Scene {
             this.cameras.main.once('camerafadeoutcomplete', () => {
                 this.journeySystem.resumeFromRoomSavePoint();
                 const room = this.journeySystem.getCurrentRoom() || 'forest_edge';
-                this.scene.start('ForestRoomScene', { roomId: room });
+                const forestRooms = this.cache.json.get('forestRooms');
+                this.scene.start(resolveForestRoomSceneKey(forestRooms, room), { roomId: room });
             });
         });
     }
@@ -1162,25 +1121,6 @@ export class ForestRiddleScene extends Phaser.Scene {
      * Create UI elements (HP bar, back button)
      */
     private createUI(): void {
-        // HP Bar at top
-        const player = this.gameState.getPlayer();
-        const hpPercent = player.hp / player.maxHp;
-
-        this.add.rectangle(150, 70, 200, 20, 0x333333)
-            .setStrokeStyle(2, 0x666666)
-            .setDepth(100);
-
-        this.add.rectangle(52, 70, 196 * hpPercent, 16, 0x44aa44)
-            .setOrigin(0, 0.5)
-            .setDepth(100);
-
-        this.add.text(150, 70, `HP: ${player.hp}/${player.maxHp}`, {
-            fontSize: '14px',
-            fontFamily: 'Arial, sans-serif',
-            color: '#ffffff',
-            fontStyle: 'bold'
-        }).setOrigin(0.5).setDepth(101);
-
         // Back button (abandon)
         const backBtn = this.add.container(80, 680).setDepth(100);
         const backBg = this.add.rectangle(0, 0, 120, 40, 0x664444)
@@ -1425,11 +1365,14 @@ export class ForestRiddleScene extends Phaser.Scene {
         // Determine opposite direction for spawn
         const oppositeDirection = direction === 'left' ? 'right' : 'left';
 
+        const forestRooms = this.cache.json.get('forestRooms');
+        const sceneKey = resolveForestRoomSceneKey(forestRooms, targetRoom);
+
         // Fade out
         this.cameras.main.fadeOut(300, 0, 0, 0);
 
         this.cameras.main.once('camerafadeoutcomplete', () => {
-            this.scene.start('ForestRoomScene', {
+            this.scene.start(sceneKey, {
                 roomId: targetRoom,
                 fromDirection: oppositeDirection
             });

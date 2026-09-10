@@ -1,10 +1,47 @@
 [
+  {
+    "id": "silverpond_pearl_jellyfish",
+    "name": "Perlová medúzka",
+    "spriteKey": "silverpond-pearl-jellyfish-idle-sheet",
+    "animPrefix": "pearl-jellyfish",
+    "hp": 24,
+    "attack": 4,
+    "defense": 1,
+    "goldReward": [
+      10,
+      14
+    ],
+    "difficulty": 6,
+    "scale": 0.8,
+    "worldScale": 0.8,
+    "battleScale": 0.9,
+    "frameTopInset": 80
+  },
+  {
+    "id": "silverpond_depth_guardian",
+    "name": "Strážce hlubin",
+    "spriteKey": "silverpond-depth-guardian-idle-sheet",
+    "animPrefix": "depth-guardian",
+    "hp": 28,
+    "attack": 4,
+    "defense": 1,
+    "goldReward": [
+      22,
+      28
+    ],
+    "difficulty": 7,
+    "scale": 1.03,
+    "worldScale": 1.03,
+    "battleScale": 1.03,
+    "battleOffsetY": -35,
+    "frameTopInset": 58
+  },
     {
         "id": "slime_tutorial",
         "name": "Zelený Sliz",
         "spriteKey": "slime-sheet",
         "animPrefix": "slime",
-        "hp": 4,
+        "hp": 3,
         "attack": 1,
         "defense": 0,
         "goldReward": [
@@ -19,7 +56,7 @@
         "name": "Zelený Sliz",
         "spriteKey": "slime-sheet",
         "animPrefix": "slime",
-        "hp": 5,
+        "hp": 4,
         "attack": 1,
         "defense": 0,
         "goldReward": [
@@ -34,7 +71,7 @@
         "name": "Fialový démon",
         "spriteKey": "purple-attack-sheet",
         "animPrefix": "purple",
-        "hp": 7,
+        "hp": 5,
         "attack": 2,
         "defense": 0,
         "goldReward": [
@@ -49,7 +86,7 @@
         "name": "Růžová bestie",
         "spriteKey": "pink-idle-sheet",
         "animPrefix": "pink",
-        "hp": 15,
+        "hp": 10,
         "attack": 3,
         "defense": 1,
         "goldReward": [
@@ -64,7 +101,7 @@
         "name": "Listový Tvor",
         "spriteKey": "leafy-idle-sheet",
         "animPrefix": "leafy",
-        "hp": 20,
+        "hp": 12,
         "attack": 3,
         "defense": 2,
         "goldReward": [
@@ -76,17 +113,17 @@
     },
     {
         "id": "forest_wolf",
-        "name": "Wolf",
+        "name": "Lesní vlk",
         "spriteKey": "wolves-only-transparent-sheet",
         "animPrefix": "wolf",
         "hp": 15,
-        "attack": 3,
+        "attack": 4,
         "defense": 2,
         "goldReward": [
             7,
             7
         ],
-        "difficulty": 3,
+        "difficulty": 4,
         "scale": 0.5
     },
     {
@@ -95,14 +132,17 @@
         "spriteKey": "spritesheet--36--sheet",
         "animPrefix": "mushroom",
         "hp": 20,
-        "attack": 2,
-        "defense": 2,
+        "attack": 3,
+        "defense": 3,
         "goldReward": [
             8,
             8
         ],
         "difficulty": 3,
-        "scale": 1
+        "worldScale": 0.5,
+        "battleScale": 0.5,
+        "battleOffsetX": 30,
+        "battleOffsetY": 20
     },
     {
         "id": "ancient_treant",
@@ -111,13 +151,16 @@
         "animPrefix": "treant",
         "hp": 25,
         "attack": 3,
-        "defense": 3,
+        "defense": 4,
         "goldReward": [
             25,
             40
         ],
         "difficulty": 7,
-        "scale": 1.5
+        "worldScale": 0.5,
+        "battleScale": 0.5,
+        "battleOffsetX": 35,
+        "battleOffsetY": 25
     },
     {
         "id": "verdant_guardian",
@@ -153,10 +196,78 @@
         ]
     },
     {
+        "id": "silverpond_bubble_crab",
+        "name": "Bublinový rak",
+        "spriteKey": "silverpond-bubble-crab-idle-sheet",
+        "animPrefix": "bubble-crab",
+        "hp": 22,
+        "attack": 4,
+        "defense": 3,
+        "goldReward": [
+            10,
+            14
+        ],
+        "difficulty": 5,
+        "scale": 0.45,
+        "worldScale": 0.45,
+        "battleScale": 0.65
+    },
+    {
+        "id": "silverpond_silverfin_scalefish",
+        "name": "Stříbroploutvý šupináč",
+        "spriteKey": "silverpond-bubble-fish-idle-sheet",
+        "animPrefix": "bubble-fish",
+        "hp": 18,
+        "attack": 5,
+        "defense": 1,
+        "goldReward": [
+            9,
+            13
+        ],
+        "difficulty": 5,
+        "scale": 0.45,
+        "worldScale": 0.45,
+        "battleScale": 0.65
+    },
+    {
+        "id": "silverpond_mill_turtle",
+        "name": "Mlýnský krunýřník",
+        "spriteKey": "silverpond-mill-turtle-idle-sheet",
+        "animPrefix": "mill-turtle",
+        "hp": 24,
+        "attack": 4,
+        "defense": 4,
+        "goldReward": [
+            11,
+            15
+        ],
+        "difficulty": 5,
+        "scale": 0.45,
+        "worldScale": 0.45,
+        "battleScale": 0.65
+    },
+    {
+        "id": "silverpond_ruin_axolotl",
+        "name": "Ruinový mlok",
+        "spriteKey": "silverpond-ruin-axolotl-idle-sheet",
+        "animPrefix": "ruin-axolotl",
+        "hp": 21,
+        "attack": 5,
+        "defense": 2,
+        "goldReward": [
+            10,
+            14
+        ],
+        "difficulty": 5,
+        "scale": 0.45,
+        "worldScale": 0.45,
+        "battleScale": 0.65
+    },
+    {
         "id": "catacomb_creature_A",
-        "name": "Ztracený Vlk",
-        "spriteKey": "wolves-only-transparent-sheet",
-        "animPrefix": "wolf",
+        "name": "Runová liška",
+        "spriteKey": "rune-fox-sheet",
+        "animPrefix": "rune-fox",
         "hp": 12,
         "attack": 1,
         "defense": 0,
@@ -165,66 +276,6 @@
             0
         ],
         "difficulty": 0,
-        "scale": 0.5
-    },
-    {
-        "id": "catacomb_creature_B",
-        "name": "Ztracený Vlk",
-        "spriteKey": "wolves-only-transparent-sheet",
-        "animPrefix": "wolf",
-        "hp": 12,
-        "attack": 1,
-        "defense": 0,
-        "goldReward": [
-            0,
-            0
-        ],
-        "difficulty": 0,
-        "scale": 0.5
-    },
-    {
-        "id": "catacomb_creature_C",
-        "name": "Ztracený Vlk",
-        "spriteKey": "wolves-only-transparent-sheet",
-        "animPrefix": "wolf",
-        "hp": 12,
-        "attack": 1,
-        "defense": 0,
-        "goldReward": [
-            0,
-            0
-        ],
-        "difficulty": 0,
-        "scale": 0.5
-    },
-    {
-        "id": "catacomb_creature_D",
-        "name": "Ztracený Vlk",
-        "spriteKey": "wolves-only-transparent-sheet",
-        "animPrefix": "wolf",
-        "hp": 12,
-        "attack": 1,
-        "defense": 0,
-        "goldReward": [
-            0,
-            0
-        ],
-        "difficulty": 0,
-        "scale": 0.5
-    },
-    {
-        "id": "catacomb_creature_E",
-        "name": "Ztracený Vlk",
-        "spriteKey": "wolves-only-transparent-sheet",
-        "animPrefix": "wolf",
-        "hp": 12,
-        "attack": 1,
-        "defense": 0,
-        "goldReward": [
-            0,
-            0
-        ],
-        "difficulty": 0,
-        "scale": 0.5
+        "scale": 0.55
     }
 ]

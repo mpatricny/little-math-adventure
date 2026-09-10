@@ -1,0 +1,9 @@
+{
+  "version": 1,
+  "playerAttack": {
+    "maxProblemsPerTurn": 3
+  },
+  "coopAttack": {
+    "powerBonusThreshold": 5
+  }
+}
