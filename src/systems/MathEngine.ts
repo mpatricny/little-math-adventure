@@ -818,10 +818,10 @@ export class MathEngine {
      */
     private generateThreeOperandProblem(maxResult: number, level?: number): MathProblem {
         // Generate a ± b ± c = result
-        const op1: '+' | '-' = Math.random() > 0.5 ? '+' : '-';
-        const op2: '+' | '-' = Math.random() > 0.5 ? '+' : '-';
+        let op1: '+' | '-' = Math.random() > 0.5 ? '+' : '-';
+        let op2: '+' | '-' = Math.random() > 0.5 ? '+' : '-';
 
-        let a: number, b: number, c: number, answer: number;
+        let a: number, b: number, c: number, answer: number, intermediate: number;
         let attempts = 0;
 
         // Try to find valid operands
@@ -831,17 +831,20 @@ export class MathEngine {
             c = this.randomInt(0, Math.min(maxResult - 1, 5));
 
             // Calculate based on operators
-            let intermediate = op1 === '+' ? a + b : a - b;
+            intermediate = op1 === '+' ? a + b : a - b;
             answer = op2 === '+' ? intermediate + c : intermediate - c;
 
             attempts++;
-        } while ((answer < 0 || answer > maxResult) && attempts < 50);
+        } while ((intermediate < 0 || intermediate > maxResult || answer < 0 || answer > maxResult) && attempts < 50);
 
         // Fallback to simple problem if we can't find valid operands
-        if (answer < 0 || answer > maxResult) {
+        if (intermediate < 0 || intermediate > maxResult || answer < 0 || answer > maxResult) {
+            op1 = '-';
+            op2 = '+';
             a = this.randomInt(2, maxResult);
             b = this.randomInt(1, Math.floor(a / 2));
             c = 1;
+            intermediate = a - b;
             answer = a - b + c;
         }
 

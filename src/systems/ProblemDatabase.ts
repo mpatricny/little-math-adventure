@@ -233,7 +233,10 @@ export class ProblemDatabase {
 
                         if (answer < 0 || answer > maxVal) continue;
                         if (intermediate < 0 || intermediate > maxVal) continue;
-                        if (!this.isInBandExclusive(band, a, b, answer, op1)) continue;
+                        if (band === 'E') {
+                            if (!this.isInBandExclusive(band, a, b, intermediate, op1)
+                                && !this.isInBandExclusive(band, intermediate, c, answer, op2)) continue;
+                        } else if (!this.isInBandExclusive(band, a, b, answer, op1)) continue;
                         // Also check third operand context
                         if (band !== 'A' && a <= 5 && b <= 5 && c <= 5 && answer <= 5) continue;
 
@@ -382,11 +385,13 @@ export class ProblemDatabase {
                 // Crossing 10
                 if (answer > 20 || answer < 0) return false;
                 if (operator === '+') {
-                    // a < 10 and answer > 10 (crosses up through 10)
-                    return a < 10 && b > 0 && crossesTen(a, answer) && answer <= 20;
+                    // Two single-digit addends need a bridge through ten.
+                    // 1 + 11 belongs to addition without that bridge.
+                    return a < 10 && b > 0 && b < 10 && crossesTen(a, answer) && answer <= 20;
                 } else {
-                    // a > 10 and answer < 10 (crosses down through 10)
-                    return a > 10 && a <= 20 && crossesTen(a, answer) && answer >= 0;
+                    // Subtract a single digit across ten, e.g. 13 - 6.
+                    // 19 - 12 does not require that skill.
+                    return a > 10 && a <= 20 && b > 0 && b < 10 && crossesTen(a, answer) && answer >= 0;
                 }
         }
     }
