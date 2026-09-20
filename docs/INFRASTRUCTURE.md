@@ -1,0 +1,119 @@
+# Číslokraj — infrastruktura pilotu
+
+## Topologie
+
+- Cloudflare Worker `cislokraj-web` publikuje `dist/pilot`: landing na `/`, hru
+  na `/hra/` a stejno-doménově předává `/api/*` a `/v1/*` na Railway API.
+- `www.cislokraj.cz` se přesměruje na `cislokraj.cz`, aby OAuth stav i relační
+  cookie vždy zůstaly na jednom hostiteli.
+- Railway služba `api` obsluhuje `api.cislokraj.cz`.
+- Railway PostgreSQL je dostupný pouze API; klient nikdy nedostane databázové
+  údaje.
+- Lokální vývoj používá PostgreSQL na `127.0.0.1:5433` a Doppler config `dev`.
+- Produkce používá Railway `DATABASE_URL` a Doppler config `prd` pro přihlašovací
+  tajemství.
+
+## Lokální API
+
+Docker není součástí repozitáře. Po jeho instalaci:
+
+```bash
+npm run infra:db:up
+doppler setup --no-interactive
+doppler run -- npm run api:db:migrate
+doppler run -- npm run api:dev
+```
+
+Výchozí hodnoty pro Doppler `dev` jsou popsané v `server/.env.example`. Soubor
+slouží jen jako kontrakt; skutečný `.env` se necommituje.
+
+Kontroly:
+
+```bash
+curl http://localhost:3000/health
+curl http://localhost:3000/ready
+npm run api:test
+```
+
+`/health` ověřuje proces. `/ready` navíc provede dotaz do PostgreSQL a Railway ho
+používá jako bránu nového deploymentu.
+
+## Migrace
+
+Před DB testy a před startem nové verze vždy spustit migrace. Railway je spouští
+jako `preDeploy`; neúspěšná migrace zastaví vydání. Každý aplikovaný SQL soubor má
+uložený checksum a staré migrace se neupravují.
+
+## Doppler
+
+1. Vytvořit projekt `cislokraj`; výchozí root configs `dev` a `prd` stačí.
+2. Do `dev` vložit hodnoty podle `server/.env.example`.
+3. V `prd` nastavit `LOG_LEVEL=info`, `APP_RELEASE` na vydávaný release,
+   `BETTER_AUTH_SECRET`, `GOOGLE_CLIENT_ID` a `GOOGLE_CLIENT_SECRET`.
+   `DATABASE_URL` vzniká jako reference na Railway PostgreSQL, ne jako ručně
+   kopírované tajemství. Bez `APP_RELEASE` API použije Railway commit SHA.
+4. Napojit Doppler `prd` na Railway prostředí `production` a službu `api`.
+   Synchronizovat jen proměnné vlastněné Dopplerem; nepřepisovat `DATABASE_URL`,
+   `NODE_ENV`, `BETTER_AUTH_URL` ani `CORS_ORIGINS`, které spravuje Railway IaC.
+   IaC používá pro tajemství, `APP_RELEASE`, `LOG_LEVEL` a metadata `DOPPLER_*`
+   režim `preserve()`, aby je příští `railway config apply` nesmazal.
+
+Google OAuth klient typu **Web application** používá redirect URI
+`https://cislokraj.cz/api/auth/callback/google`; pro lokální vývoj také
+`http://localhost:8002/api/auth/callback/google`. Odpovídající JavaScript origins
+jsou `https://cislokraj.cz` a `http://localhost:8002`.
+
+Tokeny Doppleru, Railway ani Cloudflare nepatří do repozitáře nebo klientského
+Vite buildu.
+
+## Railway — první vytvoření
+
+```bash
+railway login
+railway link
+railway config plan
+railway config apply
+```
+
+Před `apply` musí plán obsahovat pouze projekt `cislokraj`, službu `api` a databázi
+`postgres`. Railway IaC neumí první registraci vlastní domény; po vytvoření služby
+přidat `api.cislokraj.cz` v Railway dashboardu a teprve potom spustit
+`railway config pull`, aby ji deklarativní konfigurace převzala. Potom z
+otestovaného release tagu, z kořene repozitáře:
+
+```bash
+railway up ./server --path-as-root --service api --environment production
+```
+
+Po nasazení ověřit `https://api.cislokraj.cz/health` a `/ready`. Railway CLI link
+obsahuje lokální ID a zůstává ignorovaný; `.railway/railway.ts` je naopak součást
+zdrojového kódu.
+
+## Cloudflare — první nasazení
+
+```bash
+npm run cloudflare:check
+npm run cloudflare:dry-run
+npx wrangler login
+npm run cloudflare:deploy
+```
+
+Konfigurace vytvoří vlastní domény `cislokraj.cz` a `www.cislokraj.cz`. DNS záznam
+`api.cislokraj.cz` se nastaví podle cíle, který Railway ukáže při ověření vlastní
+domény. Cloudflare proxy pro tento záznam zapnout až po úspěšném přímém Railway
+ověření.
+
+Registrátor musí delegovat doménu na nameservery přidělené Cloudflare. Pro aktuální
+zónu jsou to `marlowe.ns.cloudflare.com` a `miles.ns.cloudflare.com`; změna u
+registrátora se může ve veřejném DNS projevit se zpožděním.
+
+## Brány hotového základu
+
+- `npm run api:test` a `npm run api:build` projdou bez databáze.
+- Po aplikaci migrací vrací `/ready` HTTP 200.
+- Nepovolený webový origin nedostane CORS hlavičku.
+- Google OAuth start vrátí callback na kanonický host a chráněný `state`.
+- Cloudflare build má nejvýše 20 000 souborů a žádný soubor nad 25 MiB.
+- Produkční API a frontend uvádějí identifikátor stejného release tagu.
+- Produkce se sestavuje a nasazuje z vybraného tagu, nikoli automaticky z každé
+  změny na `main`.

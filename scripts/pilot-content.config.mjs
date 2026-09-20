@@ -49,3 +49,11 @@ export const PILOT_DATA_FILES = Object.freeze([
   'ui-text-presets.json', 'localization/index.json', 'localization/cs.json',
   'localization/en.json', 'puzzles/tuning.json', 'puzzles/words.json',
 ]);
+
+// Browser screenshots used by the lightweight landing page are published without
+// becoming runtime dependencies of the Phaser game.
+export const PILOT_LANDING_FILES = Object.freeze([
+  'assets/images/screenshots/landing-menu.webp',
+  'assets/images/screenshots/landing-town.webp',
+  'assets/images/screenshots/landing-forest.webp',
+]);

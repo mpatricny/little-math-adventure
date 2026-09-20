@@ -1,6 +1,16 @@
 node_modules
 dist
 /.generated/
+.env
+.env.*
+!.env.example
+server/.env
+server/.env.*
+!server/.env.example
+/.wrangler/
+/.railway/*
+!/.railway/railway.ts
+!/.railway/README.md
 .DS_Store
 
 # Backup files

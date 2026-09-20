@@ -1,0 +1,899 @@
+<!DOCTYPE html>
+<html lang="cs">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#132922" />
+    <meta
+      name="description"
+      content="Číslokraj je dobrodružná hra, ve které děti procvičují matematiku při objevování kouzelného světa."
+    />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cpath fill='%236f45cf' stroke='%23e5cc7e' stroke-width='4' d='M32 4 54 22 46 52 18 52 10 22Z'/%3E%3Cpath fill='%23cbb6ff' d='m32 11 12 12-12 22-12-22Z'/%3E%3C/svg%3E"
+    />
+    <title>Číslokraj — matematika jako dobrodružství</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        --ink: #f8f1d8;
+        --muted: #c8c6b7;
+        --night: #0b1714;
+        --forest: #132922;
+        --forest-light: #1e3d31;
+        --gold: #e5cc7e;
+        --gold-deep: #9c7432;
+        --violet: #8060da;
+        --violet-light: #cbb6ff;
+        --line: rgba(229, 204, 126, 0.28);
+        --panel: rgba(14, 30, 25, 0.9);
+        font-family: Arial, Helvetica, sans-serif;
+        font-synthesis: none;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html {
+        scroll-behavior: smooth;
+      }
+
+      body {
+        margin: 0;
+        min-width: 320px;
+        background:
+          radial-gradient(circle at 76% 12%, rgba(128, 96, 218, 0.2), transparent 29rem),
+          linear-gradient(180deg, var(--forest) 0%, var(--night) 72%);
+        color: var(--ink);
+        line-height: 1.6;
+      }
+
+      a {
+        color: inherit;
+      }
+
+      .skip-link {
+        position: fixed;
+        left: 1rem;
+        top: 1rem;
+        z-index: 20;
+        padding: 0.65rem 0.9rem;
+        border-radius: 0.5rem;
+        background: var(--ink);
+        color: var(--night);
+        transform: translateY(-180%);
+      }
+
+      .skip-link:focus {
+        transform: translateY(0);
+      }
+
+      .site-header,
+      main,
+      footer {
+        width: min(1140px, calc(100% - 2rem));
+        margin-inline: auto;
+      }
+
+      .site-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        min-height: 5rem;
+        gap: 1.5rem;
+      }
+
+      .brand {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.75rem;
+        text-decoration: none;
+        font-family: Georgia, "Times New Roman", serif;
+        font-size: clamp(1.3rem, 2.6vw, 1.7rem);
+        font-weight: 700;
+        letter-spacing: 0.02em;
+      }
+
+      .brand-mark {
+        width: 2.1rem;
+        height: 2.1rem;
+        transform: rotate(45deg);
+        border: 2px solid var(--gold);
+        border-radius: 0.3rem 0.7rem 0.3rem 0.7rem;
+        background: linear-gradient(135deg, var(--violet-light), #6946c5 55%, #382475);
+        box-shadow: 0 0 1.25rem rgba(128, 96, 218, 0.48);
+      }
+
+      nav {
+        display: flex;
+        align-items: center;
+        gap: clamp(0.8rem, 2.5vw, 1.8rem);
+      }
+
+      nav a {
+        color: var(--muted);
+        font-size: 0.94rem;
+        text-decoration: none;
+      }
+
+      nav a:hover,
+      nav a:focus-visible {
+        color: var(--ink);
+      }
+
+      .hero {
+        display: grid;
+        grid-template-columns: minmax(0, 0.86fr) minmax(0, 1.14fr);
+        align-items: center;
+        gap: clamp(2.5rem, 6vw, 5rem);
+        min-height: calc(100svh - 5rem);
+        padding: 4rem 0 6rem;
+      }
+
+      .eyebrow,
+      .pilot-note {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.55rem;
+        margin: 0 0 1rem;
+        color: var(--violet-light);
+        font-size: 0.78rem;
+        font-weight: 700;
+        letter-spacing: 0.13em;
+        text-transform: uppercase;
+      }
+
+      .eyebrow::before,
+      .pilot-note::before {
+        content: "";
+        width: 0.55rem;
+        height: 0.55rem;
+        transform: rotate(45deg);
+        border: 1px solid var(--violet-light);
+        background: var(--violet);
+      }
+
+      h1,
+      h2,
+      h3 {
+        margin-top: 0;
+        font-family: Georgia, "Times New Roman", serif;
+        line-height: 1.12;
+      }
+
+      h1 {
+        max-width: 13ch;
+        margin-bottom: 1.25rem;
+        font-size: clamp(2.8rem, 5.4vw, 4.75rem);
+        letter-spacing: -0.04em;
+      }
+
+      h1 span {
+        color: var(--gold);
+      }
+
+      h2 {
+        max-width: 17ch;
+        margin-bottom: 1rem;
+        font-size: clamp(2rem, 4vw, 3.35rem);
+        letter-spacing: -0.025em;
+      }
+
+      h3 {
+        margin-bottom: 0.6rem;
+        font-size: 1.35rem;
+      }
+
+      .hero-copy > p:not(.eyebrow) {
+        max-width: 34rem;
+        margin: 0 0 1.8rem;
+        color: var(--muted);
+        font-size: clamp(1.05rem, 1.8vw, 1.22rem);
+      }
+
+      .actions {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 0.9rem 1.2rem;
+      }
+
+      .button {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 3.35rem;
+        padding: 0.75rem 1.45rem;
+        border: 1px solid #f3dd98;
+        border-radius: 0.75rem;
+        background: linear-gradient(180deg, #f0d98c 0%, #c69d48 100%);
+        box-shadow: 0 0.35rem 0 #76551f, 0 0.8rem 1.8rem rgba(0, 0, 0, 0.28);
+        color: #211a0d;
+        cursor: pointer;
+        font: inherit;
+        font-weight: 800;
+        text-decoration: none;
+        transition: filter 160ms ease, transform 160ms ease, box-shadow 160ms ease;
+      }
+
+      .button:hover {
+        filter: brightness(1.08);
+        transform: translateY(-2px);
+        box-shadow: 0 0.48rem 0 #76551f, 0 0.95rem 2rem rgba(0, 0, 0, 0.3);
+      }
+
+      .button:active {
+        transform: translateY(3px);
+        box-shadow: 0 0.12rem 0 #76551f, 0 0.5rem 1.2rem rgba(0, 0, 0, 0.24);
+      }
+
+      .button:focus-visible,
+      a:focus-visible {
+        outline: 3px solid var(--violet-light);
+        outline-offset: 4px;
+      }
+
+      .secondary-link {
+        color: var(--muted);
+        font-weight: 700;
+        text-decoration-thickness: 1px;
+        text-underline-offset: 0.35rem;
+      }
+
+      .auth-panel {
+        display: grid;
+        justify-items: start;
+        gap: 0.8rem;
+        max-width: 34rem;
+        margin-top: 1.75rem;
+        padding: 1rem 1.1rem;
+        border: 1px solid var(--line);
+        border-radius: 0.9rem;
+        background: rgba(7, 19, 15, 0.62);
+      }
+
+      .auth-button {
+        min-height: 3rem;
+        border-color: #dedede;
+        background: #ffffff;
+        box-shadow: 0 0.25rem 0 #a9a9a9, 0 0.7rem 1.5rem rgba(0, 0, 0, 0.22);
+        color: #252525;
+      }
+
+      .auth-button:hover {
+        box-shadow: 0 0.36rem 0 #a9a9a9, 0 0.85rem 1.7rem rgba(0, 0, 0, 0.25);
+      }
+
+      .auth-button:active {
+        box-shadow: 0 0.08rem 0 #a9a9a9, 0 0.4rem 1rem rgba(0, 0, 0, 0.2);
+      }
+
+      .auth-button:disabled {
+        cursor: wait;
+        filter: saturate(0.4);
+        opacity: 0.72;
+      }
+
+      .google-mark,
+      .signed-in-mark {
+        display: inline-grid;
+        place-items: center;
+        width: 1.65rem;
+        height: 1.65rem;
+        margin-right: 0.7rem;
+        border-radius: 50%;
+        font-size: 1rem;
+        font-weight: 800;
+      }
+
+      .google-mark {
+        border: 1px solid #d5d9df;
+        color: #2767d8;
+      }
+
+      .signed-in-mark {
+        margin-right: 0;
+        border: 1px solid rgba(229, 204, 126, 0.58);
+        background: rgba(128, 96, 218, 0.25);
+        color: var(--gold);
+      }
+
+      .auth-panel p {
+        margin: 0;
+        color: var(--muted);
+        font-size: 0.92rem;
+      }
+
+      .auth-ready,
+      .auth-ready-actions {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 0.75rem;
+      }
+
+      .auth-ready {
+        gap: 0.85rem;
+      }
+
+      .text-button {
+        padding: 0;
+        border: 0;
+        background: transparent;
+        color: var(--muted);
+        cursor: pointer;
+        font: inherit;
+        font-weight: 700;
+        text-decoration: underline;
+        text-decoration-thickness: 1px;
+        text-underline-offset: 0.3rem;
+      }
+
+      .text-button:hover,
+      .text-button:focus-visible {
+        color: var(--ink);
+      }
+
+      [hidden] {
+        display: none !important;
+      }
+
+      .scene-frame {
+        position: relative;
+        margin: 0;
+        padding: clamp(0.55rem, 1.3vw, 0.9rem);
+        border: 1px solid var(--line);
+        border-radius: 1.35rem;
+        background: linear-gradient(145deg, rgba(229, 204, 126, 0.16), rgba(128, 96, 218, 0.09));
+        box-shadow: 0 2.5rem 5.5rem rgba(0, 0, 0, 0.36);
+      }
+
+      .scene-frame::before,
+      .scene-frame::after {
+        position: absolute;
+        z-index: -1;
+        content: "";
+        width: 4.5rem;
+        height: 4.5rem;
+        border: 1px solid rgba(203, 182, 255, 0.4);
+        transform: rotate(45deg);
+      }
+
+      .scene-frame::before {
+        right: -1.15rem;
+        top: -1.15rem;
+      }
+
+      .scene-frame::after {
+        left: -1.15rem;
+        bottom: -1.15rem;
+      }
+
+      .scene-frame img {
+        display: block;
+        width: 100%;
+        height: auto;
+        aspect-ratio: 16 / 9;
+        border-radius: 0.85rem;
+      }
+
+      section:not(.hero) {
+        padding: clamp(4.5rem, 9vw, 8rem) 0;
+      }
+
+      .intro {
+        display: grid;
+        grid-template-columns: 0.8fr 1.2fr;
+        gap: clamp(2rem, 8vw, 7rem);
+        border-top: 1px solid var(--line);
+      }
+
+      .intro-copy {
+        max-width: 42rem;
+        color: var(--muted);
+        font-size: 1.08rem;
+      }
+
+      .principles {
+        border-top: 1px solid var(--line);
+      }
+
+      .learning-path {
+        display: grid;
+        grid-template-columns: 0.8fr 1.2fr;
+        gap: clamp(2rem, 8vw, 7rem);
+        border-top: 1px solid var(--line);
+      }
+
+      .learning-path-copy p:last-child {
+        max-width: 31rem;
+        margin-bottom: 0;
+        color: var(--muted);
+        font-size: 1.05rem;
+      }
+
+      .path-track {
+        display: grid;
+        gap: 0;
+        margin: 0;
+        padding: 0;
+        list-style: none;
+      }
+
+      .path-step {
+        position: relative;
+        padding: 0 0 2.25rem 3.25rem;
+      }
+
+      .path-step:not(:last-child)::after {
+        position: absolute;
+        left: 1rem;
+        top: 2rem;
+        bottom: 0.2rem;
+        width: 1px;
+        content: "";
+        background: linear-gradient(var(--violet), rgba(128, 96, 218, 0.2));
+      }
+
+      .path-step::before {
+        position: absolute;
+        left: 0.35rem;
+        top: 0.25rem;
+        width: 1.15rem;
+        height: 1.15rem;
+        content: "";
+        transform: rotate(45deg);
+        border: 1px solid var(--gold);
+        border-radius: 0.2rem;
+        background: linear-gradient(135deg, var(--violet-light), var(--violet));
+        box-shadow: 0 0 1rem rgba(128, 96, 218, 0.42);
+      }
+
+      .path-range {
+        display: block;
+        margin-bottom: 0.25rem;
+        color: var(--gold);
+        font-family: Georgia, "Times New Roman", serif;
+        font-size: 1.35rem;
+        font-weight: 700;
+      }
+
+      .path-step p {
+        margin: 0;
+        color: var(--muted);
+      }
+
+      .section-heading {
+        display: flex;
+        align-items: end;
+        justify-content: space-between;
+        gap: 2rem;
+        margin-bottom: 2.3rem;
+      }
+
+      .section-heading p {
+        max-width: 34rem;
+        margin: 0;
+        color: var(--muted);
+      }
+
+      .principle-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 1rem;
+      }
+
+      .principle-card {
+        min-height: 15rem;
+        padding: 1.5rem;
+        border: 1px solid var(--line);
+        border-radius: 1rem;
+        background: linear-gradient(160deg, rgba(30, 61, 49, 0.78), rgba(11, 23, 20, 0.84));
+      }
+
+      .principle-number {
+        display: block;
+        margin-bottom: 2.4rem;
+        color: var(--gold);
+        font-family: Georgia, "Times New Roman", serif;
+        font-size: 1.1rem;
+      }
+
+      .principle-card p {
+        margin: 0;
+        color: var(--muted);
+        font-size: 0.96rem;
+      }
+
+      .gallery {
+        border-top: 1px solid var(--line);
+      }
+
+      .gallery-grid {
+        display: grid;
+        grid-template-columns: repeat(12, 1fr);
+        gap: 1rem;
+      }
+
+      .gallery figure {
+        margin: 0;
+        padding: 0.55rem;
+        border: 1px solid var(--line);
+        border-radius: 1rem;
+        background: rgba(14, 30, 25, 0.74);
+      }
+
+      .gallery figure:first-child {
+        grid-column: span 7;
+      }
+
+      .gallery figure:nth-child(2) {
+        grid-column: span 5;
+      }
+
+      .gallery figure:nth-child(3) {
+        grid-column: 3 / span 8;
+      }
+
+      .gallery img {
+        display: block;
+        width: 100%;
+        height: auto;
+        aspect-ratio: 16 / 9;
+        border-radius: 0.65rem;
+        background: #08100e;
+      }
+
+      .gallery figcaption {
+        padding: 0.7rem 0.35rem 0.25rem;
+        color: var(--muted);
+        font-size: 0.88rem;
+      }
+
+      .support {
+        display: grid;
+        grid-template-columns: 1.05fr 0.95fr;
+        align-items: center;
+        gap: clamp(2rem, 8vw, 7rem);
+        border-top: 1px solid var(--line);
+      }
+
+      .support-card {
+        padding: clamp(1.5rem, 4vw, 2.5rem);
+        border: 1px solid var(--line);
+        border-radius: 1.2rem;
+        background: var(--panel);
+      }
+
+      .support-card ul {
+        display: grid;
+        gap: 0.7rem;
+        margin: 0;
+        padding: 0;
+        list-style: none;
+      }
+
+      .support-card li {
+        display: flex;
+        gap: 0.7rem;
+        color: var(--muted);
+      }
+
+      .support-card li::before {
+        content: "◆";
+        color: var(--violet-light);
+      }
+
+      .closing {
+        text-align: center;
+      }
+
+      .closing h2,
+      .closing p {
+        margin-inline: auto;
+      }
+
+      .closing p {
+        max-width: 40rem;
+        margin-bottom: 1.8rem;
+        color: var(--muted);
+      }
+
+      footer {
+        display: flex;
+        justify-content: space-between;
+        gap: 1rem;
+        padding: 2rem 0 3rem;
+        border-top: 1px solid var(--line);
+        color: #9f9f94;
+        font-size: 0.86rem;
+      }
+
+      @media (max-width: 1200px) {
+        .scene-frame::before,
+        .scene-frame::after {
+          display: none;
+        }
+      }
+
+      @media (max-width: 880px) {
+        .hero,
+        .intro,
+        .learning-path,
+        .support {
+          grid-template-columns: 1fr;
+        }
+
+        .hero {
+          min-height: auto;
+          padding-top: 3rem;
+        }
+
+        .hero-copy {
+          max-width: 42rem;
+        }
+
+        .principle-grid {
+          grid-template-columns: repeat(2, 1fr);
+        }
+
+        .section-heading {
+          display: block;
+        }
+
+        .gallery figure:first-child,
+        .gallery figure:nth-child(2),
+        .gallery figure:nth-child(3) {
+          grid-column: span 6;
+        }
+
+        .gallery figure:nth-child(3) {
+          grid-column-start: 4;
+        }
+      }
+
+      @media (max-width: 620px) {
+        .site-header {
+          min-height: 4.5rem;
+        }
+
+        nav a:not(.button) {
+          display: none;
+        }
+
+        nav .button {
+          min-height: 2.7rem;
+          padding: 0.5rem 0.85rem;
+        }
+
+        .hero {
+          padding: 2.5rem 0 4.5rem;
+        }
+
+        .principle-grid,
+        .gallery-grid {
+          grid-template-columns: 1fr;
+        }
+
+        .gallery figure:first-child,
+        .gallery figure:nth-child(2),
+        .gallery figure:nth-child(3) {
+          grid-column: auto;
+        }
+
+        footer {
+          flex-direction: column;
+        }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        html {
+          scroll-behavior: auto;
+        }
+
+        *,
+        *::before,
+        *::after {
+          transition-duration: 0.01ms !important;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <a class="skip-link" href="#obsah">Přeskočit na obsah</a>
+    <header class="site-header">
+      <a class="brand" href="/" aria-label="Číslokraj — úvodní stránka">
+        <span class="brand-mark" aria-hidden="true"></span>
+        Číslokraj
+      </a>
+      <nav aria-label="Hlavní navigace">
+        <a href="#o-hre">O hře</a>
+        <a href="#jak-to-funguje">Jak se učí</a>
+        <a class="button" href="/hra/">Hrát</a>
+      </nav>
+    </header>
+
+    <main id="obsah">
+      <section class="hero" aria-labelledby="hero-title">
+        <div class="hero-copy">
+          <p class="eyebrow">Pilotní verze</p>
+          <h1 id="hero-title">Matematika jako <span>dobrodružství.</span></h1>
+          <p>
+            Číslokraj propojuje počítání s objevováním světa, příběhem a souboji.
+            Dítě postupuje vlastním tempem a každá vyřešená úloha posouvá výpravu dál.
+          </p>
+          <div class="actions">
+            <a class="button" href="/hra/">Vstoupit do Číslokraje</a>
+            <a class="secondary-link" href="#o-hre">Zjistit více</a>
+          </div>
+          <div class="auth-panel" data-auth-root aria-live="polite">
+            <button class="button auth-button" type="button" data-auth-sign-in disabled>
+              <span class="google-mark" aria-hidden="true">G</span>
+              <span data-auth-label>Ověřuji přihlášení…</span>
+            </button>
+            <div class="auth-ready" data-auth-ready hidden>
+              <span class="signed-in-mark" aria-hidden="true">✓</span>
+              <div>
+                <p>Přihlášení přes Google je hotové.</p>
+                <div class="auth-ready-actions">
+                  <a class="secondary-link" href="/hra/">Pokračovat do hry</a>
+                  <button class="text-button" type="button" data-auth-sign-out>Odhlásit</button>
+                </div>
+              </div>
+            </div>
+            <p data-auth-message>
+              Přihlášení vytvoří účet pro budoucí ukládání postupu na více zařízeních.
+            </p>
+          </div>
+        </div>
+        <figure class="scene-frame">
+          <img
+            src="/assets/images/backgrounds/menu-mathoria.webp"
+            width="1280"
+            height="720"
+            alt="Hrdinka na cestě krajinou Mathorie mezi městem, krystaly a kouzelnou lodí"
+            fetchpriority="high"
+          />
+        </figure>
+      </section>
+
+      <section class="intro" id="o-hre" aria-labelledby="about-title">
+        <div>
+          <p class="eyebrow">Co je Číslokraj</p>
+          <h2 id="about-title">Hra, ve které má počítání smysl.</h2>
+        </div>
+        <div class="intro-copy">
+          <p>
+            Hráč prochází Mathorií a Kouzelným lesem, řeší matematické úlohy,
+            pomáhá obyvatelům a získává krystaly. Počítání není samostatný test —
+            je součástí dobrodružství.
+          </p>
+          <p>
+            Záměrem Číslokraje je proměnit procvičování počítání, které se bez opakování
+            neobejde, v zábavu. Místo řad příkladů na papíře čekají souboje, hlavolamy
+            a hry s čísly. Učení nemusí být nuda ani nucený dril — cílem je, aby děti
+            v Číslokraji chtěly počítat samy.
+          </p>
+        </div>
+      </section>
+
+      <section class="learning-path" aria-labelledby="path-title">
+        <div class="learning-path-copy">
+          <p class="eyebrow">Co se procvičuje</p>
+          <h2 id="path-title">Od prvních čísel až přes desítku.</h2>
+          <p>
+            Hráč si na začátku zvolí výchozí úroveň. Postup stojí na zvládání stále
+            náročnějších dovedností — jak si je dítě osvojuje a upevňuje, otevírají se
+            mu nové úlohy i další možnosti ve hře.
+          </p>
+        </div>
+        <ol class="path-track" aria-label="Současný rozsah učiva">
+          <li class="path-step">
+            <span class="path-range">Počítání do 5</span>
+            <p>Počty, čísla a první porovnávání pomocí znaků &lt;, &gt; a =.</p>
+          </li>
+          <li class="path-step">
+            <span class="path-range">Sčítání a odčítání do 10</span>
+            <p>Upevnění základních početních vztahů a jistější práce s čísly.</p>
+          </li>
+          <li class="path-step">
+            <span class="path-range">Do 20 s přechodem přes 10</span>
+            <p>Nejnáročnější dovednosti, ke kterým současná výuková cesta vede.</p>
+          </li>
+        </ol>
+      </section>
+
+      <section class="principles" id="jak-to-funguje" aria-labelledby="principles-title">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">Principy učení</p>
+            <h2 id="principles-title">Dobrodružství, které reaguje na hráče.</h2>
+          </div>
+          <p>
+            Hra dítě nestresuje odpočtem ani počítáním na rychlost. Plynulost odpovědí
+            ale sleduje společně se správností, aby děti, které počítají jistě a rychle,
+            mohly přejít k náročnějším příkladům dříve.
+          </p>
+        </div>
+        <div class="principle-grid">
+          <article class="principle-card">
+            <span class="principle-number">01</span>
+            <h3>Počítání v ději</h3>
+            <p>Úlohy otevírají cestu, pomáhají v soubojích a posouvají příběh.</p>
+          </article>
+          <article class="principle-card">
+            <span class="principle-number">02</span>
+            <h3>Vlastní začátek</h3>
+            <p>Hráč si zvolí výchozí úroveň a nemusí začínat od úplných základů.</p>
+          </article>
+          <article class="principle-card">
+            <span class="principle-number">03</span>
+            <h3>Zvládnutí otevírá cestu</h3>
+            <p>Osvojené dovednosti odemykají těžší úlohy i nové herní možnosti.</p>
+          </article>
+          <article class="principle-card">
+            <span class="principle-number">04</span>
+            <h3>Bez závodu s časem</h3>
+            <p>Pomalé přemýšlení není chyba; jisté a rychlé řešení může urychlit další postup.</p>
+          </article>
+        </div>
+      </section>
+
+      <section class="gallery" aria-labelledby="gallery-title">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">Ze hry</p>
+            <h2 id="gallery-title">Mathoria a Kouzelný les.</h2>
+          </div>
+          <p>Tři pohledy přímo z vydávané pilotní verze.</p>
+        </div>
+        <div class="gallery-grid">
+          <figure>
+            <img src="/assets/images/screenshots/landing-menu.webp" width="1280" height="720" alt="Hlavní menu Číslokraje" loading="lazy" />
+            <figcaption>Výprava začíná v Mathorii.</figcaption>
+          </figure>
+          <figure>
+            <img src="/assets/images/screenshots/landing-town.webp" width="1280" height="720" alt="Město Mathoria ve hře Číslokraj" loading="lazy" />
+            <figcaption>Ve městě čekají postavy, dílny a nové výzvy.</figcaption>
+          </figure>
+          <figure>
+            <img src="/assets/images/screenshots/landing-forest.webp" width="1280" height="720" alt="Dobrodružství v Kouzelném lese" loading="lazy" />
+            <figcaption>V lese se počítání propojuje s průzkumem a hádankami.</figcaption>
+          </figure>
+        </div>
+      </section>
+
+      <section class="support" aria-labelledby="support-title">
+        <div>
+          <p class="eyebrow">Kde si zahrát</p>
+          <h2 id="support-title">Stačí moderní prohlížeč.</h2>
+          <p class="intro-copy">
+            Pilot je určený pro notebook, stolní počítač a tablet na šířku.
+            Hra podporuje myš i dotykové ovládání a nevyžaduje instalaci.
+          </p>
+        </div>
+        <aside class="support-card" aria-label="Podporovaná zařízení">
+          <ul>
+            <li>Chrome, Edge, Safari nebo Firefox</li>
+            <li>Počítač či tablet v režimu na šířku</li>
+            <li>Zvuk je doporučený, ale lze ho vypnout</li>
+          </ul>
+        </aside>
+      </section>
+
+      <section class="closing" aria-labelledby="closing-title">
+        <p class="pilot-note">Pilotní verze</p>
+        <h2 id="closing-title">Připraven vyrazit?</h2>
+        <p>Vstup do Mathorie, vyber si hrdinu a začni první dobrodružství.</p>
+        <a class="button" href="/hra/">Hrát Číslokraj</a>
+      </section>
+    </main>
+
+    <footer>
+      <span>Číslokraj · pilot 0.1</span>
+      <span>Matematické dobrodružství ve vývoji</span>
+    </footer>
+    <script type="module" src="/src/landing-auth.ts"></script>
+  </body>
+</html>

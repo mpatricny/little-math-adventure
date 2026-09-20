@@ -102,6 +102,9 @@ test('public media is selected from runtime dependencies, with no chapter or edi
     assert.ok(content.publicFiles.has(asset.url.slice(1)), asset.url);
   }
   assert.ok(!JSON.stringify(json('ui-element-templates.json')).includes('data:image/'));
+  for (const filename of ['landing-menu.webp', 'landing-town.webp', 'landing-forest.webp']) {
+    assert.ok(content.publicFiles.has(`assets/images/screenshots/${filename}`), filename);
+  }
 });
 
 test('victory keeps shared frames and both continue-button states despite historical chapter names', () => {

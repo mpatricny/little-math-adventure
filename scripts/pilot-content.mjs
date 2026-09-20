@@ -6,7 +6,7 @@ import {
   PILOT_SCENE_KEYS, PILOT_LAYOUT_KEYS, PILOT_SCENE_SOURCE_OVERRIDES,
   EXCLUDED_SOURCE_PREFIXES, EXCLUDED_MUSIC_KEYS, EXCLUDED_AUDIO_PREFIXES,
   EXCLUDED_AUDIO_KEYS, OPTIONAL_CHAPTER_TEXTURE_PREFIXES, PILOT_DATA_FILES,
-  SHARED_RUNTIME_SOURCE_FILES, SHARED_CHAPTER_TEXTURE_KEYS,
+  PILOT_LANDING_FILES, SHARED_RUNTIME_SOURCE_FILES, SHARED_CHAPTER_TEXTURE_KEYS,
 } from './pilot-content.config.mjs';
 
 const own = (object, key) => Object.prototype.hasOwnProperty.call(object, key);
@@ -253,6 +253,7 @@ export function collectPilotContent(rootDir) {
   for (const resource of [...Object.values(audio.assets), ...Object.values(audio.music)]) {
     publicFiles.add(publicFilePath(resource.url));
   }
+  for (const filename of PILOT_LANDING_FILES) publicFiles.add(publicFilePath(filename));
   // Existing TV support is part of the pilot, but no editor/source directories are copied.
   for (const filename of ['manifest.json', 'sdk/mesa-sdk.js']) {
     if (existsSync(path.join(rootDir, 'public', filename))) publicFiles.add(filename);

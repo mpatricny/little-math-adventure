@@ -104,12 +104,28 @@ export default defineConfig(({ mode }) => {
     build: {
         target: 'es2018',
         outDir: isPilot ? 'dist/pilot' : 'dist/development',
+        rollupOptions: {
+            input: [
+                path.resolve(rootDir, 'index.html'),
+                path.resolve(rootDir, 'landing.html'),
+            ],
+        },
     },
     server: {
         host: '0.0.0.0',
         port: isPilot ? 8002 : 8001,
         strictPort: true,
         hmr: false,  // Disable hot reload - manually refresh when ready
+        proxy: {
+            '/api': 'http://127.0.0.1:3000',
+            '/v1': 'http://127.0.0.1:3000',
+        },
+    },
+    preview: {
+        proxy: {
+            '/api': 'http://127.0.0.1:3000',
+            '/v1': 'http://127.0.0.1:3000',
+        },
     },
     clearScreen: false,
     };

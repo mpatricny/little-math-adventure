@@ -1,0 +1,21 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "cislokraj-web",
+  "main": "./infra/cloudflare/worker.mjs",
+  "compatibility_date": "2026-09-10",
+  "workers_dev": true,
+  "preview_urls": true,
+  "vars": {
+    "APP_RELEASE": "pilot-0.1.0",
+    "API_ORIGIN": "https://api.cislokraj.cz"
+  },
+  "assets": {
+    "directory": "./dist/pilot",
+    "binding": "ASSETS",
+    "run_worker_first": ["/", "/hra", "/hra/*", "/api/*", "/v1/*"]
+  },
+  "routes": [
+    { "pattern": "cislokraj.cz", "zone_name": "cislokraj.cz", "custom_domain": true },
+    { "pattern": "www.cislokraj.cz", "zone_name": "cislokraj.cz", "custom_domain": true }
+  ]
+}
