@@ -412,6 +412,55 @@ describe('CoopSessionManager casual progression', () => {
         expect(Object.keys(gameState.getMathStats().problemStats)).toEqual(['attack-b', 'pet-b']);
     });
 
+    it('rebinds a cached math engine before refilling a different co-op player pool', async () => {
+        const gameState = GameStateManager.getInstance();
+        gameState.reset('girl_knight', 'PlayerA', 0);
+        const dataA = gameState.getMasteryData();
+        setCurrentBand(dataA, 'D', 2);
+        dataA.selectedStartBand = 'D';
+        gameState.getMathStats().totalAttempts = 85;
+        gameState.save();
+        gameState.reset('girl_knight', 'PlayerB', 1);
+        gameState.getMasteryData().selectedStartBand = 'A';
+        gameState.getMathStats().totalAttempts = 30;
+        gameState.save();
+        const coop = CoopSessionManager.getInstance();
+        expect(coop.startSession(0, 1)).toBe(true);
+        await new Promise(resolve => setTimeout(resolve, 0));
+        const engine = new MathEngine(createRegistryStub({ playerLevel: 2 }) as any);
+        gameState.getMathStats().currentPool = [];
+        coop.activatePlayerB();
+        const statsB = gameState.getMathStats();
+        engine.initializeLevelPool();
+        expect(gameState.getMathStats()).toBe(statsB);
+        expect(statsB.totalAttempts).toBe(30);
+        expect(statsB.masteryData!.selectedStartBand).toBe('A');
+        coop.endSession();
+        gameState.loadSlot(0);
+        expect(gameState.getMathStats().totalAttempts).toBe(85);
+        expect(gameState.getMasteryData().selectedStartBand).toBe('D');
+        gameState.loadSlot(1);
+        expect(gameState.getMathStats().totalAttempts).toBe(30);
+        expect(gameState.getMasteryData().selectedStartBand).toBe('A');
+    });
+
+    it('discards a stale engine flush after the same slot has been rehydrated', () => {
+        const gameState = GameStateManager.getInstance();
+        gameState.reset('girl_knight', 'PlayerA', 0);
+        const engine = new MathEngine(createRegistryStub({ playerLevel: 2 }) as any);
+        const stale = gameState.getMathStats();
+        gameState.save();
+        gameState.loadSlot(0);
+        const live = gameState.getMathStats();
+        live.totalAttempts = 123;
+        expect(live).not.toBe(stale);
+        (engine as any).saveStats();
+        expect(gameState.getMathStats()).toBe(live);
+        gameState.save();
+        gameState.loadSlot(0);
+        expect(gameState.getMathStats().totalAttempts).toBe(123);
+    });
+
     it('checkpoints both players learning before battle completion without mixing their daily history', async () => {
         const { SaveSystem } = await import('../SaveSystem');
         const { DailyProgressSystem } = await import('../DailyProgressSystem');

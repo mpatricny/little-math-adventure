@@ -70,8 +70,13 @@ export class MathEngine {
     }
 
     private saveStats(): void {
-        // Save through GameStateManager (unified save system)
-        this.gameState.setMathStats(this.stats);
+        // Scene engines outlive hotseat swaps and save hydration. Never install
+        // their old stats object over the active player's entire learning history.
+        if (this.stats !== this.gameState.getMathStats()) {
+            this.reloadStats();
+            this.registry.set('mathStats', this.stats);
+            return;
+        }
         this.gameState.save();
 
         // Also update registry for in-scene access
@@ -149,6 +154,7 @@ export class MathEngine {
      * Initialize the level pool based on player level
      */
     initializeLevelPool(): void {
+        if (this.autoPersist) this.reloadStats();
         const playerLevel = this.fixedLevel ?? (this.registry.get('playerLevel') || 1);
         this.levelPool = this.generateLevelPool(playerLevel);
 
@@ -247,6 +253,9 @@ export class MathEngine {
      * Get the next problem from the active pool
      */
     generateProblem(): MathProblem {
+        if (this.autoPersist && this.stats !== this.gameState.getMathStats()) {
+            this.initializeLevelPool();
+        }
         // Refill if pool is empty
         if (this.stats.currentPool.length === 0) {
             this.refillActivePool();
