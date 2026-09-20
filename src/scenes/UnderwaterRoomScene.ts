@@ -128,22 +128,13 @@ export class UnderwaterRoomScene extends Phaser.Scene {
 
     preload(): void {
         if (this.blocked) return;
-        const textures = this.cache.json.get('textures').images as Record<string, string>;
-        const missing = Object.keys(textures).filter(key => key.startsWith('underwater-'))
-            .filter(key => !this.textures.exists(key));
-        if (!missing.length) return;
-        this.ui = new UnderwaterUI(this);
-        this.ui.open('CESTA POD HLADINU');
-        const status = this.ui.text('puzzleEquationHost', 'Načítám podvodní svět…', 25, true);
-        const progressListener = (value: number) => this.ui.updateText(status, `Načítám podvodní svět… ${Math.round(value * 100)} %`);
+        // SceneAssetPlugin queues the scene dependencies before this hook. Its
+        // UI artwork is available in create(), not while the loader is running.
         const errorListener = () => { this.loadFailed = true; };
-        this.load.on('progress', progressListener);
         this.load.on('loaderror', errorListener);
         this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
-            this.load.off('progress', progressListener);
             this.load.off('loaderror', errorListener);
         });
-        missing.forEach(key => this.load.image(key, `assets/${textures[key]}`));
     }
 
     create(): void {

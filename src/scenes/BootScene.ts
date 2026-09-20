@@ -1,6 +1,6 @@
 import Phaser from 'phaser';
 import { LocalizationService } from '../systems/LocalizationService';
-import { TexturesFile, AnimationsFile } from '../types/assets';
+import { registerLoadedAnimations } from '../systems/SceneAssetPlugin';
 import { uiTemplateLoader } from '../systems/UiTemplateLoader';
 import { isTvMode } from '../remote/remoteMode';
 
@@ -56,73 +56,11 @@ export class BootScene extends Phaser.Scene {
 }
 
 /**
- * Second stage loader that reads textures.json and loads all assets dynamically
+ * Initialize shared metadata. Each destination scene loads its own texture dependencies.
  */
 export class AssetLoaderScene extends Phaser.Scene {
     constructor() {
         super({ key: 'AssetLoaderScene' });
-    }
-
-    preload(): void {
-        const textures = this.cache.json.get('textures') as TexturesFile;
-
-        // Show loading progress
-        const width = this.cameras.main.width;
-        const height = this.cameras.main.height;
-
-        const progressBar = this.add.graphics();
-        const progressBox = this.add.graphics();
-        progressBox.fillStyle(0x222222, 0.8);
-        progressBox.fillRect(width / 2 - 160, height / 2 - 25, 320, 50);
-
-        const loadingText = this.add.text(width / 2, height / 2 - 50, 'Loading assets...', {
-            fontSize: '20px',
-            color: '#ffffff',
-        });
-        loadingText.setOrigin(0.5, 0.5);
-
-        this.load.on('progress', (value: number) => {
-            progressBar.clear();
-            progressBar.fillStyle(0x44aa44, 1);
-            progressBar.fillRect(width / 2 - 150, height / 2 - 15, 300 * value, 30);
-        });
-
-        // A texture key can represent either a plain image or a spritesheet, never both.
-        // Prefer spritesheets defensively so an accidental duplicate catalog entry cannot
-        // collapse every animation frame into one large static texture.
-        const spritesheetKeys = new Set(Object.keys(textures.spritesheets));
-
-        // Load all images
-        for (const [key, path] of Object.entries(textures.images)) {
-            // Chapter backgrounds are loaded on entry, never during tablet boot.
-            if (key.startsWith('underwater-')) continue;
-            if (spritesheetKeys.has(key)) {
-                console.error(`[AssetLoaderScene] Skipping duplicate image key reserved for spritesheet: ${key}`);
-                continue;
-            }
-
-            // Handle library: prefix for Asset Library files
-            const actualPath = path.startsWith('library:')
-                ? `assets/library/${path.slice(8)}`  // Strip "library:" and add "assets/library/"
-                : `assets/${path}`;
-            this.load.image(key, actualPath);
-        }
-
-        // Load all spritesheets
-        for (const [key, config] of Object.entries(textures.spritesheets)) {
-            if (config.frameWidth && config.frameHeight) {
-                // Handle library: prefix for Asset Library files
-                const actualPath = config.path.startsWith('library:')
-                    ? `assets/library/${config.path.slice(8)}`
-                    : `assets/${config.path}`;
-                this.load.spritesheet(key, actualPath, {
-                    frameWidth: config.frameWidth,
-                    frameHeight: config.frameHeight,
-                });
-            } else {
-                console.warn(`Skipping spritesheet ${key}: missing frame dimensions`);
-            }
-        }
     }
 
     create(): void {
@@ -130,7 +68,7 @@ export class AssetLoaderScene extends Phaser.Scene {
         LocalizationService.getInstance().init(this);
 
         // Create global animations
-        this.createAnimations();
+        registerLoadedAnimations(this);
 
         // Store nine-slice configs in registry for AssetFactory
         const nineSlices = this.cache.json.get('nineSlices');
@@ -144,53 +82,4 @@ export class AssetLoaderScene extends Phaser.Scene {
         });
     }
 
-    private createAnimations(): void {
-        const animsData = this.cache.json.get('animations') as AnimationsFile;
-
-        // Store animation definitions (including movement data) in registry
-        const animationDefs: Record<string, any> = {};
-
-        // Helper to generate frames from either format
-        const generateFrames = (textureKey: string, framesConfig: any): Phaser.Types.Animations.AnimationFrame[] => {
-            // New format: { sequence: [0, 1, 2, 1, 0] }
-            if (framesConfig.sequence && Array.isArray(framesConfig.sequence)) {
-                return framesConfig.sequence.map((frameIndex: number) => ({
-                    key: textureKey,
-                    frame: frameIndex,
-                }));
-            }
-            // Legacy format: { start: 0, end: 5 }
-            return this.anims.generateFrameNumbers(textureKey, framesConfig);
-        };
-
-        // Helper to recursively find animation definitions
-        const processAnimations = (data: any) => {
-            for (const key in data) {
-                if (key === 'version') continue;
-
-                const value = data[key];
-
-                // Check if it's an animation definition (has texture and frames)
-                if (value.texture && value.frames) {
-                    this.anims.create({
-                        key: key, // Use the key from JSON as the animation key
-                        frames: generateFrames(value.texture, value.frames),
-                        frameRate: value.frameRate,
-                        repeat: value.repeat
-                    });
-
-                    // Store full definition (including movement) for runtime access
-                    animationDefs[key] = value;
-                } else if (typeof value === 'object') {
-                    // Recurse
-                    processAnimations(value);
-                }
-            }
-        };
-
-        processAnimations(animsData);
-
-        // Store in registry for access from any scene
-        this.registry.set('animationDefs', animationDefs);
-    }
 }

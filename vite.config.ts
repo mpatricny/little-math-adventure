@@ -1,6 +1,7 @@
 import { defineConfig, Plugin } from 'vite';
 import fs from 'fs';
 import path from 'path';
+import { sceneAssetsPlugin } from './scripts/scene-assets.mjs';
 import { preparePilotPublic } from './scripts/pilot-content.mjs';
 
 /**
@@ -97,6 +98,7 @@ export default defineConfig(({ mode }) => {
     plugins: [
         ...(pilot ? [pilotDataPlugin(rootDir, pilot.publicDir)] : [debugSavePlugin()]),
         cleanBuildPlugin(),
+        sceneAssetsPlugin(rootDir, path.join(pilot?.publicDir ?? path.join(rootDir, 'public'), 'assets/data')),
     ],
     esbuild: {
         target: 'es2018',

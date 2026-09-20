@@ -1,4 +1,5 @@
 import { DEV_TOOLS_ENABLED, IS_PILOT } from './config/buildVariant';
+import { SceneAssetPlugin } from './systems/SceneAssetPlugin';
 import { SceneAudioPlugin } from './audio/SceneAudioPlugin';
 import { destroyGameAudio } from './audio/AudioDirector';
 import Phaser from 'phaser';
@@ -110,6 +111,7 @@ async function startGame(): Promise<void> {
 
     const forceCanvasRenderer = new URLSearchParams(window.location.search).get('renderer') === 'canvas';
     const config: Phaser.Types.Core.GameConfig = {
+        plugins: { scene: [{ key: 'sceneAssets', plugin: SceneAssetPlugin, mapping: 'sceneAssets' }, { key: 'sceneAudio', plugin: SceneAudioPlugin, mapping: 'sceneAudio' }] },
         type: isTvMode() || forceCanvasRenderer ? Phaser.CANVAS : Phaser.AUTO,
         width: 1280,
         height: 720,
