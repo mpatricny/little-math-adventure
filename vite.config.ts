@@ -1,6 +1,7 @@
 import { defineConfig, Plugin } from 'vite';
 import fs from 'fs';
 import path from 'path';
+import { preparePilotPublic } from './scripts/pilot-content.mjs';
 
 /**
  * Vite plugin that saves debug layout values to a JSON file.
@@ -42,13 +43,17 @@ function debugSavePlugin(): Plugin {
  * that are not needed at runtime.
  */
 function cleanBuildPlugin(): Plugin {
+    let outputDir = path.resolve('dist');
     return {
         name: 'clean-build',
+        configResolved(config) {
+            outputDir = path.resolve(config.root, config.build.outDir);
+        },
         closeBundle() {
             for (const folder of ['incoming', 'previews']) {
-                fs.rmSync(path.resolve('dist/assets/audio', folder), { recursive: true, force: true });
+                fs.rmSync(path.join(outputDir, 'assets/audio', folder), { recursive: true, force: true });
             }
-            const distLibrary = path.resolve('dist/assets/library');
+            const distLibrary = path.join(outputDir, 'assets/library');
             const removals = [
                 'assets.db',
                 'assets.db-shm',
@@ -66,18 +71,46 @@ function cleanBuildPlugin(): Plugin {
     };
 }
 
-export default defineConfig({
-    plugins: [debugSavePlugin(), cleanBuildPlugin()],
+/** Static JSON imports and browser fetches must see the same pilot catalog. */
+function pilotDataPlugin(rootDir: string, publicDir: string): Plugin {
+    const originalDataDir = path.join(rootDir, 'public', 'assets', 'data') + path.sep;
+    return {
+        name: 'pilot-data',
+        enforce: 'pre',
+        resolveId(source, importer) {
+            if (!importer || (!source.startsWith('.') && !path.isAbsolute(source))) return null;
+            const resolved = path.resolve(path.dirname(importer.split('?')[0]), source);
+            if (!resolved.startsWith(originalDataDir)) return null;
+            const target = path.join(publicDir, 'assets', 'data', resolved.slice(originalDataDir.length));
+            if (!fs.existsSync(target)) throw new Error(`Missing pilot data: ${target}`);
+            return target;
+        },
+    };
+}
+
+export default defineConfig(({ mode }) => {
+    const isPilot = mode === 'pilot';
+    const rootDir = path.resolve(__dirname);
+    const pilot = isPilot ? preparePilotPublic(rootDir) : null;
+    return {
+    publicDir: pilot?.publicDir ?? 'public',
+    plugins: [
+        ...(pilot ? [pilotDataPlugin(rootDir, pilot.publicDir)] : [debugSavePlugin()]),
+        cleanBuildPlugin(),
+    ],
     esbuild: {
         target: 'es2018',
     },
     build: {
         target: 'es2018',
+        outDir: isPilot ? 'dist/pilot' : 'dist/development',
     },
     server: {
         host: '0.0.0.0',
-        port: 8000,
+        port: isPilot ? 8002 : 8001,
+        strictPort: true,
         hmr: false,  // Disable hot reload - manually refresh when ready
     },
     clearScreen: false,
+    };
 });

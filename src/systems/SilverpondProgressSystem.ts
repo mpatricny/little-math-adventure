@@ -1,4 +1,5 @@
 import type { PlayerState } from '../types';
+import { SILVERPOND_ENABLED } from '../config/buildVariant';
 import { needsDepthCrystalShipReturn } from './DepthCrystalProgressSystem';
 
 export const SILVERPOND_TOWN_SCENE = 'SilverpondTownMockScene' as const;
@@ -22,6 +23,10 @@ export function getPlayerResumeScene(player: PlayerState): PlayerResumeScene {
     if (player.storyProgress?.hasCompletedIntro === false) {
         return CRASH_SITE_SCENE;
     }
+    // An imported development save keeps its later progress, but resumes in
+    // the available chapter when played in the pilot.
+    if (!SILVERPOND_ENABLED) return MATHORIA_TOWN_SCENE;
+
     if (player.underwaterProgress?.active && (player.storyProgress?.hasWaterBreathingScale || shouldBackfillLakeFairyReward(player))) {
         return 'UnderwaterRoomScene';
     }

@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import { DEV_TOOLS_ENABLED } from '../config/buildVariant';
 import { SceneBuilder } from '../systems/SceneBuilder';
 import { WalkingSceneHud } from '../ui/WalkingSceneHud';
 import { GameStateManager } from '../systems/GameStateManager';
@@ -126,7 +127,7 @@ export class SilverpondTownMockScene extends Phaser.Scene {
         this.input.keyboard?.on('keydown-ESC', () => {
             if (!this.walkingHud.closeBook()) this.quitToMenu();
         });
-        if (import.meta.env.DEV) {
+        if (DEV_TOOLS_ENABLED) {
             this.input.keyboard?.on('keydown-R', () => {
                 this.scene.start('SilverpondFairyRewardScene', { testMode: true });
             });

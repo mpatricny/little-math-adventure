@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import { DEV_TOOLS_ENABLED } from '../config/buildVariant';
 import { SceneLayoutLoader } from './SceneLayoutLoader';
 import { SceneLayoutsFile, ElementDef } from '../types/layout';
 import { uiTemplateLoader } from './UiTemplateLoader';
@@ -87,6 +88,8 @@ export class SceneDebugger {
     constructor(scene: Phaser.Scene, sceneName: string) {
         this.scene = scene;
         this.sceneName = sceneName;
+        if (!DEV_TOOLS_ENABLED) return;
+
         this.setupKeyboard();
         this.createOverlay();
         this.poolDisplay = new DebugPoolDisplay(scene);
@@ -100,6 +103,8 @@ export class SceneDebugger {
      * Register a game object for debug manipulation
      */
     register(id: string, object: Phaser.GameObjects.GameObject): void {
+        if (!DEV_TOOLS_ENABLED) return;
+
         const config = this.getElementConfig(object);
         this.elements.push({
             id,
@@ -112,6 +117,8 @@ export class SceneDebugger {
      * Set battle-specific callbacks for instant win and heal
      */
     setBattleCallbacks(onWin: () => void, onHeal: () => void): void {
+        if (!DEV_TOOLS_ENABLED) return;
+
         this.onInstantWin = onWin;
         this.onHeal = onHeal;
         this.isBattleScene = true;
@@ -121,6 +128,8 @@ export class SceneDebugger {
      * Apply saved debug values from a config object
      */
     applyConfig(config: Record<string, DebugElementConfig>): void {
+        if (!DEV_TOOLS_ENABLED) return;
+
         for (const el of this.elements) {
             if (config[el.id]) {
                 this.applyElementConfig(el.object, config[el.id]);
@@ -132,6 +141,8 @@ export class SceneDebugger {
      * Load and apply saved values from localStorage for this scene
      */
     loadSavedLayout(): void {
+        if (!DEV_TOOLS_ENABLED) return;
+
         try {
             const saved = localStorage.getItem('debugLayout');
             if (saved) {
@@ -561,6 +572,8 @@ export class SceneDebugger {
      * Call this after registering all elements
      */
     loadFromSceneLayouts(): void {
+        if (!DEV_TOOLS_ENABLED) return;
+
         const layoutsFile = this.scene.cache.json.get(SceneLayoutLoader.CACHE_KEY) as SceneLayoutsFile | undefined;
         if (!layoutsFile?.scenes?.[this.sceneName]) {
             console.warn(`[SceneDebugger] No layout found for ${this.sceneName} in scene-layouts.json`);
@@ -590,6 +603,8 @@ export class SceneDebugger {
      * This makes it easy to update the JSON file with debugged values
      */
     exportToClipboard(): void {
+        if (!DEV_TOOLS_ENABLED) return;
+
         const elements: Partial<ElementDef>[] = [];
 
         for (const el of this.elements) {

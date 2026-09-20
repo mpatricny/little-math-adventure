@@ -5,15 +5,21 @@
     "dev": "vite",
     "dev:tv": "vite --host 0.0.0.0 --port 8001",
     "remote:relay": "node scripts/remote-relay.mjs",
-    "build": "vite build",
-    "preview": "vite preview",
+    "build": "npm run build:pilot",
+    "preview": "npm run preview:pilot",
     "test": "vitest run",
     "test:e2e:puzzles": "playwright test --config e2e/puzzles/playwright.config.ts",
     "test:e2e:arena": "playwright test --config e2e/arena/playwright.config.ts",
     "test:e2e:preparation": "playwright test --config e2e/preparation/playwright.config.ts",
     "test:e2e:underwater": "playwright test --config e2e/underwater/playwright.config.ts",
     "test:e2e:audio": "playwright test --config e2e/audio/playwright.config.ts",
-    "test:e2e:shop": "playwright test --config e2e/shop/playwright.config.ts"
+    "test:e2e:shop": "playwright test --config e2e/shop/playwright.config.ts",
+    "dev:pilot": "vite --mode pilot --port 8002 --strictPort",
+    "build:pilot": "vite build --mode pilot",
+    "build:dev": "vite build --mode development",
+    "preview:pilot": "vite preview --mode pilot --port 8012 --strictPort",
+    "preview:dev": "vite preview --mode development --port 8011 --strictPort",
+    "test:pilot-content": "node --test scripts/__tests__/pilot-content.test.mjs"
   },
   "dependencies": {
     "phaser": "^3.87.0"

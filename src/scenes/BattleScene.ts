@@ -1,6 +1,7 @@
 import { sfx, voice, gameAudio } from '../audio/AudioDirector';
 import { getCatacombFoxBonus } from '../systems/CatacombPetProgress';
 import Phaser from 'phaser';
+import { DEV_TOOLS_ENABLED } from '../config/buildVariant';
 import { BattleState, BattlePhase, BattleEnemy, EnemyDefinition, ItemDefinition, PetDefinition, MathProblem, Crystal, PlayerState, PreparationKind } from '../types';
 import { MathEngine } from '../systems/MathEngine';
 import { MathBoard, MathBoardRemoteSnapshot } from '../ui/MathBoard';
@@ -1700,7 +1701,9 @@ export class BattleScene extends Phaser.Scene implements BattleSceneCallbacks {
         );
 
         // Additional battle debug keys (not handled by SceneDebugger)
-        this.input.keyboard?.on('keydown-K', () => this.debugKillEnemy());
+        if (DEV_TOOLS_ENABLED) {
+            this.input.keyboard?.on('keydown-K', () => this.debugKillEnemy());
+        }
     }
 
     private consumePauseMenuLayout(): PauseMenuLayout {

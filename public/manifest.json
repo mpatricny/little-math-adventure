@@ -1,9 +1,9 @@
 {
-    "name": "Little Math Adventure",
-    "short_name": "MathAdventure",
+    "name": "Číslokraj",
+    "short_name": "Číslokraj",
     "display": "fullscreen",
     "orientation": "landscape",
     "background_color": "#2d2d2d",
     "theme_color": "#2d2d2d",
-    "start_url": "/"
+    "start_url": "/hra/"
 }

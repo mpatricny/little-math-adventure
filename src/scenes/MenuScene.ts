@@ -1,3 +1,4 @@
+import { DEV_TOOLS_ENABLED } from '../config/buildVariant';
 import { audioSettingsButton } from './AudioSettingsScene';
 import Phaser from 'phaser';
 import { SaveSystem } from '../systems/SaveSystem';
@@ -86,34 +87,10 @@ export class MenuScene extends Phaser.Scene {
             this.scene.start('CoopSetupScene');
         };
 
-        const onUnderwaterAdventure = () => {
-            this.scene.start('UnderwaterRoomScene', { preview: true, fromSurface: true });
-        };
-
-        const onSilverpondBattleMock = () => {
-            // The main-menu shortcut is a deterministic showcase entry. Normal
-            // Silverpond progression still enters through SilverpondTownMockScene.
-            this.scene.start('SilverpondArenaMockScene', {
-                arenaLevel: 4,
-                wave: 0,
-                encounterId: 'silverpond-arena-1-wave-1',
-            });
-        };
-
-        const onSilverpondFairyReward = () => {
-            this.scene.start('SilverpondFairyRewardScene', {
-                testMode: true,
-                returnScene: 'MenuScene',
-            });
-        };
-
         // Production buttons are layered components created from JSON hosts.
         this.sceneBuilder.registerHandler('onContinue', onContinue);
         this.sceneBuilder.registerHandler('onNewGame', onNewGame);
         this.sceneBuilder.registerHandler('onCoop', onCoop);
-        this.sceneBuilder.registerHandler('onUnderwaterAdventure', onUnderwaterAdventure);
-        this.sceneBuilder.registerHandler('onSilverpondBattleMock', onSilverpondBattleMock);
-        this.sceneBuilder.registerHandler('onSilverpondFairyReward', onSilverpondFairyReward);
 
         // Build the scene from JSON
         this.sceneBuilder.buildScene('MenuScene');
@@ -142,6 +119,43 @@ export class MenuScene extends Phaser.Scene {
             iconTexture: 'menu-icon-coop',
             onClick: onCoop,
         });
+        if (DEV_TOOLS_ENABLED) this.createDeveloperShortcuts();
+
+        this.createSaveTransferControls();
+        audioSettingsButton(this);
+
+        // Handle dynamic state (Continue button visibility and positioning)
+        this.applySaveState(SaveSystem.hasSave());
+
+        this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.cleanupTransientControls());
+
+        // Setup universal debugger
+        this.debugger = new SceneDebugger(this, 'MenuScene');
+
+    }
+
+    private createDeveloperShortcuts(): void {
+        const onUnderwaterAdventure = () => {
+            this.scene.start('UnderwaterRoomScene', { preview: true, fromSurface: true });
+        };
+
+        const onSilverpondBattleMock = () => {
+            // The main-menu shortcut is a deterministic showcase entry. Normal
+            // Silverpond progression still enters through SilverpondTownMockScene.
+            this.scene.start('SilverpondArenaMockScene', {
+                arenaLevel: 4,
+                wave: 0,
+                encounterId: 'silverpond-arena-1-wave-1',
+            });
+        };
+
+        const onSilverpondFairyReward = () => {
+            this.scene.start('SilverpondFairyRewardScene', {
+                testMode: true,
+                returnScene: 'MenuScene',
+            });
+        };
+
         this.createMenuButton({
             hostId: 'btnSilverpondFairyReward',
             fallbackX: 1060,
@@ -178,18 +192,6 @@ export class MenuScene extends Phaser.Scene {
             labelFontSize: 15,
             iconSize: 38,
         });
-
-        this.createSaveTransferControls();
-        audioSettingsButton(this);
-
-        // Handle dynamic state (Continue button visibility and positioning)
-        this.applySaveState(SaveSystem.hasSave());
-
-        this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.cleanupTransientControls());
-
-        // Setup universal debugger
-        this.debugger = new SceneDebugger(this, 'MenuScene');
-
     }
 
     private createMenuButton(config: MenuButtonConfig): MedievalActionButton {

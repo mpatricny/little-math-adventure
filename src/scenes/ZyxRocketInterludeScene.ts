@@ -1,5 +1,6 @@
 import { sfx, voice, gameAudio } from '../audio/AudioDirector';
 import Phaser from 'phaser';
+import { SILVERPOND_ENABLED } from '../config/buildVariant';
 import { SceneBuilder } from '../systems/SceneBuilder';
 import { GameStateManager } from '../systems/GameStateManager';
 import { StorySystem } from '../systems/StorySystem';
@@ -71,12 +72,17 @@ export class ZyxRocketInterludeScene extends Phaser.Scene {
     }
 
     preload(): void {
-        if (this.depthCrystal && !this.textures.exists('underwater-depth-crystal')) {
+        if (SILVERPOND_ENABLED && this.depthCrystal && !this.textures.exists('underwater-depth-crystal')) {
             this.load.image('underwater-depth-crystal', `assets/${this.cache.json.get('textures').images['underwater-depth-crystal']}`);
         }
     }
 
     create(): void {
+        if (!SILVERPOND_ENABLED && this.depthCrystal) {
+            this.scene.start('TownScene');
+            return;
+        }
+
         this.sceneBuilder = new SceneBuilder(this);
         this.sceneBuilder.buildScene('ZyxRocketInterludeScene');
         this.cameras.main.fadeIn(450, 8, 19, 14);
@@ -312,6 +318,13 @@ export class ZyxRocketInterludeScene extends Phaser.Scene {
     private advanceDialogue(): void {
         gameAudio().cancel(this);
         sfx(this, 'ui.page');
+        if (!SILVERPOND_ENABLED && this.machineCompleted) {
+            this.actionButton.setEnabled(false);
+            this.cameras.main.fadeOut(350, 7, 16, 12);
+            this.time.delayedCall(360, () => this.scene.start('TownScene'));
+            return;
+        }
+
         if (this.dialoguePage >= DIALOGUE_PAGES.length - 1) {
             this.actionButton.setEnabled(false);
             this.cameras.main.fadeOut(350, 7, 16, 12);
@@ -349,6 +362,14 @@ export class ZyxRocketInterludeScene extends Phaser.Scene {
         player: Phaser.GameObjects.Sprite,
         walkAnimation: string
     ): void {
+        if (!SILVERPOND_ENABLED) {
+            this.createDialogue();
+            this.dialogueText.setText('Díky za hraní ukázky!\nV Mathorii můžeš hrát dál.');
+            this.dialogueIcon.setTexture('forest-crystal-story').setDisplaySize(126, 126);
+            this.actionButton.setLabel('ZPĚT DO MATHORIE');
+            return;
+        }
+
         const host = this.getHost('rocketSilverpondExitHost', { x: 1160, y: 520, depth: 70 });
         const prompt = new ForestDirectionPrompt(this, {
             x: host.x,

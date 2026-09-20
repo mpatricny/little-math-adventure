@@ -4,6 +4,7 @@ import { sumPuzzle } from '../systems/puzzles/PuzzleCatalog';
 import { GameStateManager } from '../systems/GameStateManager';
 import type { PuzzleInstance, SumPuzzle } from '../types/puzzles';
 import Phaser from 'phaser';
+import { SILVERPOND_ENABLED } from '../config/buildVariant';
 import { SceneBuilder } from '../systems/SceneBuilder';
 import { StorySystem } from '../systems/StorySystem';
 import { CoopSessionManager } from '../systems/CoopSessionManager';
@@ -69,6 +70,9 @@ export class ZyxCrystalMachineScene extends Phaser.Scene {
         CoopSessionManager.getInstance().activatePlayerA();
         this.testMode = data.testMode === true;
         this.depthCrystal = data.crystal === 'depth';
+        // Do not create a later-chapter puzzle in the save before redirecting.
+        if (!SILVERPOND_ENABLED && this.depthCrystal) return;
+
         this.puzzleInstance = acquirePuzzle(this.testMode ? {} : puzzleProgress(GameStateManager.getInstance().getPlayer()).active,
             this.depthCrystal ? DEPTH_MACHINE_PUZZLE : 'zyx:machine', 'sum_selection',
             p => this.depthCrystal ? depthCrystalPuzzle(p) : sumPuzzle(p, 6));
@@ -80,12 +84,17 @@ export class ZyxCrystalMachineScene extends Phaser.Scene {
     }
 
     preload(): void {
-        if (this.depthCrystal && !this.textures.exists('underwater-depth-crystal')) {
+        if (SILVERPOND_ENABLED && this.depthCrystal && !this.textures.exists('underwater-depth-crystal')) {
             this.load.image('underwater-depth-crystal', `assets/${this.cache.json.get('textures').images['underwater-depth-crystal']}`);
         }
     }
 
     create(): void {
+        if (!SILVERPOND_ENABLED && this.depthCrystal) {
+            this.scene.start('TownScene');
+            return;
+        }
+
         if (this.depthCrystal && !this.testMode) {
             const progress = GameStateManager.getInstance().getPlayer().underwaterProgress;
             if (!progress?.depthCrystalClaimed || progress.depthCrystalInstalled) {

@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import { DEV_TOOLS_ENABLED } from '../config/buildVariant';
 import { GameStateManager } from '../systems/GameStateManager';
 import { SceneDebugger } from '../systems/SceneDebugger';
 import { SceneBuilder } from '../systems/SceneBuilder';
@@ -194,31 +195,31 @@ export class TownScene extends Phaser.Scene {
             if (el) this.debugger.register(id, el);
         });
 
-        // Debug shortcuts
-        this.input.keyboard!.on('keydown-M', () => {
-            this.scene.start('MathBoardDebugScene');
-        });
+        if (DEV_TOOLS_ENABLED) {
+            // Debug shortcuts
+            this.input.keyboard!.on('keydown-M', () => {
+                this.scene.start('MathBoardDebugScene');
+            });
 
-        // Create debug arrow for Testing scene (hidden by default)
-        this.createDebugArrow();
-        this.createDebugPanel();
+            // Create debug arrow for Testing scene (hidden by default)
+            this.createDebugArrow();
+            this.createDebugPanel();
 
-        // Toggle debug visibility when D is pressed
-        this.input.keyboard!.on('keydown-D', () => {
-            this.isDebugMode = !this.isDebugMode;
-            this.debugArrow?.setVisible(this.isDebugMode);
-            this.debugPanel?.setVisible(this.isDebugMode);
-        });
+            // Toggle debug visibility when D is pressed
+            this.input.keyboard!.on('keydown-D', () => {
+                this.isDebugMode = !this.isDebugMode;
+                this.debugArrow?.setVisible(this.isDebugMode);
+                this.debugPanel?.setVisible(this.isDebugMode);
+            });
 
-        // Debug: Forest Journey entrance (press F)
-        this.input.keyboard!.on('keydown-F', () => {
-            console.log('Debug: Starting Forest Journey');
-            this.scene.start('ForestAdventureStartScene', { debugMode: true });
-        });
+            // Debug: Forest Journey entrance (press F)
+            this.input.keyboard!.on('keydown-F', () => {
+                console.log('Debug: Starting Forest Journey');
+                this.scene.start('ForestAdventureStartScene', { debugMode: true });
+            });
 
-        // Debug: exercise the complete post-guardian story transition without
-        // touching the active save. Kept out of production builds and menus.
-        if (import.meta.env.DEV) {
+            // Exercise the complete post-guardian story transition without
+            // touching the active save.
             this.input.keyboard!.on('keydown-G', () => this.startGuardianStoryTest());
         }
     }

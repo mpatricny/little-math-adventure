@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import { DEV_TOOLS_ENABLED } from '../config/buildVariant';
 import { EnemyDefinition, PetDefinition, PlayerState } from '../types';
 import { GameStateManager } from '../systems/GameStateManager';
 import { ProgressionSystem } from '../systems/ProgressionSystem';
@@ -549,7 +550,9 @@ export class ArenaScene extends Phaser.Scene {
             () => this.debugFullHeal()
         );
 
-        this.input.keyboard?.on('keydown-N', () => this.debugSkipWave());
+        if (DEV_TOOLS_ENABLED) {
+            this.input.keyboard?.on('keydown-N', () => this.debugSkipWave());
+        }
         this.input.keyboard?.on('keydown-LEFT', () => this.cycleArenaChoice(-1));
         this.input.keyboard?.on('keydown-RIGHT', () => this.cycleArenaChoice(1));
     }
