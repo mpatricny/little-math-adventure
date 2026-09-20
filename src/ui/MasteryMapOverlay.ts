@@ -270,7 +270,8 @@ export class MasteryMapOverlay extends OverlayBase {
             node.setStrokeStyle(3, color, state === 'locked' ? 0.45 : 1);
             halo.setAlpha(1);
         });
-        node.on('pointerdown', () => {
+        node.on('pointerup', (pointer: Phaser.Input.Pointer) => {
+            if (!this.scrollPanel.canTap(pointer)) return;
             if (selected) this.expandedSubAtoms.clear();
             else {
                 this.expandedSubAtoms.clear();
