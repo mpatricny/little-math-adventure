@@ -1,6 +1,7 @@
 import { defineConfig, Plugin } from 'vite';
 import fs from 'fs';
 import path from 'path';
+import { learningSaveDiagnosticsPlugin } from './scripts/learning-save-diagnostics.mjs';
 import { sceneAssetsPlugin } from './scripts/scene-assets.mjs';
 import { preparePilotPublic } from './scripts/pilot-content.mjs';
 
@@ -96,7 +97,7 @@ export default defineConfig(({ mode }) => {
     return {
     publicDir: pilot?.publicDir ?? 'public',
     plugins: [
-        ...(pilot ? [pilotDataPlugin(rootDir, pilot.publicDir)] : [debugSavePlugin()]),
+        ...(pilot ? [pilotDataPlugin(rootDir, pilot.publicDir)] : [debugSavePlugin(), learningSaveDiagnosticsPlugin(rootDir)]),
         cleanBuildPlugin(),
         sceneAssetsPlugin(rootDir, path.join(pilot?.publicDir ?? path.join(rootDir, 'public'), 'assets/data')),
     ],
