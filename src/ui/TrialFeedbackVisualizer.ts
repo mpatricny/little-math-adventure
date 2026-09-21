@@ -1,3 +1,5 @@
+import { ComparisonProblemView, ComparisonHost } from './ComparisonProblemView';
+import { SceneBuilder } from '../systems/SceneBuilder';
 import Phaser from 'phaser';
 import { MathProblem } from '../types';
 import { formatMathProblem } from '../utils/formatMathProblem';
@@ -41,6 +43,7 @@ export class TrialFeedbackVisualizer {
     private container: Phaser.GameObjects.Container;
     private onComplete: () => void;
     private randomFrame: number;
+    private chapterCleanup?: () => void;
     private counterText: Phaser.GameObjects.Text | null = null;
     private rightCounterText: Phaser.GameObjects.Text | null = null;
 
@@ -946,6 +949,10 @@ export class TrialFeedbackVisualizer {
      * Phase 5: Scale tips (or stays balanced) and symbol appears
      */
     private showComparison(problem: MathProblem): void {
+        if (problem.comparisonMeta) {
+            this.showChapterComparison(problem);
+            return;
+        }
         const { operand1, operand2, operator, operand3, operand4, operator2, operator3 } = problem;
         const isEqVsEq = problem.problemType === 'comparison_eq_vs_eq';
         const isThreeOpComparison = !isEqVsEq && operand4 !== undefined && operator2;
@@ -1047,6 +1054,28 @@ export class TrialFeedbackVisualizer {
 
         delay += SCALE_RESULT_HOLD;
         this.scene.time.delayedCall(delay, () => this.onComplete());
+    }
+
+    private showChapterComparison(problem: MathProblem): void {
+        const builder = new SceneBuilder(this.scene);
+        builder.buildScene('ComparisonFeedbackLayout');
+        const host = (id: string): ComparisonHost => {
+            const object = builder.get<Phaser.GameObjects.Container>(id)!;
+            const definition = builder.getElementDef(id)!;
+            return { x: object.x, y: object.y, width: definition.width!, height: definition.height!, depth: object.depth };
+        };
+        const view = new ComparisonProblemView(this.scene, problem, { left: host('left'), right: host('right'), relation: host('relation') });
+        this.container.add(view.root);
+        const timers = [
+            this.scene.time.delayedCall(450, () => view.highlightOffer()),
+            this.scene.time.delayedCall(1100, () => view.reveal(false)),
+            this.scene.time.delayedCall(2200, () => { view.clearPairing(); view.reveal(true); this.onComplete(); }),
+        ];
+        this.chapterCleanup = () => {
+            timers.forEach(timer => timer.remove(false));
+            view.destroy();
+            for (const id of ['left', 'relation', 'right']) builder.get(id)?.destroy();
+        };
     }
 
     /**
@@ -1548,6 +1577,8 @@ export class TrialFeedbackVisualizer {
      * Clean up all created objects.
      */
     destroy(): void {
+        this.chapterCleanup?.();
+        this.chapterCleanup = undefined;
         this.counterText = null;
         this.rightCounterText = null;
         this.container.removeAll(true);

@@ -267,6 +267,39 @@ export interface MathProblem {
     problemType?: 'standard' | 'missing_operand' | 'comparison' | 'comparison_eq_vs_eq';
     // Mastery problem key (if generated from mastery system)
     masteryKey?: string;        // e.g. "A1:3+2:result_unknown"
+    /** Structured presentation and analytics for the comparison learning chapter. */
+    comparisonMeta?: ComparisonProblemMeta;
+}
+
+export type ComparisonRelation = 'less' | 'equal' | 'greater';
+export type ComparisonRepresentation = 'size' | 'count' | 'number' | 'expression';
+export type ComparisonStageId =
+    | 'size_crocodile'
+    | 'count_crocodile'
+    | 'number_crocodile'
+    | 'number_symbol'
+    | 'expression_guided'
+    | 'expression_independent';
+
+export interface ComparisonProblemMeta {
+    chapterId: 'comparison_symbols';
+    stage: ComparisonStageId;
+    representation: ComparisonRepresentation;
+    relation: ComparisonRelation;
+    leftValue: number;
+    rightValue: number;
+    /** Used by the object phases. Values are counts or relative display scales. */
+    leftVisualValue?: number;
+    rightVisualValue?: number;
+    leftItemScale?: number;
+    rightItemScale?: number;
+    showCrocodile: boolean;
+    autoArithmeticHintMs?: number;
+    arithmeticHintText?: string;
+    assisted?: boolean;
+    selectedRelation?: ComparisonRelation;
+    exam?: boolean;
+    diagnosticMode?: boolean;
 }
 
 export interface DifficultyConfig {
@@ -379,9 +412,13 @@ export interface ItemDefinition {
     // Equipment stats
     attackBonus?: number;
     defenseBonus?: number;
+    tier?: number;
     // Shield specific (block mechanic)
-    blockTime?: number;      // Seconds to solve math problems
-    blockAttempts?: number;  // Max problems to attempt
+    /** @deprecated Old catalog field; runtime uses one problem and blockPower. */
+    blockTime?: number;
+    /** @deprecated Old catalog field retained only as a save/catalog fallback. */
+    blockAttempts?: number;
+    blockPower?: number;     // Damage blocked by the one shield problem
     // Sword math problem (bonus attack)
     mathProblemType?: 'addition' | 'subtraction' | 'multiplication' | 'threeOperand';  // Problem type for sword bonus
     mathProblemMax?: number;     // Max result for sword problem
@@ -477,7 +514,8 @@ export type SubAtomNumber = 1 | 2 | 3 | 4;
 export type SubAtomId = `${BandId}${SubAtomNumber}`;
 export type MasteryState = 'locked' | 'training' | 'secure' | 'fluent' | 'mastery';
 export type ProblemForm = 'result_unknown' | 'missing_part' | 'compare_equation_vs_number' | 'compare_equation_vs_equation';
-export type ExamType = 'sub_atom' | 'fluency_challenge' | 'mastery_challenge' | 'band_gate' | 'band_mastery';
+export type ExamType = 'sub_atom' | 'comparison_chapter' | 'fluency_challenge' | 'mastery_challenge' | 'band_gate' | 'band_mastery';
+export type MasteryTargetId = SubAtomId | BandId | 'comparison_symbols';
 
 export const ALL_BANDS: BandId[] = ['A', 'B', 'C', 'D', 'E'];
 export const ALL_SUB_ATOM_NUMBERS: SubAtomNumber[] = [1, 2, 3, 4];
@@ -537,6 +575,62 @@ export interface MasteryData {
     lastStruggleOfferFight: number;   // fightCount when last struggle offer was shown
     coopAutoPromotionBases: Record<string, number>; // exam/challenge target key -> baseline solve sequence
     selectedStartBand?: BandId;       // band chosen at game start (optional for old saves)
+    comparisonChapter?: ComparisonChapterState;
+}
+
+export type ComparisonChapterStatus = 'locked' | 'training' | 'exam_ready' | 'complete';
+
+export interface ComparisonStageProgress {
+    stage: ComparisonStageId;
+    introSeen: boolean;
+    /** Additive save fields; older saves are hydrated before use. */
+    introVersionSeen?: number;
+    hintLevel?: number;
+    hintCorrectStreak?: number;
+    attempts: number;
+    correctFirst: number;
+    correctIndependent: number;
+    supportMode: boolean;
+    consecutiveSupportCorrect: number;
+    relationStats: Record<ComparisonRelation, {
+        attempts: number;
+        correctFirst: number;
+        correctIndependent: number;
+    }>;
+}
+
+export interface ComparisonAttempt {
+    timestamp: number;
+    sequenceIndex: number;
+    stage: ComparisonStageId;
+    representation: ComparisonRepresentation;
+    relation: ComparisonRelation;
+    selectedRelation: ComparisonRelation | null;
+    leftValue: number;
+    rightValue: number;
+    operand1: number;
+    operand2: number;
+    operand3?: number;
+    operator: string;
+    operator2?: string;
+    correct: boolean;
+    responseTimeMs: number;
+    activeTimeMs: number;
+    assisted: boolean;
+    exam: boolean;
+    diagnosticMode: boolean;
+    context: 'battle' | 'exam' | 'diagnostic';
+}
+
+export interface ComparisonChapterState {
+    id: 'comparison_symbols';
+    schemaVersion: 1;
+    status: ComparisonChapterStatus;
+    currentStageIndex: number;
+    stages: ComparisonStageProgress[];
+    attempts: ComparisonAttempt[];
+    examBestMedal: TrialTier | null;
+    examRotation: number;
 }
 
 /** Definition of a single problem in the mastery database */
@@ -566,8 +660,11 @@ export interface ExamConfig {
     passThreshold?: number;         // min correct to pass (pass/fail exams)
 }
 
+const MODULE_EXAM_RULES = { itemCount: 8, timePerItem: 15, bronzeThreshold: 5, silverThreshold: 6, goldThreshold: 7 } as const;
+
 export const EXAM_CONFIGS: Record<ExamType, ExamConfig> = {
-    sub_atom: { type: 'sub_atom', itemCount: 8, timePerItem: 15, bronzeThreshold: 5, silverThreshold: 6, goldThreshold: 7 },
+    sub_atom: { type: 'sub_atom', ...MODULE_EXAM_RULES },
+    comparison_chapter: { type: 'comparison_chapter', ...MODULE_EXAM_RULES },
     fluency_challenge: { type: 'fluency_challenge', itemCount: 10, timePerItem: 15, passThreshold: 8 },
     mastery_challenge: { type: 'mastery_challenge', itemCount: 10, timePerItem: 15, passThreshold: 9 },
     band_gate: { type: 'band_gate', itemCount: 12, timePerItem: 15, bronzeThreshold: 8, silverThreshold: 10, goldThreshold: 11 },

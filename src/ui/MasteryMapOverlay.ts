@@ -4,6 +4,8 @@ import { ScrollablePanel } from './ScrollablePanel';
 import { MasterySystem } from '../systems/MasterySystem';
 import { SUB_ATOM_EXAM_REQUIREMENTS } from '../systems/ExamProgress';
 import { GameStateManager } from '../systems/GameStateManager';
+import { SceneBuilder } from '../systems/SceneBuilder';
+import { ensureComparisonChapter, COMPARISON_STAGES } from '../systems/ComparisonLearningSystem';
 import { ProblemDatabase } from '../systems/ProblemDatabase';
 import {
     ALL_BANDS, ALL_SUB_ATOM_NUMBERS, ALL_PROBLEM_FORMS,
@@ -53,12 +55,15 @@ export class MasteryMapOverlay extends OverlayBase {
     private scrollPanel!: ScrollablePanel;
     private expandedSubAtoms: Set<string> = new Set();
     private savedScrollOffset: number = 0;
+    private layout!: SceneBuilder;
 
     constructor(scene: Phaser.Scene) {
         super(scene, 'MAPA UČENÍ', 1150, 610);
     }
 
     protected buildContent(area: { x: number; y: number; width: number; height: number }): void {
+        this.layout = new SceneBuilder(this.scene);
+        this.layout.buildScene('LearningMapOverlay');
         this.scrollPanel = new ScrollablePanel(this.scene, this.container, area);
     }
 
@@ -79,6 +84,7 @@ export class MasteryMapOverlay extends OverlayBase {
         const content = this.scrollPanel.getContent();
         const mastery = MasterySystem.getInstance();
         const data = GameStateManager.getInstance().getMasteryData();
+        ensureComparisonChapter(data);
         const problemDb = ProblemDatabase.getInstance();
 
         let yOffset = 0;
@@ -89,6 +95,10 @@ export class MasteryMapOverlay extends OverlayBase {
         for (const bandId of ALL_BANDS) {
             const band = data.bands[bandId];
             yOffset = this.renderBandMap(content, bandId, band.state, data, yOffset, totalWidth);
+
+            if (bandId === 'A' && this.expandedSubAtoms.has('comparison_symbols')) {
+                yOffset = this.renderComparisonDetail(content, data, yOffset, totalWidth);
+            }
 
             // The map stays clean until a node is selected. Only then do the
             // existing detailed form/accuracy/speed metrics unfold below it.
@@ -116,14 +126,14 @@ export class MasteryMapOverlay extends OverlayBase {
             .setOrigin(0, 0)
             .setStrokeStyle(1, 0x425c78, 0.7);
         content.add(intro);
-        content.add(this.scene.add.text(18, yOffset + 10, 'CESTA ATOMŮ', {
-            fontFamily: 'Palatino Linotype, Book Antiqua, Georgia, serif',
+        content.add(this.scene.add.text(18, yOffset + 10, `CESTA UČENÍ · ${GameStateManager.getInstance().getPlayer().name}`, {
+            resolution: 2, fontFamily: 'Palatino Linotype, Book Antiqua, Georgia, serif',
             fontSize: '16px',
             fontStyle: 'bold',
             color: '#f2d58a',
         }));
-        content.add(this.scene.add.text(18, yOffset + 29, 'Klikni na uzel a teprve potom uvidíš formy, přesnost a rychlost.', {
-            fontFamily: 'Arial, sans-serif',
+        content.add(this.scene.add.text(18, yOffset + 29, 'Posuň mapu prstem. Klepnutím na uzel zobrazíš podrobnosti.', {
+            resolution: 2, fontFamily: 'Arial, sans-serif',
             fontSize: '10px',
             color: '#8294aa',
         }));
@@ -134,7 +144,7 @@ export class MasteryMapOverlay extends OverlayBase {
             const color = STATE_COLORS[state];
             content.add(this.scene.add.circle(legendX, yOffset + 25, 5, color));
             content.add(this.scene.add.text(legendX + 10, yOffset + 18, STATE_LABELS[state], {
-                fontFamily: 'Arial, sans-serif',
+                resolution: 2, fontFamily: 'Arial, sans-serif',
                 fontSize: '9px',
                 color: `#${color.toString(16).padStart(6, '0')}`,
             }));
@@ -164,23 +174,29 @@ export class MasteryMapOverlay extends OverlayBase {
             .setStrokeStyle(3, bandColor, 0.9);
         content.add([bandHalo, bandBadge]);
         content.add(this.scene.add.text(72, yOffset + 73, bandId, {
-            fontFamily: 'Palatino Linotype, Book Antiqua, Georgia, serif',
+            resolution: 2, fontFamily: 'Palatino Linotype, Book Antiqua, Georgia, serif',
             fontSize: '20px',
             fontStyle: 'bold',
             color: '#ffffff',
         }).setOrigin(0.5));
         content.add(this.scene.add.text(72, yOffset + 101, BAND_RANGES[bandId], {
-            fontFamily: 'Arial, sans-serif',
+            resolution: 2, fontFamily: 'Arial, sans-serif',
             fontSize: '9px',
             color: '#8da0b6',
         }).setOrigin(0.5));
 
-        const nodePoints = [
-            { x: 245, y: yOffset + 53 },
+        const defaultPoints = [
+            { x: 245, y: yOffset + 65 },
             { x: 455, y: yOffset + 112 },
-            { x: 680, y: yOffset + 53 },
+            { x: 680, y: yOffset + 65 },
             { x: 900, y: yOffset + 112 },
         ];
+        const nodeIds = bandId === 'A' ? ['A1', 'A2', 'comparison_symbols', 'A3', 'A4'] : ALL_SUB_ATOM_NUMBERS.map(n => `${bandId}${n}`);
+        const nodePoints = nodeIds.map((id, index) => {
+            const host = this.layout.get<Phaser.GameObjects.Container>(bandId === 'A' ? `node${id}` : `node${index + 1}`);
+            const fallback = defaultPoints[Math.min(index, 3)];
+            return { x: host?.x ?? fallback.x, y: yOffset + (host?.y ?? fallback.y - yOffset), depth: host?.depth ?? 1 };
+        });
         const route = this.scene.add.graphics();
         route.lineStyle(6, 0x25364a, 0.9);
         route.lineBetween(104, yOffset + 82, nodePoints[0].x - 30, nodePoints[0].y);
@@ -205,16 +221,18 @@ export class MasteryMapOverlay extends OverlayBase {
         content.add(route);
 
         nodePoints.forEach((point, index) => {
-            const saId = `${bandId}${ALL_SUB_ATOM_NUMBERS[index]}` as SubAtomId;
-            this.renderMapNode(content, saId, data.subAtoms[saId], point.x, point.y);
+            const id = nodeIds[index];
+            if (id === 'comparison_symbols') this.renderComparisonNode(content, data, point.x, point.y, point.depth);
+            else this.renderMapNode(content, id as SubAtomId, data.subAtoms[id], point.x, point.y, data);
         });
 
-        const bandLabel = this.scene.add.text(1060, yOffset + 14, STATE_LABELS[bandState].toUpperCase(), {
-            fontFamily: 'Arial, sans-serif',
+        const bandStatusHost = this.layout.get<Phaser.GameObjects.Container>('bandStatus');
+        const bandLabel = this.scene.add.text(bandStatusHost?.x ?? 72, yOffset + (bandStatusHost?.y ?? 146), STATE_LABELS[bandState].toUpperCase(), {
+            resolution: 2, fontFamily: 'Arial, sans-serif',
             fontSize: '9px',
             fontStyle: 'bold',
             color: `#${bandColor.toString(16).padStart(6, '0')}`,
-        }).setOrigin(1, 0);
+        }).setOrigin(0.5, 0).setDepth(bandStatusHost?.depth ?? 1);
         content.add(bandLabel);
         return yOffset + laneHeight;
     }
@@ -225,6 +243,7 @@ export class MasteryMapOverlay extends OverlayBase {
         sa: any,
         x: number,
         y: number,
+        data: any,
     ): void {
         const state = sa.state as MasteryState;
         const color = STATE_COLORS[state];
@@ -234,29 +253,34 @@ export class MasteryMapOverlay extends OverlayBase {
         const halo = this.scene.add.circle(x, y, selected ? 39 : 35, color, selected ? 0.26 : 0.1)
             .setStrokeStyle(selected ? 2 : 1, color, selected ? 0.9 : 0.3);
         const node = this.scene.add.circle(x, y, 28, 0x101c2e, 1)
+            .setName(`masteryMapNode:${saId}`)
             .setStrokeStyle(3, color, state === 'locked' ? 0.45 : 1)
             .setInteractive({ useHandCursor: true });
         content.add([halo, node]);
         content.add(this.scene.add.text(x, y - 2, state === 'locked' ? '×' : saId, {
-            fontFamily: 'Palatino Linotype, Book Antiqua, Georgia, serif',
+            resolution: 2, fontFamily: 'Palatino Linotype, Book Antiqua, Georgia, serif',
             fontSize: state === 'locked' ? '20px' : '15px',
             fontStyle: 'bold',
             color: state === 'locked' ? '#5c6570' : '#ffffff',
         }).setOrigin(0.5));
         content.add(this.scene.add.text(x, y + 39, SUB_ATOM_NAMES[saId], {
-            fontFamily: 'Arial, sans-serif',
+            resolution: 2, fontFamily: 'Arial, sans-serif',
             fontSize: '10px',
             color: state === 'locked' ? '#596575' : '#c7d2df',
             align: 'center',
             wordWrap: { width: 150 },
         }).setOrigin(0.5, 0));
-        const progressLabel = state === 'locked'
+        const placed = data.selectedStartBand && ALL_BANDS.indexOf(saId[0] as BandId) < ALL_BANDS.indexOf(data.selectedStartBand);
+        const recordedCorrect = this.getTotalCorrect(saId, data);
+        const progressLabel = placed
+            ? recordedCorrect === 0 ? 'SPLNĚNO VOLBOU PÁSMA' : `${recordedCorrect} SPRÁVNĚ · ZÁKLAD SPLNĚN`
+            : state === 'locked'
             ? 'ZAMČENO'
             : state === 'mastery'
                 ? '★ HOTOVO'
                 : `${sa.successfulSolves ?? 0} / ${target}`;
         content.add(this.scene.add.text(x, y - 52, progressLabel, {
-            fontFamily: 'Arial, sans-serif',
+            resolution: 2, fontFamily: 'Arial, sans-serif',
             fontSize: '9px',
             fontStyle: 'bold',
             color: `#${color.toString(16).padStart(6, '0')}`,
@@ -279,6 +303,53 @@ export class MasteryMapOverlay extends OverlayBase {
             }
             this.rebuildContent();
         });
+    }
+
+    private renderComparisonNode(content: Phaser.GameObjects.Container, data: any, x: number, y: number, depth: number): void {
+        const chapter = data.comparisonChapter;
+        const complete = chapter.status === 'complete';
+        const locked = chapter.status === 'locked';
+        const color = locked ? STATE_COLORS.locked : complete ? STATE_COLORS.secure : STATE_COLORS.training;
+        const selected = this.expandedSubAtoms.has('comparison_symbols');
+        const root = this.scene.add.container(x, y).setDepth(depth).setName('comparisonMapNode');
+        const halo = this.scene.add.circle(0, 0, 35, color, selected ? 0.26 : 0.1);
+        const node = this.scene.add.circle(0, 0, 28, 0x101c2e).setStrokeStyle(3, color)
+            .setInteractive({ useHandCursor: true });
+        const label = (text: string, dy: number, size: number, fill = '#c7d2df') => this.scene.add.text(0, dy, text, {
+            resolution: 2, fontFamily: 'Arial, sans-serif', fontSize: `${size}px`, color: fill,
+            align: 'center', wordWrap: { width: 160 },
+        }).setOrigin(0.5, 0);
+        root.add([halo, node, label('<', -23, 38), label('Porovnávání', 39, 11),
+            label(locked ? 'PO A2' : complete ? '✓ HOTOVO' : chapter.status === 'exam_ready' ? 'ZKOUŠKA' : `KROK ${chapter.currentStageIndex + 1} / 6`, -52, 9)]);
+        node.on('pointerover', () => node.setStrokeStyle(4, color));
+        node.on('pointerout', () => node.setStrokeStyle(3, color));
+        node.on('pointerup', (pointer: Phaser.Input.Pointer) => {
+            if (!this.scrollPanel.canTap(pointer)) return;
+            this.expandedSubAtoms.clear();
+            if (!selected) this.expandedSubAtoms.add('comparison_symbols');
+            this.rebuildContent();
+        });
+        content.add(root);
+    }
+
+    private renderComparisonDetail(content: Phaser.GameObjects.Container, data: any, y: number, width: number): number {
+        const host = this.layout.get<Phaser.GameObjects.Container>('comparisonDetail');
+        const chapter = data.comparisonChapter;
+        const root = this.scene.add.container(host?.x ?? 18, y + (host?.y ?? 14))
+            .setDepth(host?.depth ?? 1).setName('comparisonMapDetail');
+        const names = ['Velikost', 'Počet', 'Předměty a čísla', 'Čísla', 'Výrazy s pomocí', 'Výrazy'];
+        const lines = [
+            'POROVNÁVÁNÍ',
+            chapter.status === 'locked' ? 'Po A2' : chapter.status === 'complete' ? '✓ Hotovo' : chapter.status === 'exam_ready' ? '★ Zkouška' : '⚔ Souboje',
+            ...COMPARISON_STAGES.map((_stage, index) => `${chapter.status === 'complete' || index < chapter.currentStageIndex ? '✓' : index === chapter.currentStageIndex && chapter.status === 'training' ? '→' : '○'} ${index + 1}. ${names[index]}`),
+        ];
+        const text = this.scene.add.text(0, 0, lines.join('\n'), {
+            resolution: 2, fontFamily: 'Arial, sans-serif', fontSize: '14px', color: '#d6deea',
+            lineSpacing: 7, wordWrap: { width: width - 60 },
+        });
+        root.add(text);
+        content.add(root);
+        return y + (host?.y ?? 14) + text.height + 18;
     }
 
     // ── Expanded detail panel ──
@@ -306,14 +377,14 @@ export class MasteryMapOverlay extends OverlayBase {
 
         // Header
         const headerText = this.scene.add.text(24, py, `${saId}: ${SUB_ATOM_NAMES[saId]} ─ ${STATE_LABELS[state].toUpperCase()}`, {
-            fontSize: '16px', fontFamily: 'Arial, sans-serif', color: '#e8d44d', fontStyle: 'bold',
+            fontSize: '16px', resolution: 2, fontFamily: 'Arial, sans-serif', color: '#e8d44d', fontStyle: 'bold',
         });
         content.add(headerText);
         py += 26;
 
         if (state === 'locked') {
             const lockedText = this.scene.add.text(24, py, 'Zamčeno', {
-                fontSize: '13px', fontFamily: 'Arial, sans-serif', color: '#555555',
+                fontSize: '13px', resolution: 2, fontFamily: 'Arial, sans-serif', color: '#555555',
             });
             content.add(lockedText);
             py += 30;
@@ -322,6 +393,13 @@ export class MasteryMapOverlay extends OverlayBase {
         }
 
         // Summary line
+        const placed = data.selectedStartBand && ALL_BANDS.indexOf(saId[0] as BandId) < ALL_BANDS.indexOf(data.selectedStartBand);
+        if (placed) {
+            content.add(this.scene.add.text(24, py, 'Pásmo splněno volbou startu. Souhrn a tabulka ukazují skutečná řešení; postup ke zkoušce zahrnuje přiznaný základ.', {
+                resolution: 2, fontSize: '12px', fontFamily: 'Arial, sans-serif', color: '#b9c7d8',
+            }));
+            py += 25;
+        }
         const totalCorrect = this.getTotalCorrect(saId, data);
         const totalWrong = this.getTotalWrong(saId, data);
         const accuracy = mastery.getLast20Accuracy(saId);
@@ -330,7 +408,7 @@ export class MasteryMapOverlay extends OverlayBase {
 
         const summaryText = this.scene.add.text(24, py,
             `Celkem: ✓${totalCorrect}  ✗${totalWrong}  |  Přesnost (posl. 20): ${Math.round(accuracy * 100)}%  |  Median RT: ${rtStr}`, {
-            fontSize: '13px', fontFamily: 'Arial, sans-serif', color: '#b9c7d8',
+            fontSize: '13px', resolution: 2, fontFamily: 'Arial, sans-serif', color: '#b9c7d8',
         });
         content.add(summaryText);
         py += 30;
@@ -357,7 +435,7 @@ export class MasteryMapOverlay extends OverlayBase {
     ): number {
         // Table header
         const colX = [24, 240, 330, 400, 480];
-        const headerStyle = { fontSize: '12px', fontFamily: 'Arial, sans-serif', color: '#7fa1c4', fontStyle: 'bold' as const };
+        const headerStyle = { fontSize: '12px', resolution: 2, fontFamily: 'Arial, sans-serif', color: '#7fa1c4', fontStyle: 'bold' as const };
 
         const headers = ['Forma', 'Správně', 'Špatně', 'Prům. RT'];
         for (let i = 0; i < headers.length; i++) {
@@ -374,7 +452,7 @@ export class MasteryMapOverlay extends OverlayBase {
         for (const form of ALL_PROBLEM_FORMS) {
             const stats = this.computeFormStats(saId, form, data, problemDb);
 
-            const rowStyle = { fontSize: '12px', fontFamily: 'Arial, sans-serif', color: '#d6deea' };
+            const rowStyle = { fontSize: '12px', resolution: 2, fontFamily: 'Arial, sans-serif', color: '#d6deea' };
 
             const formText = this.scene.add.text(colX[0], yOffset, FORM_LABELS[form], rowStyle);
             content.add(formText);
@@ -413,7 +491,7 @@ export class MasteryMapOverlay extends OverlayBase {
 
         if (state === 'mastery') {
             const starText = this.scene.add.text(xOffset, yOffset, '★ Mistrovství!', {
-                fontSize: '15px', fontFamily: 'Arial, sans-serif', color: '#ff44ff', fontStyle: 'bold',
+                fontSize: '15px', resolution: 2, fontFamily: 'Arial, sans-serif', color: '#ff44ff', fontStyle: 'bold',
             });
             content.add(starText);
             return yOffset + 28;
@@ -429,7 +507,7 @@ export class MasteryMapOverlay extends OverlayBase {
         if (!nextLabel) return yOffset;
 
         const nextText = this.scene.add.text(xOffset, yOffset, `DALŠÍ KROK\n${nextLabel}`, {
-            fontSize: '13px', fontFamily: 'Arial, sans-serif', color: '#e0c777', fontStyle: 'bold',
+            fontSize: '13px', resolution: 2, fontFamily: 'Arial, sans-serif', color: '#e0c777', fontStyle: 'bold',
             lineSpacing: 4,
         });
         content.add(nextText);
@@ -456,7 +534,7 @@ export class MasteryMapOverlay extends OverlayBase {
         const barHeight = 8;
 
         const label = this.scene.add.text(barX, yOffset, item.label, {
-            fontSize: '12px', fontFamily: 'Arial, sans-serif', color: '#a7b5c7',
+            fontSize: '12px', resolution: 2, fontFamily: 'Arial, sans-serif', color: '#a7b5c7',
         });
         content.add(label);
 
@@ -472,11 +550,16 @@ export class MasteryMapOverlay extends OverlayBase {
 
         const checkMark = item.met ? ' ✓' : '';
         const valText = this.scene.add.text(barX + 268, yOffset, `${item.valueStr}${checkMark}`, {
-            fontSize: '12px', fontFamily: 'Arial, sans-serif', color: item.met ? '#44ff44' : '#a7b5c7',
+            fontSize: '12px', resolution: 2, fontFamily: 'Arial, sans-serif', color: item.met ? '#44ff44' : '#a7b5c7',
         });
         content.add(valText);
 
         return yOffset + 21;
+    }
+
+    public destroy(): void {
+        this.scrollPanel?.destroy();
+        super.destroy();
     }
 
     // ── Data computation helpers ──
@@ -485,17 +568,16 @@ export class MasteryMapOverlay extends OverlayBase {
         subAtomId: SubAtomId,
         form: ProblemForm,
         data: any,
-        problemDb: ProblemDatabase,
+        _problemDb: ProblemDatabase,
     ): { correct: number; wrong: number; meanRT: number } {
-        const problems = problemDb.getProblemsForForm(subAtomId, form);
         let correct = 0;
         let wrong = 0;
         let totalRT = 0;
         let rtCount = 0;
 
-        for (const p of problems) {
-            const record = data.problemRecords[p.key];
-            if (!record) continue;
+        // Catalog corrections must not erase historical answers from the map.
+        for (const record of Object.values(data.problemRecords) as any[]) {
+            if (record.subAtomId !== subAtomId || record.form !== form) continue;
 
             for (const attempt of record.attempts) {
                 if (attempt.correct) {

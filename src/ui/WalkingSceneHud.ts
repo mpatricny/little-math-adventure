@@ -235,7 +235,7 @@ export class WalkingSceneHud {
             swordFrame: sword?.iconFrame ?? null,
             swordBonus: sword?.attackBonus ?? 0,
             shieldFrame: shield?.iconFrame ?? null,
-            shieldBlock: shield?.blockAttempts ?? shield?.defenseBonus ?? 0,
+            shieldBlock: shield?.blockPower ?? shield?.blockAttempts ?? shield?.defenseBonus ?? 0,
             attackCount,
             attacks: [
                 attackDamage[0] ?? 0,

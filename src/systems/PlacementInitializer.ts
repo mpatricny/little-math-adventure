@@ -102,6 +102,11 @@ export class PlacementInitializer {
         // PRESERVE: retryPool, slowPool (still relevant)
         // PRESERVE: player HP/stats (no stat reduction - kinder for children)
 
+        // Lower the placement floor only if it would otherwise undo this drop.
+        // Earlier bands earned through play must remain earned, not become placement credit.
+        if (data.selectedStartBand && ALL_BANDS.indexOf(data.selectedStartBand) >= currentIndex) {
+            data.selectedStartBand = prevBand;
+        }
         data.lastStruggleOfferFight = data.fightCount;
 
         // Clear pools since they contain problems from higher band

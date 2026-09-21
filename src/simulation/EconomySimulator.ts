@@ -182,12 +182,12 @@ export class EconomyTracker {
 
   private tryBuyShield(player: PlayerState): { item: string; cost: number } | null {
     // Find best affordable shield that's better than current
-    const currentAttempts = player.shield?.blockAttempts ?? 0;
+    const currentPower = player.shield?.blockPower ?? 0;
 
     for (let i = SHIELDS.length - 1; i >= 0; i--) {
       const shield = SHIELDS[i];
       if (
-        shield.blockAttempts > currentAttempts &&
+        shield.blockPower > currentPower &&
         player.coins >= shield.cost + this.config.coinBuffer
       ) {
         player.coins -= shield.cost;

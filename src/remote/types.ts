@@ -21,6 +21,17 @@ export interface RemoteAnswerChoice {
     label: string;
 }
 
+export interface RemoteComparisonPrompt {
+    representation: 'size' | 'count' | 'number' | 'expression';
+    left: number;
+    right: number;
+    numberedObjects: boolean;
+    crocodileChoices: boolean;
+    showReminders: boolean;
+    expression?: string;
+    arithmeticHint?: number;
+}
+
 export interface RemoteEnemyTarget {
     index: number;
     name: string;
@@ -56,6 +67,7 @@ export type RemoteControllerState =
         subtitle?: string;
         problem: string;
         choices: RemoteAnswerChoice[];
+        comparison?: RemoteComparisonPrompt;
     }
     | {
         screen: 'feedback';

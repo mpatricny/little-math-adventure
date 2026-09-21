@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { applyComparisonExamResult, createInitialComparisonChapterState, generateComparisonTrainingProblems, recordComparisonAttempt } from '../ComparisonLearningSystem';
 import {
     ALL_BANDS,
     ALL_SUB_ATOM_NUMBERS,
@@ -16,6 +17,17 @@ let MasterySystem: typeof import('../MasterySystem').MasterySystem;
 let MathEngine: typeof import('../MathEngine').MathEngine;
 let ProblemDatabase: typeof import('../ProblemDatabase').ProblemDatabase;
 let ManaPlayerLane: typeof import('../../ui/ManaPlayerLane').ManaPlayerLane;
+
+function completeComparisonLesson(data: MasteryData): void {
+    const chapter = data.comparisonChapter = createInitialComparisonChapterState('training');
+    for (let stage = 0; stage < 6; stage++) {
+        for (const problem of generateComparisonTrainingProblems(chapter, stage === 3 || stage === 5 ? 9 : 6)) {
+            recordComparisonAttempt(chapter, problem, true, 3000, false, chapter.attempts.length + 1);
+        }
+    }
+    expect(chapter.status).toBe('exam_ready');
+    applyComparisonExamResult(chapter, 'bronze');
+}
 
 let uuidCounter = 0;
 vi.mock('phaser', () => ({
@@ -218,12 +230,13 @@ function hasZero(problem: { operand1?: number; operand2?: number; operand3?: num
 
 function isCrossingTen(problem: { operand1: number; operand2: number; operator: string; answer: number }): boolean {
     if (problem.operator === '+') {
-        return problem.operand1 < 10 && problem.operand2 > 0 && problem.answer > 10 && problem.answer <= 20;
+        return problem.operand1 < 10 && problem.operand2 > 0 && problem.operand2 < 10 && problem.answer > 10 && problem.answer <= 20;
     }
 
     return problem.operator === '-'
         && problem.operand1 > 10
         && problem.operand2 > 0
+        && problem.operand2 < 10
         && problem.answer < 10
         && problem.answer >= 0;
 }
@@ -557,6 +570,84 @@ describe('CoopSessionManager casual progression', () => {
         expect(poolB.every(problem => !hasZero(problem))).toBe(true);
     });
 
+    it('keeps completed E learning and old retry queues away from A in combat and mana', () => {
+        const data = createMasteryData();
+        setCurrentBand(data, 'E', 4);
+        for (const band of ALL_BANDS) {
+            data.bands[band].state = 'mastery';
+            for (const num of ALL_SUB_ATOM_NUMBERS) data.subAtoms[`${band}${num}` as SubAtomId].state = 'mastery';
+        }
+        const easy = ProblemDatabase.getInstance().getProblemsForForm('A2', 'result_unknown')[1].key;
+        data.currentPool = [easy]; data.retryPool = [easy]; data.slowPool = [easy];
+        const system = MasterySystem.getInstance();
+        system.setActiveData(data);
+        expect(system.getCurrentBand()).toBe('E');
+        expect(system.getFrontierSubAtom()).toBe('E4');
+        expect(system.drawFromPool(20).every(key => key.startsWith('E'))).toBe(true);
+        expect(system.drawFromReviewPool(2).every(key => key.startsWith('E'))).toBe(true);
+        expect(system.drawFromMasterPool(2).every(key => key.startsWith('E'))).toBe(true);
+        const engine = new MathEngine(createRegistryStub({ playerLevel: 2 }) as any, {
+            fixedLevel: 2, initialStats: createMathStats(data), autoPersist: false,
+        });
+        const mana = ManaPlayerLane.buildManaPool(engine, data);
+        expect(mana).toHaveLength(20);
+        expect(mana.every(problem => problem.masteryKey?.startsWith('E') && isCrossingTen(problem))).toBe(true);
+    });
+
+    it('restores skipped placement bands on load without changing combat or later learning progress', () => {
+        const game = GameStateManager.getInstance();
+        game.reset('girl_knight', 'Placement regression', 0);
+        const data = createMasteryData();
+        setCurrentBand(data, 'E', 2);
+        data.selectedStartBand = 'E';
+        data.bands.A.state = 'training'; data.subAtoms.A1.state = 'training';
+        data.bands.C.state = 'locked'; data.subAtoms.C2.state = 'locked';
+        game.getMathStats().masteryData = data;
+        game.getPlayer().attack = 5;
+        game.getPlayer().equippedWeapon = 'sword_wooden';
+        game.getMathStats().totalAttempts = 324;
+        game.save(); game.loadSlot(0);
+        const restored = game.getMasteryData();
+        expect(restored.bands.A.state).toBe('secure');
+        expect(restored.subAtoms.C2.state).toBe('secure');
+        expect(restored.subAtoms.E2).toEqual(data.subAtoms.E2);
+        expect(game.getPlayer().attack).toBe(5);
+        expect(game.getMathStats().totalAttempts).toBe(324);
+        expect(game.getPlayer().equippedWeapon).toBe('sword_wooden');
+    });
+
+    it('offers the new comparison lesson to an A-band learner with old A3/A4 progress', () => {
+        const data = createMasteryData(); setCurrentBand(data, 'A', 4);
+        data.subAtoms.A2.state = 'fluent'; data.subAtoms.A3.state = 'fluent';
+        const system = MasterySystem.getInstance(); system.setActiveData(data);
+        expect(system.shouldTrainComparisonChapter()).toBe(true);
+        expect(system.generateComparisonTrainingProblems(1)[0].comparisonMeta?.stage).toBe('size_crocodile');
+        expect(system.drawFromPool(20).every(key => /^A[12]:/.test(key) && !key.includes('compare'))).toBe(true);
+        expect(data.subAtoms.A3.state).toBe('fluent');
+        expect(system.checkMasteryChallengeEligibility('A3')).toBe(false);
+        data.subAtoms.A4.state = 'secure';
+        expect(system.getBandGateEligibility('A')).toBe(false);
+        const chapter = system.getComparisonChapterState();
+        const problem = system.generateComparisonTrainingProblems(1)[0];
+        system.recordComparisonSolve(problem, true, 2000, false);
+        expect(system.getComparisonChapterState()).toBe(chapter);
+        expect(chapter.attempts).toHaveLength(1);
+    });
+
+    it.each([['A', 'A'], ['E', 'D']] as const)('preserves an intentional drop with original placement %s', async (start, expected) => {
+        const { PlacementInitializer } = await import('../PlacementInitializer');
+        const game = GameStateManager.getInstance();
+        game.reset('girl_knight', 'Placement drop QA', 0);
+        const data = createMasteryData(); setCurrentBand(data, 'E', 2);
+        data.selectedStartBand = start;
+        game.getMathStats().masteryData = data;
+        PlacementInitializer.dropOneBand('E', game);
+        game.loadSlot(0);
+        expect(game.getMasteryData().selectedStartBand).toBe(expected);
+        expect(game.getMasteryData().bands.D.state).toBe('training');
+        expect(game.getMasteryData().bands.E.state).toBe('locked');
+    });
+
     it('filters zero-containing mana problems and keeps E1 pools on crossing-10 calculations', () => {
         const mastery = createMasteryData();
         setCurrentBand(mastery, 'E', 1);
@@ -648,6 +739,7 @@ describe('MasterySystem co-op auto-promotion', () => {
     it('auto-awards band gate silver after a full band-scoped buffer', () => {
         const masterySystem = MasterySystem.getInstance();
         const data = createMasteryData();
+        completeComparisonLesson(data);
         masterySystem.setActiveData(data);
 
         data.bands.A.state = 'training';

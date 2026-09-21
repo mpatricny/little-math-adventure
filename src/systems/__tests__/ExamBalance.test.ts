@@ -18,6 +18,7 @@ function createGeneratorHarness(): MasterySystem {
     (system as any).pickRandomProblems = (subAtomId: string, form: ProblemForm, count: number) =>
         Array.from({ length: count }, () => `${subAtomId}|${form}|${serial++}`);
     (system as any).shuffle = <T>(items: T[]) => items;
+    (system as any).isComparisonChapterComplete = () => true;
 
     return system;
 }
@@ -33,6 +34,9 @@ function countBySegment(keys: string[], segment: number): Record<string, number>
 describe('exam difficulty balance', () => {
     it('uses the reduced item counts and approved thresholds', () => {
         expect(EXAM_CONFIGS.sub_atom).toMatchObject({
+            itemCount: 8, bronzeThreshold: 5, silverThreshold: 6, goldThreshold: 7,
+        });
+        expect(EXAM_CONFIGS.comparison_chapter).toMatchObject({
             itemCount: 8, bronzeThreshold: 5, silverThreshold: 6, goldThreshold: 7,
         });
         expect(EXAM_CONFIGS.fluency_challenge).toMatchObject({ itemCount: 10, passThreshold: 8 });
@@ -88,10 +92,23 @@ describe('exam difficulty balance', () => {
         const keys = createGeneratorHarness().generateSubAtomExamProblems('A1');
 
         expect(keys).toHaveLength(8);
+        expect(countBySegment(keys, 1)).toEqual({ result_unknown: 3, missing_part: 3, compare_equation_vs_number: 2 });
+    });
+
+    it('keeps A1/A2 exams at eight arithmetic items before comparison is learned', () => {
+        const system = createGeneratorHarness();
+        (system as any).isComparisonChapterComplete = () => false;
+        const keys = system.generateSubAtomExamProblems('A2');
+        expect(keys).toHaveLength(8);
+        expect(countBySegment(keys, 1)).toEqual({ result_unknown: 4, missing_part: 4 });
+    });
+
+    it('uses four results and four comparisons for A3', () => {
+        const keys = createGeneratorHarness().generateSubAtomExamProblems('A3');
+        expect(keys).toHaveLength(8);
         expect(countBySegment(keys, 1)).toEqual({
-            result_unknown: 3,
-            missing_part: 3,
-            compare_equation_vs_number: 2,
+            result_unknown: 4,
+            compare_equation_vs_number: 4,
         });
     });
 
@@ -119,22 +136,22 @@ describe('exam difficulty balance', () => {
         expect(keys).toHaveLength(12);
         expect(countBySegment(keys, 0)).toEqual({ A1: 3, A2: 3, A3: 3, A4: 3 });
         expect(countBySegment(keys, 1)).toEqual({
-            result_unknown: 4,
-            missing_part: 4,
+            result_unknown: 5,
+            missing_part: 3,
             compare_equation_vs_number: 4,
         });
     });
 
-    it('builds 14 band-mastery items with extra weight on complex sub-atoms', () => {
+    it('builds 14 band-mastery items without the removed A3 missing form', () => {
         const keys = createGeneratorHarness().generateBandMasteryProblems('A');
 
         expect(keys).toHaveLength(14);
-        expect(countBySegment(keys, 0)).toEqual({ A1: 3, A2: 3, A3: 4, A4: 4 });
+        expect(countBySegment(keys, 0)).toEqual({ A1: 4, A2: 4, A3: 3, A4: 3 });
         expect(countBySegment(keys, 1)).toEqual({
             result_unknown: 4,
-            missing_part: 4,
+            missing_part: 3,
             compare_equation_vs_number: 4,
-            compare_equation_vs_equation: 2,
+            compare_equation_vs_equation: 3,
         });
     });
 });

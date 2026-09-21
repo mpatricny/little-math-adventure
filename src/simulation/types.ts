@@ -105,8 +105,7 @@ export interface ShieldStats {
   id: string;
   name: string;
   cost: number;
-  blockTime: number;
-  blockAttempts: number;
+  blockPower: number;
 }
 
 export const GAME_BALANCE = {
@@ -174,17 +173,19 @@ export const ENEMIES: EnemyStats[] = [
 ];
 
 export const WEAPONS: WeaponStats[] = [
-  { id: 'sword_wooden', name: 'Wooden Sword', cost: 8, atk: 2, multiplier: 1 },
-  { id: 'sword_iron', name: 'Iron Sword', cost: 80, atk: 5, multiplier: 1 },
+  { id: 'sword_wooden', name: 'Wooden Sword', cost: 8, atk: 1, multiplier: 1 },
+  { id: 'sword_iron', name: 'Iron Sword', cost: 16, atk: 2, multiplier: 2 },
+  { id: 'sword_reinforced', name: 'Reinforced Sword', cost: 28, atk: 3, multiplier: 3 },
   { id: 'sword_steel', name: 'Steel Sword', cost: 180, atk: 8, multiplier: 2 },
   { id: 'sword_golden', name: 'Golden Sword', cost: 400, atk: 12, multiplier: 2 },
 ];
 
 export const SHIELDS: ShieldStats[] = [
-  { id: 'shield_wooden', name: 'Wooden Shield', cost: 3, blockTime: 5, blockAttempts: 1 },
-  { id: 'shield_iron', name: 'Iron Shield', cost: 100, blockTime: 6, blockAttempts: 2 },
-  { id: 'shield_steel', name: 'Steel Shield', cost: 200, blockTime: 8, blockAttempts: 2 },
-  { id: 'shield_golden', name: 'Golden Shield', cost: 450, blockTime: 10, blockAttempts: 3 },
+  { id: 'shield_wooden', name: 'Wooden Shield', cost: 3, blockPower: 1 },
+  { id: 'shield_iron', name: 'Iron Shield', cost: 12, blockPower: 2 },
+  { id: 'shield_reinforced', name: 'Reinforced Shield', cost: 20, blockPower: 3 },
+  { id: 'shield_steel', name: 'Steel Shield', cost: 200, blockPower: 2 },
+  { id: 'shield_golden', name: 'Golden Shield', cost: 450, blockPower: 3 },
 ];
 
 export interface PotionStats {

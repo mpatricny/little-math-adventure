@@ -135,6 +135,17 @@ export class MenuScene extends Phaser.Scene {
     }
 
     private createDeveloperShortcuts(): void {
+        const onComparisonTest = () => {
+            const state = GameStateManager.getInstance();
+            state.beginComparisonPreview();
+            MasterySystem.destroyInstance();
+            this.scene.start('BattleScene', {
+                enemyId: 'comparison_training_slime',
+                comparisonTest: true,
+                returnScene: 'MenuScene',
+            });
+        };
+
         const onUnderwaterAdventure = () => {
             this.scene.start('UnderwaterRoomScene', { preview: true, fromSurface: true });
         };
@@ -156,6 +167,18 @@ export class MenuScene extends Phaser.Scene {
             });
         };
 
+        this.createMenuButton({
+            hostId: 'btnComparisonTest',
+            fallbackX: 1060,
+            fallbackY: 440,
+            label: 'TEST: POROVNÁVÁNÍ',
+            iconTexture: 'menu-icon-test-scene',
+            onClick: onComparisonTest,
+            width: 350,
+            height: 62,
+            labelFontSize: 15,
+            iconSize: 38,
+        });
         this.createMenuButton({
             hostId: 'btnSilverpondFairyReward',
             fallbackX: 1060,

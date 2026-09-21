@@ -1,9 +1,10 @@
 import {
-    BandId, SubAtomId, SubAtomNumber, ProblemForm, ExamType,
+    BandId, SubAtomId, SubAtomNumber, ProblemForm, ExamType, MasteryTargetId,
     MasteryData, SubAtomState, MasteryAttempt, ProblemDefinition,
-    TrialTier, ExamConfig, EXAM_CONFIGS,
+    TrialTier, ExamConfig, EXAM_CONFIGS, MathProblem,
     ALL_BANDS, ALL_SUB_ATOM_NUMBERS, ALL_PROBLEM_FORMS,
 } from '../types';
+import { getLearningBand, getLearningFrontier } from './LearningProgress';
 import { GameStateManager } from './GameStateManager';
 import { ProblemDatabase } from './ProblemDatabase';
 import { ManaSystem } from './ManaSystem';
@@ -18,6 +19,17 @@ import {
     SubAtomExamProgress,
     SUB_ATOM_EXAM_REQUIREMENTS,
 } from './ExamProgress';
+import {
+    applyComparisonExamResult as applyChapterExamResult,
+    createInitialComparisonChapterState,
+    generateComparisonExamProblems as createComparisonExamProblems,
+    generateComparisonTrainingProblems as createComparisonTrainingProblems,
+    getCurrentComparisonStage,
+    markComparisonStageIntroSeen,
+    ensureComparisonChapter,
+    needsComparisonStageIntro,
+    recordComparisonAttempt as recordChapterAttempt,
+} from './ComparisonLearningSystem';
 
 // Non-difficulty thresholds (stay global)
 const SLOW_POOL_THRESHOLD_MS = 15000;
@@ -79,55 +91,89 @@ export class MasterySystem {
      */
     setActiveData(data: MasteryData | null): void {
         this.activeData = data;
+        if (data) this.ensureComparisonChapter(data);
     }
 
     private get data(): MasteryData {
-        if (this.activeData) return this.activeData;
-        return this.gameState.getMasteryData();
+        const data = this.activeData ?? this.gameState.getMasteryData();
+        this.ensureComparisonChapter(data);
+        return data;
+    }
+
+    private ensureComparisonChapter(data: MasteryData): void {
+        ensureComparisonChapter(data);
+    }
+
+    getComparisonChapterState() {
+        return this.data.comparisonChapter ?? createInitialComparisonChapterState();
+    }
+
+    isComparisonChapterComplete(): boolean {
+        return this.getComparisonChapterState().status === 'complete';
+    }
+
+    shouldTrainComparisonChapter(): boolean {
+        return this.getComparisonChapterState().status === 'training';
+    }
+
+    getCurrentComparisonStage() {
+        return getCurrentComparisonStage(this.getComparisonChapterState());
+    }
+
+    needsComparisonStageIntro(): boolean {
+        return needsComparisonStageIntro(this.getComparisonChapterState());
+    }
+
+    markComparisonStageIntroSeen(): void {
+        markComparisonStageIntroSeen(this.getComparisonChapterState());
+    }
+
+    generateComparisonTrainingProblems(count: number, diagnosticMode = false): MathProblem[] {
+        return createComparisonTrainingProblems(this.getComparisonChapterState(), count, diagnosticMode);
+    }
+
+    generateComparisonExamProblems(): MathProblem[] {
+        return createComparisonExamProblems(this.getComparisonChapterState());
+    }
+
+    recordComparisonSolve(problem: MathProblem, correct: boolean, responseTimeMs: number, assisted: boolean): void {
+        const data = this.data;
+        data.globalSolveSequence++;
+        recordChapterAttempt(
+            this.getComparisonChapterState(),
+            problem,
+            correct,
+            responseTimeMs,
+            assisted,
+            data.globalSolveSequence,
+        );
+    }
+
+    applyComparisonExamResult(correctCount: number, tierOverride?: TrialTier, sessionOnly = false) {
+        const tier = tierOverride ?? this.computeExamTier(correctCount, 'comparison_chapter');
+        const state = this.getComparisonChapterState();
+        const wasComplete = state.status === 'complete';
+        applyChapterExamResult(state, tier);
+        if (state.status === 'complete') this.unlockA3AfterComparison();
+        const statGains = (!sessionOnly && tier !== 'none')
+            ? this.applyStatRewards(tier)
+            : { hpGain: 0, attackGain: 0, manaGain: 0 };
+        if (!sessionOnly) this.updatePlayerLevel();
+        return { tier, stateChanged: !wasComplete && state.status === 'complete', ...statGains };
     }
 
     // ========================================
     // State Queries
     // ========================================
 
-    /** Get the highest unlocked band not yet Secure */
+    /** Get the highest unlocked learning band, including a completed final band. */
     getCurrentBand(): BandId {
-        // Highest unlocked band that is not yet Secure
-        for (let i = ALL_BANDS.length - 1; i >= 0; i--) {
-            const band = ALL_BANDS[i];
-            const state = this.data.bands[band].state;
-            if (state !== 'locked' && state !== 'secure' && state !== 'fluent' && state !== 'mastery') {
-                return band;
-            }
-        }
-        // All unlocked bands are Secure+, use highest not yet Mastery
-        for (let i = ALL_BANDS.length - 1; i >= 0; i--) {
-            const band = ALL_BANDS[i];
-            const state = this.data.bands[band].state;
-            if (state !== 'locked' && state !== 'mastery') {
-                return band;
-            }
-        }
-        return 'A'; // fallback
+        return getLearningBand(this.data);
     }
 
-    /** Get the frontier sub-atom (lowest Training in current band) */
+    /** Current arithmetic module, shared by combat and mana collection. */
     getFrontierSubAtom(): SubAtomId {
-        const band = this.getCurrentBand();
-        for (const num of ALL_SUB_ATOM_NUMBERS) {
-            const id = `${band}${num}` as SubAtomId;
-            if (this.data.subAtoms[id].state === 'training') {
-                return id;
-            }
-        }
-        // No training sub-atom: use first non-mastery sub-atom
-        for (const num of ALL_SUB_ATOM_NUMBERS) {
-            const id = `${band}${num}` as SubAtomId;
-            if (this.data.subAtoms[id].state !== 'mastery') {
-                return id;
-            }
-        }
-        return `${band}1` as SubAtomId;
+        return getLearningFrontier(this.data);
     }
 
     /** Number of base math problems in a solo attack. */
@@ -242,6 +288,7 @@ export class MasterySystem {
 
     /** Check if sub-atom exam is available */
     checkExamEligibility(subAtomId: SubAtomId): boolean {
+        if (!this.isSubAtomAvailable(subAtomId)) return false;
         const sa = this.data.subAtoms[subAtomId];
         if (sa.state !== 'training') return false;
 
@@ -268,6 +315,7 @@ export class MasterySystem {
 
     /** Check if fluency challenge is available */
     checkFluencyEligibility(subAtomId: SubAtomId): boolean {
+        if (!this.isSubAtomAvailable(subAtomId)) return false;
         const sa = this.data.subAtoms[subAtomId];
         if (sa.state !== 'secure') return false;
 
@@ -280,6 +328,7 @@ export class MasterySystem {
 
     /** Check if mastery challenge is available */
     checkMasteryChallengeEligibility(subAtomId: SubAtomId): boolean {
+        if (!this.isSubAtomAvailable(subAtomId)) return false;
         const sa = this.data.subAtoms[subAtomId];
         if (sa.state !== 'fluent') return false;
 
@@ -292,6 +341,7 @@ export class MasterySystem {
 
     /** Check if band gate exam is available */
     getBandGateEligibility(bandId: BandId): boolean {
+        if (bandId === 'A' && !this.isComparisonChapterComplete()) return false;
         for (const num of ALL_SUB_ATOM_NUMBERS) {
             const id = `${bandId}${num}` as SubAtomId;
             const state = this.data.subAtoms[id].state;
@@ -303,6 +353,7 @@ export class MasterySystem {
 
     /** Check if band mastery challenge is available */
     checkBandMasteryEligibility(bandId: BandId): boolean {
+        if (bandId === 'A' && !this.isComparisonChapterComplete()) return false;
         const band = this.data.bands[bandId];
         if (band.state !== 'fluent') return false;
 
@@ -592,6 +643,9 @@ export class MasterySystem {
      */
     generatePool(): string[] {
         const data = this.data;
+        data.retryPool = data.retryPool.filter(key => this.isProblemKeyAllowed(key));
+        data.slowPool = data.slowPool.filter(key => this.isProblemKeyAllowed(key));
+        data.currentPool = data.currentPool.filter(key => this.isProblemKeyAllowed(key));
         const pool: string[] = [];
         const used = new Set<string>();
 
@@ -704,7 +758,7 @@ export class MasterySystem {
         const add = (keys: string[]): void => {
             for (const key of keys) {
                 if (result.length >= targetCount) break;
-                if (used.has(key) || !this.problemDb.getProblemByKey(key)) continue;
+                if (used.has(key) || !this.isProblemKeyAllowed(key)) continue;
                 used.add(key);
                 result.push(key);
             }
@@ -736,6 +790,18 @@ export class MasterySystem {
     drawFromPool(count: number): string[] {
         const data = this.data;
         const result: string[] = [];
+
+        // Saves created by older builds can still contain forms that are no
+        // longer legal (comparison before the chapter or A3 missing-part).
+        // Sanitize only the unconsumed tail so an update cannot surface one of
+        // those stale entries before the next pool regeneration.
+        const remainingPool = data.currentPool
+            .slice(data.currentPoolIndex)
+            .filter(key => this.isProblemKeyAllowed(key));
+        if (remainingPool.length !== data.currentPool.length - data.currentPoolIndex) {
+            data.currentPool = remainingPool;
+            data.currentPoolIndex = 0;
+        }
 
         for (let i = 0; i < count; i++) {
             if (data.currentPoolIndex >= data.currentPool.length || data.currentPool.length === 0) {
@@ -786,29 +852,29 @@ export class MasterySystem {
 
     /** Generate problem keys for a sub-atom exam (8 items) */
     generateSubAtomExamProblems(subAtomId: SubAtomId): string[] {
-        // 3 result_unknown + 3 missing_part + 2 compare_eq_vs_number (no compare_eq_vs_equation)
-        const problems: string[] = [];
-        problems.push(...this.pickRandomProblems(subAtomId, 'result_unknown', 3));
-        problems.push(...this.pickRandomProblems(subAtomId, 'missing_part', 3));
-        problems.push(...this.pickRandomProblems(subAtomId, 'compare_equation_vs_number', 2));
-        return this.shuffle(problems);
+        const itemCount = EXAM_CONFIGS.sub_atom.itemCount;
+        if (!this.isComparisonChapterComplete() && (subAtomId === 'A1' || subAtomId === 'A2')) {
+            return this.generateBalancedProblemKeys(subAtomId, itemCount, ['result_unknown', 'missing_part']);
+        }
+        if (subAtomId[1] === '3') {
+            return this.generateBalancedProblemKeys(subAtomId, itemCount, ['result_unknown', 'compare_equation_vs_number']);
+        }
+        return this.generateBalancedProblemKeys(
+            subAtomId,
+            itemCount,
+            ['result_unknown', 'missing_part', 'compare_equation_vs_number'],
+        );
     }
 
     /** Generate a form-balanced fluency/mastery challenge of the requested length. */
     generateChallengeProblemKeys(subAtomId: SubAtomId, count: number, examType: ExamType = 'mastery_challenge'): string[] {
         // Fluency challenge: player is secure, hasn't seen compare_equation_vs_equation yet
         // Mastery challenge: player is fluent, all 4 forms available
-        const forms: ProblemForm[] = examType === 'fluency_challenge'
+        const desiredForms: ProblemForm[] = examType === 'fluency_challenge'
             ? ['result_unknown', 'missing_part', 'compare_equation_vs_number']
             : ALL_PROBLEM_FORMS;
-        const perForm = Math.floor(count / forms.length);
-        const remainder = count % forms.length;
-        const problems: string[] = [];
-        for (let i = 0; i < forms.length; i++) {
-            const formCount = perForm + (i < remainder ? 1 : 0);
-            problems.push(...this.pickRandomProblems(subAtomId, forms[i], formCount));
-        }
-        return this.shuffle(problems);
+        const forms = desiredForms.filter(form => this.isFormAllowed(subAtomId, form));
+        return this.generateBalancedProblemKeys(subAtomId, count, forms);
     }
 
     /** Generate problem keys for band gate exam (12 items: 3 per sub-atom) */
@@ -816,10 +882,9 @@ export class MasterySystem {
         const problems: string[] = [];
         for (const num of ALL_SUB_ATOM_NUMBERS) {
             const subAtomId = `${bandId}${num}` as SubAtomId;
-            // 3 problems per sub-atom: one result, one missing part, one comparison
-            problems.push(...this.pickRandomProblems(subAtomId, 'result_unknown', 1));
-            problems.push(...this.pickRandomProblems(subAtomId, 'missing_part', 1));
-            problems.push(...this.pickRandomProblems(subAtomId, 'compare_equation_vs_number', 1));
+            const forms = (['result_unknown', 'missing_part', 'compare_equation_vs_number'] as ProblemForm[])
+                .filter(form => this.isFormAllowed(subAtomId, form));
+            problems.push(...this.generateBalancedProblemKeys(subAtomId, 3, forms));
         }
         return this.shuffle(problems);
     }
@@ -827,18 +892,12 @@ export class MasterySystem {
     /** Generate a 14-item band mastery challenge with every sub-atom represented. */
     generateBandMasteryProblems(bandId: BandId): string[] {
         const problems: string[] = [];
-        // Three core forms from every sub-atom (12), plus one advanced comparison
-        // from both the three-operand and mixed sub-atoms (2).
-        for (const num of ALL_SUB_ATOM_NUMBERS) {
+        const perSubAtom = [4, 4, 3, 3];
+        for (const [index, num] of ALL_SUB_ATOM_NUMBERS.entries()) {
             const subAtomId = `${bandId}${num}` as SubAtomId;
-            problems.push(...this.pickRandomProblems(subAtomId, 'result_unknown', 1));
-            problems.push(...this.pickRandomProblems(subAtomId, 'missing_part', 1));
-            problems.push(...this.pickRandomProblems(subAtomId, 'compare_equation_vs_number', 1));
+            const forms = ALL_PROBLEM_FORMS.filter(form => this.isFormAllowed(subAtomId, form));
+            problems.push(...this.generateBalancedProblemKeys(subAtomId, perSubAtom[index], forms));
         }
-
-        problems.push(...this.pickRandomProblems(`${bandId}3` as SubAtomId, 'compare_equation_vs_equation', 1));
-        problems.push(...this.pickRandomProblems(`${bandId}4` as SubAtomId, 'compare_equation_vs_equation', 1));
-
         return this.shuffle(problems);
     }
 
@@ -847,8 +906,16 @@ export class MasterySystem {
     // ========================================
 
     /** Get all available exams for the Guild scene */
-    getAvailableExams(): Array<{ type: ExamType; targetId: SubAtomId | BandId; label: string }> {
-        const exams: Array<{ type: ExamType; targetId: SubAtomId | BandId; label: string }> = [];
+    getAvailableExams(): Array<{ type: ExamType; targetId: MasteryTargetId; label: string }> {
+        const exams: Array<{ type: ExamType; targetId: MasteryTargetId; label: string }> = [];
+
+        if (this.getComparisonChapterState().status === 'exam_ready') {
+            exams.push({
+                type: 'comparison_chapter',
+                targetId: 'comparison_symbols',
+                label: 'Zkouška porovnávání',
+            });
+        }
 
         for (const band of ALL_BANDS) {
             for (const num of ALL_SUB_ATOM_NUMBERS) {
@@ -881,8 +948,8 @@ export class MasterySystem {
      * 2. Require an extra exam-sized buffer of in-scope attempts after that baseline.
      * 3. Auto-award the fixed co-op outcome when that buffer is strong enough.
      */
-    applyCoopAutoPromotions(sessionOnly: boolean = false): Array<{ type: ExamType; targetId: SubAtomId | BandId }> {
-        const promotions: Array<{ type: ExamType; targetId: SubAtomId | BandId }> = [];
+    applyCoopAutoPromotions(sessionOnly: boolean = false): Array<{ type: ExamType; targetId: MasteryTargetId }> {
+        const promotions: Array<{ type: ExamType; targetId: MasteryTargetId }> = [];
         const candidates = this.getCoopAutoPromotionCandidates();
 
         for (const candidate of candidates) {
@@ -906,6 +973,9 @@ export class MasterySystem {
             }
 
             switch (candidate.type) {
+                case 'comparison_chapter':
+                    this.applyComparisonExamResult(EXAM_CONFIGS.comparison_chapter.silverThreshold || 0, 'silver', sessionOnly);
+                    break;
                 case 'sub_atom':
                     this.applyExamResult(candidate.targetId as SubAtomId, EXAM_CONFIGS.sub_atom.silverThreshold || 0, 'silver', sessionOnly);
                     break;
@@ -976,8 +1046,10 @@ export class MasterySystem {
     // Private helpers
     // ========================================
 
-    private getCoopAutoPromotionCandidates(): Array<{ type: ExamType; targetId: SubAtomId | BandId }> {
-        const candidates: Array<{ type: ExamType; targetId: SubAtomId | BandId }> = [];
+    private getCoopAutoPromotionCandidates(): Array<{ type: ExamType; targetId: MasteryTargetId }> {
+        const candidates: Array<{ type: ExamType; targetId: MasteryTargetId }> = [
+            { type: 'comparison_chapter', targetId: 'comparison_symbols' },
+        ];
 
         for (const band of ALL_BANDS) {
             for (const num of ALL_SUB_ATOM_NUMBERS) {
@@ -994,12 +1066,14 @@ export class MasterySystem {
         return candidates;
     }
 
-    private getCoopAutoPromotionKey(type: ExamType, targetId: SubAtomId | BandId): string {
+    private getCoopAutoPromotionKey(type: ExamType, targetId: MasteryTargetId): string {
         return `${type}:${targetId}`;
     }
 
-    private isCoopAutoPromotionEligible(type: ExamType, targetId: SubAtomId | BandId): boolean {
+    private isCoopAutoPromotionEligible(type: ExamType, targetId: MasteryTargetId): boolean {
         switch (type) {
+            case 'comparison_chapter':
+                return this.getComparisonChapterState().status === 'exam_ready';
             case 'sub_atom':
                 return this.checkExamEligibility(targetId as SubAtomId);
             case 'fluency_challenge':
@@ -1013,8 +1087,10 @@ export class MasterySystem {
         }
     }
 
-    private isCoopAutoPromotionStageRelevant(type: ExamType, targetId: SubAtomId | BandId): boolean {
+    private isCoopAutoPromotionStageRelevant(type: ExamType, targetId: MasteryTargetId): boolean {
         switch (type) {
+            case 'comparison_chapter':
+                return this.getComparisonChapterState().status === 'exam_ready';
             case 'sub_atom':
                 return this.data.subAtoms[targetId as SubAtomId].state === 'training';
             case 'fluency_challenge':
@@ -1028,8 +1104,19 @@ export class MasterySystem {
         }
     }
 
-    private isCoopAutoPromotionReady(type: ExamType, targetId: SubAtomId | BandId, baseline: number): boolean {
+    private isCoopAutoPromotionReady(type: ExamType, targetId: MasteryTargetId, baseline: number): boolean {
         const config = EXAM_CONFIGS[type];
+        if (type === 'comparison_chapter') {
+            const buffer = this.getComparisonChapterState().attempts
+                .filter(attempt => !attempt.exam && attempt.sequenceIndex > baseline)
+                .slice(-config.itemCount);
+            if (buffer.length < config.itemCount) return false;
+            const correct = buffer.filter(attempt => attempt.correct).length;
+            const threshold = config.silverThreshold ?? config.bronzeThreshold ?? config.itemCount;
+            return correct >= threshold
+                && this.median(buffer.filter(attempt => attempt.correct).map(attempt => attempt.responseTimeMs))
+                    <= COOP_AUTO_PROMOTION_RT_MS;
+        }
         const buffer = this.getScopedAttemptsSince(type, targetId, baseline).slice(-config.itemCount);
 
         if (buffer.length < config.itemCount) {
@@ -1059,7 +1146,7 @@ export class MasterySystem {
         }
     }
 
-    private getScopedAttemptsSince(type: ExamType, targetId: SubAtomId | BandId, baseline: number): ScopedMasteryAttempt[] {
+    private getScopedAttemptsSince(type: ExamType, targetId: MasteryTargetId, baseline: number): ScopedMasteryAttempt[] {
         const attempts: ScopedMasteryAttempt[] = [];
 
         for (const record of Object.values(this.data.problemRecords)) {
@@ -1149,6 +1236,12 @@ export class MasterySystem {
         // Unlock next sub-atom if this one became Secure+
         const sa = this.data.subAtoms[subAtomId];
         if (sa.state === 'secure' || sa.state === 'fluent' || sa.state === 'mastery') {
+            if (subAtomId === 'A2' && !this.isComparisonChapterComplete()) {
+                const chapter = this.getComparisonChapterState();
+                if (chapter.status === 'locked') chapter.status = 'training';
+                this.checkBandFluency(bandId);
+                return;
+            }
             const nextNum = (num + 1) as SubAtomNumber;
             if (nextNum <= 4) {
                 const nextId = `${bandId}${nextNum}` as SubAtomId;
@@ -1160,6 +1253,14 @@ export class MasterySystem {
 
         // Check band-level transitions
         this.checkBandFluency(bandId);
+    }
+
+    private unlockA3AfterComparison(): void {
+        const a2 = this.data.subAtoms.A2;
+        const a2Ready = a2.state === 'secure' || a2.state === 'fluent' || a2.state === 'mastery';
+        if (a2Ready && this.data.subAtoms.A3.state === 'locked') {
+            this.data.subAtoms.A3.state = 'training';
+        }
     }
 
     /** Called when a band changes state — may unlock next band */
@@ -1203,7 +1304,7 @@ export class MasterySystem {
 
         // Sort by form weight (highest first) then by RT (highest first)
         const candidates = allProblems
-            .filter(p => !used.has(p.key) && !lastPool.includes(p.key))
+            .filter(p => this.isProblemAllowed(p) && !used.has(p.key) && !lastPool.includes(p.key))
             .map(p => ({
                 problem: p,
                 weight: weights[p.form],
@@ -1271,7 +1372,7 @@ export class MasterySystem {
         for (let i = 0; i < count * 3 && result.length < count; i++) {
             const saId = subAtoms[saIndex % subAtoms.length];
             const problems = this.problemDb.getAllProblems(saId)
-                .filter(p => !used.has(p.key))
+                .filter(p => this.isProblemAllowed(p) && !used.has(p.key))
                 .sort((a, b) => this.getAverageRT(b.key) - this.getAverageRT(a.key));
 
             if (problems.length > 0) {
@@ -1291,14 +1392,14 @@ export class MasterySystem {
     private selectReviewProblems(state: 'fluent' | 'mastery', count: number, used: Set<string>): string[] {
         const result: string[] = [];
 
-        for (const band of ALL_BANDS) {
+        for (const band of [this.getCurrentBand()]) {
             for (const num of ALL_SUB_ATOM_NUMBERS) {
                 if (result.length >= count) break;
                 const id = `${band}${num}` as SubAtomId;
                 if (this.data.subAtoms[id].state !== state) continue;
 
                 const problems = this.problemDb.getAllProblems(id)
-                    .filter(p => !used.has(p.key))
+                    .filter(p => this.isProblemAllowed(p) && !used.has(p.key))
                     .sort((a, b) => this.getAverageRT(b.key) - this.getAverageRT(a.key));
 
                 // Never-seen first, then highest RT
@@ -1314,12 +1415,44 @@ export class MasterySystem {
         return result;
     }
 
-    /** Pick N random problems from a sub-atom/form combo */
+    private generateBalancedProblemKeys(subAtomId: SubAtomId, count: number, forms: ProblemForm[]): string[] {
+        const allowedForms = forms.filter(form => this.isFormAllowed(subAtomId, form));
+        if (allowedForms.length === 0 || count <= 0) return [];
+
+        const problems: string[] = [];
+        for (let formIndex = 0; formIndex < allowedForms.length; formIndex++) {
+            const formCount = Math.floor(count / allowedForms.length)
+                + (formIndex < count % allowedForms.length ? 1 : 0);
+            problems.push(...this.pickRandomProblems(subAtomId, allowedForms[formIndex], formCount));
+        }
+        return this.shuffle(problems);
+    }
+
     private pickRandomProblems(subAtomId: SubAtomId, form: ProblemForm, count: number): string[] {
         const available = this.problemDb.getProblemsForForm(subAtomId, form)
-            .filter(p => !this.hasZero(p));
-        const shuffled = this.shuffle([...available]);
-        return shuffled.slice(0, count).map(p => p.key);
+            .filter(problem => this.isProblemAllowed(problem) && !this.hasZero(problem));
+        return this.shuffle(available).slice(0, count).map(problem => problem.key);
+    }
+
+    private isFormAllowed(subAtomId: SubAtomId, form: ProblemForm): boolean {
+        if (subAtomId[1] === '3' && form === 'missing_part') return false;
+        if (!this.isComparisonChapterComplete() && form.startsWith('compare_')) return false;
+        return true;
+    }
+
+    private isProblemAllowed(problem: ProblemDefinition): boolean {
+        return this.isSubAtomAvailable(problem.subAtomId) && this.isFormAllowed(problem.subAtomId, problem.form);
+    }
+
+    private isSubAtomAvailable(subAtomId: SubAtomId): boolean {
+        const state = this.data.subAtoms[subAtomId]?.state;
+        return state !== undefined && state !== 'locked'
+            && !(subAtomId[0] === 'A' && Number(subAtomId[1]) > 2 && !this.isComparisonChapterComplete());
+    }
+
+    private isProblemKeyAllowed(key: string): boolean {
+        const problem = this.problemDb.getProblemByKey(key);
+        return problem !== undefined && problem.bandId === this.getCurrentBand() && this.isProblemAllowed(problem);
     }
 
     /** Determine phase for form weight selection */

@@ -47,6 +47,20 @@ test('runtime scene registration and packaged pilot scope stay in sync', () => {
   assert.deepEqual([...names].sort(), [...PILOT_SCENE_KEYS].sort());
 });
 
+test('comparison lessons retain their editor layouts and illustrated choices in the pilot', () => {
+  const scenes = json('scenes.json').scenes;
+  for (const key of ['MathBoardComparisonLayout', 'ComparisonFeedbackLayout']) {
+    assert.deepEqual(scenes[key], original('scenes.json').scenes[key], `Missing comparison layout ${key}`);
+  }
+  for (const key of ['comparison-apple', 'comparison-crocodile', 'comparison-equal-jaws',
+    'comparison-greater', 'comparison-equal']) {
+    assert.ok(content.report.textureKeys.includes(key), `Missing comparison texture ${key}`);
+    const texture = original('textures.json').images[key];
+    const url = typeof texture === 'string' ? texture : texture.path;
+    assert.ok(content.publicFiles.has(publicFilePath(`assets/${url}`)), `Missing comparison image ${key}`);
+  }
+});
+
 test('retained actor animations, UI templates, nine slices and textures form a closed dependency graph', () => {
   const textures = new Set(content.report.textureKeys);
   const templateIds = new Set(content.report.templateIds);

@@ -1,4 +1,5 @@
 import { MathStats, MasteryData, BandId, SubAtomId, ALL_BANDS, ALL_SUB_ATOM_NUMBERS } from '../types';
+import { createInitialComparisonChapterState } from './ComparisonLearningSystem';
 
 /**
  * Migrate existing level-based saves to the mastery system.
@@ -237,6 +238,9 @@ export class MasteryMigration {
             globalSolveSequence: 0, fightCount: 0,
             retryPool: [], slowPool: [],
             currentPool: [], currentPoolIndex: 0, lastPoolProblems: [],
+            lastStruggleOfferFight: 0,
+            coopAutoPromotionBases: {},
+            comparisonChapter: createInitialComparisonChapterState(),
         };
     }
 }

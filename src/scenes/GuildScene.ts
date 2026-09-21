@@ -1,7 +1,9 @@
+import { ComparisonProblemView, comparisonGlyph } from '../ui/ComparisonProblemView';
+import { COMPARISON_CHOICE_SCALE } from '../ui/ComparisonPresentation';
 import Phaser from 'phaser';
 import { GameStateManager } from '../systems/GameStateManager';
 import { MathEngine } from '../systems/MathEngine';
-import { MathProblem, TrialState, TrialProblemResult, TrialTier, ExamType, SubAtomId, BandId, EXAM_CONFIGS, MathStats, PlayerState } from '../types';
+import { MathProblem, TrialState, TrialProblemResult, TrialTier, ExamType, SubAtomId, BandId, MasteryTargetId, EXAM_CONFIGS, MathStats, PlayerState } from '../types';
 import { MasterySystem } from '../systems/MasterySystem';
 import { SceneDebugger } from '../systems/SceneDebugger';
 import { SceneBuilder } from '../systems/SceneBuilder';
@@ -18,7 +20,7 @@ import { createGuildExamBoard, createGuildExamRule } from '../ui/GuildExamTheme'
 
 type AvailableGuildExam = {
     type: ExamType;
-    targetId: SubAtomId | BandId;
+    targetId: MasteryTargetId;
     label: string;
 };
 
@@ -74,6 +76,7 @@ export class GuildScene extends Phaser.Scene {
     private trialOverlay!: Phaser.GameObjects.Container;
     private trialQuestionCounter!: Phaser.GameObjects.Text;
     private problemText!: Phaser.GameObjects.Text;
+    private comparisonProblemVisual: ComparisonProblemView | null = null;
     private answerButtons: MedievalActionButton[] = [];
     private answerButtonValues: number[] = [0, 0, 0];
     private progressDots: Phaser.GameObjects.Text[] = [];
@@ -93,10 +96,11 @@ export class GuildScene extends Phaser.Scene {
     private resultsRewardText!: Phaser.GameObjects.Text;
     private resultsZyxText!: Phaser.GameObjects.Text;
     private resultEntryTexts: Phaser.GameObjects.Text[] = [];
+    private comparisonResultGrid!: Phaser.GameObjects.Container;
 
     // Mastery exam state (used when taking mastery-system exams)
     private currentMasteryExamType: ExamType | null = null;
-    private currentMasteryExamTarget: SubAtomId | BandId | null = null;
+    private currentMasteryExamTarget: MasteryTargetId | null = null;
     private masteryExamStatGains: { hpGain: number; attackGain: number; manaGain: number; shardGain?: number; coinGain?: number } = { hpGain: 0, attackGain: 0, manaGain: 0 };
 
     // Info overlays
@@ -560,6 +564,7 @@ export class GuildScene extends Phaser.Scene {
             align: 'center',
         }).setOrigin(0.5).setDepth(problemHost.depth);
         this.trialOverlay.add(this.problemText);
+        this.trialOverlay.setData('problemHost', problemHost);
 
         this.answerButtons = [];
         ['answerButton1', 'answerButton2', 'answerButton3'].forEach((id, index) => {
@@ -600,7 +605,7 @@ export class GuildScene extends Phaser.Scene {
             x: 640, y: 575, width: 760, height: 42, depth: 204,
         });
         const hintRule = createGuildExamRule(this, hintHost.x, hintHost.y - 24, hintHost.width, this.accentColor);
-        const hint = this.add.text(hintHost.x, hintHost.y + 2, 'O MEDAILI ROZHODUJE POČET SPRÁVNÝCH ODPOVĚDÍ', {
+        const hint = this.add.text(hintHost.x, hintHost.y + 2, 'Každá odpověď platí', {
             resolution: 2,
             fontFamily: 'Georgia, serif',
             fontSize: '14px',
@@ -692,7 +697,7 @@ export class GuildScene extends Phaser.Scene {
         const correctLabel = this.feedbackOverlay.getData('correctLabel') as Phaser.GameObjects.Text;
         const visualContainer = this.feedbackOverlay.getData('visualContainer') as Phaser.GameObjects.Container;
         visualContainer.removeAll(true);
-        correctLabel.setText(formatMathProblem(problem, 'answer'));
+        correctLabel.setText(problem.comparisonMeta ? 'Podívej' : formatMathProblem(problem, 'answer'));
         this.feedbackActionButton.setLabel('PŘESKOČIT');
         this.feedbackOverlay.setVisible(true);
 
@@ -781,6 +786,9 @@ export class GuildScene extends Phaser.Scene {
         const gridHost = this.getLocalHost('trialResultsGridHost', rootHost.x, rootHost.y, {
             x: 640, y: 355, width: 790, height: 220, depth: 203,
         });
+        this.comparisonResultGrid = this.add.container(gridHost.x, gridHost.y)
+            .setDepth(gridHost.depth).setSize(gridHost.width, gridHost.height).setVisible(false);
+        this.resultsOverlay.add(this.comparisonResultGrid);
         this.resultEntryTexts = [];
         const maxResults = Math.max(...Object.values(EXAM_CONFIGS).map(config => config.itemCount));
         const maxRows = Math.ceil(maxResults / 2);
@@ -858,17 +866,39 @@ export class GuildScene extends Phaser.Scene {
         this.resultsOverlay.setVisible(true);
         this.trialState.phase = 'results';
         const tier = this.trialState.tier;
+        const isComparison = this.currentMasteryExamType === 'comparison_chapter';
         const tierConfig = this.getTierDisplay(tier);
         this.resultsTitleText.setText(tierConfig.title).setColor(tierConfig.color);
         this.resultsMedalText.setText(tierConfig.stars);
-        this.resultsScoreText.setText(
-            `${this.trialState.correctCount} Z ${this.trialState.totalProblems} SPRÁVNĚ`,
-        );
+        this.resultsScoreText.setFontSize(isComparison ? 28 : 18).setText(isComparison
+            ? `✓ ${this.trialState.correctCount} / ${this.trialState.totalProblems}`
+            : `${this.trialState.correctCount} Z ${this.trialState.totalProblems} SPRÁVNĚ`);
 
         this.resultEntryTexts.forEach(entry => entry.setVisible(false));
+        this.comparisonResultGrid.removeAll(true).setVisible(isComparison);
         const half = Math.ceil(this.trialState.results.length / 2);
         for (let i = 0; i < this.trialState.results.length; i++) {
             const result = this.trialState.results[i];
+            if (isComparison) {
+                const grid = this.comparisonResultGrid;
+                const columns = 4, rows = Math.ceil(this.trialState.results.length / columns);
+                const cellWidth = grid.width / columns, cellHeight = grid.height / rows;
+                const x = (i % columns - (columns - 1) / 2) * cellWidth;
+                const y = (Math.floor(i / columns) - (rows - 1) / 2) * cellHeight;
+                const color = result.wasCorrect ? 0x427238 : 0x9b4939;
+                const card = this.add.graphics().setPosition(x, y);
+                card.fillStyle(color, 0.14).fillRoundedRect(-cellWidth * 0.4, -cellHeight * 0.39, cellWidth * 0.8, cellHeight * 0.78, 14);
+                card.lineStyle(2, color, 0.75).strokeRoundedRect(-cellWidth * 0.4, -cellHeight * 0.39, cellWidth * 0.8, cellHeight * 0.78, 14);
+                const number = this.add.text(x - cellWidth * 0.29, y - cellHeight * 0.23, `${i + 1}`, {
+                    fontFamily: 'Arial, sans-serif', fontSize: '18px', color: '#68411f', resolution: 2,
+                }).setOrigin(0.5);
+                const mark = this.add.text(x, y + 2, result.wasCorrect ? '✓' : '×', {
+                    fontFamily: 'Arial, sans-serif', fontSize: '46px', fontStyle: 'bold',
+                    color: result.wasCorrect ? '#28622b' : '#8b2f26', resolution: 2,
+                }).setOrigin(0.5);
+                grid.add([card, number, mark]);
+                continue;
+            }
             const targetIndex = i < half ? i : 7 + (i - half);
             const entry = this.resultEntryTexts[targetIndex];
             if (!entry) continue;
@@ -899,8 +929,19 @@ export class GuildScene extends Phaser.Scene {
         } else {
             rewardText = 'CECH DOPORUČUJE DALŠÍ TRÉNINK. NOVÝ POKUS JE PŘIPRAVEN.';
         }
-        this.resultsRewardText.setText(rewardText);
-        this.resultsZyxText.setText(this.getZyxMessage(tier));
+        if (isComparison) {
+            const rewards: string[] = [];
+            if (tier !== 'none') {
+                if (gains.hpGain > 0) rewards.push(`♥ +${gains.hpGain}`);
+                if (gains.attackGain > 0) rewards.push(`⚔ +${gains.attackGain}`);
+                if (gains.manaGain > 0) rewards.push(`✦ +${gains.manaGain}`);
+                if ((gains.shardGain ?? 0) > 0) rewards.push(`💎 +${gains.shardGain}`);
+                if ((gains.coinGain ?? 0) > 0) rewards.push(`🪙 +${gains.coinGain}`);
+            }
+            rewardText = tier === 'none' ? 'Ještě potrénujeme' : rewards.join('    ') || 'Hotovo!';
+        }
+        this.resultsRewardText.setFontSize(isComparison ? 26 : 18).setText(rewardText);
+        this.resultsZyxText.setVisible(!isComparison).setText(isComparison ? '' : this.getZyxMessage(tier));
     }
 
     private getTierDisplay(tier: TrialTier): { title: string; stars: string; color: string } {
@@ -938,6 +979,9 @@ export class GuildScene extends Phaser.Scene {
         // Generate exam problems based on type
         let problemKeys: string[] = [];
         switch (examType) {
+            case 'comparison_chapter':
+                this.trialProblems = masterySystem.generateComparisonExamProblems();
+                break;
             case 'sub_atom':
                 problemKeys = masterySystem.generateSubAtomExamProblems(target as SubAtomId);
                 break;
@@ -954,15 +998,22 @@ export class GuildScene extends Phaser.Scene {
         }
 
         // Convert keys to MathProblems
-        this.trialProblems = [];
-        for (const key of problemKeys) {
-            const problem = this.mathEngine.generateProblemFromKey(key);
-            if (problem) this.trialProblems.push(problem);
+        if (examType !== 'comparison_chapter') {
+            this.trialProblems = [];
+            for (const key of problemKeys) {
+                const problem = this.mathEngine.generateProblemFromKey(key);
+                if (problem) this.trialProblems.push(problem);
+            }
         }
 
         // Ensure we have enough problems
         while (this.trialProblems.length < config.itemCount) {
             // Fallback: generate more problems from the same target
+            if (examType === 'comparison_chapter') {
+                this.trialProblems.push(...masterySystem.generateComparisonExamProblems()
+                    .slice(0, config.itemCount - this.trialProblems.length));
+                break;
+            }
             const additionalKeys = examType === 'band_gate' || examType === 'band_mastery'
                 ? masterySystem.generateBandGateProblems(target as BandId)
                 : masterySystem.generateSubAtomExamProblems(target as SubAtomId);
@@ -1039,12 +1090,21 @@ export class GuildScene extends Phaser.Scene {
         this.currentTrialProblem = this.trialProblems[idx];
         this.trialState.timeRemainingForProblem = this.trialState.timePerProblem;
         this.trialState.phase = 'problem';
-        this.problemStartTime = Date.now();
+        this.problemStartTime = this.time.now;
 
         this.trialQuestionCounter.setText(`OTÁZKA ${idx + 1} Z ${this.trialState.totalProblems}`);
         this.problemText
             .setText(formatMathProblem(this.currentTrialProblem, 'question'))
-            .setColor('#2f1a0d');
+            .setColor('#2f1a0d')
+            .setVisible(true);
+        this.comparisonProblemVisual?.destroy();
+        this.comparisonProblemVisual = null;
+        const comparisonMeta = this.currentTrialProblem.comparisonMeta;
+        if (comparisonMeta) {
+            this.comparisonProblemVisual = this.createComparisonExamVisual(this.currentTrialProblem);
+            this.trialOverlay.add(this.comparisonProblemVisual.root);
+            this.problemText.setVisible(false);
+        }
 
         // Update choices — display symbols for comparison types
         const answers = this.currentTrialProblem.choices;
@@ -1052,10 +1112,16 @@ export class GuildScene extends Phaser.Scene {
         const comparisonSymbols = ['<', '=', '>'];
         for (let i = 0; i < 3; i++) {
             const displayText = isComparison ? comparisonSymbols[answers[i]] : answers[i].toString();
-            this.answerButtons[i]
-                .setLabel(displayText, isComparison ? 38 : 34)
-                .setEnabled(true);
-            this.answerButtons[i].label.setColor('#3c210f');
+            const button = this.answerButtons[i];
+            (button.root.getData('comparisonGlyph') as Phaser.GameObjects.Image | undefined)?.destroy();
+            button.root.setData('comparisonGlyph', null);
+            button.setLabel(isComparison ? '' : displayText, 34).setEnabled(true);
+            button.label.setColor('#3c210f');
+            if (isComparison) {
+                const glyph = comparisonGlyph(this, answers[i], true, 72 * COMPARISON_CHOICE_SCALE).setPosition(button.label.x, button.label.y);
+                button.label.parentContainer.add(glyph);
+                button.root.setData('comparisonGlyph', glyph);
+            }
             this.answerButtonValues[i] = answers[i];
         }
 
@@ -1064,6 +1130,22 @@ export class GuildScene extends Phaser.Scene {
         this.progressFrames[idx]
             .setFillStyle(this.accentColor, 1)
             .setStrokeStyle(3, 0xeafaff, 0.9);
+    }
+
+    private createComparisonExamVisual(problem: MathProblem): ComparisonProblemView {
+        const host = (id: string): GuildHostLayout => {
+            const object = this.sceneBuilder.get<Phaser.GameObjects.Container>(id)!;
+            const definition = this.sceneBuilder.getElementDef(id)!;
+            return { x: object.x - this.trialOverlay.x, y: object.y - this.trialOverlay.y,
+                width: definition.width!, height: definition.height!, depth: object.depth };
+        };
+        return new ComparisonProblemView(this, problem, {
+            left: host('trialComparisonLeft'), right: host('trialComparisonRight'), relation: host('trialComparisonRelation'),
+        });
+    }
+
+    private revealComparisonExamVisual(_problem: MathProblem): void {
+        this.comparisonProblemVisual?.reveal(true);
     }
 
     private onProblemTick(): void {
@@ -1084,8 +1166,12 @@ export class GuildScene extends Phaser.Scene {
 
         const problem = this.currentTrialProblem;
         const isCorrect = playerAnswer === problem.answer;
-        const timeSpent = (Date.now() - this.problemStartTime) / 1000;
+        if (problem.comparisonMeta && playerAnswer !== null && playerAnswer >= 0 && playerAnswer <= 2) {
+            problem.comparisonMeta.selectedRelation = (['less', 'equal', 'greater'] as const)[playerAnswer];
+        }
+        const timeSpent = Math.max(0, this.time.now - this.problemStartTime) / 1000;
         const idx = this.trialState.currentProblemIndex;
+        this.revealComparisonExamVisual(problem);
 
         // Record stats
         this.mathEngine.recordResultForProblem(problem.id, isCorrect);
@@ -1156,7 +1242,14 @@ export class GuildScene extends Phaser.Scene {
             const context = this.getMasteryExamContext();
 
             for (const result of this.trialState.results) {
-                if (result.problem.masteryKey) {
+                if (result.problem.comparisonMeta) {
+                    masterySystem.recordComparisonSolve(
+                        result.problem,
+                        result.wasCorrect,
+                        result.timeSpent * 1000,
+                        false,
+                    );
+                } else if (result.problem.masteryKey) {
                     masterySystem.recordSolve(
                         result.problem.masteryKey,
                         result.wasCorrect,
@@ -1182,6 +1275,7 @@ export class GuildScene extends Phaser.Scene {
     /** Map exam type to mastery attempt context */
     private getMasteryExamContext(): 'exam' | 'fluency' | 'mastery_challenge' | 'band_gate' {
         switch (this.currentMasteryExamType) {
+            case 'comparison_chapter': return 'exam';
             case 'sub_atom': return 'exam';
             case 'fluency_challenge': return 'fluency';
             case 'mastery_challenge': return 'mastery_challenge';
@@ -1201,6 +1295,13 @@ export class GuildScene extends Phaser.Scene {
         this.masteryExamStatGains = { hpGain: 0, attackGain: 0, manaGain: 0 };
 
         switch (this.currentMasteryExamType) {
+            case 'comparison_chapter': {
+                const tier = masterySystem.computeExamTier(correct, 'comparison_chapter');
+                const result = masterySystem.applyComparisonExamResult(correct, tier);
+                this.trialState.tier = result.tier;
+                this.masteryExamStatGains = { hpGain: result.hpGain, attackGain: result.attackGain, manaGain: result.manaGain };
+                break;
+            }
             case 'sub_atom': {
                 const tier = masterySystem.computeExamTier(correct, 'sub_atom');
                 const result = masterySystem.applyExamResult(target as SubAtomId, correct, tier);

@@ -1,95 +1,95 @@
 {
     "version": "1.0",
-  "underwater": {
-    "glow-grotto": {
-      "type": "image",
-      "texture": "underwater-glow-grotto-bg"
+    "underwater": {
+        "glow-grotto": {
+            "type": "image",
+            "texture": "underwater-glow-grotto-bg"
+        },
+        "depth-gate": {
+            "type": "image",
+            "texture": "underwater-depth-gate-bg"
+        },
+        "lake-heart": {
+            "type": "image",
+            "texture": "underwater-lake-heart-bg"
+        },
+        "descent": {
+            "type": "image",
+            "texture": "underwater-descent-bg"
+        },
+        "shallows": {
+            "type": "image",
+            "texture": "underwater-shallows-bg"
+        },
+        "bell": {
+            "type": "image",
+            "texture": "underwater-bell-bg"
+        },
+        "bell-instrument": {
+            "type": "image",
+            "texture": "underwater-bell-instrument"
+        },
+        "pearl-shell": {
+            "type": "image",
+            "texture": "underwater-pearl-shell"
+        },
+        "sealed-kelp": {
+            "type": "image",
+            "texture": "underwater-sealed-kelp"
+        },
+        "pearl-nacre": {
+            "type": "image",
+            "texture": "underwater-pearl-nacre"
+        },
+        "reed-garden": {
+            "type": "image",
+            "texture": "underwater-reed-garden-bg"
+        },
+        "sunken-canal": {
+            "type": "image",
+            "texture": "underwater-sunken-canal-bg"
+        },
+        "pump-impeller": {
+            "type": "image",
+            "texture": "underwater-pump-impeller"
+        },
+        "lock-left": {
+            "type": "image",
+            "texture": "underwater-lock-left"
+        },
+        "lock-middle": {
+            "type": "image",
+            "texture": "underwater-lock-middle"
+        },
+        "lock-right": {
+            "type": "image",
+            "texture": "underwater-lock-right"
+        },
+        "lock-drum": {
+            "type": "image",
+            "texture": "underwater-lock-drum"
+        },
+        "lock-backing": {
+            "type": "image",
+            "texture": "underwater-lock-backing"
+        },
+        "shell-shrine": {
+            "type": "image",
+            "texture": "underwater-shell-shrine-bg"
+        },
+        "current-chamber": {
+            "type": "image",
+            "texture": "underwater-current-chamber-bg"
+        },
+        "post-wreck": {
+            "type": "image",
+            "texture": "underwater-post-wreck-bg"
+        },
+        "wreck-hold": {
+            "type": "image",
+            "texture": "underwater-wreck-hold-bg"
+        }
     },
-    "depth-gate": {
-      "type": "image",
-      "texture": "underwater-depth-gate-bg"
-    },
-    "lake-heart": {
-      "type": "image",
-      "texture": "underwater-lake-heart-bg"
-    },
-    "descent": {
-      "type": "image",
-      "texture": "underwater-descent-bg"
-    },
-    "shallows": {
-      "type": "image",
-      "texture": "underwater-shallows-bg"
-    },
-    "bell": {
-      "type": "image",
-      "texture": "underwater-bell-bg"
-    },
-    "bell-instrument": {
-      "type": "image",
-      "texture": "underwater-bell-instrument"
-    },
-    "pearl-shell": {
-      "type": "image",
-      "texture": "underwater-pearl-shell"
-    },
-    "sealed-kelp": {
-      "type": "image",
-      "texture": "underwater-sealed-kelp"
-    },
-    "pearl-nacre": {
-      "type": "image",
-      "texture": "underwater-pearl-nacre"
-    },
-    "reed-garden": {
-      "type": "image",
-      "texture": "underwater-reed-garden-bg"
-    },
-    "sunken-canal": {
-      "type": "image",
-      "texture": "underwater-sunken-canal-bg"
-    },
-    "pump-impeller": {
-      "type": "image",
-      "texture": "underwater-pump-impeller"
-    },
-    "lock-left": {
-      "type": "image",
-      "texture": "underwater-lock-left"
-    },
-    "lock-middle": {
-      "type": "image",
-      "texture": "underwater-lock-middle"
-    },
-    "lock-right": {
-      "type": "image",
-      "texture": "underwater-lock-right"
-    },
-    "lock-drum": {
-      "type": "image",
-      "texture": "underwater-lock-drum"
-    },
-    "lock-backing": {
-      "type": "image",
-      "texture": "underwater-lock-backing"
-    },
-    "shell-shrine": {
-      "type": "image",
-      "texture": "underwater-shell-shrine-bg"
-    },
-    "current-chamber": {
-      "type": "image",
-      "texture": "underwater-current-chamber-bg"
-    },
-    "post-wreck": {
-      "type": "image",
-      "texture": "underwater-post-wreck-bg"
-    },
-    "wreck-hold": {
-      "type": "image",
-      "texture": "underwater-wreck-hold-bg"
-    }
-  },
     "characters": {
         "player": {
             "girl_knight": {
@@ -144,321 +144,321 @@
             }
         },
         "enemies": {
-          "slime": {
-            "type": "animatedSprite",
-            "category": "enemy",
-            "nameKey": "$characters.enemies.ENM_001",
-            "origin": [
-              0.5,
-              0.5
-            ],
-            "scale": {
-              "default": 1,
-              "battle": 1,
-              "arena": 1
+            "slime": {
+                "type": "animatedSprite",
+                "category": "enemy",
+                "nameKey": "$characters.enemies.ENM_001",
+                "origin": [
+                    0.5,
+                    0.5
+                ],
+                "scale": {
+                    "default": 1,
+                    "battle": 1,
+                    "arena": 1
+                },
+                "depth": 5,
+                "defaultTexture": "slime-sheet",
+                "animations": {
+                    "idle": "slime-idle",
+                    "attack": "slime-attack-anim",
+                    "hurt": "slime-hurt",
+                    "death": "slime-death"
+                },
+                "defaultAnimation": "idle"
             },
-            "depth": 5,
-            "defaultTexture": "slime-sheet",
-            "animations": {
-              "idle": "slime-idle",
-              "attack": "slime-attack-anim",
-              "hurt": "slime-hurt",
-              "death": "slime-death"
+            "pink": {
+                "type": "animatedSprite",
+                "category": "enemy",
+                "nameKey": "$characters.enemies.ENM_002",
+                "origin": [
+                    0.5,
+                    0.5
+                ],
+                "scale": {
+                    "default": 1,
+                    "battle": 1,
+                    "arena": 1
+                },
+                "depth": 5,
+                "defaultTexture": "pink-idle-sheet",
+                "animations": {
+                    "idle": "pink-idle",
+                    "attack": "pink-attack-anim",
+                    "hurt": "pink-hurt",
+                    "death": "pink-death"
+                },
+                "defaultAnimation": "idle"
             },
-            "defaultAnimation": "idle"
-          },
-          "pink": {
-            "type": "animatedSprite",
-            "category": "enemy",
-            "nameKey": "$characters.enemies.ENM_002",
-            "origin": [
-              0.5,
-              0.5
-            ],
-            "scale": {
-              "default": 1,
-              "battle": 1,
-              "arena": 1
+            "purple": {
+                "type": "animatedSprite",
+                "category": "enemy",
+                "nameKey": "$characters.enemies.ENM_003",
+                "origin": [
+                    0.5,
+                    0.5
+                ],
+                "scale": {
+                    "default": 1,
+                    "battle": 1,
+                    "arena": 1
+                },
+                "depth": 5,
+                "defaultTexture": "purple-attack-sheet",
+                "animations": {
+                    "idle": "purple-idle",
+                    "attack": "purple-attack-anim",
+                    "hurt": "purple-hurt",
+                    "death": "purple-death"
+                },
+                "defaultAnimation": "idle"
             },
-            "depth": 5,
-            "defaultTexture": "pink-idle-sheet",
-            "animations": {
-              "idle": "pink-idle",
-              "attack": "pink-attack-anim",
-              "hurt": "pink-hurt",
-              "death": "pink-death"
+            "leafy": {
+                "type": "animatedSprite",
+                "category": "enemy",
+                "nameKey": "$characters.enemies.ENM_004",
+                "origin": [
+                    0.5,
+                    0.5
+                ],
+                "scale": {
+                    "default": 1,
+                    "battle": 1,
+                    "arena": 1
+                },
+                "depth": 5,
+                "defaultTexture": "leafy-idle-sheet",
+                "animations": {
+                    "idle": "leafy-idle",
+                    "attack": "leafy-attack-anim",
+                    "hurt": "leafy-hurt",
+                    "death": "leafy-death"
+                },
+                "defaultAnimation": "idle"
             },
-            "defaultAnimation": "idle"
-          },
-          "purple": {
-            "type": "animatedSprite",
-            "category": "enemy",
-            "nameKey": "$characters.enemies.ENM_003",
-            "origin": [
-              0.5,
-              0.5
-            ],
-            "scale": {
-              "default": 1,
-              "battle": 1,
-              "arena": 1
+            "bubble_crab": {
+                "type": "animatedSprite",
+                "category": "enemy",
+                "nameKey": "$characters.enemies.ENM_005",
+                "origin": [
+                    0.5,
+                    0.5
+                ],
+                "scale": {
+                    "default": 0.45,
+                    "battle": 0.65,
+                    "arena": 0.55
+                },
+                "depth": 5,
+                "defaultTexture": "silverpond-bubble-crab-idle-sheet",
+                "animations": {
+                    "idle": "bubble-crab-idle",
+                    "attack": "bubble-crab-attack",
+                    "hurt": "bubble-crab-hurt",
+                    "death": "bubble-crab-death"
+                },
+                "defaultAnimation": "idle"
             },
-            "depth": 5,
-            "defaultTexture": "purple-attack-sheet",
-            "animations": {
-              "idle": "purple-idle",
-              "attack": "purple-attack-anim",
-              "hurt": "purple-hurt",
-              "death": "purple-death"
+            "bubble_fish": {
+                "type": "animatedSprite",
+                "category": "enemy",
+                "nameKey": "$characters.enemies.ENM_006",
+                "origin": [
+                    0.5,
+                    0.5
+                ],
+                "scale": {
+                    "default": 0.45,
+                    "battle": 0.65,
+                    "arena": 0.55
+                },
+                "depth": 5,
+                "defaultTexture": "silverpond-bubble-fish-idle-sheet",
+                "animations": {
+                    "idle": "bubble-fish-idle",
+                    "attack": "bubble-fish-attack",
+                    "hurt": "bubble-fish-hurt",
+                    "death": "bubble-fish-death"
+                },
+                "defaultAnimation": "idle"
             },
-            "defaultAnimation": "idle"
-          },
-          "leafy": {
-            "type": "animatedSprite",
-            "category": "enemy",
-            "nameKey": "$characters.enemies.ENM_004",
-            "origin": [
-              0.5,
-              0.5
-            ],
-            "scale": {
-              "default": 1,
-              "battle": 1,
-              "arena": 1
+            "mill_turtle": {
+                "type": "animatedSprite",
+                "category": "enemy",
+                "nameKey": "$characters.enemies.ENM_007",
+                "origin": [
+                    0.5,
+                    0.5
+                ],
+                "scale": {
+                    "default": 0.45,
+                    "battle": 0.65,
+                    "arena": 0.55
+                },
+                "depth": 5,
+                "defaultTexture": "silverpond-mill-turtle-idle-sheet",
+                "animations": {
+                    "idle": "mill-turtle-idle",
+                    "attack": "mill-turtle-attack",
+                    "hurt": "mill-turtle-hurt",
+                    "death": "mill-turtle-death"
+                },
+                "defaultAnimation": "idle"
             },
-            "depth": 5,
-            "defaultTexture": "leafy-idle-sheet",
-            "animations": {
-              "idle": "leafy-idle",
-              "attack": "leafy-attack-anim",
-              "hurt": "leafy-hurt",
-              "death": "leafy-death"
+            "ruin_axolotl": {
+                "type": "animatedSprite",
+                "category": "enemy",
+                "nameKey": "$characters.enemies.ENM_008",
+                "origin": [
+                    0.5,
+                    0.5
+                ],
+                "scale": {
+                    "default": 0.45,
+                    "battle": 0.65,
+                    "arena": 0.55
+                },
+                "depth": 5,
+                "defaultTexture": "silverpond-ruin-axolotl-idle-sheet",
+                "animations": {
+                    "idle": "ruin-axolotl-idle",
+                    "attack": "ruin-axolotl-attack",
+                    "hurt": "ruin-axolotl-hurt",
+                    "death": "ruin-axolotl-death"
+                },
+                "defaultAnimation": "idle"
             },
-            "defaultAnimation": "idle"
-          },
-          "bubble_crab": {
-            "type": "animatedSprite",
-            "category": "enemy",
-            "nameKey": "$characters.enemies.ENM_005",
-            "origin": [
-              0.5,
-              0.5
-            ],
-            "scale": {
-              "default": 0.45,
-              "battle": 0.65,
-              "arena": 0.55
+            "pearl_jellyfish": {
+                "type": "animatedSprite",
+                "category": "enemy",
+                "nameKey": "$characters.enemies.ENM_009",
+                "origin": [
+                    0.5,
+                    0.5
+                ],
+                "scale": {
+                    "default": 0.8,
+                    "battle": 0.9,
+                    "arena": 0.8
+                },
+                "depth": 5,
+                "defaultTexture": "silverpond-pearl-jellyfish-idle-sheet",
+                "animations": {
+                    "idle": "pearl-jellyfish-idle",
+                    "attack": "pearl-jellyfish-attack",
+                    "hurt": "pearl-jellyfish-hurt",
+                    "death": "pearl-jellyfish-death"
+                },
+                "defaultAnimation": "idle"
             },
-            "depth": 5,
-            "defaultTexture": "silverpond-bubble-crab-idle-sheet",
-            "animations": {
-              "idle": "bubble-crab-idle",
-              "attack": "bubble-crab-attack",
-              "hurt": "bubble-crab-hurt",
-              "death": "bubble-crab-death"
-            },
-            "defaultAnimation": "idle"
-          },
-          "bubble_fish": {
-            "type": "animatedSprite",
-            "category": "enemy",
-            "nameKey": "$characters.enemies.ENM_006",
-            "origin": [
-              0.5,
-              0.5
-            ],
-            "scale": {
-              "default": 0.45,
-              "battle": 0.65,
-              "arena": 0.55
-            },
-            "depth": 5,
-            "defaultTexture": "silverpond-bubble-fish-idle-sheet",
-            "animations": {
-              "idle": "bubble-fish-idle",
-              "attack": "bubble-fish-attack",
-              "hurt": "bubble-fish-hurt",
-              "death": "bubble-fish-death"
-            },
-            "defaultAnimation": "idle"
-          },
-          "mill_turtle": {
-            "type": "animatedSprite",
-            "category": "enemy",
-            "nameKey": "$characters.enemies.ENM_007",
-            "origin": [
-              0.5,
-              0.5
-            ],
-            "scale": {
-              "default": 0.45,
-              "battle": 0.65,
-              "arena": 0.55
-            },
-            "depth": 5,
-            "defaultTexture": "silverpond-mill-turtle-idle-sheet",
-            "animations": {
-              "idle": "mill-turtle-idle",
-              "attack": "mill-turtle-attack",
-              "hurt": "mill-turtle-hurt",
-              "death": "mill-turtle-death"
-            },
-            "defaultAnimation": "idle"
-          },
-          "ruin_axolotl": {
-            "type": "animatedSprite",
-            "category": "enemy",
-            "nameKey": "$characters.enemies.ENM_008",
-            "origin": [
-              0.5,
-              0.5
-            ],
-            "scale": {
-              "default": 0.45,
-              "battle": 0.65,
-              "arena": 0.55
-            },
-            "depth": 5,
-            "defaultTexture": "silverpond-ruin-axolotl-idle-sheet",
-            "animations": {
-              "idle": "ruin-axolotl-idle",
-              "attack": "ruin-axolotl-attack",
-              "hurt": "ruin-axolotl-hurt",
-              "death": "ruin-axolotl-death"
-            },
-            "defaultAnimation": "idle"
-          },
-          "pearl_jellyfish": {
-            "type": "animatedSprite",
-            "category": "enemy",
-            "nameKey": "$characters.enemies.ENM_009",
-            "origin": [
-              0.5,
-              0.5
-            ],
-            "scale": {
-              "default": 0.8,
-              "battle": 0.9,
-              "arena": 0.8
-            },
-            "depth": 5,
-            "defaultTexture": "silverpond-pearl-jellyfish-idle-sheet",
-            "animations": {
-              "idle": "pearl-jellyfish-idle",
-              "attack": "pearl-jellyfish-attack",
-              "hurt": "pearl-jellyfish-hurt",
-              "death": "pearl-jellyfish-death"
-            },
-            "defaultAnimation": "idle"
-          },
-          "depth_guardian": {
-            "type": "animatedSprite",
-            "category": "enemy",
-            "nameKey": "$characters.enemies.ENM_010",
-            "origin": [
-              0.5,
-              0.5
-            ],
-            "scale": {
-              "default": 1.03,
-              "battle": 1.03,
-              "arena": 1.03
-            },
-            "depth": 5,
-            "defaultTexture": "silverpond-depth-guardian-idle-sheet",
-            "animations": {
-              "idle": "depth-guardian-idle",
-              "attack": "depth-guardian-attack",
-              "hurt": "depth-guardian-hurt",
-              "death": "depth-guardian-death"
-            },
-            "defaultAnimation": "idle"
-          }
+            "depth_guardian": {
+                "type": "animatedSprite",
+                "category": "enemy",
+                "nameKey": "$characters.enemies.ENM_010",
+                "origin": [
+                    0.5,
+                    0.5
+                ],
+                "scale": {
+                    "default": 1.03,
+                    "battle": 1.03,
+                    "arena": 1.03
+                },
+                "depth": 5,
+                "defaultTexture": "silverpond-depth-guardian-idle-sheet",
+                "animations": {
+                    "idle": "depth-guardian-idle",
+                    "attack": "depth-guardian-attack",
+                    "hurt": "depth-guardian-hurt",
+                    "death": "depth-guardian-death"
+                },
+                "defaultAnimation": "idle"
+            }
         },
         "npcs": {
-          "blacksmith": {
-            "type": "staticImage",
-            "category": "npc",
-            "nameKey": "$characters.npcs.NPC_001",
-            "texture": "npc-blacksmith",
-            "origin": [
-              0.5,
-              1
-            ],
-            "scale": {
-              "default": 1
+            "blacksmith": {
+                "type": "staticImage",
+                "category": "npc",
+                "nameKey": "$characters.npcs.NPC_001",
+                "texture": "npc-blacksmith",
+                "origin": [
+                    0.5,
+                    1
+                ],
+                "scale": {
+                    "default": 1
+                },
+                "depth": 5
             },
-            "depth": 5
-          },
-          "guildmaster": {
-            "type": "staticImage",
-            "category": "npc",
-            "nameKey": "$characters.npcs.NPC_002",
-            "texture": "npc-guildmaster",
-            "origin": [
-              0.5,
-              0.5
-            ],
-            "scale": {
-              "default": 0.4
+            "guildmaster": {
+                "type": "staticImage",
+                "category": "npc",
+                "nameKey": "$characters.npcs.NPC_002",
+                "texture": "npc-guildmaster",
+                "origin": [
+                    0.5,
+                    0.5
+                ],
+                "scale": {
+                    "default": 0.4
+                },
+                "depth": 10
             },
-            "depth": 10
-          },
-          "zyx": {
-            "type": "animatedSprite",
-            "category": "npc",
-            "nameKey": "Zyx",
-            "defaultTexture": "spritesheet-zyx-transparent2-sheet",
-            "animations": {
-              "idle": "zyx-idle"
+            "zyx": {
+                "type": "animatedSprite",
+                "category": "npc",
+                "nameKey": "Zyx",
+                "defaultTexture": "spritesheet-zyx-transparent2-sheet",
+                "animations": {
+                    "idle": "zyx-idle"
+                },
+                "defaultAnimation": "idle",
+                "origin": [
+                    0.5,
+                    1
+                ],
+                "scale": {
+                    "default": 0.53
+                },
+                "depth": 20
             },
-            "defaultAnimation": "idle",
-            "origin": [
-              0.5,
-              1
-            ],
-            "scale": {
-              "default": 0.53
+            "silverpond_lake_fairy": {
+                "type": "animatedSprite",
+                "category": "npc",
+                "nameKey": "Jezerní víla",
+                "defaultTexture": "silverpond-lake-fairy-idle-sheet",
+                "animations": {
+                    "idle": "silverpond-lake-fairy-idle",
+                    "give": "silverpond-lake-fairy-give"
+                },
+                "defaultAnimation": "idle",
+                "origin": [
+                    0.5,
+                    0.5
+                ],
+                "scale": {
+                    "default": 1
+                },
+                "depth": 24
             },
-            "depth": 20
-          },
-          "silverpond_lake_fairy": {
-            "type": "animatedSprite",
-            "category": "npc",
-            "nameKey": "Jezerní víla",
-            "defaultTexture": "silverpond-lake-fairy-idle-sheet",
-            "animations": {
-              "idle": "silverpond-lake-fairy-idle",
-              "give": "silverpond-lake-fairy-give"
-            },
-            "defaultAnimation": "idle",
-            "origin": [
-              0.5,
-              0.5
-            ],
-            "scale": {
-              "default": 1
-            },
-            "depth": 24
-          },
-          "depth_guardian_friendly": {
-            "type": "animatedSprite",
-            "category": "npc",
-            "nameKey": "$characters.enemies.ENM_010",
-            "defaultTexture": "silverpond-depth-guardian-friendly-idle-sheet",
-            "animations": {
-              "idle": "depth-guardian-friendly-idle"
-            },
-            "defaultAnimation": "idle",
-            "origin": [
-              0.5,
-              0.5
-            ],
-            "scale": {
-              "default": 0.47
-            },
-            "depth": 24
-          }
+            "depth_guardian_friendly": {
+                "type": "animatedSprite",
+                "category": "npc",
+                "nameKey": "$characters.enemies.ENM_010",
+                "defaultTexture": "silverpond-depth-guardian-friendly-idle-sheet",
+                "animations": {
+                    "idle": "depth-guardian-friendly-idle"
+                },
+                "defaultAnimation": "idle",
+                "origin": [
+                    0.5,
+                    0.5
+                ],
+                "scale": {
+                    "default": 0.47
+                },
+                "depth": 24
+            }
         },
         "sprites": {
             "knight_idle": {
@@ -838,6 +838,28 @@
         }
     },
     "ui": {
+        "comparison": {
+            "apple": {
+                "type": "image",
+                "texture": "comparison-apple"
+            },
+            "crocodile": {
+                "type": "image",
+                "texture": "comparison-crocodile"
+            },
+            "equal-jaws": {
+                "type": "image",
+                "texture": "comparison-equal-jaws"
+            },
+            "greater": {
+                "type": "image",
+                "texture": "comparison-greater"
+            },
+            "equal": {
+                "type": "image",
+                "texture": "comparison-equal"
+            }
+        },
         "buttons": {
             "attack-button": {
                 "type": "button",

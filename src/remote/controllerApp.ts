@@ -1,7 +1,8 @@
 import { getRelayUrlFromLocation, getRoomFromLocation } from './remoteMode';
 import { RemoteInputService } from './RemoteInputService';
 import { CONTROLLER_STYLES } from './controllerStyles';
-import { RemoteAction, RemoteCommand, RemoteControllerState, RemoteEnemyTarget } from './types';
+import { comparisonObjectScale } from '../ui/ComparisonPresentation';
+import { RemoteAction, RemoteCommand, RemoteControllerState, RemoteEnemyTarget, RemoteComparisonPrompt } from './types';
 
 const service = RemoteInputService.getInstance();
 const COMMAND_TIMEOUT_MS = 1800;
@@ -113,8 +114,8 @@ function renderState(root: HTMLElement, state: RemoteControllerState): void {
         children.push(createEnemyList(root, state.enemies));
         children.push(createActionGrid(root, state.actions));
     } else if (state.screen === 'math') {
-        children.push(createProblemCard(state.problem));
-        children.push(createAnswerGrid(root, state.choices));
+        children.push(state.comparison ? createComparisonCard(state.comparison) : createProblemCard(state.problem));
+        children.push(createAnswerGrid(root, state.choices, state.comparison));
     } else if (state.screen === 'pairing' && state.room) {
         children.push(createCodeCard(state.room));
     }
@@ -154,15 +155,59 @@ function createCodeCard(room: string): HTMLElement {
     return card;
 }
 
+function comparisonImage(name: string, flip = false): HTMLImageElement {
+    const image = document.createElement('img');
+    image.src = `/assets/ui/comparison/${name}.svg`;
+    image.alt = '';
+    if (flip) image.style.transform = 'scaleX(-1)';
+    return image;
+}
+
+function createComparisonCard(prompt: RemoteComparisonPrompt): HTMLElement {
+    const card = document.createElement('section');
+    card.className = 'remote-problem remote-comparison';
+    const operand = (value: number, left: boolean): HTMLElement => {
+        const side = document.createElement('div'); side.className = 'remote-comparison-side';
+        if (prompt.representation === 'size' || prompt.representation === 'count' || prompt.numberedObjects) {
+            const pieces = document.createElement('div'); pieces.className = 'remote-comparison-pieces';
+            const count = prompt.representation === 'size' ? 1 : value;
+            if (prompt.representation === 'size') pieces.classList.add('size');
+            for (let i = 0; i < count; i++) {
+                const item = comparisonImage('apple');
+                if (prompt.representation === 'size') item.style.width = `${comparisonObjectScale(value, left ? prompt.right : prompt.left) * 100}%`;
+                pieces.appendChild(item);
+            }
+            side.appendChild(pieces);
+            if (prompt.numberedObjects) { const numeral = document.createElement('b'); numeral.textContent = `${value}`; side.appendChild(numeral); }
+        } else side.textContent = left && prompt.expression ? prompt.expression.replace('*', '×') : `${value}`;
+        if (left && prompt.arithmeticHint !== undefined) { const hint = document.createElement('small'); hint.textContent = `= ${prompt.arithmeticHint}`; side.appendChild(hint); }
+        return side;
+    };
+    const slot = document.createElement('div'); slot.className = 'remote-comparison-slot'; slot.setAttribute('aria-label', 'Prázdné místo');
+    card.append(operand(prompt.left, true), slot, operand(prompt.right, false));
+    return card;
+}
+
 function createAnswerGrid(
     root: HTMLElement,
     choices: { index: 0 | 1 | 2; label: string }[],
+    comparison?: RemoteComparisonPrompt,
 ): HTMLElement {
     const grid = createGrid('answers');
+    if (comparison) grid.classList.add('remote-comparison-answers');
     choices.forEach((choice) => {
-        grid.appendChild(createButton(choice.label, (button) => {
+        const button = createButton(choice.label, (button) => {
             sendCommand(root, button, { type: 'answerChoice', index: choice.index });
-        }, 'answer', false, true));
+        }, 'answer', false, true);
+        if (!comparison) { grid.appendChild(button); return; }
+        button.setAttribute('aria-label', choice.label);
+        const name = choice.label === '=' ? 'equal' : 'greater';
+        const jaws = choice.label === '=' ? 'equal-jaws' : 'crocodile';
+        button.replaceChildren(comparisonImage(comparison.crocodileChoices ? jaws : name, choice.label === '<'));
+        const wrapper = document.createElement('div'); wrapper.className = 'remote-comparison-choice';
+        const reminder = comparisonImage(jaws, choice.label === '<'); reminder.className = 'remote-comparison-reminder';
+        reminder.style.visibility = comparison.showReminders ? 'visible' : 'hidden';
+        wrapper.append(reminder, button); grid.appendChild(wrapper);
     });
     return grid;
 }
@@ -233,7 +278,8 @@ function sendCommand(root: HTMLElement, source: HTMLButtonElement, command: Remo
     root.dataset.pending = 'true';
     source.dataset.pending = 'true';
     source.dataset.originalLabel = source.textContent ?? '';
-    source.textContent = 'Odesláno';
+    const pictureChoice = source.querySelector('img') !== null;
+    if (!pictureChoice) source.textContent = 'Odesláno';
 
     root.querySelectorAll<HTMLButtonElement>('button[data-command="true"]').forEach((button) => {
         button.dataset.disabledBeforePending = String(button.disabled);
@@ -241,7 +287,7 @@ function sendCommand(root: HTMLElement, source: HTMLButtonElement, command: Remo
     });
 
     const status = root.querySelector<HTMLElement>('.remote-status');
-    if (status) status.textContent = 'Příkaz odeslán. Čekám na TV...';
+    if (status) status.textContent = 'Čekám na TV';
     vibrate(24);
     service.sendCommand(command);
 
@@ -254,8 +300,8 @@ function sendCommand(root: HTMLElement, source: HTMLButtonElement, command: Remo
             delete button.dataset.disabledBeforePending;
         });
         source.dataset.pending = 'false';
-        source.textContent = source.dataset.originalLabel ?? source.textContent;
-        if (status) status.textContent = 'TV zatím neodpověděla. Akci můžeš zkusit znovu.';
+        if (!pictureChoice) source.textContent = source.dataset.originalLabel ?? source.textContent;
+        if (status) status.textContent = 'Zkus znovu';
     }, COMMAND_TIMEOUT_MS);
 }
 

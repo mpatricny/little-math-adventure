@@ -1,3 +1,5 @@
+import { COMPARISON_CHOICE_SCALE } from '../ui/ComparisonPresentation';
+
 export const CONTROLLER_STYLES = `
     :root {
         color-scheme: dark;
@@ -86,6 +88,19 @@ export const CONTROLLER_STYLES = `
         line-height: 1.1;
         letter-spacing: 0;
     }
+
+    .remote-comparison { grid-template-columns: minmax(0, 1fr) 52px minmax(0, 1fr); gap: 12px; font: 700 42px Arial, sans-serif; }
+    .remote-comparison-side { display: grid; justify-items: center; gap: 8px; }
+    .remote-comparison-side small { font-size: 26px; color: #486b35; }
+    .remote-comparison-slot { width: 48px; height: 64px; border: 2px dashed #917747; border-radius: 9px; }
+    .remote-comparison-pieces { display: grid; grid-template-columns: repeat(3, 28px); min-height: 64px; gap: 3px; justify-content: center; align-content: center; }
+    .remote-comparison-pieces img { width: 28px; height: auto; }
+    .remote-comparison-pieces.size { width: 88px; height: 96px; display: flex; align-items: center; justify-content: center; }
+    .remote-comparison-answers { grid-template-columns: repeat(3, minmax(0, 1fr)) !important; }
+    .remote-comparison-choice { display: grid; gap: 8px; justify-items: center; }
+    .remote-comparison-reminder { width: 40px; height: 37px; object-fit: contain; }
+    .remote-comparison-answers .remote-button { padding: 8px; min-height: 80px; }
+    .remote-comparison-answers .remote-button img { width: ${58 * COMPARISON_CHOICE_SCALE}px; height: ${54 * COMPARISON_CHOICE_SCALE}px; object-fit: contain; }
 
     .remote-problem {
         background: #f4efe3;

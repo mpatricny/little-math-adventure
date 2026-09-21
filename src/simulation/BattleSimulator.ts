@@ -113,15 +113,13 @@ export function simulateBattle(
     let enemyDamage = enemy.atk;
 
     // Shield blocking (if equipped)
-    if (player.shield) {
+    if (player.shield && enemyDamage > 0) {
+      totalProblems++;
       let blocked = 0;
-      for (let i = 0; i < player.shield.blockAttempts && enemyDamage > 0; i++) {
-        totalProblems++;
-        if (Math.random() < accuracy.blockProblems) {
-          blocked++;
-          enemyDamage--;
-          totalCorrect++;
-        }
+      if (Math.random() < accuracy.blockProblems) {
+        blocked = Math.min(enemyDamage, player.shield.blockPower);
+        enemyDamage -= blocked;
+        totalCorrect++;
       }
       if (config.debug && blocked > 0) {
         console.log(`  Player blocks ${blocked} damage with shield`);

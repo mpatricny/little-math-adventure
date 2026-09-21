@@ -1,8 +1,22 @@
 import { sfx } from '../audio/AudioDirector';
 import Phaser from 'phaser';
-import { MathProblem } from '../types';
+import { ComparisonStageId, MathProblem } from '../types';
 import { formatMathProblem } from '../utils/formatMathProblem';
 import { MasterySystem } from '../systems/MasterySystem';
+import { MedievalActionButton } from './MedievalActionButton';
+import { MathBoardDefense, SequentialMathView } from './SequentialMathView';
+import { COMPARISON_CHOICE_SCALE } from './ComparisonPresentation';
+import { calculateShieldAnswerBlock } from '../systems/ShieldBlockSystem';
+import { ComparisonSupportProgress, comparisonHintDelay, normalizeComparisonSupport, updateComparisonSupport } from '../systems/ComparisonSupport';
+import type { RemoteComparisonPrompt } from '../remote/types';
+
+export interface MathBoardShowOptions {
+    presentation?: 'rows' | 'sequential';
+    introduction?: ComparisonStageId;
+    support?: Partial<ComparisonSupportProgress>;
+    onIntroComplete?: () => void;
+    defense?: MathBoardDefense;
+}
 
 // Visual hint configuration
 const HINT_ITEM_COUNT = 8;      // Total items in spritesheet
@@ -52,6 +66,7 @@ export interface MathBoardLayout {
 export interface MathBoardRemoteSnapshot {
     problem: string;
     choices: Array<{ index: 0 | 1 | 2; label: string }>;
+    comparison?: RemoteComparisonPrompt;
 }
 
 interface ProblemRow {
@@ -71,8 +86,9 @@ export class MathBoard {
     private problemRows: ProblemRow[] = [];
     private hintContainer!: Phaser.GameObjects.Container;
     private damageText!: Phaser.GameObjects.Text;
-    private onComplete: (damageDealt: number, results: boolean[], timings: number[]) => void;
-    private originalOnComplete: (damageDealt: number, results: boolean[], timings: number[]) => void; // Store original callback
+    private comparisonHelpButton!: MedievalActionButton;
+    private onComplete: (damageDealt: number, results: boolean[], timings: number[], assisted: boolean[]) => void;
+    private originalOnComplete: (damageDealt: number, results: boolean[], timings: number[], assisted: boolean[]) => void; // Store original callback
     private hintTimer: Phaser.Time.TimerEvent | null = null;
     private completionTimer: Phaser.Time.TimerEvent | null = null; // Track pending onComplete callback
     private advanceTimer: Phaser.Time.TimerEvent | null = null; // Track 400ms delay between problems
@@ -80,6 +96,14 @@ export class MathBoard {
     private speedChargeCallback?: (charges: number, type: 'swift' | 'lightning') => number; // Returns bonus damage from bar fills
     private activeProblemChangedCallback?: (snapshot: MathBoardRemoteSnapshot | null) => void;
     private damageDisplayEnabled = true;
+    private sequential = false;
+    private sequentialView: SequentialMathView | null = null;
+    private acceptingAnswer = false;
+    private activeTimeMs = 0;
+    private generation = 0;
+    private support = normalizeComparisonSupport();
+    private defense: MathBoardDefense | null = null;
+    private rowsPosition: { x: number; y: number } | null = null;
 
     // Multi-problem state
     private problems: MathProblem[] = [];
@@ -87,7 +111,7 @@ export class MathBoard {
     private damageDealt: number = 0;
     private results: boolean[] = [];
     private timings: number[] = [];            // Response time per problem (ms)
-    private problemStartTime: number = 0;       // Timestamp when current problem activated
+    private assisted: boolean[] = [];
 
     // Configurable layout
     private layout = { ...DEFAULT_LAYOUT };
@@ -99,12 +123,16 @@ export class MathBoard {
         defaultPreset: string;
     } | null = null;
 
-    constructor(scene: Phaser.Scene, onComplete: (damageDealt: number, results: boolean[], timings: number[]) => void) {
+    constructor(scene: Phaser.Scene, onComplete: (damageDealt: number, results: boolean[], timings: number[], assisted: boolean[]) => void) {
         this.scene = scene;
         this.onComplete = onComplete;
         this.originalOnComplete = onComplete; // Store original for restoration
         this.loadUILayouts();
         this.create();
+        this.scene.events.on(Phaser.Scenes.Events.UPDATE, this.updateActiveTime, this);
+        this.scene.input.on(Phaser.Input.Events.GAME_OUT, this.resetSurfaces, this);
+        document.addEventListener('visibilitychange', this.onVisibilityChanged);
+        this.scene.events.once(Phaser.Scenes.Events.SHUTDOWN, this.destroy, this);
     }
 
     /** Set optional callback for wrong answers (shows explanation popup) */
@@ -124,7 +152,8 @@ export class MathBoard {
     /** Hide combat-only damage UI when the board is reused for practice flows. */
     setDamageDisplayEnabled(enabled: boolean): void {
         this.damageDisplayEnabled = enabled;
-        this.damageText.setVisible(enabled && this.container.visible);
+        this.damageText.setVisible(enabled && this.container.visible && !this.sequential);
+        this.updateSequentialProgress();
     }
 
     /**
@@ -245,6 +274,21 @@ export class MathBoard {
         }).setOrigin(0.5);
         this.damageText.setVisible(false);
         this.container.add(this.damageText);
+
+        this.comparisonHelpButton = new MedievalActionButton(this.scene, {
+            x: 0,
+            y: 0,
+            depth: 102,
+            width: 138,
+            height: 42,
+            label: 'NÁPOVĚDA',
+            labelFontSize: 13,
+            layout: 'text',
+            accent: 0x4f7d42,
+            onClick: () => this.revealManualComparisonHint(),
+        });
+        this.comparisonHelpButton.root.setVisible(false);
+        this.container.add(this.comparisonHelpButton.root);
     }
 
     private createProblemRow(problem: MathProblem, index: number, totalProblems: number): ProblemRow {
@@ -292,6 +336,7 @@ export class MathBoard {
             fontFamily: 'Arial, sans-serif',
             color: textColor,
             fontStyle: 'bold',
+            resolution: 2,
         }).setOrigin(0, 0.5);
 
         const buttonFrameWidth = this.scene.textures.getFrame('ui-button')?.width ?? 300;
@@ -457,38 +502,22 @@ export class MathBoard {
         scale: number = 0.28,
         displayValue?: string
     ): Phaser.GameObjects.Container {
-        // Use smaller button for multi-problem layout
-        const bg = this.scene.add.image(0, 0, 'ui-button')
-            .setScale(scale)
-            .setInteractive({ useHandCursor: true });
-
-        const fontSize = scale < 0.25 ? '18px' : '22px';
+        const bg = this.scene.add.image(0, 0, 'ui-button').setScale(scale);
+        const isSign = displayValue === '<' || displayValue === '=' || displayValue === '>';
         const text = this.scene.add.text(0, -2, displayValue ?? value.toString(), {
-            fontSize: fontSize,
-            fontFamily: 'Arial, sans-serif',
-            color: '#5a3825',
-            fontStyle: 'bold',
+            fontSize: isSign ? `${44 * COMPARISON_CHOICE_SCALE}px` : scale < 0.25 ? '18px' : '22px',
+            fontFamily: 'Arial, sans-serif', color: '#5a3825', fontStyle: 'bold', resolution: 2,
         }).setOrigin(0.5);
-
-        const container = this.scene.add.container(x, y, [bg, text]);
-        container.setData('buttonIndex', buttonIndex);
-        container.setData('rowIndex', rowIndex);
-        container.setData('value', value);
-        container.setData('isCorrect', isCorrect);
-        container.setData('text', text);
-        container.setData('bg', bg);
-
-        // Hover effects
-        const hoverScale = scale * 1.07;
-        bg.on('pointerover', () => bg.setScale(hoverScale));
-        bg.on('pointerout', () => {
-            bg.setScale(scale);
-            bg.setTexture('ui-button');
-        });
-
-        // Click handler
-        bg.on('pointerdown', () => {
-            bg.setTexture('ui-button-pressed');
+        const surface = this.scene.add.container(0, 0, [bg, text]);
+        const container = this.scene.add.container(x, y, [surface]);
+        container.setSize(bg.displayWidth, bg.displayHeight).setInteractive({ useHandCursor: true });
+        container.setData({ buttonIndex, rowIndex, value, isCorrect, text, bg, surface });
+        container.on('pointerover', () => { if (container.input?.enabled) surface.setY(-2); });
+        container.on('pointerout', () => surface.setY(0));
+        container.on('pointerup', () => surface.setY(0));
+        container.on('pointerdown', () => {
+            if (!container.input?.enabled) return;
+            surface.setY(1);
             this.handleAnswer(rowIndex, buttonIndex, isCorrect);
         });
 
@@ -505,94 +534,192 @@ export class MathBoard {
 
     private setRowEnabled(buttons: Phaser.GameObjects.Container[], enabled: boolean): void {
         buttons.forEach(btn => {
-            const bg = btn.getData('bg') as Phaser.GameObjects.Image;
-            if (enabled) {
-                bg.setInteractive({ useHandCursor: true });
-            } else {
-                bg.disableInteractive();
-            }
+            (btn.getData('surface') as Phaser.GameObjects.Container).setY(0);
+            if (enabled) btn.setInteractive({ useHandCursor: true }); else btn.disableInteractive();
         });
     }
 
-    show(problems: MathProblem[]): void {
-        // DEBUG: Log problems being shown
-        console.log('[MathBoard] Showing problems:', problems.map(p => ({
-            problem: `${p.operand1} ${p.operator} ${p.operand2}${p.operand3 !== undefined ? ` ${p.operator2} ${p.operand3}` : ''} = ?`,
-            answer: p.answer,
-            choices: p.choices,
-            correctInChoices: p.choices.includes(p.answer)
-        })));
-
-        // Apply layout preset based on problem count
-        this.applyLayoutForProblemCount(problems.length);
-
-        // Reset state
+    show(problems: MathProblem[], options: MathBoardShowOptions = {}): void {
+        this.cancelPending();
+        this.onComplete = this.originalOnComplete;
+        this.scene.tweens.killTweensOf(this.container);
+        this.support = normalizeComparisonSupport(options.support);
+        this.defense = options.defense ?? null;
+        this.sequential = Boolean(this.defense) || options.presentation === 'sequential' || problems.some(problem => Boolean(problem.comparisonMeta));
         this.problems = problems;
         this.currentProblemIndex = 0;
         this.damageDealt = 0;
         this.results = [];
         this.timings = [];
-        this.problemStartTime = Date.now();
-
-        // Clear old problem rows
-        this.problemRows.forEach(row => row.container.destroy());
+        this.assisted = [];
+        this.activeTimeMs = 0;
+        problems.forEach(problem => {
+            if (problem.comparisonMeta) {
+                problem.comparisonMeta.assisted = false;
+                delete problem.comparisonMeta.selectedRelation;
+            }
+        });
+        this.problemRows.forEach(row => row.container.destroy(true));
         this.problemRows = [];
-
-        // Calculate board size based on problem count (using configurable layout)
-        const useTwoColumns = problems.length > this.layout.twoColumnThreshold;
-        const rowsToDisplay = useTwoColumns ? Math.ceil(problems.length / 2) : problems.length;
-        const boardHeight = Math.max(this.layout.boardMinHeight, rowsToDisplay * this.layout.rowHeight + this.layout.boardHeightPadding);
-        const boardWidth = useTwoColumns ? this.layout.boardWidthTwoCol : this.layout.boardWidth;
+        this.hintContainer.removeAll(true);
+        this.comparisonHelpButton.root.setVisible(false);
         const board = this.container.getByName('board') as Phaser.GameObjects.Image;
-        board.setDisplaySize(boardWidth, boardHeight);
-
-        // Create problem rows
-        for (let i = 0; i < problems.length; i++) {
-            const row = this.createProblemRow(problems[i], i, problems.length);
-            this.problemRows.push(row);
+        board.setVisible(!this.sequential);
+        if (this.sequential) {
+            if (!this.sequentialView) {
+                this.sequentialView = new SequentialMathView(this.scene, () => this.replayComparisonDemo());
+                this.container.add(this.sequentialView.root);
+            }
+            if (!this.rowsPosition) this.rowsPosition = { x: this.container.x, y: this.container.y };
+            this.sequentialView.setDefense(this.defense);
+            if (!this.container.parentContainer) this.container.setPosition(this.sequentialView.origin.x, this.sequentialView.origin.y).setDepth(this.sequentialView.origin.depth);
+            this.damageText.setVisible(false);
+            if (problems[0]) this.renderSequentialQuestion();
+        } else {
+            this.sequentialView?.hide();
+            if (this.rowsPosition) this.container.setPosition(this.rowsPosition.x, this.rowsPosition.y);
+            this.rowsPosition = null;
+            this.applyLayoutForProblemCount(problems.length);
+            const useTwoColumns = problems.length > this.layout.twoColumnThreshold;
+            const rowsToDisplay = useTwoColumns ? Math.ceil(problems.length / 2) : problems.length;
+            const boardHeight = Math.max(this.layout.boardMinHeight, rowsToDisplay * this.layout.rowHeight + this.layout.boardHeightPadding);
+            const boardWidth = useTwoColumns ? this.layout.boardWidthTwoCol : this.layout.boardWidth;
+            board.setDisplaySize(boardWidth, boardHeight);
+            for (let i = 0; i < problems.length; i++) this.problemRows.push(this.createProblemRow(problems[i], i, problems.length));
+            this.problemRows.forEach(row => this.setRowEnabled(row.buttons, false));
+            this.damageText.setY(boardHeight / 2 - this.layout.damageTextYOffset).setText('Poškození: 0').setVisible(this.damageDisplayEnabled);
+            this.comparisonHelpButton.root.setPosition(boardWidth / 2 - 86, -boardHeight / 2 + 34);
+            this.hintContainer.setY(this.layout.hintY);
         }
-
-        // Position damage text at bottom
-        this.damageText.setY(boardHeight / 2 - this.layout.damageTextYOffset);
-        this.damageText.setText(`Poškození: 0`);
-        this.damageText.setVisible(this.damageDisplayEnabled);
-
-        // Position hint container (using configurable hintY offset)
-        this.hintContainer.setY(this.layout.hintY);
-
-        // Show visual hints for first problem if enabled
-        if (problems.length > 0 && problems[0].showVisualHint) {
-            this.showVisualHints(problems[0]);
-        }
-
-        // Animate in
-        this.container.setVisible(true);
-        this.container.setAlpha(0);
-        this.container.setScale(0.8);
+        this.container.setVisible(true).setAlpha(0).setScale(1);
         this.notifyActiveProblemChanged();
+        const generation = this.generation;
+        this.scene.tweens.add({ targets: this.container, alpha: 1, duration: 200, onComplete: () => {
+            if (generation !== this.generation || !problems.length) return;
+            if (this.sequential && options.introduction && !problems[0].comparisonMeta?.exam) {
+                this.sequentialView!.playDemo(options.introduction, () => {
+                    if (generation !== this.generation) return;
+                    options.onIntroComplete?.();
+                    this.renderSequentialQuestion();
+                    this.activateQuestion();
+                });
+            } else this.activateQuestion();
+        } });
+    }
 
-        this.scene.tweens.add({
-            targets: this.container,
-            alpha: 1,
-            scale: 1,
-            duration: 200,
-            ease: 'Back.easeOut',
+    private renderSequentialQuestion(): void {
+        this.sequentialView!.showQuestion(this.problems[this.currentProblemIndex], index => this.submitChoice(index));
+        this.sequentialView!.setEnabled(false);
+        this.updateSequentialProgress();
+    }
+
+    private updateSequentialProgress(): void {
+        if (this.sequential) this.sequentialView?.updateProgress(this.currentProblemIndex, this.problems.length, this.results, this.damageDealt, this.damageDisplayEnabled);
+    }
+
+    private activateQuestion(resetTime = true): void {
+        if (resetTime) this.activeTimeMs = 0;
+        this.acceptingAnswer = true;
+        if (this.sequential) this.sequentialView!.setEnabled(true);
+        else {
+            const row = this.problemRows[this.currentProblemIndex];
+            row.container.setAlpha(1);
+            this.setRowEnabled(row.buttons, true);
+            this.scheduleHints(row.problem);
+        }
+        this.notifyActiveProblemChanged();
+    }
+
+    private updateActiveTime(_time: number, delta: number): void {
+        if (!this.acceptingAnswer || !this.container.visible || document.hidden) return;
+        this.activeTimeMs += Math.max(0, delta);
+        if (!this.sequential) return;
+        const meta = this.problems[this.currentProblemIndex]?.comparisonMeta;
+        if (!meta || meta.exam || meta.assisted) return;
+        if (meta.stage === 'number_symbol') {
+            const delay = comparisonHintDelay(this.support);
+            if (delay !== null && this.activeTimeMs >= delay) {
+                this.sequentialView!.showHints();
+                meta.assisted = true;
+                this.notifyActiveProblemChanged();
+            }
+        } else if (meta.autoArithmeticHintMs && this.activeTimeMs >= meta.autoArithmeticHintMs) {
+            this.sequentialView!.showArithmeticHint();
+            meta.assisted = true;
+            this.notifyActiveProblemChanged();
+        }
+    }
+
+    private readonly onVisibilityChanged = (): void => {
+        this.sequentialView?.setPaused(document.hidden);
+        if (this.hintTimer) this.hintTimer.paused = document.hidden;
+        if (this.advanceTimer) this.advanceTimer.paused = document.hidden;
+        if (this.completionTimer) this.completionTimer.paused = document.hidden;
+        this.notifyActiveProblemChanged();
+    };
+
+    private resetSurfaces(): void {
+        this.sequentialView?.resetSurfaces();
+        for (const row of this.problemRows) for (const button of row.buttons) (button.getData('surface') as Phaser.GameObjects.Container).setY(0);
+    }
+
+    private replayComparisonDemo(): void {
+        const problem = this.problems[this.currentProblemIndex];
+        if (!this.acceptingAnswer || !problem?.comparisonMeta || problem.comparisonMeta.exam) return;
+        problem.comparisonMeta.assisted = true;
+        this.acceptingAnswer = false;
+        this.notifyActiveProblemChanged();
+        const generation = this.generation;
+        this.sequentialView!.playDemo(problem.comparisonMeta.stage, () => {
+            if (generation !== this.generation) return;
+            this.renderSequentialQuestion();
+            this.activateQuestion(false);
         });
     }
 
     // Legacy single-problem support (for shield block, pet turn, etc.)
-    showSingle(problem: MathProblem, onAnswer: (isCorrect: boolean, responseTimeMs: number) => void): void {
-        const wrappedCallback = this.onComplete;
-        this.onComplete = (damage, results, timings) => {
-            onAnswer(results[0] || false, timings[0] || 0);
-            this.onComplete = wrappedCallback;
-        };
+    showSingle(problem: MathProblem, onAnswer: (isCorrect: boolean, responseTimeMs: number, assisted: boolean) => void): void {
         this.show([problem]);
+        this.onComplete = (_damage, results, timings, assisted) => {
+            this.onComplete = this.originalOnComplete;
+            onAnswer(results[0] || false, timings[0] || 0, assisted[0] || false);
+        };
+    }
+
+    private scheduleHints(problem: MathProblem): void {
+        this.hintContainer.removeAll(true);
+        if (this.hintTimer) {
+            this.hintTimer.destroy();
+            this.hintTimer = null;
+        }
+        const manualHelp = problem.comparisonMeta?.stage === 'number_symbol'
+            || problem.comparisonMeta?.stage === 'expression_independent';
+        this.comparisonHelpButton.root.setVisible(manualHelp === true);
+        this.comparisonHelpButton.setEnabled(manualHelp === true);
+        const delayedArithmeticHint = problem.comparisonMeta?.autoArithmeticHintMs;
+        if (delayedArithmeticHint && problem.comparisonMeta?.arithmeticHintText) {
+            this.hintTimer = this.scene.time.delayedCall(delayedArithmeticHint, () => {
+                if (problem.comparisonMeta) problem.comparisonMeta.assisted = true;
+                this.displayComparisonArithmeticHint(problem);
+            });
+            return;
+        }
+        if (problem.showVisualHint) this.showVisualHints(problem);
+    }
+
+    private revealManualComparisonHint(): void { this.replayComparisonDemo(); }
+
+    private displayComparisonArithmeticHint(problem: MathProblem): void {
+        this.hintContainer.removeAll(true);
+        this.hintContainer.add(this.scene.add.text(0, 0, problem.comparisonMeta?.arithmeticHintText ?? '', {
+            fontSize: '28px', fontFamily: 'Arial, sans-serif', color: '#3e6f45', fontStyle: 'bold', resolution: 2,
+        }).setOrigin(0.5));
     }
 
     private showVisualHints(problem: MathProblem): void {
         // Clear any existing hints and cancel pending timer
         this.hintContainer.removeAll(true);
+        this.comparisonHelpButton.root.setVisible(false);
         if (this.hintTimer) {
             this.hintTimer.destroy();
             this.hintTimer = null;
@@ -682,136 +809,96 @@ export class MathBoard {
         }
     }
 
-    private handleAnswer(rowIndex: number, buttonIndex: number, isCorrect: boolean): void {
-        // Only handle if this is the current problem
-        if (rowIndex !== this.currentProblemIndex) return;
-        sfx(this.scene, isCorrect ? 'math.correct' : 'math.retry');
-
-        // Record response time for this problem
-        const responseTimeMs = Date.now() - this.problemStartTime;
+    private handleAnswer(rowIndex: number, buttonIndex: number, _isCorrect: boolean): void {
+        if (!this.acceptingAnswer || !this.container.visible || document.hidden || rowIndex !== this.currentProblemIndex) return;
+        const problem = this.problems[rowIndex];
+        if (!problem || buttonIndex < 0 || buttonIndex >= problem.choices.length) return;
+        // The same gate locks mouse, touch and remote before any feedback runs.
+        this.acceptingAnswer = false;
+        const isCorrect = problem.choices[buttonIndex] === problem.answer;
+        const responseTimeMs = this.activeTimeMs;
+        const usedAssistance = problem.comparisonMeta?.assisted === true;
+        if (problem.comparisonMeta) {
+            problem.comparisonMeta.selectedRelation = (['less', 'equal', 'greater'] as const)[problem.choices[buttonIndex]];
+        }
         this.timings.push(responseTimeMs);
-
-        // Immediately cancel any pending hint timer to prevent wrong hints
-        if (this.hintTimer) {
-            this.hintTimer.destroy();
-            this.hintTimer = null;
-        }
-        // Also clear visible hints immediately
-        this.hintContainer.removeAll(true);
-
-        const row = this.problemRows[rowIndex];
-        const btn = row.buttons[buttonIndex];
-        const bg = btn.getData('bg') as Phaser.GameObjects.Image;
-
-        // Track charge bar bonus for animation below
-        let chargeBonusDamage = 0;
-
-        // Visual feedback
-        if (isCorrect) {
-            bg.setTint(0x88ff88);  // Green tint
-            row.statusIcon.setText('✓');
-            row.statusIcon.setColor('#44aa44');
-            // Add damage with multiplier (from equipment bonuses)
-            const multiplier = row.problem.damageMultiplier || 1;
-            let totalHit = multiplier;
-
-            // Speed charge bar: fast answers add charges, bar fill grants +1 damage
-            let speedLabel = '';
-            if (row.problem.masteryKey && responseTimeMs > 0) {
-                const speedBonus = MasterySystem.getInstance().getSpeedBonus(responseTimeMs, row.problem.masteryKey);
-                if (speedBonus.charges > 0 && speedBonus.type !== 'none') {
-                    speedLabel = speedBonus.type === 'lightning' ? ' ⚡⚡' : ' ⚡';
-                    if (this.speedChargeCallback) {
-                        chargeBonusDamage = this.speedChargeCallback(speedBonus.charges, speedBonus.type);
-                    }
-                }
-            }
-
-            totalHit += chargeBonusDamage;
-            this.damageDealt += totalHit;
-            // Show hit detail on status icon
-            if (chargeBonusDamage > 0) {
-                row.statusIcon.setText(`✓${speedLabel} +${chargeBonusDamage}`);
-            } else if (totalHit > 1) {
-                row.statusIcon.setText(`✓ ×${totalHit}${speedLabel}`);
-            } else if (speedLabel) {
-                row.statusIcon.setText(`✓${speedLabel}`);
-            }
-            row.correct = true;
-        } else {
-            bg.setTint(0xff8888);  // Red tint
-            row.statusIcon.setText('✗');
-            row.statusIcon.setColor('#cc4444');
-            row.correct = false;
-
-            // Highlight correct answer
-            row.buttons.forEach(b => {
-                if (b.getData('isCorrect')) {
-                    const correctBg = b.getData('bg') as Phaser.GameObjects.Image;
-                    correctBg.setTint(0x88ff88);
-                }
-            });
-        }
-
-        row.solved = true;
+        this.assisted.push(usedAssistance);
         this.results.push(isCorrect);
+        sfx(this.scene, isCorrect ? 'math.correct' : 'math.retry');
+        if (this.hintTimer) { this.hintTimer.remove(false); this.hintTimer = null; }
+        this.hintContainer.removeAll(true);
+        this.comparisonHelpButton.root.setVisible(false);
+        this.notifyActiveProblemChanged();
 
-        // Disable this row's buttons
-        this.setRowEnabled(row.buttons, false);
-
-        // Update damage display
-        this.damageText.setText(`Poškození: ${this.damageDealt}`);
-
-        // Animate damage text on correct
-        if (isCorrect && this.damageDisplayEnabled) {
-            // Bigger bounce + gold flash when charge bar filled
-            this.scene.tweens.add({
-                targets: this.damageText,
-                scale: chargeBonusDamage > 0 ? 1.5 : 1.3,
-                duration: chargeBonusDamage > 0 ? 150 : 100,
-                yoyo: true,
-            });
-            if (chargeBonusDamage > 0) {
-                this.damageText.setColor('#ffcc00');
-                this.scene.time.delayedCall(300, () => {
-                    this.damageText.setColor('#ffffff');
-                });
+        let chargeBonusDamage = 0;
+        let speedCharges = 0;
+        if (isCorrect && !this.defense) {
+            if (!usedAssistance && problem.masteryKey && responseTimeMs > 0) {
+                const speed = MasterySystem.getInstance().getSpeedBonus(responseTimeMs, problem.masteryKey);
+                if (speed.charges > 0 && speed.type !== 'none' && this.speedChargeCallback) {
+                    speedCharges = speed.charges;
+                    chargeBonusDamage = this.speedChargeCallback(speed.charges, speed.type);
+                }
             }
+            this.damageDealt += (problem.damageMultiplier || 1) + chargeBonusDamage;
         }
-
-        // If wrong and onWrongAnswer is set, show explanation instead of auto-advancing
-        if (!isCorrect && this.onWrongAnswer) {
-            const problem = row.problem;
-            this.onWrongAnswer(problem, () => {
-                this.advanceAfterAnswer();
+        if (this.sequential) {
+            if (problem.comparisonMeta?.stage === 'number_symbol' && !problem.comparisonMeta.exam) updateComparisonSupport(this.support, isCorrect);
+            this.updateSequentialProgress();
+            if (speedCharges > 0) this.sequentialView!.showSpeedBonus(speedCharges);
+            if (this.defense) {
+                const quick = responseTimeMs > 0 && responseTimeMs < MasterySystem.getInstance().getMasteryRTThreshold(problem.masteryKey);
+                const blocked = calculateShieldAnswerBlock(this.defense.power, this.defense.incomingDamage, isCorrect, quick, usedAssistance);
+                const baseBlock = calculateShieldAnswerBlock(this.defense.power, this.defense.incomingDamage, isCorrect, false, usedAssistance);
+                this.sequentialView!.showDefenseResult(blocked, blocked > baseBlock);
+            }
+            const generation = this.generation;
+            this.sequentialView!.answer(isCorrect, buttonIndex, () => {
+                if (generation !== this.generation) return;
+                const advance = () => { if (generation === this.generation) this.advanceAfterAnswer(); };
+                if (!isCorrect && !problem.comparisonMeta && this.onWrongAnswer) this.onWrongAnswer(problem, advance);
+                else advance();
             });
             return;
         }
 
-        // Move to next problem or complete
-        this.advanceAfterAnswer();
+        const row = this.problemRows[rowIndex];
+        row.solved = true;
+        row.correct = isCorrect;
+        this.setRowEnabled(row.buttons, false);
+        (row.buttons[buttonIndex].getData('bg') as Phaser.GameObjects.Image).setTint(isCorrect ? 0x88ff88 : 0xff8888);
+        row.statusIcon.setText(isCorrect ? '✓' : '✗').setColor(isCorrect ? '#44aa44' : '#cc4444');
+        if (!isCorrect) row.buttons.forEach(button => {
+            if (button.getData('isCorrect')) (button.getData('bg') as Phaser.GameObjects.Image).setTint(0x88ff88);
+        });
+        this.damageText.setText(`Poškození: ${this.damageDealt}`);
+        if (isCorrect && this.damageDisplayEnabled) this.scene.tweens.add({ targets: this.damageText,
+            scale: chargeBonusDamage > 0 ? 1.5 : 1.3, duration: 100, yoyo: true });
+        if (!isCorrect && this.onWrongAnswer) {
+            const generation = this.generation;
+            this.onWrongAnswer(problem, () => { if (generation === this.generation) this.advanceAfterAnswer(); });
+        } else this.advanceAfterAnswer();
     }
 
     submitChoice(choiceIndex: 0 | 1 | 2): void {
-        if (!this.container.visible) return;
-        const row = this.problemRows[this.currentProblemIndex];
-        if (!row || row.solved) return;
-        const button = row.buttons[choiceIndex];
-        if (!button) return;
-        this.handleAnswer(this.currentProblemIndex, choiceIndex, button.getData('isCorrect') === true);
+        this.handleAnswer(this.currentProblemIndex, choiceIndex, false);
     }
 
     getActiveProblemSnapshot(): MathBoardRemoteSnapshot | null {
-        if (!this.container.visible) return null;
-        const row = this.problemRows[this.currentProblemIndex];
-        if (!row || row.solved) return null;
-
+        if (!this.container.visible || !this.acceptingAnswer || document.hidden) return null;
+        const problem = this.problems[this.currentProblemIndex];
+        if (!problem) return null;
+        const meta = problem.comparisonMeta;
         return {
-            problem: formatMathProblem(row.problem, 'question'),
-            choices: row.buttons.map((button, index) => ({
-                index: index as 0 | 1 | 2,
-                label: (button.getData('text') as Phaser.GameObjects.Text).text,
-            })),
+            problem: formatMathProblem(problem, 'question'),
+            choices: problem.choices.map((_value, index) => ({ index: index as 0 | 1 | 2, label: this.getChoiceDisplayValue(problem, index) })),
+            comparison: meta ? {
+                representation: meta.representation, left: meta.leftValue, right: meta.rightValue,
+                numberedObjects: meta.stage === 'number_crocodile', crocodileChoices: meta.showCrocodile,
+                showReminders: !meta.exam && this.sequentialView?.hints.some(hint => hint.visible) === true,
+                expression: meta.representation === 'expression' ? `${problem.operand1} ${problem.operator} ${problem.operand2}` : undefined,
+                arithmeticHint: meta.representation === 'expression' && meta.assisted ? meta.leftValue : undefined,
+            } : undefined,
         };
     }
 
@@ -819,85 +906,60 @@ export class MathBoard {
         this.activeProblemChangedCallback?.(this.getActiveProblemSnapshot());
     }
 
-    /** Advance to next problem or complete (called after answer or after wrong-answer popup dismissed) */
+    /** Preserve the full attack batch and invoke its completion exactly once. */
     private advanceAfterAnswer(): void {
-        this.advanceTimer = this.scene.time.delayedCall(400, () => {
+        if (this.advanceTimer || this.completionTimer) return;
+        const generation = this.generation;
+        this.advanceTimer = this.scene.time.delayedCall(this.sequential ? 120 : 400, () => {
             this.advanceTimer = null;
+            if (generation !== this.generation) return;
             this.currentProblemIndex++;
-
             if (this.currentProblemIndex < this.problems.length) {
-                // Start timing the next problem
-                this.problemStartTime = Date.now();
-
-                // Activate next row
-                const nextRow = this.problemRows[this.currentProblemIndex];
-                nextRow.container.setAlpha(1);
-                this.setRowEnabled(nextRow.buttons, true);
-
-                // Show hints for next problem if applicable
-                const nextProblem = this.problems[this.currentProblemIndex];
-                if (nextProblem.showVisualHint) {
-                    this.showVisualHints(nextProblem);
-                }
-                this.notifyActiveProblemChanged();
-
-                // Highlight current row
-                this.scene.tweens.add({
-                    targets: nextRow.container,
-                    scaleX: 1.02,
-                    duration: 150,
-                    yoyo: true,
-                });
+                if (this.sequential) this.renderSequentialQuestion();
+                this.activateQuestion();
             } else {
-                // All problems answered - complete (track the timer so it can be cancelled)
-                this.completionTimer = this.scene.time.delayedCall(300, () => {
+                this.completionTimer = this.scene.time.delayedCall(200, () => {
                     this.completionTimer = null;
-                    this.onComplete(this.damageDealt, this.results, this.timings);
+                    if (generation === this.generation) this.onComplete(this.damageDealt, [...this.results], [...this.timings], [...this.assisted]);
                 });
             }
         });
     }
 
+    private cancelPending(): void {
+        this.generation++;
+        this.acceptingAnswer = false;
+        this.sequentialView?.cancel();
+        for (const timer of [this.hintTimer, this.advanceTimer, this.completionTimer]) timer?.remove(false);
+        this.hintTimer = null; this.advanceTimer = null; this.completionTimer = null;
+    }
+
     hide(): void {
-        // Cancel pending hint timer
-        if (this.hintTimer) {
-            this.hintTimer.destroy();
-            this.hintTimer = null;
-        }
-
-        // Cancel pending advance delay (prevents completionTimer from being created after hide)
-        if (this.advanceTimer) {
-            this.advanceTimer.destroy();
-            this.advanceTimer = null;
-        }
-
-        // Cancel pending completion callback (prevents race condition with block phase timer)
-        if (this.completionTimer) {
-            this.completionTimer.destroy();
-            this.completionTimer = null;
-        }
-
-        // Restore original callback (in case showSingle was interrupted)
+        this.cancelPending();
         this.onComplete = this.originalOnComplete;
+        this.scene.tweens.killTweensOf(this.container);
+        this.sequentialView?.hide();
+        this.problemRows.forEach(row => this.setRowEnabled(row.buttons, false));
+        this.hintContainer.removeAll(true);
+        this.comparisonHelpButton.root.setVisible(false);
+        this.notifyActiveProblemChanged();
+        const generation = this.generation;
+        this.scene.tweens.add({ targets: this.container, alpha: 0, duration: 150, onComplete: () => {
+            if (generation !== this.generation) return;
+            this.container.setVisible(false);
+            this.damageText.setVisible(false);
+            this.problemRows.forEach(row => row.container.destroy(true));
+            this.problemRows = [];
+        } });
+    }
 
-        this.scene.tweens.add({
-            targets: this.container,
-            alpha: 0,
-            scale: 0.8,
-            duration: 150,
-            onComplete: () => {
-                this.container.setVisible(false);
-                this.damageText.setVisible(false);
-
-                // Clear problem rows
-                this.problemRows.forEach(row => row.container.destroy());
-                this.problemRows = [];
-
-                // Clear hints
-                this.hintContainer.removeAll(true);
-                this.notifyActiveProblemChanged();
-            },
-        });
+    private destroy(): void {
+        this.cancelPending();
+        document.removeEventListener('visibilitychange', this.onVisibilityChanged);
+        this.scene.events.off(Phaser.Scenes.Events.UPDATE, this.updateActiveTime, this);
+        this.scene.input.off(Phaser.Input.Events.GAME_OUT, this.resetSurfaces, this);
+        this.sequentialView?.destroy();
+        this.sequentialView = null;
     }
 
     // Get current damage for external display

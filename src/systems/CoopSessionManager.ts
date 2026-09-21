@@ -1,4 +1,4 @@
-import { BandId, EnemyDefinition, ExamType, MasteryData, SubAtomId } from '../types';
+import { EnemyDefinition, ExamType, MasteryData, MasteryTargetId } from '../types';
 import { GameStateManager } from './GameStateManager';
 import { MasterySystem } from './MasterySystem';
 
@@ -192,7 +192,7 @@ export class CoopSessionManager {
     applyAndPersistMasteryProgress(): Array<{
         player: 'A' | 'B';
         type: ExamType;
-        targetId: SubAtomId | BandId;
+        targetId: MasteryTargetId;
     }> {
         return this.persistMasteryTracks(true);
     }
@@ -329,7 +329,7 @@ export class CoopSessionManager {
     private persistMasteryTracks(applyPromotions: boolean): Array<{
         player: 'A' | 'B';
         type: ExamType;
-        targetId: SubAtomId | BandId;
+        targetId: MasteryTargetId;
     }> {
         if (!this._isActive) return [];
 
@@ -339,7 +339,7 @@ export class CoopSessionManager {
         const promotions: Array<{
             player: 'A' | 'B';
             type: ExamType;
-            targetId: SubAtomId | BandId;
+            targetId: MasteryTargetId;
         }> = [];
 
         const persistPlayer = (playerId: 'A' | 'B', data: MasteryData | null): void => {

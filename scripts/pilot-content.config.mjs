@@ -14,6 +14,7 @@ export const PILOT_SCENE_KEYS = Object.freeze([
 
 export const PILOT_LAYOUT_KEYS = Object.freeze([
   ...PILOT_SCENE_KEYS, 'WalkingHudOverlay', 'LearningMapOverlay', 'AudioControlHosts', 'AncientForestScene',
+  'MathBoardComparisonLayout', 'ComparisonFeedbackLayout',
 ]);
 
 // This production scene retains its historical filename; do not discard every "Mock" file.

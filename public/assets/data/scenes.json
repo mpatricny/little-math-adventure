@@ -3881,6 +3881,15 @@
           "height": 48
         },
         {
+          "id": "btnComparisonTest",
+          "asset": "ui.containers.empty",
+          "x": 1060,
+          "y": 440,
+          "depth": 31,
+          "width": 350,
+          "height": 62
+        },
+        {
           "id": "btnSilverpondFairyReward",
           "asset": "ui.containers.empty",
           "x": 1060,
@@ -4247,6 +4256,24 @@
           "depth": 90,
           "width": 380,
           "height": 72
+        },
+        {
+          "id": "comparisonLessonHost",
+          "asset": "ui.containers.empty",
+          "x": 640,
+          "y": 352,
+          "depth": 500,
+          "width": 760,
+          "height": 480
+        },
+        {
+          "id": "comparisonLessonButtonHost",
+          "asset": "ui.containers.empty",
+          "x": 640,
+          "y": 548,
+          "depth": 502,
+          "width": 230,
+          "height": 64
         }
       ],
       "spawnPoints": {
@@ -4838,34 +4865,50 @@
         {
           "id": "item-container",
           "asset": "misc.item-container",
-          "x": 89,
+          "x": 68,
           "y": 170,
-          "scaleX": 0.7,
-          "scaleY": 0.65
+          "scaleX": 0.58,
+          "scaleY": 0.6
         },
         {
           "id": "item-container-1",
           "asset": "misc.item-container",
-          "x": 217,
+          "x": 158,
           "y": 170,
-          "scaleX": 0.7,
-          "scaleY": 0.65
+          "scaleX": 0.58,
+          "scaleY": 0.6
         },
         {
           "id": "item-container-2",
           "asset": "misc.item-container",
-          "x": 369,
+          "x": 337,
           "y": 170,
-          "scaleX": 0.7,
-          "scaleY": 0.65
+          "scaleX": 0.58,
+          "scaleY": 0.6
         },
         {
           "id": "item-container-3",
           "asset": "misc.item-container",
-          "x": 499,
+          "x": 427,
           "y": 170,
-          "scaleX": 0.7,
-          "scaleY": 0.65
+          "scaleX": 0.58,
+          "scaleY": 0.6
+        },
+        {
+          "id": "item-container-4",
+          "asset": "misc.item-container",
+          "x": 248,
+          "y": 170,
+          "scaleX": 0.58,
+          "scaleY": 0.6
+        },
+        {
+          "id": "item-container-5",
+          "asset": "misc.item-container",
+          "x": 517,
+          "y": 170,
+          "scaleX": 0.58,
+          "scaleY": 0.6
         },
         {
           "id": "swordPrepHost",
@@ -5283,6 +5326,36 @@
           "depth": 1020,
           "width": 320,
           "height": 74
+        },
+        {
+          "id": "trialComparisonLeft",
+          "asset": "ui.containers.empty",
+          "x": 420,
+          "y": 305,
+          "width": 168,
+          "height": 140,
+          "depth": 204,
+          "visible": false
+        },
+        {
+          "id": "trialComparisonRelation",
+          "asset": "ui.containers.empty",
+          "x": 640,
+          "y": 305,
+          "width": 94,
+          "height": 96,
+          "depth": 204,
+          "visible": false
+        },
+        {
+          "id": "trialComparisonRight",
+          "asset": "ui.containers.empty",
+          "x": 860,
+          "y": 305,
+          "width": 168,
+          "height": 140,
+          "depth": 204,
+          "visible": false
         }
       ],
       "ui": [
@@ -5474,7 +5547,7 @@
           "id": "trialResultsHeaderHost",
           "asset": "ui.containers.empty",
           "x": 640,
-          "y": 115,
+          "y": 135,
           "depth": 203,
           "width": 800,
           "height": 110,
@@ -7532,6 +7605,109 @@
         }
       ]
     },
+    "LearningMapOverlay": {
+      "elements": [
+        {
+          "id": "bandStatus",
+          "asset": "ui.containers.empty",
+          "x": 72,
+          "y": 146,
+          "depth": 1,
+          "width": 130,
+          "height": 18
+        },
+        {
+          "id": "nodeA1",
+          "asset": "ui.containers.empty",
+          "x": 225,
+          "y": 65,
+          "depth": 1,
+          "width": 150,
+          "height": 130
+        },
+        {
+          "id": "nodeA2",
+          "asset": "ui.containers.empty",
+          "x": 415,
+          "y": 112,
+          "depth": 1,
+          "width": 150,
+          "height": 130
+        },
+        {
+          "id": "nodecomparison_symbols",
+          "asset": "ui.containers.empty",
+          "x": 605,
+          "y": 65,
+          "depth": 1,
+          "width": 150,
+          "height": 130
+        },
+        {
+          "id": "nodeA3",
+          "asset": "ui.containers.empty",
+          "x": 795,
+          "y": 112,
+          "depth": 1,
+          "width": 150,
+          "height": 130
+        },
+        {
+          "id": "nodeA4",
+          "asset": "ui.containers.empty",
+          "x": 985,
+          "y": 65,
+          "depth": 1,
+          "width": 150,
+          "height": 130
+        },
+        {
+          "id": "node1",
+          "asset": "ui.containers.empty",
+          "x": 245,
+          "y": 65,
+          "depth": 1,
+          "width": 150,
+          "height": 130
+        },
+        {
+          "id": "node2",
+          "asset": "ui.containers.empty",
+          "x": 455,
+          "y": 112,
+          "depth": 1,
+          "width": 150,
+          "height": 130
+        },
+        {
+          "id": "node3",
+          "asset": "ui.containers.empty",
+          "x": 680,
+          "y": 65,
+          "depth": 1,
+          "width": 150,
+          "height": 130
+        },
+        {
+          "id": "node4",
+          "asset": "ui.containers.empty",
+          "x": 900,
+          "y": 112,
+          "depth": 1,
+          "width": 150,
+          "height": 130
+        },
+        {
+          "id": "comparisonDetail",
+          "asset": "ui.containers.empty",
+          "x": 18,
+          "y": 14,
+          "depth": 1,
+          "width": 150,
+          "height": 130
+        }
+      ]
+    },
     "WalkingHudOverlay": {
       "viewport": {
         "width": 1280,
@@ -9578,6 +9754,272 @@
           "x": 640,
           "y": 640,
           "depth": 10010
+        }
+      ]
+    },
+    "MathBoardComparisonLayout": {
+      "viewport": {
+        "width": 1280,
+        "height": 720
+      },
+      "elements": [
+        {
+          "id": "board",
+          "asset": "ui.containers.empty",
+          "x": 640,
+          "y": 170,
+          "width": 740,
+          "height": 300,
+          "depth": 100,
+          "visible": false
+        },
+        {
+          "id": "title",
+          "asset": "ui.containers.empty",
+          "x": 324,
+          "y": 61,
+          "width": 390,
+          "height": 36,
+          "depth": 102,
+          "visible": false
+        },
+        {
+          "id": "left",
+          "asset": "ui.containers.empty",
+          "x": 377,
+          "y": 170,
+          "width": 106,
+          "height": 140,
+          "depth": 102,
+          "visible": false
+        },
+        {
+          "id": "relation",
+          "asset": "ui.containers.empty",
+          "x": 495,
+          "y": 170,
+          "width": 94,
+          "height": 96,
+          "depth": 102,
+          "visible": false
+        },
+        {
+          "id": "right",
+          "asset": "ui.containers.empty",
+          "x": 611,
+          "y": 170,
+          "width": 106,
+          "height": 140,
+          "depth": 102,
+          "visible": false
+        },
+        {
+          "id": "expressionLeft",
+          "asset": "ui.containers.empty",
+          "x": 414,
+          "y": 168,
+          "width": 180,
+          "height": 120,
+          "depth": 102,
+          "visible": false
+        },
+        {
+          "id": "expressionRelation",
+          "asset": "ui.containers.empty",
+          "x": 548,
+          "y": 168,
+          "width": 68,
+          "height": 72,
+          "depth": 102,
+          "visible": false
+        },
+        {
+          "id": "expressionRight",
+          "asset": "ui.containers.empty",
+          "x": 627,
+          "y": 168,
+          "width": 66,
+          "height": 100,
+          "depth": 102,
+          "visible": false
+        },
+        {
+          "id": "arithmetic",
+          "asset": "ui.containers.empty",
+          "x": 489,
+          "y": 168,
+          "width": 328,
+          "height": 130,
+          "depth": 102,
+          "visible": false
+        },
+        {
+          "id": "arithmeticHint",
+          "asset": "ui.containers.empty",
+          "x": 490,
+          "y": 233,
+          "width": 326,
+          "height": 38,
+          "depth": 102,
+          "visible": false
+        },
+        {
+          "id": "progress",
+          "asset": "ui.containers.empty",
+          "x": 326,
+          "y": 272,
+          "width": 220,
+          "height": 30,
+          "depth": 102,
+          "visible": false
+        },
+        {
+          "id": "power",
+          "asset": "ui.containers.empty",
+          "x": 580,
+          "y": 272,
+          "width": 116,
+          "height": 32,
+          "depth": 102,
+          "visible": false
+        },
+        {
+          "id": "source",
+          "asset": "ui.containers.empty",
+          "x": 706,
+          "y": 272,
+          "width": 102,
+          "height": 32,
+          "depth": 102,
+          "visible": false
+        },
+        {
+          "id": "bonus",
+          "asset": "ui.containers.empty",
+          "x": 806,
+          "y": 272,
+          "width": 88,
+          "height": 32,
+          "depth": 102,
+          "visible": false
+        },
+        {
+          "id": "feedback",
+          "asset": "ui.containers.empty",
+          "x": 792,
+          "y": 63,
+          "width": 164,
+          "height": 32,
+          "depth": 102,
+          "visible": false
+        },
+        {
+          "id": "demo",
+          "asset": "ui.containers.empty",
+          "x": 914,
+          "y": 272,
+          "width": 106,
+          "height": 44,
+          "depth": 104,
+          "visible": false
+        },
+        {
+          "id": "answer0",
+          "asset": "ui.containers.empty",
+          "x": 728,
+          "y": 190,
+          "width": 88,
+          "height": 70,
+          "depth": 103,
+          "visible": false
+        },
+        {
+          "id": "hint0",
+          "asset": "ui.containers.empty",
+          "x": 728,
+          "y": 130,
+          "width": 40,
+          "height": 36,
+          "depth": 103,
+          "visible": false
+        },
+        {
+          "id": "answer1",
+          "asset": "ui.containers.empty",
+          "x": 820,
+          "y": 190,
+          "width": 88,
+          "height": 70,
+          "depth": 103,
+          "visible": false
+        },
+        {
+          "id": "hint1",
+          "asset": "ui.containers.empty",
+          "x": 820,
+          "y": 130,
+          "width": 40,
+          "height": 36,
+          "depth": 103,
+          "visible": false
+        },
+        {
+          "id": "answer2",
+          "asset": "ui.containers.empty",
+          "x": 912,
+          "y": 190,
+          "width": 88,
+          "height": 70,
+          "depth": 103,
+          "visible": false
+        },
+        {
+          "id": "hint2",
+          "asset": "ui.containers.empty",
+          "x": 912,
+          "y": 130,
+          "width": 40,
+          "height": 36,
+          "depth": 103,
+          "visible": false
+        }
+      ]
+    },
+    "ComparisonFeedbackLayout": {
+      "viewport": {
+        "width": 820,
+        "height": 310
+      },
+      "elements": [
+        {
+          "id": "left",
+          "asset": "ui.containers.empty",
+          "x": -170,
+          "y": 0,
+          "width": 146,
+          "height": 140,
+          "depth": 1,
+          "visible": false
+        },
+        {
+          "id": "relation",
+          "asset": "ui.containers.empty",
+          "x": 0,
+          "y": 0,
+          "width": 94,
+          "height": 96,
+          "depth": 1,
+          "visible": false
+        },
+        {
+          "id": "right",
+          "asset": "ui.containers.empty",
+          "x": 170,
+          "y": 0,
+          "width": 146,
+          "height": 140,
+          "depth": 1,
+          "visible": false
         }
       ]
     }

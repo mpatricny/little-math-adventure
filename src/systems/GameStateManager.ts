@@ -1,7 +1,9 @@
 import { PlayerState, MathStats, ProblemStats, CharacterType, MasteryData, BandId, SubAtomId, ALL_BANDS, ALL_SUB_ATOM_NUMBERS } from '../types';
+import { restoreLearningPlacement } from './LearningProgress';
 import { MasteryMigration } from './MasteryMigration';
 import { ProgressionSystem } from './ProgressionSystem';
 import { SaveSystem } from './SaveSystem';
+import { createInitialComparisonChapterState, ensureComparisonChapter } from './ComparisonLearningSystem';
 
 /** Deferred level sync — called after GameStateManager is fully constructed */
 let pendingLevelSync = false;
@@ -197,6 +199,30 @@ export class GameStateManager {
         this.activeSlotIndex = null;
     }
 
+    /** Disposable chapter test profile used only by the development-menu shortcut. */
+    beginComparisonPreview(): void {
+        if (this.previewSnapshot) return;
+        this.previewSnapshot = { player: this.player, mathStats: this.mathStats, slot: this.activeSlotIndex };
+        this.player = ProgressionSystem.createInitialPlayer(this.player.characterType);
+        this.player.name = 'Tester porovnávání';
+        this.player.maxHp = this.player.hp = 24;
+        this.player.attack = 1;
+        this.player.equippedWeapon = null;
+        this.player.equippedShield = null;
+        this.player.pet = null;
+        this.player.activePet = null;
+        this.player.potions = 0;
+        this.mathStats = this.createInitialMathStats();
+        const mastery = this.getMasteryData();
+        mastery.subAtoms.A1.state = 'secure';
+        mastery.subAtoms.A1.examBestMedal = 'bronze';
+        mastery.subAtoms.A2.state = 'secure';
+        mastery.subAtoms.A2.examBestMedal = 'bronze';
+        mastery.subAtoms.A3.state = 'locked';
+        mastery.comparisonChapter = createInitialComparisonChapterState('training');
+        this.activeSlotIndex = null;
+    }
+
     isPreviewActive(): boolean { return this.previewSnapshot !== null; }
 
     endPreview(): boolean {
@@ -313,10 +339,9 @@ export class GameStateManager {
     }
 
     private migrateExistingMasteryData(data: MasteryData): MasteryData {
-        return {
-            ...data,
-            coopAutoPromotionBases: data.coopAutoPromotionBases || {},
-        };
+        restoreLearningPlacement(data);
+        ensureComparisonChapter(data);
+        return { ...data, coopAutoPromotionBases: data.coopAutoPromotionBases || {} };
     }
 
     /**
@@ -361,6 +386,7 @@ export class GameStateManager {
             lastPoolProblems: [],
             lastStruggleOfferFight: 0,
             coopAutoPromotionBases: {},
+            comparisonChapter: createInitialComparisonChapterState(),
         };
     }
 

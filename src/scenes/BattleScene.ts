@@ -55,6 +55,9 @@ import { completeUnderwaterEncounter, hasUnderwaterBlessing } from '../systems/U
 import { resolveTidalWave } from '../systems/UnderwaterTidalWave';
 import { UnderwaterBossHud } from '../ui/UnderwaterBossHud';
 import { StorySystem } from '../systems/StorySystem';
+import { applyProblemComplexityDamage } from '../systems/ProblemComplexity';
+import { markComparisonStageIntroSeen } from '../systems/ComparisonLearningSystem';
+import { calculateShieldAnswerBlock } from '../systems/ShieldBlockSystem';
 
 export class BattleScene extends Phaser.Scene implements BattleSceneCallbacks {
     // Turn management
@@ -74,6 +77,7 @@ export class BattleScene extends Phaser.Scene implements BattleSceneCallbacks {
     private potionButton!: Phaser.GameObjects.Container;
     private blockUI!: Phaser.GameObjects.Container;
     private blockDamageText!: Phaser.GameObjects.Text;
+    private blockResultText: Phaser.GameObjects.Text | null = null;
     private blockTimerText!: Phaser.GameObjects.Text;
     private blockAttemptsText!: Phaser.GameObjects.Text;
     private targetIndicator!: Phaser.GameObjects.Image;
@@ -97,12 +101,11 @@ export class BattleScene extends Phaser.Scene implements BattleSceneCallbacks {
     // Block state
     private isBlockPhase: boolean = false;
     private blockCorrectCount: number = 0;
-    private blockMaxAttempts: number = 0;
-    private blockAttemptsMade: number = 0;
-    private blockTimeRemaining: number = 0;
     private blockTimerEvent: Phaser.Time.TimerEvent | null = null;
     private pendingDamage: number = 0;
+    private currentBlockPower: number = 1;
     private mathBoardContext: 'attack' | 'block' | null = null;
+    private comparisonTestMode = false;
 
     // Multi-enemy attack tracking
     private currentAttackingEnemyIndex: number = 0;
@@ -246,11 +249,13 @@ export class BattleScene extends Phaser.Scene implements BattleSceneCallbacks {
         mockMode?: boolean;
         storyVictory?: 'forest-crystal';
         ritualBossAttackReduction?: number;
+        comparisonTest?: boolean;
     }): void {
         // Get global game state
         this.gameState = GameStateManager.getInstance();
         const player = this.gameState.getPlayer();
         this.mockMode = data.mockMode === true;
+        this.comparisonTestMode = data.comparisonTest === true;
         this.storyVictory = data.storyVictory ?? null;
         this.ritualBossAttackReduction = Math.max(0, data.ritualBossAttackReduction ?? 0);
         this.mockProblemCursor = 0;
@@ -627,9 +632,15 @@ export class BattleScene extends Phaser.Scene implements BattleSceneCallbacks {
         // Initialize systems
         this.mathEngine = new MathEngine(this.registry);
 
-        // Create math board with multi-problem callback (but we'll use showSingle)
+        // One shared board owns each complete attack batch; pets can still use showSingle.
         this.mathBoard = new MathBoard(this, this.onMathComplete.bind(this));
         this.mathBoard.setActiveProblemChangedCallback((snapshot) => {
+            // A previous block's floating result must not cover a new question.
+            if (this.blockResultText) {
+                this.tweens.killTweensOf(this.blockResultText);
+                this.blockResultText.destroy();
+                this.blockResultText = null;
+            }
             this.publishRemoteMathState(snapshot);
         });
         this.unsubscribeRemoteCommand = this.remoteInput.onCommand((command) => {
@@ -2322,6 +2333,7 @@ export class BattleScene extends Phaser.Scene implements BattleSceneCallbacks {
             subtitle: this.coopSession?.getActivePlayer() === 'B' ? 'Hráč 2' : undefined,
             problem: snapshot.problem,
             choices: snapshot.choices,
+            comparison: snapshot.comparison,
         });
     }
 
@@ -2473,10 +2485,32 @@ export class BattleScene extends Phaser.Scene implements BattleSceneCallbacks {
         // Get mastery system with co-op safety (ensures correct player context)
         const masterySystem = this.getCoopSafeMasterySystem();
 
+        const comparisonState = masterySystem.getComparisonChapterState();
+        if (masterySystem.shouldTrainComparisonChapter()
+            || ((this.comparisonTestMode || this.isCoopMode) && comparisonState.status === 'exam_ready')) {
+            const count = this.getAttackProblemCount(masterySystem);
+            const problems = masterySystem.shouldTrainComparisonChapter()
+                ? masterySystem.generateComparisonTrainingProblems(count, this.comparisonTestMode)
+                : masterySystem.generateComparisonExamProblems().slice(0, count).map(problem => {
+                    if (problem.comparisonMeta) {
+                        problem.comparisonMeta.exam = false;
+                        problem.comparisonMeta.diagnosticMode = true;
+                    }
+                    return problem;
+                });
+            if (equippedSword?.mathProblemType) problems.push(this.generateSwordProblem(equippedSword));
+            this.applyAttackPowerDistribution(problems);
+            this.battleState.currentProblems = problems;
+            this.mathBoardContext = 'attack';
+            this.showComparisonLessonThenProblems(problems, masterySystem);
+            return;
+        }
+
         // Check if we're in a boss fight with phase-specific math
         if (this.isBoss && this.bossPhases[this.currentBossPhase]) {
             const phase = this.bossPhases[this.currentBossPhase];
-            if (phase.mathType) {
+            const phaseUsesComparison = phase.mathType === 'comparison';
+            if (phase.mathType && (!phaseUsesComparison || masterySystem.isComparisonChapterComplete())) {
                 const problemCount = this.getAttackProblemCount(masterySystem);
                 const problems: MathProblem[] = [];
                 for (let i = 0; i < problemCount; i++) {
@@ -2535,6 +2569,23 @@ export class BattleScene extends Phaser.Scene implements BattleSceneCallbacks {
         this.mathBoard.show(problems);
     }
 
+    private showComparisonLessonThenProblems(problems: MathProblem[], masterySystem: MasterySystem): void {
+        const chapter = masterySystem.getComparisonChapterState();
+        const stage = masterySystem.getCurrentComparisonStage();
+        const owner = this.coopSession?.getActivePlayer();
+        this.mathBoard.show(problems, {
+            presentation: 'sequential',
+            introduction: masterySystem.needsComparisonStageIntro() ? stage ?? undefined : undefined,
+            support: chapter.stages.find(progress => progress.stage === 'number_symbol'),
+            onIntroComplete: () => {
+                if (this.isCoopMode && owner !== this.coopSession?.getActivePlayer()) return;
+                markComparisonStageIntroSeen(chapter);
+                if (this.isCoopMode) this.coopSession?.persistActiveMasteryProgress();
+                else this.gameState.save();
+            },
+        });
+    }
+
     private createMockProblems(count: number): MathProblem[] {
         const bank: Array<Pick<MathProblem, 'operand1' | 'operand2' | 'operator' | 'answer' | 'choices'>> = [
             { operand1: 8, operand2: 7, operator: '+', answer: 15, choices: [14, 15, 16] },
@@ -2560,7 +2611,7 @@ export class BattleScene extends Phaser.Scene implements BattleSceneCallbacks {
         });
     }
 
-    private onMathComplete(mathBoardDamage: number, results: boolean[], timings: number[]): void {
+    private onMathComplete(mathBoardDamage: number, results: boolean[], timings: number[], assisted: boolean[] = []): void {
         const context = this.mathBoardContext;
         this.mathBoardContext = null;
 
@@ -2593,12 +2644,14 @@ export class BattleScene extends Phaser.Scene implements BattleSceneCallbacks {
                     }
                 }
                 if (isCorrect) {
-                    correctCount++;
-                    // Quick block bonus: +1 extra block if answered under mastery RT threshold (per-problem)
                     const masteryRT = masterySystem.getMasteryRTThreshold(problem?.masteryKey);
-                    if (timings[index] && timings[index] < masteryRT) {
-                        correctCount++;
-                    }
+                    correctCount = calculateShieldAnswerBlock(
+                        this.currentBlockPower,
+                        this.pendingDamage,
+                        true,
+                        Boolean(timings[index] && timings[index] < masteryRT),
+                        assisted[index] === true,
+                    );
                 }
             });
 
@@ -2618,8 +2671,6 @@ export class BattleScene extends Phaser.Scene implements BattleSceneCallbacks {
             }
 
             this.blockCorrectCount = correctCount;
-            this.blockAttemptsMade = results.length;
-
             // Update UI with final count
             const currentBlock = Math.min(this.blockCorrectCount, this.pendingDamage);
             this.blockAttemptsText.setText(`BLOKUJI: ${currentBlock} DMG`);
@@ -2635,6 +2686,7 @@ export class BattleScene extends Phaser.Scene implements BattleSceneCallbacks {
         // Record mastery data and track arena wrong answers
         const masterySystem = this.getCoopSafeMasterySystem();
 
+        let recordedComparisonAttempt = false;
         results.forEach((isCorrect, index) => {
             const problem = this.battleState.currentProblems[index];
             if (problem) {
@@ -2651,6 +2703,15 @@ export class BattleScene extends Phaser.Scene implements BattleSceneCallbacks {
                     const ctx = problem.source === 'sword' ? 'battle_sword' : 'battle';
                     masterySystem.recordSolve(problem.masteryKey, isCorrect, responseTimeMs, ctx);
                 }
+                if (problem.comparisonMeta) {
+                    recordedComparisonAttempt = true;
+                    masterySystem.recordComparisonSolve(
+                        problem,
+                        isCorrect,
+                        timings[index] || 0,
+                        assisted[index] === true,
+                    );
+                }
 
                 if (!isCorrect && this.fromArena) {
                     // Track wrong answers for arena perfect wave calculation
@@ -2666,6 +2727,7 @@ export class BattleScene extends Phaser.Scene implements BattleSceneCallbacks {
                 }
             }
         });
+        if (recordedComparisonAttempt && !this.isCoopMode) this.gameState.save();
 
         // Use MathBoard's damage total (includes multipliers + speed charge bar fill bonuses)
         if (this.isCoopMode && !this.mockMode) this.coopSession?.persistActiveMasteryProgress();
@@ -2716,6 +2778,7 @@ export class BattleScene extends Phaser.Scene implements BattleSceneCallbacks {
             this.gameState.getPlayer().attack,
             this.isCoopMode ? 'coop' : 'solo',
         );
+        problems.forEach(applyProblemComplexityDamage);
     }
 
     /** Generate a sword problem from mastery master pool, with fallbacks */
@@ -2791,7 +2854,7 @@ export class BattleScene extends Phaser.Scene implements BattleSceneCallbacks {
             if (problem) {
                 problem.damageMultiplier = pet.damageMultiplier || 1;
                 problem.source = 'pet';
-                return problem;
+                return applyProblemComplexityDamage(problem);
             }
         }
 
@@ -2802,12 +2865,12 @@ export class BattleScene extends Phaser.Scene implements BattleSceneCallbacks {
             if (problem) {
                 problem.damageMultiplier = pet.damageMultiplier || 1;
                 problem.source = 'pet';
-                return problem;
+                return applyProblemComplexityDamage(problem);
             }
         }
 
         // 3. Last resort: legacy pet problem generation
-        return this.mathEngine.generatePetTurnProblem(pet);
+        return applyProblemComplexityDamage(this.mathEngine.generatePetTurnProblem(pet));
     }
 
     /** Show effect when speed charge bar fills and grants bonus damage */
@@ -2861,6 +2924,14 @@ export class BattleScene extends Phaser.Scene implements BattleSceneCallbacks {
     }
 
     private startBlockPhase(damage: number): void {
+        if (damage <= 0) {
+            this.applyDamageToPlayer(0);
+            if (this.blockPhaseResumeCallback) {
+                this.blockPhaseResumeCallback();
+                this.blockPhaseResumeCallback = undefined;
+            }
+            return;
+        }
         const shield = this.getEquippedShield();
         if (!shield) {
             // No shield - apply damage directly and resume enemy attack sequence
@@ -2875,30 +2946,36 @@ export class BattleScene extends Phaser.Scene implements BattleSceneCallbacks {
         this.isBlockPhase = true;
         this.pendingDamage = damage;
         this.blockCorrectCount = 0;
-        this.blockAttemptsMade = 0;
-        this.blockMaxAttempts = shield.blockAttempts || 1;
-        this.blockTimeRemaining = shield.blockTime || 5;
+        this.currentBlockPower = shield.blockPower ?? shield.blockAttempts ?? 1;
 
-        // Show block UI (no countdown timer — block phase ends when all problems answered)
-        this.blockUI.setVisible(true);
+        // The common board carries the shield and incoming attack in its footer.
+        // Keep the former top banner hidden so it cannot cover the lesson header.
+        this.blockUI.setVisible(false);
         this.blockDamageText.setText(`ÚTOK: ${damage} DMG`);
         this.blockTimerText.setVisible(false); // Timer removed; block ends on completion
         this.blockAttemptsText.setText(`BLOKUJI: 0 DMG`);
 
         // Generate block problems from mastery review pool (Fluent sub-atoms)
-        const problems = this.generateBlockProblemsFromPool(this.blockMaxAttempts);
+        const problems = this.generateBlockProblemsFromPool(1);
+        if (problems.length === 0) {
+            // Fresh/imported saves may not have a populated mastery pool yet.
+            // A shield turn must still contain exactly one answerable problem.
+            problems.push(this.mathEngine.generateBlockProblem(shield));
+        }
         this.battleState.currentProblems = problems;
 
         // DEBUG: Log block phase setup
         console.log('[BattleScene] Block phase started:', {
             shieldId: shield?.id,
-            blockAttempts: this.blockMaxAttempts,
+            blockPower: this.currentBlockPower,
             mathProblemTypes: shield?.mathProblemTypes,
             problems: problems.map(p => ({ answer: p.answer, choices: p.choices }))
         });
 
         this.mathBoardContext = 'block';
-        this.mathBoard.show(problems);
+        this.mathBoard.show(problems, {
+            defense: { power: this.currentBlockPower, incomingDamage: damage },
+        });
     }
 
     private endBlockPhase(): void {
@@ -2916,7 +2993,7 @@ export class BattleScene extends Phaser.Scene implements BattleSceneCallbacks {
             this.blockTimerEvent = null;
         }
 
-        // Each correct answer blocks 1 damage, max is the shield's blockAttempts or incoming damage
+        // One answer supplies the shield's configured block power; incoming damage remains the cap.
         const damageBlocked = Math.min(this.blockCorrectCount, this.pendingDamage);
         const finalDamage = this.pendingDamage - damageBlocked;
 
@@ -2933,6 +3010,7 @@ export class BattleScene extends Phaser.Scene implements BattleSceneCallbacks {
                 : `-${damageBlocked} dmg`;
 
             const blockText = this.add.text(640, 180, blockMessage.toUpperCase(), {
+                resolution: 2,
                 fontSize: '28px',
                 fontFamily: 'Arial, sans-serif',
                 color: '#4488ff',
@@ -2940,13 +3018,17 @@ export class BattleScene extends Phaser.Scene implements BattleSceneCallbacks {
                 stroke: '#000000',
                 strokeThickness: 4,
             }).setOrigin(0.5).setDepth(200);
+            this.blockResultText = blockText;
 
             this.tweens.add({
                 targets: blockText,
                 alpha: 0,
                 y: 100,
                 duration: 1500,
-                onComplete: () => blockText.destroy(),
+                onComplete: () => {
+                    if (this.blockResultText === blockText) this.blockResultText = null;
+                    blockText.destroy();
+                },
             });
         }
 

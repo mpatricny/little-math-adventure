@@ -3,9 +3,11 @@ import Phaser from 'phaser';
 import { MathEngine } from '../systems/MathEngine';
 import { GameStateManager } from '../systems/GameStateManager';
 import { CoopSessionManager } from '../systems/CoopSessionManager';
+import { getLearningFrontier } from '../systems/LearningProgress';
+import { ensureComparisonChapter } from '../systems/ComparisonLearningSystem';
 import { MasterySystem } from '../systems/MasterySystem';
 import { ProblemDatabase } from '../systems/ProblemDatabase';
-import { ALL_BANDS, ALL_SUB_ATOM_NUMBERS, BandId, MasteryData, MathProblem, MathProblemDef, PlayerState, ProblemDefinition, ProblemStats, SubAtomId } from '../types';
+import { MasteryData, MathProblem, MathProblemDef, PlayerState, ProblemDefinition, ProblemStats, SubAtomId } from '../types';
 import { formatMathProblem } from '../utils/formatMathProblem';
 
 const ROW_COUNT = 8;
@@ -144,7 +146,8 @@ export class ManaPlayerLane {
     // ============ STATIC: BUILD MANA POOL ============
 
     static buildManaPool(mathEngine: MathEngine, masteryData?: MasteryData): PoolProblem[] {
-        const frontierSubAtom = masteryData ? ManaPlayerLane.getFrontierSubAtom(masteryData) : null;
+        if (masteryData) ensureComparisonChapter(masteryData);
+        const frontierSubAtom = masteryData ? getLearningFrontier(masteryData) : null;
         if (frontierSubAtom) {
             const masteryPool = ManaPlayerLane.buildFrontierSubAtomPool(frontierSubAtom);
             if (masteryPool.length > 0) {
@@ -273,48 +276,14 @@ export class ManaPlayerLane {
         }
 
         if (problem.operator === '+') {
-            return problem.operand1 < 10 && problem.operand2 > 0 && problem.answer > 10;
+            return problem.operand1 < 10 && problem.operand2 > 0 && problem.operand2 < 10 && problem.answer > 10;
         }
 
         return problem.operator === '-'
             && problem.operand1 > 10
             && problem.operand2 > 0
+            && problem.operand2 < 10
             && problem.answer < 10;
-    }
-
-    private static getFrontierSubAtom(data: MasteryData): SubAtomId | null {
-        const currentBand = ManaPlayerLane.getCurrentBand(data);
-        for (const num of ALL_SUB_ATOM_NUMBERS) {
-            const id = `${currentBand}${num}` as SubAtomId;
-            if (data.subAtoms[id].state === 'training') {
-                return id;
-            }
-        }
-        for (const num of ALL_SUB_ATOM_NUMBERS) {
-            const id = `${currentBand}${num}` as SubAtomId;
-            if (data.subAtoms[id].state !== 'mastery') {
-                return id;
-            }
-        }
-        return `${currentBand}1` as SubAtomId;
-    }
-
-    private static getCurrentBand(data: MasteryData): BandId {
-        for (let i = ALL_BANDS.length - 1; i >= 0; i--) {
-            const band = ALL_BANDS[i];
-            const state = data.bands[band].state;
-            if (state !== 'locked' && state !== 'secure' && state !== 'fluent' && state !== 'mastery') {
-                return band;
-            }
-        }
-        for (let i = ALL_BANDS.length - 1; i >= 0; i--) {
-            const band = ALL_BANDS[i];
-            const state = data.bands[band].state;
-            if (state !== 'locked' && state !== 'mastery') {
-                return band;
-            }
-        }
-        return 'A';
     }
 
     // ============ CHANNEL ============
@@ -549,7 +518,7 @@ export class ManaPlayerLane {
 
     private fetchNextPoolProblem(): PoolProblem {
         if (this.manaPool.length === 0) {
-            this.manaPool = ManaPlayerLane.buildManaPool(this.mathEngine);
+            this.manaPool = ManaPlayerLane.buildManaPool(this.mathEngine, this.masteryData ?? undefined);
         }
         if (this.poolIndex >= this.manaPool.length) {
             this.poolIndex = 0;

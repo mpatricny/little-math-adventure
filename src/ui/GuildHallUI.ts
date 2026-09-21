@@ -5,17 +5,16 @@ import { CoopSessionManager } from '../systems/CoopSessionManager';
 import { SceneBuilder } from '../systems/SceneBuilder';
 import { MasterySystem } from '../systems/MasterySystem';
 import {
-    BandId,
     ExamConfig,
     ExamType,
     EXAM_CONFIGS,
-    SubAtomId,
+    MasteryTargetId,
 } from '../types';
 import { MedievalActionButton } from './MedievalActionButton';
 
 export type GuildAvailableExam = {
     type: ExamType;
-    targetId: SubAtomId | BandId;
+    targetId: MasteryTargetId;
     label: string;
 };
 

@@ -280,7 +280,7 @@ export function estimateArenaDifficulty(
 
   // Factor in blocking
   const blockReduction = player.shield
-    ? player.shield.blockAttempts * accuracy.blockProblems
+    ? player.shield.blockPower * accuracy.blockProblems
     : 0;
   const reducedDamage = Math.max(0, estimatedDamageTaken - blockReduction * stats.waveDetails.length);
 

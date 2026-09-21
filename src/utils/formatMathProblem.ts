@@ -16,6 +16,11 @@ interface FormattableProblem {
     operator3?: string;
     answer: number;
     problemType?: string;
+    comparisonMeta?: {
+        representation: 'size' | 'count' | 'number' | 'expression';
+        leftValue: number;
+        rightValue: number;
+    };
 }
 
 /**
@@ -29,6 +34,18 @@ export function formatMathProblem(problem: FormattableProblem, mode: 'question' 
     const { operand1, operand2, operand3, operand4, operator, operator2, operator3, answer } = problem;
     const op = displayOp(operator);
     const isThreeOp = operand4 !== undefined && operator2;
+
+    if (problem.comparisonMeta) {
+        const meta = problem.comparisonMeta;
+        const sym = mode === 'question' ? '○' : COMPARISON_SYMBOLS[answer];
+        if (meta.representation === 'number') {
+            return `${meta.leftValue} ${sym} ${meta.rightValue}`;
+        }
+        if (meta.representation === 'expression') {
+            return `${operand1} ${op} ${operand2} ${sym} ${meta.rightValue}`;
+        }
+        return mode === 'question' ? 'Vyber správný znak' : `Správně: ${sym}`;
+    }
 
     switch (problem.problemType) {
         case 'comparison_eq_vs_eq': {

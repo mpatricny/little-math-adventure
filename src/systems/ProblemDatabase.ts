@@ -253,15 +253,8 @@ export class ProblemDatabase {
                                 break;
                             }
                             case 'missing_part': {
-                                // a op1 ? op2 c = answer → missing is b
-                                const key = `${subAtomId}:${a}${op1}?${op2}${c}=${answer}:missing_part`;
-                                if (!results.some(r => r.key === key)) {
-                                    results.push({
-                                        key, bandId: band, subAtomId, form,
-                                        operand1: a, operand2: answer, operand3: c,
-                                        operator: op1, operator2: op2, answer: b,
-                                    });
-                                }
+                                // Three-operand missing-part tasks are intentionally excluded.
+                                // At this stage the child always computes the final result.
                                 break;
                             }
                             case 'compare_equation_vs_number': {

@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="100" height="106" viewBox="0 0 100 106"><defs><linearGradient id="cc-apple-fill" x1="0" y1="0" x2=".8" y2="1"><stop stop-color="#ffb18a"/><stop offset=".35" stop-color="#e46b47"/><stop offset="1" stop-color="#a23d29"/></linearGradient><linearGradient id="cc-leaf-fill" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#c2d782"/><stop offset="1" stop-color="#597d3d"/></linearGradient><linearGradient id="cc-croc-fill" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#b6d478"/><stop offset=".45" stop-color="#80ad4e"/><stop offset="1" stop-color="#497c42"/></linearGradient></defs>
+      <path d="M50 29Q43 19 48 9" stroke="#6d4c2b" stroke-width="6" stroke-linecap="round" fill="none"/>
+      <path d="M50 24Q58 3 81 12Q74 31 50 24Z" fill="url(#cc-leaf-fill)" stroke="#385335" stroke-width="2"/>
+      <path d="M50 32C17 9 4 39 11 65C15 87 29 100 44 94Q50 91 56 94C76 102 91 78 92 58C96 27 73 17 50 32Z" fill="url(#cc-apple-fill)" stroke="#722e23" stroke-width="3"/>
+      <path d="M25 43Q17 54 23 66" stroke="#ffcfad" stroke-width="7" opacity=".8" stroke-linecap="round" fill="none"/>
+      <path d="M70 83Q79 75 81 61" stroke="#8b3626" stroke-width="4" stroke-linecap="round" fill="none" opacity=".5"/>
+    </svg>

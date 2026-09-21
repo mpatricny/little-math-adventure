@@ -632,15 +632,14 @@ export class ShopScene extends Phaser.Scene {
             }).setOrigin(0.5).setDepth((labelShields.depth ?? 0) + 1);
         }
 
-        // Define the 4 items to show: 2 swords + 2 shields
-        const weapons = this.allItems.filter(item => item.type === 'weapon');
-        const shields = this.allItems.filter(item => item.type === 'shield');
-
+        const byId = new Map(this.allItems.map(item => [item.id, item]));
         const displayItems: { containerId: string; item: ItemDefinition | undefined; type: ItemType }[] = [
-            { containerId: 'item-container', item: weapons[0], type: 'weapon' },
-            { containerId: 'item-container-1', item: weapons[1], type: 'weapon' },
-            { containerId: 'item-container-2', item: shields[0], type: 'shield' },
-            { containerId: 'item-container-3', item: shields[1], type: 'shield' },
+            { containerId: 'item-container', item: byId.get('sword_wooden'), type: 'weapon' },
+            { containerId: 'item-container-1', item: byId.get('sword_iron'), type: 'weapon' },
+            { containerId: 'item-container-4', item: byId.get('sword_reinforced'), type: 'weapon' },
+            { containerId: 'item-container-2', item: byId.get('shield_wooden'), type: 'shield' },
+            { containerId: 'item-container-3', item: byId.get('shield_iron'), type: 'shield' },
+            { containerId: 'item-container-5', item: byId.get('shield_reinforced'), type: 'shield' },
         ];
 
         for (const entry of displayItems) {
@@ -656,9 +655,10 @@ export class ShopScene extends Phaser.Scene {
             if (item.spriteKey) {
                 const iconW = entry.type === 'weapon' ? 45 : 55;
                 const iconH = entry.type === 'weapon' ? 60 : 55;
-                const icon = this.add.image(container.x, container.y, item.spriteKey, item.iconFrame)
-                    .setDisplaySize(iconW, iconH)
-                    .setDepth((container.depth ?? 0) + 1);
+                const icon = this.add.image(container.x, container.y, item.spriteKey, item.iconFrame);
+                const frame = icon.frame;
+                icon.setScale(Math.min(iconW / frame.realWidth, iconH / frame.realHeight));
+                icon.setDepth((container.depth ?? 0) + 1);
                 this.itemIcons.set(item.id, icon);
             }
 
@@ -902,9 +902,14 @@ export class ShopScene extends Phaser.Scene {
                          : null;
         if (!equippedId) return false;
         if (equippedId === item.id) return true;  // Owned
-        // Compare price as proxy for power — if equipped item costs >= this one, it's obsolete
         const equippedItem = this.allItems.find(i => i.id === equippedId);
-        return equippedItem ? equippedItem.price >= item.price : false;
+        if (!equippedItem) return false;
+        const itemPower = item.type === 'weapon' ? (item.attackBonus ?? 0) : (item.blockPower ?? item.blockAttempts ?? 0);
+        const equippedPower = equippedItem.type === 'weapon'
+            ? (equippedItem.attackBonus ?? 0)
+            : (equippedItem.blockPower ?? equippedItem.blockAttempts ?? 0);
+        return equippedPower > itemPower
+            || (equippedPower === itemPower && (equippedItem.tier ?? 0) >= (item.tier ?? 0));
     }
 
     protected attemptPurchase(): void {
@@ -1048,8 +1053,8 @@ export class ShopScene extends Phaser.Scene {
                 lines.push({ text: `${item.damageMultiplier}× síla`, color: '#66ccff' });
             }
         } else if (item.type === 'shield') {
-            if (item.blockTime) lines.push({ text: `Blok: ${item.blockTime}s`, color: '#aaddff' });
-            if (item.blockAttempts) lines.push({ text: `Pokusy: ${item.blockAttempts}`, color: '#aaddff' });
+            lines.push({ text: 'Jedna obranná úloha', color: '#aaddff' });
+            lines.push({ text: `Blok: ${item.blockPower ?? item.blockAttempts ?? 1}`, color: '#aaddff' });
         }
 
         const contentHeight = lines.length * lineHeight;

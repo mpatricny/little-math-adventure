@@ -27,7 +27,7 @@ export function createGuildExamBoard(
     shadow.fillRoundedRect(-halfW + 10, -halfH + 16, width, height, 28);
 
     const oak = scene.add.graphics();
-    oak.fillGradientStyle(0x5b351d, 0x2b170d, 0x211109, 0x4a2917, 1);
+    oak.fillStyle(0x422613, 1);
     oak.fillRoundedRect(-halfW, -halfH, width, height, 26);
     oak.lineStyle(5, 0x15100d, 1);
     oak.strokeRoundedRect(-halfW, -halfH, width, height, 26);
@@ -41,7 +41,9 @@ export function createGuildExamBoard(
     steel.strokeRoundedRect(-halfW + 19, -halfH + 19, width - 38, height - 38, 14);
 
     const parchment = scene.add.graphics();
-    parchment.fillGradientStyle(0xf2d790, 0xd9ad5e, 0xc9954b, 0xebc976, 1);
+    // A stable paper fill avoids unsupported Canvas gradients and WebGL's
+    // visible triangulation seam across this rounded path.
+    parchment.fillStyle(0xe4bf75, 1);
     parchment.fillRoundedRect(-halfW + 29, -halfH + 29, width - 58, height - 58, 14);
     parchment.lineStyle(3, 0x6f431f, 0.95);
     parchment.strokeRoundedRect(-halfW + 29, -halfH + 29, width - 58, height - 58, 14);
