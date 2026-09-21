@@ -79,7 +79,8 @@ describe('Guild Hall layout contract', () => {
         expect(guildSource).toContain('MINIHRA · ZDARMA');
         expect(guildSource).not.toContain('MANA_COLLECTION_PLAY_COST');
         expect(guildSource).not.toContain('NEDOSTATEK MINCÍ');
-        expect(manaSceneSource).toContain('Jen sčítání a odčítání se dvěma čísly.');
+        expect(manaSceneSource).not.toContain('spendCoins');
+        expect(manaSceneSource).not.toContain('PLAY_COST');
     });
 
     it('registers existing 1280x720 backgrounds for both towns', () => {

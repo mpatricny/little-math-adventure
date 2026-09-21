@@ -5,7 +5,7 @@ import { DailyProgressSystem } from './DailyProgressSystem';
  * ManaSystem handles mana resource for Crystal Forge operations
  *
  * Mana is a simple counter (like crystals):
- * - Earned by solving math problems in Guild (at 5/10/20 correct thresholds)
+ * - Collection minigame rewards use ManaCollectionRewards (shared score in co-op)
  * - Spent in Crystal Forge for merge/split operations (1 mana per operation)
  * - No maximum limit - accumulates indefinitely
  * - Starting value for new players: 3

@@ -9443,102 +9443,22 @@
       },
       "elements": [
         {
-          "id": "title",
-          "asset": "ui.containers.empty",
-          "x": 640,
-          "y": 35,
-          "depth": 10
-        },
-        {
-          "id": "livesDisplay",
-          "asset": "ui.containers.empty",
-          "x": 100,
-          "y": 45,
-          "depth": 10
-        },
-        {
-          "id": "manaDisplay",
-          "asset": "ui.containers.empty",
-          "x": 1100,
-          "y": 45,
-          "depth": 10
-        },
-        {
-          "id": "resolveButton",
-          "asset": "ui.containers.empty",
-          "x": 600,
-          "y": 620,
-          "depth": 20
-        },
-        {
-          "id": "problemText",
-          "asset": "ui.containers.empty",
-          "x": 600,
-          "y": 0,
-          "depth": 15
-        },
-        {
           "id": "manaIntroPopupHost",
           "asset": "ui.containers.empty",
           "x": 640,
           "y": 360,
           "depth": 100,
-          "width": 620,
-          "height": 485
+          "width": 800,
+          "height": 630
         },
         {
           "id": "manaIntroTitleHost",
           "asset": "ui.containers.empty",
           "x": 640,
-          "y": 174,
+          "y": 123,
           "depth": 102,
-          "width": 410,
-          "height": 32
-        },
-        {
-          "id": "manaIntroObjectiveHost",
-          "asset": "ui.containers.empty",
-          "x": 640,
-          "y": 232,
-          "depth": 102,
-          "width": 500,
-          "height": 48
-        },
-        {
-          "id": "manaIntroRulesHost",
-          "asset": "ui.containers.empty",
-          "x": 640,
-          "y": 332,
-          "depth": 102,
-          "width": 500,
-          "height": 145
-        },
-        {
-          "id": "manaIntroRewardHost",
-          "asset": "ui.containers.empty",
-          "x": 640,
-          "y": 442,
-          "depth": 102,
-          "width": 500,
+          "width": 450,
           "height": 44
-        },
-        {
-          "id": "manaIntroBackHost",
-          "asset": "ui.containers.empty",
-          "x": 505,
-          "y": 526,
-          "depth": 103,
-          "width": 190,
-          "height": 62
-        },
-        {
-          "id": "manaIntroPlayHost",
-          "asset": "ui.containers.empty",
-          "x": 745,
-          "y": 526,
-          "depth": 103,
-          "width": 250,
-          "height": 62
         },
         {
           "id": "manaResultsPopupHost",
@@ -9546,35 +9466,458 @@
           "x": 640,
           "y": 360,
           "depth": 100,
-          "width": 620,
-          "height": 485
+          "width": 800,
+          "height": 630
         },
         {
           "id": "manaResultsTitleHost",
           "asset": "ui.containers.empty",
           "x": 640,
-          "y": 174,
+          "y": 123,
           "depth": 102,
-          "width": 410,
-          "height": 32
+          "width": 450,
+          "height": 44
         },
         {
-          "id": "manaResultsStatsHost",
+          "id": "manaIntroObjectiveHost",
           "asset": "ui.containers.empty",
           "x": 640,
-          "y": 338,
+          "y": 206,
           "depth": 102,
-          "width": 500,
-          "height": 245
+          "width": 590,
+          "height": 40
+        },
+        {
+          "id": "manaIntroDemoHost",
+          "asset": "ui.containers.empty",
+          "x": 623,
+          "y": 353,
+          "depth": 102,
+          "width": 354,
+          "height": 244
+        },
+        {
+          "id": "manaIntroRewardHost",
+          "asset": "ui.containers.empty",
+          "x": 881,
+          "y": 327,
+          "depth": 102,
+          "width": 100,
+          "height": 140
+        },
+        {
+          "id": "manaIntroPlayerAHost",
+          "asset": "ui.containers.empty",
+          "x": 470,
+          "y": 519,
+          "depth": 102,
+          "width": 282,
+          "height": 38
+        },
+        {
+          "id": "manaIntroPlayerBHost",
+          "asset": "ui.containers.empty",
+          "x": 810,
+          "y": 519,
+          "depth": 102,
+          "width": 282,
+          "height": 38
+        },
+        {
+          "id": "manaIntroLivesHost",
+          "asset": "ui.containers.empty",
+          "x": 640,
+          "y": 519,
+          "depth": 102,
+          "width": 280,
+          "height": 40
+        },
+        {
+          "id": "manaIntroBackHost",
+          "asset": "ui.containers.empty",
+          "x": 500,
+          "y": 578,
+          "depth": 103,
+          "width": 210,
+          "height": 70
+        },
+        {
+          "id": "manaIntroPlayHost",
+          "asset": "ui.containers.empty",
+          "x": 765,
+          "y": 578,
+          "depth": 103,
+          "width": 270,
+          "height": 70
         },
         {
           "id": "manaResultsContinueHost",
           "asset": "ui.containers.empty",
           "x": 640,
-          "y": 526,
+          "y": 578,
           "depth": 103,
+          "width": 270,
+          "height": 70
+        },
+        {
+          "id": "manaResultACardHost",
+          "asset": "ui.containers.empty",
+          "x": 480,
+          "y": 353,
+          "depth": 101,
+          "width": 270,
+          "height": 326
+        },
+        {
+          "id": "manaResultANameHost",
+          "asset": "ui.containers.empty",
+          "x": 480,
+          "y": 227,
+          "depth": 102,
+          "width": 246,
+          "height": 56
+        },
+        {
+          "id": "manaResultACorrectIconHost",
+          "asset": "ui.containers.empty",
+          "x": 428,
+          "y": 326,
+          "depth": 102,
+          "width": 84,
+          "height": 84
+        },
+        {
+          "id": "manaResultACorrectValueHost",
+          "asset": "ui.containers.empty",
+          "x": 537,
+          "y": 326,
+          "depth": 102,
+          "width": 112,
+          "height": 78
+        },
+        {
+          "id": "manaResultAManaIconHost",
+          "asset": "ui.containers.empty",
+          "x": 428,
+          "y": 443,
+          "depth": 102,
+          "width": 106,
+          "height": 106
+        },
+        {
+          "id": "manaResultAManaValueHost",
+          "asset": "ui.containers.empty",
+          "x": 537,
+          "y": 443,
+          "depth": 102,
+          "width": 112,
+          "height": 78
+        },
+        {
+          "id": "manaResultBCardHost",
+          "asset": "ui.containers.empty",
+          "x": 800,
+          "y": 353,
+          "depth": 101,
+          "width": 270,
+          "height": 326
+        },
+        {
+          "id": "manaResultBNameHost",
+          "asset": "ui.containers.empty",
+          "x": 800,
+          "y": 227,
+          "depth": 102,
+          "width": 246,
+          "height": 56
+        },
+        {
+          "id": "manaResultBCorrectIconHost",
+          "asset": "ui.containers.empty",
+          "x": 748,
+          "y": 326,
+          "depth": 102,
+          "width": 84,
+          "height": 84
+        },
+        {
+          "id": "manaResultBCorrectValueHost",
+          "asset": "ui.containers.empty",
+          "x": 857,
+          "y": 326,
+          "depth": 102,
+          "width": 112,
+          "height": 78
+        },
+        {
+          "id": "manaResultBManaIconHost",
+          "asset": "ui.containers.empty",
+          "x": 748,
+          "y": 443,
+          "depth": 102,
+          "width": 106,
+          "height": 106
+        },
+        {
+          "id": "manaResultBManaValueHost",
+          "asset": "ui.containers.empty",
+          "x": 857,
+          "y": 443,
+          "depth": 102,
+          "width": 112,
+          "height": 78
+        },
+        {
+          "id": "manaResultsoloCardHost",
+          "asset": "ui.containers.empty",
+          "x": 640,
+          "y": 353,
+          "depth": 101,
+          "width": 340,
+          "height": 326
+        },
+        {
+          "id": "manaResultsoloNameHost",
+          "asset": "ui.containers.empty",
+          "x": 640,
+          "y": 227,
+          "depth": 102,
+          "width": 310,
+          "height": 56
+        },
+        {
+          "id": "manaResultsoloCorrectIconHost",
+          "asset": "ui.containers.empty",
+          "x": 588,
+          "y": 326,
+          "depth": 102,
+          "width": 84,
+          "height": 84
+        },
+        {
+          "id": "manaResultsoloCorrectValueHost",
+          "asset": "ui.containers.empty",
+          "x": 697,
+          "y": 326,
+          "depth": 102,
+          "width": 112,
+          "height": 78
+        },
+        {
+          "id": "manaResultsoloManaIconHost",
+          "asset": "ui.containers.empty",
+          "x": 588,
+          "y": 443,
+          "depth": 102,
+          "width": 106,
+          "height": 106
+        },
+        {
+          "id": "manaResultsoloManaValueHost",
+          "asset": "ui.containers.empty",
+          "x": 697,
+          "y": 443,
+          "depth": 102,
+          "width": 112,
+          "height": 78
+        },
+        {
+          "id": "manaLanesoloTitleHost",
+          "asset": "ui.containers.empty",
+          "x": 640,
+          "y": 34,
+          "depth": 10,
+          "width": 440,
+          "height": 48
+        },
+        {
+          "id": "manaLanesoloLivesHost",
+          "asset": "ui.containers.empty",
+          "x": 100,
+          "y": 37,
+          "depth": 10,
+          "width": 112,
+          "height": 40
+        },
+        {
+          "id": "manaLanesoloManaHost",
+          "asset": "ui.containers.empty",
+          "x": 1100,
+          "y": 32,
+          "depth": 10,
+          "width": 100,
+          "height": 46
+        },
+        {
+          "id": "manaLanesoloScoreHost",
+          "asset": "ui.containers.empty",
+          "x": 1100,
+          "y": 66,
+          "depth": 10,
+          "width": 100,
+          "height": 26
+        },
+        {
+          "id": "manaLanesoloGainHost",
+          "asset": "ui.containers.empty",
+          "x": 600,
+          "y": 602,
+          "depth": 30,
+          "width": 200,
+          "height": 96
+        },
+        {
+          "id": "manaLanesoloButtonHost",
+          "asset": "ui.containers.empty",
+          "x": 600,
+          "y": 683,
+          "depth": 20,
           "width": 240,
-          "height": 62
+          "height": 56
+        },
+        {
+          "id": "manaLaneATitleHost",
+          "asset": "ui.containers.empty",
+          "x": 315,
+          "y": 34,
+          "depth": 10,
+          "width": 280,
+          "height": 48
+        },
+        {
+          "id": "manaLaneALivesHost",
+          "asset": "ui.containers.empty",
+          "x": 70,
+          "y": 37,
+          "depth": 10,
+          "width": 112,
+          "height": 40
+        },
+        {
+          "id": "manaLaneAManaHost",
+          "asset": "ui.containers.empty",
+          "x": 550,
+          "y": 32,
+          "depth": 10,
+          "width": 100,
+          "height": 46
+        },
+        {
+          "id": "manaLaneAScoreHost",
+          "asset": "ui.containers.empty",
+          "x": 550,
+          "y": 66,
+          "depth": 10,
+          "width": 100,
+          "height": 26
+        },
+        {
+          "id": "manaLaneAGainHost",
+          "asset": "ui.containers.empty",
+          "x": 315,
+          "y": 602,
+          "depth": 30,
+          "width": 200,
+          "height": 96
+        },
+        {
+          "id": "manaLaneAButtonHost",
+          "asset": "ui.containers.empty",
+          "x": 315,
+          "y": 683,
+          "depth": 20,
+          "width": 220,
+          "height": 56
+        },
+        {
+          "id": "manaLaneBTitleHost",
+          "asset": "ui.containers.empty",
+          "x": 955,
+          "y": 34,
+          "depth": 10,
+          "width": 280,
+          "height": 48
+        },
+        {
+          "id": "manaLaneBLivesHost",
+          "asset": "ui.containers.empty",
+          "x": 710,
+          "y": 37,
+          "depth": 10,
+          "width": 112,
+          "height": 40
+        },
+        {
+          "id": "manaLaneBManaHost",
+          "asset": "ui.containers.empty",
+          "x": 1190,
+          "y": 32,
+          "depth": 10,
+          "width": 100,
+          "height": 46
+        },
+        {
+          "id": "manaLaneBScoreHost",
+          "asset": "ui.containers.empty",
+          "x": 1190,
+          "y": 66,
+          "depth": 10,
+          "width": 100,
+          "height": 26
+        },
+        {
+          "id": "manaLaneBGainHost",
+          "asset": "ui.containers.empty",
+          "x": 955,
+          "y": 602,
+          "depth": 30,
+          "width": 200,
+          "height": 96
+        },
+        {
+          "id": "manaLaneBButtonHost",
+          "asset": "ui.containers.empty",
+          "x": 955,
+          "y": 683,
+          "depth": 20,
+          "width": 220,
+          "height": 56
+        },
+        {
+          "id": "manaResultsSafeHost",
+          "asset": "ui.containers.empty",
+          "x": 640,
+          "y": 353,
+          "width": 610,
+          "height": 332,
+          "depth": 101
+        },
+        {
+          "id": "manaLanesoloNextHost",
+          "asset": "ui.containers.empty",
+          "x": 1100,
+          "y": 180,
+          "width": 130,
+          "height": 70,
+          "depth": 10
+        },
+        {
+          "id": "manaLaneANextHost",
+          "asset": "ui.containers.empty",
+          "x": 570,
+          "y": 604,
+          "width": 130,
+          "height": 70,
+          "depth": 10
+        },
+        {
+          "id": "manaLaneBNextHost",
+          "asset": "ui.containers.empty",
+          "x": 1210,
+          "y": 604,
+          "width": 130,
+          "height": 70,
+          "depth": 10
         }
       ]
     },

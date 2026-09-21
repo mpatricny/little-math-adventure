@@ -9,10 +9,10 @@ import { MasterySystem } from '../systems/MasterySystem';
 import { ProblemDatabase } from '../systems/ProblemDatabase';
 import { MasteryData, MathProblem, MathProblemDef, PlayerState, ProblemDefinition, ProblemStats, SubAtomId } from '../types';
 import { formatMathProblem } from '../utils/formatMathProblem';
+import { manaForCorrectAnswers } from '../systems/ManaCollectionRewards';
 
 const ROW_COUNT = 8;
 const MAX_LIVES = 3;
-export const MANA_REWARD_INTERVAL = 5;
 
 interface AnswerSlot {
     value: number;
@@ -50,6 +50,21 @@ export interface PlayerLaneConfig {
     rewardMode?: 'individual' | 'shared';
     resolveKey?: string;
     fontScale?: number;
+    titleWidth: number;
+    headerDepth: number;
+    livesDepth: number;
+    manaDepth: number;
+    scoreDepth: number;
+    previewDepth: number;
+    scoreX: number;
+    scoreY: number;
+    gainX: number;
+    gainY: number;
+    gainDepth: number;
+    buttonDepth: number;
+    buttonWidth: number;
+    buttonHeight: number;
+    onScoreChanged?: () => void;
 }
 
 export interface LaneResults {
@@ -111,6 +126,9 @@ export class ManaPlayerLane {
     private nextProblemLabel!: Phaser.GameObjects.Text;
     private nextProblemText!: Phaser.GameObjects.Text;
     private laneFinishedText: Phaser.GameObjects.Text | null = null;
+    private earnedMana = 0;
+    private rewardEffect: Phaser.GameObjects.Container | null = null;
+    private manaIcon!: Phaser.GameObjects.Image;
 
     constructor(
         scene: Phaser.Scene,
@@ -132,7 +150,9 @@ export class ManaPlayerLane {
         this.persistProgress = persistence?.persistProgress ?? null;
 
         this.rowHeight = (config.channelBottom - config.channelTop) / ROW_COUNT;
-        this.problemStartY = config.channelTop - 60;
+        // Enter inside the first answer row, below the player's name/HUD.
+        // A short reading pause preserves time to choose that first row.
+        this.problemStartY = config.channelTop + this.rowHeight / 2;
         this.problemEndY = config.channelBottom + 20;
         this.fontScale = config.fontScale ?? 1.0;
 
@@ -318,62 +338,73 @@ export class ManaPlayerLane {
     private createHeader(): void {
         const { titleX, titleY, heartsX, heartsY, manaX, manaY } = this.config;
 
-        this.scene.add.text(titleX, titleY, this.config.playerLabel, {
+        const title = this.scene.add.text(titleX, titleY, this.config.playerLabel, {
+            resolution: 2,
             fontSize: `${Math.round(26 * this.fontScale)}px`,
             fontFamily: 'Arial, sans-serif',
             color: '#d4aa44',
             fontStyle: 'bold',
             stroke: '#1a1008',
             strokeThickness: 4,
-        }).setOrigin(0.5).setDepth(10);
+        }).setOrigin(0.5).setDepth(this.config.headerDepth).setName(`manaPlayerName-${this.config.playerIdentifier}`);
+        let titleSize = Number.parseInt(String(title.style.fontSize), 10);
+        while (title.width > this.config.titleWidth && titleSize > 16) {
+            title.setFontSize(--titleSize);
+        }
+        if (title.width > this.config.titleWidth) title.setWordWrapWidth(this.config.titleWidth).setFontSize(16);
 
         for (let i = 0; i < MAX_LIVES; i++) {
             const spacing = Math.round(35 * this.fontScale);
             const heart = this.scene.add.text(heartsX + i * spacing, heartsY, '♥', {
+                resolution: 2,
                 fontSize: `${Math.round(30 * this.fontScale)}px`,
                 fontFamily: 'Arial, sans-serif',
                 color: '#cc3333',
                 stroke: '#1a0808',
                 strokeThickness: 2,
-            }).setOrigin(0.5).setDepth(10);
+            }).setOrigin(0.5).setDepth(this.config.livesDepth);
             this.heartTexts.push(heart);
         }
 
-        const initialManaLabel = this.config.rewardMode === 'shared' ? 'Mana: společná' : 'Mana: ⚡ 0';
-        this.manaDisplayText = this.scene.add.text(manaX, manaY, initialManaLabel, {
-            fontSize: `${Math.round(18 * this.fontScale)}px`,
+        this.manaIcon = this.scene.add.image(manaX - 26, manaY, 'mana-icon').setDepth(this.config.manaDepth);
+        this.manaIcon.setScale(Math.min(44 / this.manaIcon.width, 44 / this.manaIcon.height));
+        this.manaDisplayText = this.scene.add.text(manaX + 10, manaY, '0', {
+            resolution: 2,
+            fontSize: '30px',
             fontFamily: 'Arial, sans-serif',
-            color: '#88ccaa',
+            color: '#b8f6ff',
             fontStyle: 'bold',
             stroke: '#0a1a0a',
             strokeThickness: 2,
-        }).setOrigin(0.5).setDepth(10);
+        }).setOrigin(0, 0.5).setDepth(this.config.manaDepth).setName(`manaEarned-${this.config.playerIdentifier}`);
 
-        this.scoreText = this.scene.add.text(manaX, manaY + 25, '', {
-            fontSize: `${Math.round(14 * this.fontScale)}px`,
+        this.scoreText = this.scene.add.text(this.config.scoreX, this.config.scoreY, '✓ 0', {
+            resolution: 2,
+            fontSize: '20px',
             fontFamily: 'Arial, sans-serif',
             color: '#aaaaaa',
-        }).setOrigin(0.5).setDepth(10);
+        }).setOrigin(0.5).setDepth(this.config.scoreDepth).setName(`manaCorrect-${this.config.playerIdentifier}`);
     }
 
     // ============ RESOLVE BUTTON ============
 
     private createResolveButton(): void {
         const { buttonX, buttonY } = this.config;
-        const btnW = Math.round(220 * this.fontScale);
-        const btnH = Math.round(52 * this.fontScale);
+        const btnW = this.config.buttonWidth;
+        const btnH = this.config.buttonHeight;
 
         this.resolveButton = this.scene.add.container(buttonX, buttonY);
-        this.resolveButton.setDepth(20);
+        this.resolveButton.setDepth(this.config.buttonDepth);
 
         const bg = this.scene.add.rectangle(0, 0, btnW, btnH, 0x2a1f14)
             .setStrokeStyle(3, 0x8b6914);
         const innerBorder = this.scene.add.rectangle(0, 0, btnW - 10, btnH - 10, 0x000000, 0)
             .setStrokeStyle(1, 0x5a4a2a);
         const label = this.config.resolveKey
-            ? `VYHODNOTIT (${this.config.resolveKey.toUpperCase()})`
-            : 'VYHODNOTIT';
+            ? `ZASTAV · ${this.config.resolveKey.toUpperCase()}`
+            : 'ZASTAV';
         const text = this.scene.add.text(0, 0, label, {
+            resolution: 2,
             fontSize: `${Math.round(20 * this.fontScale)}px`,
             fontFamily: 'Arial, sans-serif',
             color: '#d4aa44',
@@ -428,7 +459,7 @@ export class ManaPlayerLane {
             fontSize: `${Math.round(13 * this.fontScale)}px`,
             fontFamily: 'Arial, sans-serif',
             color: '#6a5a40',
-        }).setOrigin(0.5).setDepth(10).setVisible(false);
+        }).setOrigin(0.5).setDepth(this.config.previewDepth).setVisible(false);
 
         this.nextProblemText = this.scene.add.text(nextPreviewX, nextPreviewY + 5, '', {
             fontSize: `${Math.round(16 * this.fontScale)}px`,
@@ -439,7 +470,7 @@ export class ManaPlayerLane {
             strokeThickness: 2,
             backgroundColor: '#1e1810',
             padding: { x: 12, y: 6 },
-        }).setOrigin(0.5).setDepth(10).setVisible(false);
+        }).setOrigin(0.5).setDepth(this.config.previewDepth).setVisible(false);
     }
 
     // ============ PUBLIC API ============
@@ -453,6 +484,9 @@ export class ManaPlayerLane {
 
     stopGame(): void {
         this.isGameActive = false;
+        this.rewardEffect?.destroy(true);
+        this.rewardEffect = null;
+        this.laneFinishedText?.setVisible(false);
         if (this.fallingTween) {
             this.fallingTween.stop();
             this.fallingTween = null;
@@ -552,7 +586,7 @@ export class ManaPlayerLane {
         this.problemText.setY(this.problemStartY);
         this.problemText.setVisible(true);
 
-        this.scoreText.setText(`${this.correctCount} / ${this.problemCount}`);
+        this.scoreText.setText(`✓ ${this.correctCount}`);
         this.updateNextProblemPreview();
 
         const duration = this.getFallDuration();
@@ -561,6 +595,7 @@ export class ManaPlayerLane {
         this.fallingTween = this.scene.tweens.add({
             targets: this.problemText,
             y: this.problemEndY,
+            delay: 750,
             duration,
             ease: 'Linear',
             onComplete: () => {
@@ -681,7 +716,7 @@ export class ManaPlayerLane {
     // ============ CORRECT / WRONG / MISSED ============
 
     private onCorrectAnswer(highlightBar: Phaser.GameObjects.Rectangle): void {
-        sfx(this.scene, 'mana.collect');
+        sfx(this.scene, 'math.correct');
         highlightBar.setFillStyle(0x228822, 0.4);
 
         for (const s of this.answerSlots) {
@@ -697,8 +732,10 @@ export class ManaPlayerLane {
         this.correctCount++;
         this.problemCount++;
 
-        this.showFeedbackText('SPRÁVNĚ!', '#44ff44', this.config.problemX, this.problemText.y - 40);
-        this.updateManaDisplay();
+        this.showFeedbackText('✓', '#44ff44', this.config.problemX, this.problemText.y - 40);
+        this.scoreText.setText(`✓ ${this.correctCount}`);
+        if (this.config.onScoreChanged) this.config.onScoreChanged();
+        else this.setManaReward(manaForCorrectAnswers(this.correctCount));
 
         this.scene.time.delayedCall(1000, () => {
             highlightBar.destroy();
@@ -738,7 +775,7 @@ export class ManaPlayerLane {
         this.lives--;
         this.updateHearts();
 
-        this.showFeedbackText('ŠPATNĚ!', '#ff4444', this.config.problemX, this.problemText.y - 40);
+        this.showFeedbackText('×', '#ff4444', this.config.problemX, this.problemText.y - 40);
 
         this.scene.time.delayedCall(1200, () => {
             highlightBar?.destroy();
@@ -753,8 +790,6 @@ export class ManaPlayerLane {
 
     private onMissed(): void {
         this.isResolving = true;
-        const feedbackY = (this.config.channelTop + this.config.channelBottom) / 2;
-        this.showFeedbackText('NESTIHNUTÉ!', '#ffaa44', this.config.problemX, feedbackY);
         this.onWrongAnswer();
     }
 
@@ -781,14 +816,45 @@ export class ManaPlayerLane {
         }
     }
 
-    private updateManaDisplay(): void {
-        if (this.config.rewardMode === 'shared') {
-            this.manaDisplayText.setText('Mana: společná');
-            return;
-        }
+    setManaReward(earnedMana: number): void {
+        const added = earnedMana - this.earnedMana;
+        this.earnedMana = earnedMana;
+        this.manaDisplayText.setText(String(earnedMana));
+        if (added > 0) this.showManaGain(added);
+    }
 
-        const earnedMana = Math.floor(this.correctCount / MANA_REWARD_INTERVAL);
-        this.manaDisplayText.setText(`Mana: ⚡ ${earnedMana}`);
+    /** Keep the celebration below the falling answers, including the partner's lane. */
+    private showManaGain(added: number): void {
+        this.rewardEffect?.destroy(true);
+        const { gainX, gainY, gainDepth, channelLeft, channelRight, channelTop, channelBottom } = this.config;
+        const root = this.scene.add.container(gainX, gainY).setDepth(gainDepth)
+            .setName(`manaRewardGain-${this.config.playerIdentifier}`).setData('added', added);
+        this.rewardEffect = root;
+        const glow = this.scene.add.graphics().fillStyle(0x123b54, 0.94)
+            .fillRoundedRect(-100, -37, 200, 74, 30)
+            .lineStyle(3, 0x6be9ff, 0.95).strokeRoundedRect(-100, -37, 200, 74, 30);
+        const icon = this.scene.add.image(-43, 0, 'mana-icon');
+        icon.setScale(Math.min(84 / icon.width, 84 / icon.height));
+        const value = this.scene.add.text(5, 0, `+${added}`, { resolution: 2, fontFamily: 'Arial',
+            fontSize: '54px', fontStyle: 'bold', color: '#e5fcff', stroke: '#126189', strokeThickness: 4 }).setOrigin(0, 0.5);
+        const rim = this.scene.add.graphics().lineStyle(5, 0x5beaff, 1)
+            .strokeRect(channelLeft - gainX, channelTop - gainY, channelRight - channelLeft, channelBottom - channelTop);
+        root.add([rim, glow, icon, value]);
+        const animated: Phaser.GameObjects.GameObject[] = [root, rim, icon];
+        for (let i = 0; i < 10; i++) {
+            const angle = i * Math.PI / 5;
+            const spark = this.scene.add.circle(Math.cos(angle) * 70, Math.sin(angle) * 20, i % 2 ? 3 : 4, 0xc7f9ff);
+            root.add(spark); animated.push(spark);
+            this.scene.tweens.add({ targets: spark, x: Math.cos(angle) * 118, y: Math.sin(angle) * 42,
+                alpha: 0, duration: 650, ease: 'Cubic.easeOut' });
+        }
+        this.scene.tweens.add({ targets: icon, scale: icon.scaleX * 1.12, duration: 180, yoyo: true, repeat: 1 });
+        this.scene.tweens.add({ targets: rim, alpha: 0, duration: 900 });
+        this.scene.tweens.add({ targets: root, alpha: 0, delay: 1050, duration: 300, onComplete: () => root.destroy(true) });
+        root.once('destroy', () => {
+            animated.forEach(object => this.scene.tweens.killTweensOf(object));
+            if (this.rewardEffect === root) this.rewardEffect = null;
+        });
     }
 
     private showFeedbackText(text: string, color: string, x: number, y: number): void {

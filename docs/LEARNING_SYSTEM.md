@@ -746,7 +746,13 @@ The full parent/teacher analytics view remains richer than the child view.
 
 ### 17.1 Mana gathering:
 
-Keep the existing mechanic, mana meditation to become available - will allow practice of the problems that are close to reaching mana award - to be defined later.
+The free falling-problem minigame awards cumulative mana at 1, 3, 6, 10 and
+15 correct answers (1–5 mana), then another mana every five correct answers.
+Mistakes do not reset the correct-answer total. In co-op, both lanes contribute
+to one score and each player receives the full shared reward. A visible blue
+mana burst marks every increase; results show real player names, their own
+correct-answer counts and their mana reward using large icons.
+See [MANA_COLLECTION.md](MANA_COLLECTION.md) for the production contract and QA.
 
 ### 17.2 Fast-answer combat bonuses
 

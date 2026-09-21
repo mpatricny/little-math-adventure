@@ -13,7 +13,7 @@ type SceneElement = {
 };
 
 describe('Mana collection popup UI', () => {
-    const scene = (scenesJson.scenes as Record<string, { elements: SceneElement[] }>).ManaCollectionScene;
+    const scene = (scenesJson.scenes as unknown as Record<string, { elements: SceneElement[] }>).ManaCollectionScene;
     const elements = new Map(scene.elements.map(element => [element.id, element]));
     const source = readFileSync(resolve('src/scenes/ManaCollectionScene.ts'), 'utf8');
 
@@ -29,14 +29,17 @@ describe('Mana collection popup UI', () => {
             'manaIntroPopupHost',
             'manaIntroTitleHost',
             'manaIntroObjectiveHost',
-            'manaIntroRulesHost',
+            'manaIntroDemoHost',
             'manaIntroRewardHost',
             'manaIntroBackHost',
             'manaIntroPlayHost',
             'manaResultsPopupHost',
             'manaResultsTitleHost',
-            'manaResultsStatsHost',
             'manaResultsContinueHost',
+            ...['A', 'B', 'solo'].flatMap(id => [
+                ...['Card', 'Name', 'CorrectIcon', 'CorrectValue', 'ManaIcon', 'ManaValue'].map(role => `manaResult${id}${role}Host`),
+                ...['Title', 'Lives', 'Mana', 'Score', 'Next', 'Gain', 'Button'].map(role => `manaLane${id}${role}Host`),
+            ]),
         ];
 
         requiredHosts.forEach(id => {
@@ -55,9 +58,17 @@ describe('Mana collection popup UI', () => {
     });
 
     it('keeps mana collection free to start', () => {
-        expect(source).toContain('VSTUP ZDARMA');
         expect(source).not.toContain('PLAY_COST');
         expect(source).not.toContain('spendCoins');
         expect(source).not.toContain('NEDOSTATEK MINCÍ');
+    });
+
+    it('gives result icons and touch controls ample room', () => {
+        for (const id of ['A', 'B', 'solo']) {
+            expect(elements.get(`manaResult${id}CorrectIconHost`)?.width).toBeGreaterThanOrEqual(80);
+            expect(elements.get(`manaResult${id}ManaIconHost`)?.height).toBeGreaterThanOrEqual(100);
+            // 1024px tablet renders the 1280px board at 0.8 scale.
+            expect(elements.get(`manaLane${id}ButtonHost`)!.height! * 0.8).toBeGreaterThanOrEqual(44);
+        }
     });
 });
