@@ -1,41 +1,34 @@
 [
-  {
-    "id": "silverpond_pearl_jellyfish",
-    "name": "Perlová medúzka",
-    "spriteKey": "silverpond-pearl-jellyfish-idle-sheet",
-    "animPrefix": "pearl-jellyfish",
-    "hp": 24,
-    "attack": 4,
-    "defense": 1,
-    "goldReward": [
-      10,
-      14
-    ],
-    "difficulty": 6,
-    "scale": 0.8,
-    "worldScale": 0.8,
-    "battleScale": 0.9,
-    "frameTopInset": 80
-  },
-  {
-    "id": "silverpond_depth_guardian",
-    "name": "Strážce hlubin",
-    "spriteKey": "silverpond-depth-guardian-idle-sheet",
-    "animPrefix": "depth-guardian",
-    "hp": 28,
-    "attack": 4,
-    "defense": 1,
-    "goldReward": [
-      22,
-      28
-    ],
-    "difficulty": 7,
-    "scale": 1.03,
-    "worldScale": 1.03,
-    "battleScale": 1.03,
-    "battleOffsetY": -35,
-    "frameTopInset": 58
-  },
+    {
+        "id": "silverpond_pearl_jellyfish",
+        "name": "Perlová medúzka",
+        "spriteKey": "silverpond-pearl-jellyfish-idle-sheet",
+        "animPrefix": "pearl-jellyfish",
+        "hp": 24,
+        "attack": 4,
+        "defense": 1,
+        "goldReward": [
+            10,
+            14
+        ],
+        "difficulty": 6,
+        "scale": 0.8
+    },
+    {
+        "id": "silverpond_depth_guardian",
+        "name": "Strážce hlubin",
+        "spriteKey": "silverpond-depth-guardian-idle-sheet",
+        "animPrefix": "depth-guardian",
+        "hp": 28,
+        "attack": 4,
+        "defense": 1,
+        "goldReward": [
+            22,
+            28
+        ],
+        "difficulty": 7,
+        "scale": 1.03
+    },
     {
         "id": "slime_tutorial",
         "name": "Zelený Sliz",
@@ -154,10 +147,7 @@
             8
         ],
         "difficulty": 3,
-        "worldScale": 0.5,
-        "battleScale": 0.5,
-        "battleOffsetX": 30,
-        "battleOffsetY": 20
+        "scale": 1
     },
     {
         "id": "ancient_treant",
@@ -165,17 +155,14 @@
         "spriteKey": "spritesheet--37--sheet",
         "animPrefix": "treant",
         "hp": 25,
-        "attack": 3,
+        "attack": 4,
         "defense": 4,
         "goldReward": [
             25,
             40
         ],
         "difficulty": 7,
-        "worldScale": 0.5,
-        "battleScale": 0.5,
-        "battleOffsetX": 35,
-        "battleOffsetY": 25
+        "scale": 2
     },
     {
         "id": "verdant_guardian",
@@ -223,9 +210,7 @@
             14
         ],
         "difficulty": 5,
-        "scale": 0.45,
-        "worldScale": 0.45,
-        "battleScale": 0.65
+        "scale": 0.45
     },
     {
         "id": "silverpond_silverfin_scalefish",
@@ -240,9 +225,7 @@
             13
         ],
         "difficulty": 5,
-        "scale": 0.45,
-        "worldScale": 0.45,
-        "battleScale": 0.65
+        "scale": 0.45
     },
     {
         "id": "silverpond_mill_turtle",
@@ -257,9 +240,7 @@
             15
         ],
         "difficulty": 5,
-        "scale": 0.45,
-        "worldScale": 0.45,
-        "battleScale": 0.65
+        "scale": 0.45
     },
     {
         "id": "silverpond_ruin_axolotl",
@@ -274,9 +255,7 @@
             14
         ],
         "difficulty": 5,
-        "scale": 0.45,
-        "worldScale": 0.45,
-        "battleScale": 0.65
+        "scale": 0.45
     },
     {
         "id": "catacomb_creature_A",
