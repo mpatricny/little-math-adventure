@@ -72,6 +72,11 @@ původní název a potřebuje vlastní výtvarnou úpravu před veřejným vydá
 
 ## Ověření oddělení
 
+> **POVINNÁ PŘEJÍMKA UI OD 20. 9. 2026: DĚTI NEUMĚJÍ ČÍST. Žádný dlouhý text
+> nikde v herním UI; vysvětlení musí být obrázkové a názorné. Všechny kontroly
+> zahrnují [UI pro nečtenáře](UI_PRE_READER_GATES.md), včetně nejméně 2× větších `<`, `>` a `=`.
+> Starší výsledky testů nejsou dokladem splnění této nové podmínky.**
+
 - 7 testů balení obsahu: závislosti, sdílené vítězství, shoda seznamu scén,
   vyloučené soubory a nedotčená původní data.
 - 21 cílených testů: debugger pilotu, návrat pokročilých savů, dosavadní postup,

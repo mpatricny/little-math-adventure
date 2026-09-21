@@ -307,6 +307,11 @@ Etapy 2 a 3 potřebují spolupráci s editorem; plošná výroba assetů z etap 
 
 ## 10. Kritéria playtestu a dokončení
 
+> **POVINNÁ PŘEJÍMKA UI OD 20. 9. 2026: DĚTI NEUMĚJÍ ČÍST. Žádný dlouhý text
+> nikde v herním UI; vysvětlení musí být obrázkové a názorné. Všechny kontroly
+> zahrnují [UI pro nečtenáře](UI_PRE_READER_GATES.md), včetně nejméně 2× větších `<`, `>` a `=`.
+> Starší výsledky testů nejsou dokladem splnění této nové podmínky.**
+
 - Čerstvě dokončená aréna i starší save s arénou 6 zpřístupní ponor. V sólu ani jako hostitel se hráč bez šupiny do vody omylem nedostane; host v co-opu smí využít popsanou společnou ochranu.
 - První Zyxův úvod jde odklikat, po návratu se neopakuje; přerušení během ponoru nezanechá zamčené ovládání.
 - Projít hlavní trasy v obou pořadích, využít i obejití přes vrak a všechny zkratky. Z žádného legálně dosaženého stavu nevznikne slepá past bez návratu.

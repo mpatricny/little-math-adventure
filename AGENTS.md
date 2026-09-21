@@ -1,5 +1,66 @@
 # Little Math Adventure - Development Rules
 
+## BLOCKING UI RULE: CHILDREN CANNOT RELY ON READING
+
+**The primary players are small children who cannot read, or can barely read.
+NO LONG TEXT MAY APPEAR ANYWHERE IN PLAYER-FACING UI. This is a release-blocking
+requirement, not a copywriting preference.** It applies to every region, lesson,
+dialog, tooltip, hint, wrong-answer explanation, menu, shop, map and result state.
+
+- Teach by pictures, objects, spatial relationships and short demonstrated actions.
+  Optional spoken guidance may supplement a complete visual explanation; neither
+  reading nor audio may be required to understand the task.
+- Keep visible labels to 1–3 familiar words (at most 4 for a short title). No
+  paragraphs, multiline instructions or sequences of short labels that form a
+  paragraph. Do not hide long text behind a tooltip, smaller font or a mask.
+- **Every design review, code review, visual test, playtest and release checklist
+  must apply [docs/UI_PRE_READER_GATES.md](docs/UI_PRE_READER_GATES.md).** Test the
+  task with prose hidden and audio muted; it must still explain the action and
+  its result. Automated success never substitutes for this visual review.
+- All comparison signs `<`, `>` and `=` must be **at least 2× their previous
+  visible size in the same context**: prompts, answer controls, hints, feedback,
+  exams, battle, co-op and learning map. Enlarge layout hosts with them; never
+  shrink a symbol to retain an old crowded layout.
+  The baseline is the original small in-game sign, not the preceding mockup.
+  **Author correction: a filled relation between numerals must not dwarf them.**
+  Aim for roughly the numerals' visible height; reserve the larger mouth for
+  the illustrated teaching steps. Measure the drawn sign, not its empty slot.
+- The crocodile teaching sequence is fixed: **one larger object → more objects
+  → objects with their count numeral → numerals alone**. Open jaws face the
+  larger side; equality needs a visible demonstration of sameness and `=`.
+- **Reuse the shared MathBoard for this chapter.** Keep its canonical parchment,
+  common answer flow and evaluation; enlarge/replace answer controls as needed.
+  Before an answer, the relation host must be visibly **empty** (for example a
+  dashed slot), never occupied by a neutral crocodile or a preselected relation.
+  The introductory animation demonstrates a mouth entering that same slot,
+  eating the larger offer, both orientations and equality, without long text.
+
+These requirements supersede older text-heavy UI examples in design documents.
+The approved crocodile redesign is integrated through MathBoard and
+SequentialMathView. See docs/COMPARISON_IMPLEMENTATION.md for runtime behavior.
+
+Comparison chapter follow-up: a sequential presentation may show one question
+at a time while retaining the complete attack batch, its first-answer results
+and one completion callback. A demo cannot earn damage or mastery. See
+`docs/COMPARISON_BATTLE_INTEGRATION.md` before implementing this flow.
+For answer-button hover/press, move the frame surface and its symbol together
+inside one visual container; keep the root hit area stable and restore both
+on pointer-out, disabling and reuse.
+Transitional symbol support may show matching crocodile forms above all three
+choices together, never identify the correct choice. Reserve the hint space;
+cancel stale timers and record assistance only when it actually appears.
+Confirmed delay schedule: 4 → 8 → 16 → 24 seconds → off. Two correct first
+answers move one step up; every wrong first answer moves one step down. Keep
+tuning in src/data/comparison-learning.json and progress per player in the save.
+
+Author's visual refinement (21 September): unequal size-comparison apples must
+have an unmistakable difference (2:1 linear size), while equal apples remain
+identical. Count-comparison pieces keep the same size. Answer glyphs use 90% of
+the initially integrated size so they fit comfortably inside their frames.
+The first size lesson runs 30% more slowly. Keep a separate bonus area in the
+shared board; its shield variant shows one known problem, incoming damage and
+block power. The first-answer, quick-block and attack-charge rules still apply.
+
 ## Scene Editor Compatibility
 
 The game uses a **Scene Editor** (`/Users/datamole/SimpleGame/scene-editor`) to visually position elements. To ensure changes made in the scene editor are respected by the game code, follow these rules:
@@ -572,6 +633,10 @@ When creating or modifying any visual elements (buttons, panels, labels, overlay
 4. **Button text**: If reusing a scene definition with different behavior, override button labels to match the new context (e.g., "HRÁT" → "ZVOLIT" in co-op setup).
 
 ### Visual acceptance gates (not replaced by functional tests)
+
+- **BLOCKER: pre-reader gates in `docs/UI_PRE_READER_GATES.md` must pass in every
+  UI state. No long text anywhere in player UI; explanations must work visually.
+  Comparison signs `<`, `>` and `=` must all meet the 2× visible-size rule.**
 
 - Preserve bitmap aspect ratios. Use uniform `setScale(min(width / sourceWidth, height / sourceHeight))` for complete artwork; only a deliberately authored and reviewed 9-slice may stretch its center. Never stretch a complete decorative frame to a new aspect ratio.
 - Define a frame's **safe content inset**, not only its outer bounds. Titles, body copy, portraits, answer choices, feedback, and footer actions must fit inside that inset and occupy separate layout regions in `scenes.json`.

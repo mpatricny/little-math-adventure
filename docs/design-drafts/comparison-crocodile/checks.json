@@ -1,0 +1,108 @@
+{
+  "database": "Static standalone design: no API, save or database dependency.",
+  "errors": [],
+  "viewports": [
+    {
+      "name": "desktop",
+      "width": 1248,
+      "height": 1000,
+      "scrollWidth": 1248,
+      "visibleTexts": [
+        "1",
+        "Větší předmět",
+        "2",
+        "Více předmětů",
+        "3",
+        "S číslem",
+        "4",
+        "Jen čísla",
+        "Umíš porovnávat",
+        "",
+        "★ ★ ★",
+        "Znovu"
+      ],
+      "minimumButton": 48
+    },
+    {
+      "name": "tablet",
+      "width": 992,
+      "height": 768,
+      "scrollWidth": 992,
+      "visibleTexts": [
+        "1",
+        "Větší předmět",
+        "2",
+        "Více předmětů",
+        "3",
+        "S číslem",
+        "4",
+        "Jen čísla",
+        "Umíš porovnávat",
+        "",
+        "★ ★ ★",
+        "Znovu"
+      ],
+      "minimumButton": 48
+    },
+    {
+      "name": "inline",
+      "width": 736,
+      "height": 900,
+      "scrollWidth": 736,
+      "visibleTexts": [
+        "1",
+        "Větší předmět",
+        "2",
+        "Více předmětů",
+        "3",
+        "S číslem",
+        "4",
+        "Jen čísla",
+        "Umíš porovnávat",
+        "",
+        "★ ★ ★",
+        "Znovu"
+      ],
+      "minimumButton": 48
+    },
+    {
+      "name": "small",
+      "width": 320,
+      "height": 900,
+      "scrollWidth": 320,
+      "visibleTexts": [
+        "1",
+        "Větší předmět",
+        "2",
+        "Více předmětů",
+        "3",
+        "S číslem",
+        "4",
+        "Jen čísla",
+        "Umíš porovnávat",
+        "",
+        "★ ★ ★",
+        "Znovu"
+      ],
+      "minimumButton": 44
+    }
+  ],
+  "interactions": [
+    "desktop: step 1; demo, neutral question, wrong, correct, equality passed",
+    "desktop: step 2; demo, neutral question, wrong, correct, equality passed",
+    "desktop: step 3; demo, neutral question, wrong, correct, equality passed",
+    "desktop: step 4; demo, neutral question, wrong, correct, equality passed",
+    "tablet: step 1; demo, neutral question, wrong, correct, equality passed",
+    "tablet: step 2; demo, neutral question, wrong, correct, equality passed",
+    "tablet: step 3; demo, neutral question, wrong, correct, equality passed",
+    "tablet: step 4; demo, neutral question, wrong, correct, equality passed",
+    "inline: step 1; demo, neutral question, wrong, correct, equality passed",
+    "inline: step 2; demo, neutral question, wrong, correct, equality passed",
+    "inline: step 3; demo, neutral question, wrong, correct, equality passed",
+    "inline: step 4; demo, neutral question, wrong, correct, equality passed",
+    "small: step 1; demo, neutral question, wrong, correct, equality passed",
+    "small: step 2; demo, neutral question, wrong, correct, equality passed",
+    "small: step 3; demo, neutral question, wrong, correct, equality passed",
+    "small: step 4; demo, neutral question, wrong, correct, equality passed"
+  ]
+}

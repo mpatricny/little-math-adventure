@@ -788,6 +788,11 @@ this.hero = this.builder.spawnOnZone('characters.player.knight', 'player-spawn-b
 
 ## Testing Checkpoints
 
+> **POVINNÁ PŘEJÍMKA UI OD 20. 9. 2026: DĚTI NEUMĚJÍ ČÍST. Žádný dlouhý text
+> nikde v herním UI; vysvětlení musí být obrázkové a názorné. Všechny kontroly
+> zahrnují [UI pro nečtenáře](UI_PRE_READER_GATES.md), včetně nejméně 2× větších `<`, `>` a `=`.
+> Starší výsledky testů nejsou dokladem splnění této nové podmínky.**
+
 | Phase | Test |
 |-------|------|
 | 0 | `npm run build` succeeds |

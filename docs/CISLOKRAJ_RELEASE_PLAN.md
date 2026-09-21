@@ -105,14 +105,28 @@ Anonymizační pipeline nyní nevzniká; data jsou spojená se savem. Počet 20 
 
 ## Kapitola: porozumění `> < =`
 
+**Revize 20. 9. 2026: původní krokodýlí UI nebylo přijato. Nejprve vizuální
+návrh v [COMPARISON_CROCODILE_REDESIGN.md](COMPARISON_CROCODILE_REDESIGN.md), potom
+přestavba. Děti téměř neumějí číst: žádný dlouhý text nikde v herním UI,
+vysvětlení výhradně názorně; všechna znaménka alespoň 2× větší.**
+
+Navazující revize návrhu zachovává **společný MathBoard**, jeho pergamen a tři
+volby. V zadání je před odpovědí prázdné místo pro vztah. Úvodní animace přímo
+na tabuli předvede vložení tlamy a krmení větší nabídkou, oba směry i rovnost.
+
+Revize 3 doplňuje postupné zobrazování **jednoho příkladu ze sady pro jeden
+běžný útok**, přiměřenou velikost vloženého znaménka a společný hover rámu
+se symbolem. Návrh napojení na boj, výbavu, co-op a savy je v
+[COMPARISON_BATTLE_INTEGRATION.md](COMPARISON_BATTLE_INTEGRATION.md).
+
 Zařadit **za A2, před A3**. Před dokončením kapitoly vyřadit porovnávání z běžných úloh a zkoušek A1/A2 a nahradit je dostupnými aritmetickými formami, při zachování počtu úloh a podmínek zkoušek. Stejná podmínka platí pro opakování a vybavení. Kapitola používá společná pravidla modulové zkoušky, aktuálně 8 úloh a medaile od 5/6/7 správných odpovědí. Aktuální samostatné zadání včetně bojových změn je v [COMPARISON_COMBAT_SHOP_PLAN.md](COMPARISON_COMBAT_SHOP_PLAN.md).
 
 | Krok | Obsah |
 |---|---|
-| **1. Velikost → krokodýl → symbol** | Od první úlohy vybírat znak pro velikost předmětů. Tlama krokodýla vysvětluje orientaci `<` a `>`, rovnost má vlastní vysvětlení. |
-| **2. Počet → krokodýl → symbol** | Znak pro počet kusů; později obměnit velikost a rozmístění předmětů. |
-| **3. Čísla → krokodýl → symbol** | Orientaci tlamy přenést na porovnávání číselných hodnot. |
-| **4. Čísla → symbol** | Samostatné rozhodnutí bez automaticky zobrazovaného krokodýla. |
+| **1. Větší předmět** | Jeden předmět na každé straně, bez čísel. Krokodýl jí větší. |
+| **2. Více předmětů** | Stejně velké kusy, bez čísel. Krokodýl jí početnější skupinu; párování ukáže rovnost. |
+| **3. Předměty s číslem** | Obrázky zůstávají, každá skupina dostane své číslo. Počet musí přesně odpovídat. |
+| **4. Jen čísla** | Obrázky zmizí až nyní. Krokodýlí tlama se převede na velký matematický znak. |
 | **5. Výraz s nápovědou** | Výraz proti číslu; po 15 sekundách aktivního zadání ukázat výsledek výrazu, symbol zvolí dítě. |
 | **6. Výraz samostatně** | Bez automatického výsledku; následuje smíšená zkouška velikosti, počtu, čísel a výrazů podle společných pravidel. |
 
@@ -120,7 +134,7 @@ Výraz „větší předmět“ důsledně odlišit od „více předmětů“. 
 
 Při opakovaných chybách nabídnout krátké názorné vysvětlení, několik jednodušších úloh a potom **nové ověření bez pomoci**. Vyhodnocovat první odpovědi, jednotlivé vztahy a reprezentace; úspěch jen na `>` nestačí. Jedna chyba ani pomalé přemýšlení nemají spouštět návrat. Konkrétní velikost okna a hranice úspěšnosti nastavíme jako laditelné parametry pilotu, ne jako hotový důkaz porozumění.
 
-U chybného `a + b ? c` krátce oddělit výpočet levé strany od porovnání výsledných čísel. Podle odpovědí pomoci se sčítáním, počtem nebo orientací symbolu. Zavření vysvětlení tlačítkem „Rozumím“ není úspěšný pokus. Procvičování probíhá bez tlaku na rychlost a bez ztráty ostatního postupu. Využít stávající vizualizér vysvětlení jako základ, dodržet herní výtvarný styl a editorové hosty.
+U chybného `a + b ? c` krátce oddělit výpočet levé strany od porovnání výsledných čísel. Podle odpovědí pomoci obrázky se sčítáním, počtem nebo orientací symbolu. Přehrání ani zavření ukázky není úspěšný pokus. Procvičování probíhá bez tlaku na rychlost a bez ztráty ostatního postupu. Využít stávající vizualizér vysvětlení jako základ, dodržet herní výtvarný styl a editorové hosty.
 
 Do dat přidat stupeň kapitoly, obě hodnoty, počty/velikostní podmínku obrázků, očekávaný a vybraný symbol a samostatný/pomáhaný pokus. Tak půjde rozlišit záměnu `<` a `>`, nepochopení rovnosti, velikost versus počet a chybu samotného výpočtu.
 
@@ -135,6 +149,11 @@ Pro malou DB je to typicky drobný náklad a nastavení bez vlastní implementac
 Pokročilou obnovu a samostatné zálohovací servery nyní vynechat.
 
 ## Loading a krátké ověření pilotu
+
+**BLOKUJÍCÍ PŘEJÍMKA CELÉHO UI:** [UI_PRE_READER_GATES.md](UI_PRE_READER_GATES.md).
+Žádné dlouhé texty; vše pochopitelné z obrázků i se skrytými slovy a vypnutým
+zvukem. Platí pro každý stav v každé scéně, včetně mapy a nápověd. Všechny `<`,
+`>` a `=` nejméně 2× větší oproti předchozí podobě při stejném viewportu.
 
 Oddělení obsahu snížilo katalog textur z 60,65 MiB na 37,01 MiB. Nejde o změřený přenos ani čas startu. Dále změříme start, potom oddělíme menu/první hraní a další oblasti. Přednačítat další pravděpodobnou scénu během hraní. Před spuštěním scény musí být dostupné i závislé UI šablony a animace, při chybě nabídnout opakování.
 

@@ -45,6 +45,11 @@ Spojnice zahrada ↔ kanál nyní vede přes U07 se zachováním starých vstupn
 
 ## Výtvarná výroba a kontrola
 
+> **POVINNÁ PŘEJÍMKA UI OD 20. 9. 2026: DĚTI NEUMĚJÍ ČÍST. Žádný dlouhý text
+> nikde v herním UI; vysvětlení musí být obrázkové a názorné. Všechny kontroly
+> zahrnují [UI pro nečtenáře](UI_PRE_READER_GATES.md), včetně nejméně 2× větších `<`, `>` a `=`.
+> Starší výsledky testů nejsou dokladem splnění této nové podmínky.**
+
 Vestavěný skill **imagegen**, přesné úpravy původních čtyř obrázků. Původní soubory zůstaly zachovány; produkce používá sourozence `*-passages.webp`. Poměr stran byl zachován při jednotném převodu 1672 × 941 → 1280 × 720, WebP kvalita 88. Žádné nové texty, ovládací prvky ani postavy nejsou zapečené do pozadí.
 
 Prompty a přesné cesty: [UNDERWATER_ASSET_PROMPTS.md](UNDERWATER_ASSET_PROMPTS.md), sekce „Map passage corrections“.

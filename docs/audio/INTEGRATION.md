@@ -57,6 +57,11 @@ Hra během přehrávání nepoužívá API ani tajný token. Přidáním audia n
 
 ## Ověření
 
+> **POVINNÁ PŘEJÍMKA UI OD 20. 9. 2026: DĚTI NEUMĚJÍ ČÍST. Žádný dlouhý text
+> nikde v herním UI; vysvětlení musí být obrázkové a názorné. Všechny kontroly
+> zahrnují [UI pro nečtenáře](../UI_PRE_READER_GATES.md), včetně nejméně 2× větších `<`, `>` a `=`.
+> Starší výsledky testů nejsou dokladem splnění této nové podmínky.**
+
 31 jednotkových testů nastavení, přípravy, výpočtu poškození, podvodních úloh a lesního krystalu prošlo. Produkční build prošel. Celorepozitářový `tsc --noEmit` má již existující chyby v jiných částech; nové audio moduly v kontrole chyby nemají.
 
 Šest prohlížečových scénářů prošlo: nastavení/pauza na desktopu ve WebGL a tabletu v Canvas, mixer se smyčkou/chybovým souborem návaznost skutečných Zyxových dialogových stránek a celý hlasový postup krystalového stroje v obou vykreslovacích režimech. Dvě duplicitní kontroly mixeru/dialogu jsou na Canvas záměrně vynechané. Spuštění: `npm run test:e2e:audio`. Testují odemčení po interakci, skutečné přehrávání MP3/WAV, ztišení při řeči, výměnu dialogu, vypnutí a uložení hlasitosti, pauzu/návrat, mapování témat, konec smyčky, zrušení čekajícího hlasu a chybějící soubor. Vizuální snímky jsou v `artifacts/audio/`.

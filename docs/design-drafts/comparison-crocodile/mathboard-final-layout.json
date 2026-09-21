@@ -1,0 +1,33 @@
+{
+  "numberBaselines": [
+    {
+      "name": "desktop",
+      "baselines": [
+        489.65625,
+        489.671875
+      ]
+    },
+    {
+      "name": "tablet",
+      "baselines": [
+        441.25,
+        441.25
+      ]
+    },
+    {
+      "name": "inline",
+      "baselines": [
+        343.65625,
+        343.671875
+      ]
+    },
+    {
+      "name": "narrow",
+      "baselines": [
+        355.375,
+        355.390625
+      ]
+    }
+  ],
+  "errors": []
+}

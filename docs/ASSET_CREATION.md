@@ -79,12 +79,28 @@ never place them in scripts, metadata, documentation, or committed files.
 
 ## Mandatory UI Prompt Context
 
+**BLOCKER — the players cannot rely on reading. No long text anywhere in player
+UI. Teach every action with pictures and a short visual demonstration. Apply
+[UI_PRE_READER_GATES.md](UI_PRE_READER_GATES.md) before prompting and during
+asset, composition and release review. All `<`, `>` and `=` signs must be at
+least 2× their former rendered size in every context.**
+
+The comparison baseline is the original small in-game sign, not the latest
+mockup. The author's subsequent correction requires a filled plain relation
+to stay approximately as tall as the neighboring numerals; it must not fill
+an oversized crocodile slot. Frame surface and symbol/text must move together
+for hover and press, inside a stable root hit area.
+
 Before creating any visible UI, use the existing game design language and decide which parts are structural, stateful, and textual. Related controls must share one canonical frame/source. A production control is composed from a stable reusable frame, aligned normal/active icon states, runtime text, and code/template animation; it is not a set of independently generated complete button images.
 
 When prompting an image model, include these requirements explicitly:
 
 ```text
 Match the supplied game UI reference and preserve one shared visual system.
+The players are small children who cannot read or barely read. Explain through
+clear pictures and demonstrated actions, never paragraphs or written directions.
+Do not generate lettering, labels or numerals. Keep ample room for large runtime
+comparison signs (<, >, =) at least twice their previous visible size.
 Create only the requested structural frame or isolated icon pair; do not add text.
 For a state pair, generate both states together with identical silhouette, pose,
 scale, cell size, and placement. Change only light, glow, or compact particles.

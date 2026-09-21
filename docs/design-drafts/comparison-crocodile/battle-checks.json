@@ -1,0 +1,935 @@
+{
+  "errors": [],
+  "layouts": [
+    {
+      "name": "desktop",
+      "stage": 1,
+      "board": {
+        "x": 254,
+        "y": 62,
+        "right": 994,
+        "bottom": 362,
+        "width": 740,
+        "height": 300
+      },
+      "row": {
+        "x": 308,
+        "y": 136,
+        "right": 940,
+        "bottom": 288,
+        "width": 632,
+        "height": 152
+      },
+      "problem": {
+        "x": 308,
+        "y": 161,
+        "right": 657.1875,
+        "bottom": 263,
+        "width": 349.1875,
+        "height": 102
+      },
+      "answers": {
+        "x": 667.1875,
+        "y": 176.984375,
+        "right": 939.984375,
+        "bottom": 247,
+        "width": 272.796875,
+        "height": 70.015625
+      },
+      "footer": {
+        "x": 308,
+        "y": 294,
+        "right": 940,
+        "bottom": 340,
+        "width": 632,
+        "height": 46
+      },
+      "minButton": 70.015625,
+      "overflow": 0,
+      "fruits": [
+        61.046875,
+        117.3125
+      ]
+    },
+    {
+      "name": "desktop",
+      "stage": 2,
+      "board": {
+        "x": 254,
+        "y": 62,
+        "right": 994,
+        "bottom": 362,
+        "width": 740,
+        "height": 300
+      },
+      "row": {
+        "x": 308,
+        "y": 136,
+        "right": 940,
+        "bottom": 288,
+        "width": 632,
+        "height": 152
+      },
+      "problem": {
+        "x": 308,
+        "y": 161,
+        "right": 657.1875,
+        "bottom": 263,
+        "width": 349.1875,
+        "height": 102
+      },
+      "answers": {
+        "x": 667.1875,
+        "y": 176.984375,
+        "right": 939.984375,
+        "bottom": 247,
+        "width": 272.796875,
+        "height": 70.015625
+      },
+      "footer": {
+        "x": 308,
+        "y": 294,
+        "right": 940,
+        "bottom": 340,
+        "width": 632,
+        "height": 46
+      },
+      "minButton": 70.015625,
+      "overflow": 0,
+      "fruits": [
+        37.234375,
+        37.234375,
+        37.234375,
+        37.234375,
+        37.234375,
+        37.234375
+      ]
+    },
+    {
+      "name": "desktop",
+      "stage": 3,
+      "board": {
+        "x": 254,
+        "y": 62,
+        "right": 994,
+        "bottom": 362,
+        "width": 740,
+        "height": 300
+      },
+      "row": {
+        "x": 308,
+        "y": 136,
+        "right": 940,
+        "bottom": 288,
+        "width": 632,
+        "height": 152
+      },
+      "problem": {
+        "x": 308,
+        "y": 143,
+        "right": 657.1875,
+        "bottom": 281,
+        "width": 349.1875,
+        "height": 138
+      },
+      "answers": {
+        "x": 667.1875,
+        "y": 176.984375,
+        "right": 939.984375,
+        "bottom": 247,
+        "width": 272.796875,
+        "height": 70.015625
+      },
+      "footer": {
+        "x": 308,
+        "y": 294,
+        "right": 940,
+        "bottom": 340,
+        "width": 632,
+        "height": 46
+      },
+      "minButton": 70.015625,
+      "overflow": 0,
+      "fruits": [
+        37.234375,
+        37.234375,
+        37.234375,
+        37.234375,
+        37.234375,
+        37.234375
+      ]
+    },
+    {
+      "name": "desktop",
+      "stage": 4,
+      "board": {
+        "x": 254,
+        "y": 62,
+        "right": 994,
+        "bottom": 362,
+        "width": 740,
+        "height": 300
+      },
+      "row": {
+        "x": 308,
+        "y": 136,
+        "right": 940,
+        "bottom": 288,
+        "width": 632,
+        "height": 152
+      },
+      "problem": {
+        "x": 308,
+        "y": 164.109375,
+        "right": 657.1875,
+        "bottom": 259.875,
+        "width": 349.1875,
+        "height": 95.765625
+      },
+      "answers": {
+        "x": 667.1875,
+        "y": 176.984375,
+        "right": 939.984375,
+        "bottom": 247,
+        "width": 272.796875,
+        "height": 70.015625
+      },
+      "footer": {
+        "x": 308,
+        "y": 294,
+        "right": 940,
+        "bottom": 340,
+        "width": 632,
+        "height": 46
+      },
+      "minButton": 70.015625,
+      "overflow": 0,
+      "fruits": []
+    },
+    {
+      "name": "tablet",
+      "stage": 1,
+      "board": {
+        "x": 126,
+        "y": 62,
+        "right": 866,
+        "bottom": 362,
+        "width": 740,
+        "height": 300
+      },
+      "row": {
+        "x": 180,
+        "y": 136,
+        "right": 812,
+        "bottom": 288,
+        "width": 632,
+        "height": 152
+      },
+      "problem": {
+        "x": 180,
+        "y": 161,
+        "right": 529.1875,
+        "bottom": 263,
+        "width": 349.1875,
+        "height": 102
+      },
+      "answers": {
+        "x": 539.1875,
+        "y": 176.984375,
+        "right": 811.984375,
+        "bottom": 247,
+        "width": 272.796875,
+        "height": 70.015625
+      },
+      "footer": {
+        "x": 180,
+        "y": 294,
+        "right": 812,
+        "bottom": 340,
+        "width": 632,
+        "height": 46
+      },
+      "minButton": 70.015625,
+      "overflow": 0,
+      "fruits": [
+        61.046875,
+        117.3125
+      ]
+    },
+    {
+      "name": "tablet",
+      "stage": 2,
+      "board": {
+        "x": 126,
+        "y": 62,
+        "right": 866,
+        "bottom": 362,
+        "width": 740,
+        "height": 300
+      },
+      "row": {
+        "x": 180,
+        "y": 136,
+        "right": 812,
+        "bottom": 288,
+        "width": 632,
+        "height": 152
+      },
+      "problem": {
+        "x": 180,
+        "y": 161,
+        "right": 529.1875,
+        "bottom": 263,
+        "width": 349.1875,
+        "height": 102
+      },
+      "answers": {
+        "x": 539.1875,
+        "y": 176.984375,
+        "right": 811.984375,
+        "bottom": 247,
+        "width": 272.796875,
+        "height": 70.015625
+      },
+      "footer": {
+        "x": 180,
+        "y": 294,
+        "right": 812,
+        "bottom": 340,
+        "width": 632,
+        "height": 46
+      },
+      "minButton": 70.015625,
+      "overflow": 0,
+      "fruits": [
+        37.234375,
+        37.234375,
+        37.234375,
+        37.234375,
+        37.234375,
+        37.234375
+      ]
+    },
+    {
+      "name": "tablet",
+      "stage": 3,
+      "board": {
+        "x": 126,
+        "y": 62,
+        "right": 866,
+        "bottom": 362,
+        "width": 740,
+        "height": 300
+      },
+      "row": {
+        "x": 180,
+        "y": 136,
+        "right": 812,
+        "bottom": 288,
+        "width": 632,
+        "height": 152
+      },
+      "problem": {
+        "x": 180,
+        "y": 143,
+        "right": 529.1875,
+        "bottom": 281,
+        "width": 349.1875,
+        "height": 138
+      },
+      "answers": {
+        "x": 539.1875,
+        "y": 176.984375,
+        "right": 811.984375,
+        "bottom": 247,
+        "width": 272.796875,
+        "height": 70.015625
+      },
+      "footer": {
+        "x": 180,
+        "y": 294,
+        "right": 812,
+        "bottom": 340,
+        "width": 632,
+        "height": 46
+      },
+      "minButton": 70.015625,
+      "overflow": 0,
+      "fruits": [
+        37.234375,
+        37.234375,
+        37.234375,
+        37.234375,
+        37.234375,
+        37.234375
+      ]
+    },
+    {
+      "name": "tablet",
+      "stage": 4,
+      "board": {
+        "x": 126,
+        "y": 62,
+        "right": 866,
+        "bottom": 362,
+        "width": 740,
+        "height": 300
+      },
+      "row": {
+        "x": 180,
+        "y": 136,
+        "right": 812,
+        "bottom": 288,
+        "width": 632,
+        "height": 152
+      },
+      "problem": {
+        "x": 180,
+        "y": 164.109375,
+        "right": 529.1875,
+        "bottom": 259.875,
+        "width": 349.1875,
+        "height": 95.765625
+      },
+      "answers": {
+        "x": 539.1875,
+        "y": 176.984375,
+        "right": 811.984375,
+        "bottom": 247,
+        "width": 272.796875,
+        "height": 70.015625
+      },
+      "footer": {
+        "x": 180,
+        "y": 294,
+        "right": 812,
+        "bottom": 340,
+        "width": 632,
+        "height": 46
+      },
+      "minButton": 70.015625,
+      "overflow": 0,
+      "fruits": []
+    },
+    {
+      "name": "inline",
+      "stage": 1,
+      "board": {
+        "x": 0,
+        "y": 62,
+        "right": 704,
+        "bottom": 362,
+        "width": 704,
+        "height": 300
+      },
+      "row": {
+        "x": 54,
+        "y": 136,
+        "right": 650,
+        "bottom": 288,
+        "width": 596,
+        "height": 152
+      },
+      "problem": {
+        "x": 54,
+        "y": 161,
+        "right": 382.96875,
+        "bottom": 263,
+        "width": 328.96875,
+        "height": 102
+      },
+      "answers": {
+        "x": 392.96875,
+        "y": 179.078125,
+        "right": 650,
+        "bottom": 244.921875,
+        "width": 257.03125,
+        "height": 65.84375
+      },
+      "footer": {
+        "x": 54,
+        "y": 294,
+        "right": 650,
+        "bottom": 340,
+        "width": 596,
+        "height": 46
+      },
+      "minButton": 65.84375,
+      "overflow": 0,
+      "fruits": [
+        57.359375,
+        110.25
+      ]
+    },
+    {
+      "name": "inline",
+      "stage": 2,
+      "board": {
+        "x": 0,
+        "y": 62,
+        "right": 704,
+        "bottom": 362,
+        "width": 704,
+        "height": 300
+      },
+      "row": {
+        "x": 54,
+        "y": 136,
+        "right": 650,
+        "bottom": 288,
+        "width": 596,
+        "height": 152
+      },
+      "problem": {
+        "x": 54,
+        "y": 161,
+        "right": 382.96875,
+        "bottom": 263,
+        "width": 328.96875,
+        "height": 102
+      },
+      "answers": {
+        "x": 392.96875,
+        "y": 179.078125,
+        "right": 650,
+        "bottom": 244.921875,
+        "width": 257.03125,
+        "height": 65.84375
+      },
+      "footer": {
+        "x": 54,
+        "y": 294,
+        "right": 650,
+        "bottom": 340,
+        "width": 596,
+        "height": 46
+      },
+      "minButton": 65.84375,
+      "overflow": 0,
+      "fruits": [
+        34.828125,
+        34.828125,
+        34.828125,
+        34.828125,
+        34.828125,
+        34.828125
+      ]
+    },
+    {
+      "name": "inline",
+      "stage": 3,
+      "board": {
+        "x": 0,
+        "y": 62,
+        "right": 704,
+        "bottom": 362,
+        "width": 704,
+        "height": 300
+      },
+      "row": {
+        "x": 54,
+        "y": 136,
+        "right": 650,
+        "bottom": 288,
+        "width": 596,
+        "height": 152
+      },
+      "problem": {
+        "x": 54,
+        "y": 143,
+        "right": 382.96875,
+        "bottom": 281,
+        "width": 328.96875,
+        "height": 138
+      },
+      "answers": {
+        "x": 392.96875,
+        "y": 179.078125,
+        "right": 650,
+        "bottom": 244.921875,
+        "width": 257.03125,
+        "height": 65.84375
+      },
+      "footer": {
+        "x": 54,
+        "y": 294,
+        "right": 650,
+        "bottom": 340,
+        "width": 596,
+        "height": 46
+      },
+      "minButton": 65.84375,
+      "overflow": 0,
+      "fruits": [
+        34.828125,
+        34.828125,
+        34.828125,
+        34.828125,
+        34.828125,
+        34.828125
+      ]
+    },
+    {
+      "name": "inline",
+      "stage": 4,
+      "board": {
+        "x": 0,
+        "y": 62,
+        "right": 704,
+        "bottom": 362,
+        "width": 704,
+        "height": 300
+      },
+      "row": {
+        "x": 54,
+        "y": 136,
+        "right": 650,
+        "bottom": 288,
+        "width": 596,
+        "height": 152
+      },
+      "problem": {
+        "x": 54,
+        "y": 167,
+        "right": 382.96875,
+        "bottom": 256.984375,
+        "width": 328.96875,
+        "height": 89.984375
+      },
+      "answers": {
+        "x": 392.96875,
+        "y": 179.078125,
+        "right": 650,
+        "bottom": 244.921875,
+        "width": 257.03125,
+        "height": 65.84375
+      },
+      "footer": {
+        "x": 54,
+        "y": 294,
+        "right": 650,
+        "bottom": 340,
+        "width": 596,
+        "height": 46
+      },
+      "minButton": 65.84375,
+      "overflow": 0,
+      "fruits": []
+    },
+    {
+      "name": "narrow",
+      "stage": 1,
+      "board": {
+        "x": 0,
+        "y": 80,
+        "right": 320,
+        "bottom": 600,
+        "width": 320,
+        "height": 520
+      },
+      "row": {
+        "x": 38,
+        "y": 164,
+        "right": 282,
+        "bottom": 484,
+        "width": 244,
+        "height": 320
+      },
+      "problem": {
+        "x": 38,
+        "y": 191,
+        "right": 282,
+        "bottom": 316,
+        "width": 244,
+        "height": 125
+      },
+      "answers": {
+        "x": 38,
+        "y": 382,
+        "right": 282,
+        "bottom": 457,
+        "width": 244,
+        "height": 75
+      },
+      "footer": {
+        "x": 38,
+        "y": 496,
+        "right": 282,
+        "bottom": 572,
+        "width": 244,
+        "height": 76
+      },
+      "minButton": 75,
+      "overflow": 0,
+      "fruits": [
+        41.890625,
+        80.5
+      ]
+    },
+    {
+      "name": "narrow",
+      "stage": 2,
+      "board": {
+        "x": 0,
+        "y": 80,
+        "right": 320,
+        "bottom": 600,
+        "width": 320,
+        "height": 520
+      },
+      "row": {
+        "x": 38,
+        "y": 164,
+        "right": 282,
+        "bottom": 484,
+        "width": 244,
+        "height": 320
+      },
+      "problem": {
+        "x": 38,
+        "y": 191,
+        "right": 282,
+        "bottom": 316,
+        "width": 244,
+        "height": 125
+      },
+      "answers": {
+        "x": 38,
+        "y": 382,
+        "right": 282,
+        "bottom": 457,
+        "width": 244,
+        "height": 75
+      },
+      "footer": {
+        "x": 38,
+        "y": 496,
+        "right": 282,
+        "bottom": 572,
+        "width": 244,
+        "height": 76
+      },
+      "minButton": 75,
+      "overflow": 0,
+      "fruits": [
+        24.703125,
+        24.71875,
+        24.71875,
+        24.71875,
+        24.71875,
+        24.71875
+      ]
+    },
+    {
+      "name": "narrow",
+      "stage": 3,
+      "board": {
+        "x": 0,
+        "y": 80,
+        "right": 320,
+        "bottom": 600,
+        "width": 320,
+        "height": 520
+      },
+      "row": {
+        "x": 38,
+        "y": 164,
+        "right": 282,
+        "bottom": 484,
+        "width": 244,
+        "height": 320
+      },
+      "problem": {
+        "x": 38,
+        "y": 186,
+        "right": 282,
+        "bottom": 331,
+        "width": 244,
+        "height": 145
+      },
+      "answers": {
+        "x": 38,
+        "y": 387,
+        "right": 282,
+        "bottom": 462,
+        "width": 244,
+        "height": 75
+      },
+      "footer": {
+        "x": 38,
+        "y": 496,
+        "right": 282,
+        "bottom": 572,
+        "width": 244,
+        "height": 76
+      },
+      "minButton": 75,
+      "overflow": 0,
+      "fruits": [
+        24.703125,
+        24.71875,
+        24.71875,
+        24.71875,
+        24.71875,
+        24.71875
+      ]
+    },
+    {
+      "name": "narrow",
+      "stage": 4,
+      "board": {
+        "x": 0,
+        "y": 80,
+        "right": 320,
+        "bottom": 600,
+        "width": 320,
+        "height": 520
+      },
+      "row": {
+        "x": 38,
+        "y": 170.59375,
+        "right": 282,
+        "bottom": 484,
+        "width": 244,
+        "height": 313.40625
+      },
+      "problem": {
+        "x": 38,
+        "y": 195.9375,
+        "right": 282,
+        "bottom": 320.9375,
+        "width": 244,
+        "height": 125
+      },
+      "answers": {
+        "x": 38,
+        "y": 383.640625,
+        "right": 282,
+        "bottom": 458.640625,
+        "width": 244,
+        "height": 75
+      },
+      "footer": {
+        "x": 38,
+        "y": 496,
+        "right": 282,
+        "bottom": 572,
+        "width": 244,
+        "height": 76
+      },
+      "minButton": 75,
+      "overflow": 0,
+      "fruits": []
+    }
+  ],
+  "hover": [
+    {
+      "normal": {
+        "surface": "none",
+        "root": {
+          "x": 667.1875,
+          "y": 176.984375,
+          "width": 88.265625,
+          "height": 70.015625
+        },
+        "symbol": {
+          "x": 681.296875,
+          "y": 190.984375
+        }
+      },
+      "hover": {
+        "surface": "matrix(1, 0, 0, 1, 0, -2)",
+        "root": {
+          "x": 667.1875,
+          "y": 176.984375,
+          "width": 88.265625,
+          "height": 70.015625
+        },
+        "symbol": {
+          "x": 681.296875,
+          "y": 188.984375
+        }
+      },
+      "pressed": {
+        "surface": "matrix(1, 0, 0, 1, 0, 1)",
+        "root": {
+          "x": 667.1875,
+          "y": 176.984375,
+          "width": 88.265625,
+          "height": 70.015625
+        },
+        "symbol": {
+          "x": 681.296875,
+          "y": 191.984375
+        }
+      },
+      "out": {
+        "surface": "none",
+        "root": {
+          "x": 667.1875,
+          "y": 176.984375,
+          "width": 88.265625,
+          "height": 70.015625
+        },
+        "symbol": {
+          "x": 681.296875,
+          "y": 190.984375
+        }
+      }
+    }
+  ],
+  "turns": [
+    "desktop/1: three first answers -> 101 -> one attack of strength 2",
+    "desktop/2: three first answers -> 101 -> one attack of strength 2",
+    "desktop/3: three first answers -> 101 -> one attack of strength 2",
+    "desktop/4: three first answers -> 101 -> one attack of strength 2",
+    "tablet/1: three first answers -> 101 -> one attack of strength 2",
+    "tablet/2: three first answers -> 101 -> one attack of strength 2",
+    "tablet/3: three first answers -> 101 -> one attack of strength 2",
+    "tablet/4: three first answers -> 101 -> one attack of strength 2",
+    "inline/1: three first answers -> 101 -> one attack of strength 2",
+    "inline/2: three first answers -> 101 -> one attack of strength 2",
+    "inline/3: three first answers -> 101 -> one attack of strength 2",
+    "inline/4: three first answers -> 101 -> one attack of strength 2",
+    "narrow/1: three first answers -> 101 -> one attack of strength 2",
+    "narrow/2: three first answers -> 101 -> one attack of strength 2",
+    "narrow/3: three first answers -> 101 -> one attack of strength 2",
+    "narrow/4: three first answers -> 101 -> one attack of strength 2"
+  ],
+  "demo": [
+    "Větší než",
+    "Menší než",
+    "Stejně",
+    "cancelled demo did not overwrite new stage"
+  ],
+  "sign": [
+    {
+      "name": "desktop",
+      "svgWidth": 52,
+      "svgHeight": 47.65625,
+      "signInkHeight": 41.6,
+      "numberInkHeight": 46
+    },
+    {
+      "name": "tablet",
+      "svgWidth": 52,
+      "svgHeight": 47.65625,
+      "signInkHeight": 41.6,
+      "numberInkHeight": 46
+    },
+    {
+      "name": "inline",
+      "svgWidth": 52,
+      "svgHeight": 47.65625,
+      "signInkHeight": 41.6,
+      "numberInkHeight": 46
+    },
+    {
+      "name": "narrow",
+      "svgWidth": 45.65625,
+      "svgHeight": 41.84375,
+      "signInkHeight": 36.525000000000006,
+      "numberInkHeight": 48.875
+    }
+  ]
+}

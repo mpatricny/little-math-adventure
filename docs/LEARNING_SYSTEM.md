@@ -1,5 +1,12 @@
 # Mastery-Based Battle System Redesign Spec
 
+> **BLOCKING UI REQUIREMENT (2026-09-20): children cannot rely on reading. NO LONG
+> TEXT ANYWHERE IN PLAYER UI. Teach with pictures and demonstrations; short labels
+> only. All design, functional, visual and release checks must include
+> [UI_PRE_READER_GATES.md](UI_PRE_READER_GATES.md), including 2× larger `<`, `>`, `=`.
+> The first four comparison steps are object size → object count → objects with
+> count numerals → numerals alone. This supersedes older presentation examples.**
+
 Version: 1.1
 Status: runtime-aligned specification
 Last synchronized with implementation: 2026-07-23

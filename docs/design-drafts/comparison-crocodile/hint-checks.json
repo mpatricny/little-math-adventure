@@ -1,0 +1,473 @@
+{
+  "errors": [],
+  "layouts": [
+    {
+      "name": "desktop",
+      "board": {
+        "x": 254,
+        "y": 62,
+        "right": 994,
+        "bottom": 362,
+        "width": 740,
+        "height": 300
+      },
+      "row": {
+        "x": 308,
+        "y": 136,
+        "right": 940,
+        "bottom": 288,
+        "width": 632,
+        "height": 152
+      },
+      "hints": [
+        {
+          "x": 667.1875,
+          "y": 156.484375,
+          "right": 755.453125,
+          "bottom": 192.484375,
+          "width": 88.265625,
+          "height": 36
+        },
+        {
+          "x": 759.453125,
+          "y": 156.484375,
+          "right": 847.71875,
+          "bottom": 192.484375,
+          "width": 88.265625,
+          "height": 36
+        },
+        {
+          "x": 851.71875,
+          "y": 156.484375,
+          "right": 939.984375,
+          "bottom": 192.484375,
+          "width": 88.265625,
+          "height": 36
+        }
+      ],
+      "buttons": [
+        {
+          "x": 667.1875,
+          "y": 197.484375,
+          "right": 755.453125,
+          "bottom": 267.5,
+          "width": 88.265625,
+          "height": 70.015625
+        },
+        {
+          "x": 759.453125,
+          "y": 197.484375,
+          "right": 847.71875,
+          "bottom": 267.5,
+          "width": 88.265625,
+          "height": 70.015625
+        },
+        {
+          "x": 851.71875,
+          "y": 197.484375,
+          "right": 939.984375,
+          "bottom": 267.5,
+          "width": 88.265625,
+          "height": 70.015625
+        }
+      ],
+      "slotChildren": 0,
+      "overflow": 0
+    },
+    {
+      "name": "tablet",
+      "board": {
+        "x": 126,
+        "y": 62,
+        "right": 866,
+        "bottom": 362,
+        "width": 740,
+        "height": 300
+      },
+      "row": {
+        "x": 180,
+        "y": 136,
+        "right": 812,
+        "bottom": 288,
+        "width": 632,
+        "height": 152
+      },
+      "hints": [
+        {
+          "x": 539.1875,
+          "y": 156.484375,
+          "right": 627.453125,
+          "bottom": 192.484375,
+          "width": 88.265625,
+          "height": 36
+        },
+        {
+          "x": 631.453125,
+          "y": 156.484375,
+          "right": 719.71875,
+          "bottom": 192.484375,
+          "width": 88.265625,
+          "height": 36
+        },
+        {
+          "x": 723.71875,
+          "y": 156.484375,
+          "right": 811.984375,
+          "bottom": 192.484375,
+          "width": 88.265625,
+          "height": 36
+        }
+      ],
+      "buttons": [
+        {
+          "x": 539.1875,
+          "y": 197.484375,
+          "right": 627.453125,
+          "bottom": 267.5,
+          "width": 88.265625,
+          "height": 70.015625
+        },
+        {
+          "x": 631.453125,
+          "y": 197.484375,
+          "right": 719.71875,
+          "bottom": 267.5,
+          "width": 88.265625,
+          "height": 70.015625
+        },
+        {
+          "x": 723.71875,
+          "y": 197.484375,
+          "right": 811.984375,
+          "bottom": 267.5,
+          "width": 88.265625,
+          "height": 70.015625
+        }
+      ],
+      "slotChildren": 0,
+      "overflow": 0
+    },
+    {
+      "name": "inline",
+      "board": {
+        "x": 0,
+        "y": 62,
+        "right": 704,
+        "bottom": 362,
+        "width": 704,
+        "height": 300
+      },
+      "row": {
+        "x": 54,
+        "y": 136,
+        "right": 650,
+        "bottom": 288,
+        "width": 596,
+        "height": 152
+      },
+      "hints": [
+        {
+          "x": 392.96875,
+          "y": 158.578125,
+          "right": 475.96875,
+          "bottom": 194.578125,
+          "width": 83,
+          "height": 36
+        },
+        {
+          "x": 479.96875,
+          "y": 158.578125,
+          "right": 562.984375,
+          "bottom": 194.578125,
+          "width": 83.015625,
+          "height": 36
+        },
+        {
+          "x": 566.984375,
+          "y": 158.578125,
+          "right": 649.984375,
+          "bottom": 194.578125,
+          "width": 83,
+          "height": 36
+        }
+      ],
+      "buttons": [
+        {
+          "x": 392.96875,
+          "y": 199.578125,
+          "right": 475.96875,
+          "bottom": 265.421875,
+          "width": 83,
+          "height": 65.84375
+        },
+        {
+          "x": 479.96875,
+          "y": 199.578125,
+          "right": 562.984375,
+          "bottom": 265.421875,
+          "width": 83.015625,
+          "height": 65.84375
+        },
+        {
+          "x": 566.984375,
+          "y": 199.578125,
+          "right": 649.984375,
+          "bottom": 265.421875,
+          "width": 83,
+          "height": 65.84375
+        }
+      ],
+      "slotChildren": 0,
+      "overflow": 0
+    },
+    {
+      "name": "narrow",
+      "board": {
+        "x": 0,
+        "y": 80,
+        "right": 320,
+        "bottom": 600,
+        "width": 320,
+        "height": 520
+      },
+      "row": {
+        "x": 38,
+        "y": 170.59375,
+        "right": 282,
+        "bottom": 484,
+        "width": 244,
+        "height": 313.40625
+      },
+      "hints": [
+        {
+          "x": 38,
+          "y": 352.890625,
+          "right": 113.328125,
+          "bottom": 388.890625,
+          "width": 75.328125,
+          "height": 36
+        },
+        {
+          "x": 122.328125,
+          "y": 352.890625,
+          "right": 197.65625,
+          "bottom": 388.890625,
+          "width": 75.328125,
+          "height": 36
+        },
+        {
+          "x": 206.65625,
+          "y": 352.890625,
+          "right": 282,
+          "bottom": 388.890625,
+          "width": 75.34375,
+          "height": 36
+        }
+      ],
+      "buttons": [
+        {
+          "x": 38,
+          "y": 393.890625,
+          "right": 113.328125,
+          "bottom": 468.890625,
+          "width": 75.328125,
+          "height": 75
+        },
+        {
+          "x": 122.328125,
+          "y": 393.890625,
+          "right": 197.65625,
+          "bottom": 468.890625,
+          "width": 75.328125,
+          "height": 75
+        },
+        {
+          "x": 206.65625,
+          "y": 393.890625,
+          "right": 282,
+          "bottom": 468.890625,
+          "width": 75.34375,
+          "height": 75
+        }
+      ],
+      "slotChildren": 0,
+      "overflow": 0
+    }
+  ],
+  "timers": [
+    "3 s: hidden at 1 s, then shown",
+    "6 s: hidden-tab interval excluded",
+    "10 s: hidden at 1 s, then shown"
+  ],
+  "assistance": [
+    {
+      "mode": "practice",
+      "stage": "3",
+      "result": "none",
+      "phase": "none",
+      "buttonStyle": "wood",
+      "index": "1",
+      "damage": "1",
+      "results": "1",
+      "assisted": "1",
+      "complete": "false",
+      "hint": "shown",
+      "supportLevel": "0",
+      "hintDelay": "0"
+    },
+    {
+      "mode": "practice",
+      "stage": "3",
+      "result": "none",
+      "phase": "none",
+      "buttonStyle": "wood",
+      "index": "2",
+      "damage": "2",
+      "results": "11",
+      "assisted": "11",
+      "complete": "false",
+      "hint": "hidden",
+      "supportLevel": "1",
+      "hintDelay": "3000"
+    },
+    {
+      "mode": "practice",
+      "stage": "3",
+      "result": "none",
+      "phase": "none",
+      "buttonStyle": "wood",
+      "index": "2",
+      "damage": "3",
+      "results": "111",
+      "assisted": "111",
+      "complete": "true",
+      "hint": "hidden",
+      "supportLevel": "1",
+      "hintDelay": "3000"
+    },
+    {
+      "mode": "practice",
+      "stage": "3",
+      "result": "none",
+      "phase": "none",
+      "buttonStyle": "wood",
+      "index": "1",
+      "damage": "1",
+      "results": "1",
+      "assisted": "0",
+      "complete": "false",
+      "hint": "hidden",
+      "supportLevel": "2",
+      "hintDelay": "6000"
+    },
+    {
+      "mode": "practice",
+      "stage": "3",
+      "result": "none",
+      "phase": "none",
+      "buttonStyle": "wood",
+      "index": "2",
+      "damage": "2",
+      "results": "11",
+      "assisted": "01",
+      "complete": "false",
+      "hint": "hidden",
+      "supportLevel": "2",
+      "hintDelay": "6000"
+    },
+    {
+      "mode": "practice",
+      "stage": "3",
+      "result": "none",
+      "phase": "none",
+      "buttonStyle": "wood",
+      "index": "2",
+      "damage": "3",
+      "results": "111",
+      "assisted": "010",
+      "complete": "true",
+      "hint": "hidden",
+      "supportLevel": "3",
+      "hintDelay": "10000"
+    },
+    {
+      "mode": "practice",
+      "stage": "3",
+      "result": "none",
+      "phase": "none",
+      "buttonStyle": "wood",
+      "index": "1",
+      "damage": "1",
+      "results": "1",
+      "assisted": "1",
+      "complete": "false",
+      "hint": "hidden",
+      "supportLevel": "3",
+      "hintDelay": "10000"
+    },
+    {
+      "mode": "practice",
+      "stage": "3",
+      "result": "none",
+      "phase": "none",
+      "buttonStyle": "wood",
+      "index": "2",
+      "damage": "2",
+      "results": "11",
+      "assisted": "10",
+      "complete": "false",
+      "hint": "hidden",
+      "supportLevel": "4",
+      "hintDelay": "off"
+    },
+    {
+      "mode": "practice",
+      "stage": "3",
+      "result": "none",
+      "phase": "none",
+      "buttonStyle": "wood",
+      "index": "2",
+      "damage": "3",
+      "results": "111",
+      "assisted": "100",
+      "complete": "true",
+      "hint": "hidden",
+      "supportLevel": "4",
+      "hintDelay": "off"
+    },
+    {
+      "mode": "practice",
+      "stage": "3",
+      "result": "none",
+      "phase": "none",
+      "buttonStyle": "wood",
+      "index": "1",
+      "damage": "0",
+      "results": "0",
+      "assisted": "0",
+      "complete": "false",
+      "hint": "hidden",
+      "supportLevel": "4",
+      "hintDelay": "off"
+    },
+    {
+      "mode": "practice",
+      "stage": "3",
+      "result": "none",
+      "phase": "none",
+      "buttonStyle": "wood",
+      "index": "2",
+      "damage": "0",
+      "results": "00",
+      "assisted": "00",
+      "complete": "false",
+      "hint": "hidden",
+      "supportLevel": "3",
+      "hintDelay": "10000"
+    }
+  ],
+  "checks": [
+    "0 -> 3 -> 6 -> 10 -> off; progress retained across turns; two errors restore one step",
+    "Hint timer cancelled by answer and stage change; blank relation preserved; assistance tracked per question"
+  ]
+}

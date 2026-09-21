@@ -25,6 +25,11 @@ Produkční soubory: `public/assets/images/underwater/post-wreck.webp`, `wreck-h
 
 ## Ověření a vizuální přejímka
 
+> **POVINNÁ PŘEJÍMKA UI OD 20. 9. 2026: DĚTI NEUMĚJÍ ČÍST. Žádný dlouhý text
+> nikde v herním UI; vysvětlení musí být obrázkové a názorné. Všechny kontroly
+> zahrnují [UI pro nečtenáře](UI_PRE_READER_GATES.md), včetně nejméně 2× větších `<`, `>` a `=`.
+> Starší výsledky testů nejsou dokladem splnění této nové podmínky.**
+
 - Před testováním zkontrolována migrace: pouze existující klientská migrace mastery, žádná nová databázová migrace. Doplnění místností hydratuje staré savy bez resetu postupu.
 - `npm test -- --silent --reporter=dot`: 39 souborů, 285 testů prošlo. Obsahují nové průchody, jejich protější vstupy, blokování podpalubí, jednorázové odměny, rozdílnou historii co-op profilů a bezpečné oblasti VictoryScene.
 - `npm run build`: prošel; zbývají upozornění Vite na velikost společného balíku a kombinovaný statický/dynamický import MasterySystem.

@@ -1,0 +1,71 @@
+{
+  "runtimeErrors": [],
+  "viewports": [
+    {
+      "name": "desktop",
+      "width": 1248,
+      "height": 900,
+      "scrollWidth": 1248,
+      "intersects": false,
+      "frameRatio": 1.7125382262996942,
+      "naturalRatio": 1.7115384615384615,
+      "minButton": 44
+    },
+    {
+      "name": "tablet",
+      "width": 992,
+      "height": 768,
+      "scrollWidth": 992,
+      "intersects": false,
+      "frameRatio": 1.710344827586207,
+      "naturalRatio": 1.7115384615384615,
+      "minButton": 44
+    },
+    {
+      "name": "inline",
+      "width": 736,
+      "height": 800,
+      "scrollWidth": 736,
+      "intersects": false,
+      "frameRatio": 1.7116279069767442,
+      "naturalRatio": 1.7115384615384615,
+      "minButton": 44
+    },
+    {
+      "name": "narrow",
+      "width": 320,
+      "height": 800,
+      "scrollWidth": 320,
+      "intersects": false,
+      "frameRatio": null,
+      "naturalRatio": 1.7115384615384615,
+      "minButton": 44
+    }
+  ],
+  "checks": [
+    "desktop: stage 1, blank, all three choices, wrong, correct, equal, opposite direction",
+    "desktop: stage 2, blank, all three choices, wrong, correct, equal, opposite direction",
+    "desktop: stage 3, blank, all three choices, wrong, correct, equal, opposite direction",
+    "desktop: stage 4, blank, all three choices, wrong, correct, equal, opposite direction",
+    "tablet: stage 1, blank, all three choices, wrong, correct, equal, opposite direction",
+    "tablet: stage 2, blank, all three choices, wrong, correct, equal, opposite direction",
+    "tablet: stage 3, blank, all three choices, wrong, correct, equal, opposite direction",
+    "tablet: stage 4, blank, all three choices, wrong, correct, equal, opposite direction",
+    "inline: stage 1, blank, all three choices, wrong, correct, equal, opposite direction",
+    "inline: stage 2, blank, all three choices, wrong, correct, equal, opposite direction",
+    "inline: stage 3, blank, all three choices, wrong, correct, equal, opposite direction",
+    "inline: stage 4, blank, all three choices, wrong, correct, equal, opposite direction",
+    "narrow: stage 1, blank, all three choices, wrong, correct, equal, opposite direction",
+    "narrow: stage 2, blank, all three choices, wrong, correct, equal, opposite direction",
+    "narrow: stage 3, blank, all three choices, wrong, correct, equal, opposite direction",
+    "narrow: stage 4, blank, all three choices, wrong, correct, equal, opposite direction"
+  ],
+  "animation": [
+    "Stage 2: demo Větší než observed",
+    "Stage 2: demo Menší než observed",
+    "Stage 2: demo Stejně observed",
+    "Stage 4: demo Větší než observed",
+    "Stage 4: demo Menší než observed",
+    "Stage 4: demo Stejně observed"
+  ]
+}

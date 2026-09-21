@@ -39,6 +39,10 @@ Battle → Earn Crystals/Coins → Upgrade Gear → Bind Pets → Explore New Re
 
 - Pre-readers and early readers (ages 5-8 primary)
 - Visual storytelling with minimal text
+- **RELEASE BLOCKER: no long text anywhere in player UI. Children cannot rely on
+  reading; all explanations must work through pictures and demonstrated actions.
+  Short labels only. Every review must pass [UI_PRE_READER_GATES.md](UI_PRE_READER_GATES.md),
+  including the 2× visible-size requirement for every `<`, `>` and `=` sign.**
 - Math difficulty scales with progression
 
 ### Key Features

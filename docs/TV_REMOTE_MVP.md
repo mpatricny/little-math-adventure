@@ -51,6 +51,11 @@ Then enter the room code shown on the TV.
 
 ## Verification Flow
 
+> **POVINNÁ PŘEJÍMKA UI OD 20. 9. 2026: DĚTI NEUMĚJÍ ČÍST. Žádný dlouhý text
+> nikde v herním UI; vysvětlení musí být obrázkové a názorné. Všechny kontroly
+> zahrnují [UI pro nečtenáře](UI_PRE_READER_GATES.md), včetně nejméně 2× větších `<`, `>` a `=`.
+> Starší výsledky testů nejsou dokladem splnění této nové podmínky.**
+
 1. TV shows the pairing scene.
 2. Phone connects and shows `Spustit tréninkový boj`.
 3. Pressing that button starts `BattleScene` on the TV.

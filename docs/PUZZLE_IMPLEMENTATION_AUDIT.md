@@ -109,6 +109,11 @@ Jednorázové odměny nadále hlídají světová ID. Procvičení obnoveného p
 
 ## Původní ověření přestavby před opravou světla
 
+> **POVINNÁ PŘEJÍMKA UI OD 20. 9. 2026: DĚTI NEUMĚJÍ ČÍST. Žádný dlouhý text
+> nikde v herním UI; vysvětlení musí být obrázkové a názorné. Všechny kontroly
+> zahrnují [UI pro nečtenáře](UI_PRE_READER_GATES.md), včetně nejméně 2× větších `<`, `>` a `=`.
+> Starší výsledky testů nejsou dokladem splnění této nové podmínky.**
+
 - `npm test -- --maxWorkers=2 --testTimeout=30000`: **46 souborů, 347 testů prošlo**. Zahrnuje kapacitu všech profilů, 10 000 generovaných průchodů, správnost a přípustnost mezivýsledků, řešitelnost potrubí, světlo/nápovědy, adaptaci, první chybu, staré savy, export/import a serializaci interakcí.
 - Matice UI v `e2e/puzzles/puzzle-ui.spec.ts`: **4 průchody prošly**, pásma A/E, desktop 1280×720 a tablet 1024×768, skutečný WebGL i vynucený Canvas. Skutečné kliky a drag-and-drop řeší most, čtyři lesní minihry, svatyni, raketu, oba zámky a sedm podvodních povrchů. U podvodních puzzlů také chyba, oprava a zavření/obnovení.
 - Další test ověřil **Prastarý most**, umístění instrukce svatyně pod HUD a všech 25 textů v písmenovém zámku; prošel. Snímky nejdelšího textu a konečného umístění jsou uvedeny níže.

@@ -40,6 +40,11 @@ výslovně vysvětlí. Žádná nová městská lokace ani její vzhled se zde n
 
 ## Grafika a ověření
 
+> **POVINNÁ PŘEJÍMKA UI OD 20. 9. 2026: DĚTI NEUMĚJÍ ČÍST. Žádný dlouhý text
+> nikde v herním UI; vysvětlení musí být obrázkové a názorné. Všechny kontroly
+> zahrnují [UI pro nečtenáře](UI_PRE_READER_GATES.md), včetně nejméně 2× větších `<`, `>` a `=`.
+> Starší výsledky testů nejsou dokladem splnění této nové podmínky.**
+
 Všechny nové statické hosty jsou v `scenes.json`. Nové ovladače sdílejí
 existující modrý smaltovaný rám. Druhý otvor stroje používá frame původní
 ilustrace stroje bez změny poměru stran. Modrý krystal se načítá také při

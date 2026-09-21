@@ -84,6 +84,11 @@ Strážce prověřuje známé vztahy v běžném souboji. Silný útok je přede
 
 ## Výroba a ověření
 
+> **POVINNÁ PŘEJÍMKA UI OD 20. 9. 2026: DĚTI NEUMĚJÍ ČÍST. Žádný dlouhý text
+> nikde v herním UI; vysvětlení musí být obrázkové a názorné. Všechny kontroly
+> zahrnují [UI pro nečtenáře](UI_PRE_READER_GATES.md), včetně nejméně 2× větších `<`, `>` a `=`.
+> Starší výsledky testů nejsou dokladem splnění této nové podmínky.**
+
 1. Ověřit současný proud a truhlu s dítětem na tabletu: rozpozná cíl bez vysvětlování? Považuje ještě něco za váhu? Zkouší plán, nebo pouze náhodně překládá perly? Rozumí směru řazení?
 2. Postavit U03 a U05 jako dvě alternativní krátké mise. Jeden nový objev, jedna užitečná oprava. Teprve po ovládání a playtestu vyrábět celé větve.
 3. Doplnit obrácený proud, společné výhybky a návratové zkratky. V obou pořadích větví musí být potřebný princip předem dostupný; při opačném pořadí nabídnout stejnou krátkou ukázku.

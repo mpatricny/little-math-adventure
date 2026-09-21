@@ -230,6 +230,11 @@ this.journeySystem.setObjectState(this.roomId, 'mushroom_1', {
 
 ## Testing Checklist
 
+> **POVINNÁ PŘEJÍMKA UI OD 20. 9. 2026: DĚTI NEUMĚJÍ ČÍST. Žádný dlouhý text
+> nikde v herním UI; vysvětlení musí být obrázkové a názorné. Všechny kontroly
+> zahrnují [UI pro nečtenáře](UI_PRE_READER_GATES.md), včetně nejméně 2× větších `<`, `>` a `=`.
+> Starší výsledky testů nejsou dokladem splnění této nové podmínky.**
+
 1. [ ] Solve puzzle → mushroom appears
 2. [ ] Defeat mushroom → scene restores correctly (no floating rocks)
 3. [ ] Place one stone, walk → placed stone doesn't shake

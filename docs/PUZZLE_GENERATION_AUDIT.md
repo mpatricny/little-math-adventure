@@ -115,6 +115,11 @@ jejich tréninkové chování; stejný součet může být součástí jiného n
 
 ## Postup přestavby a ověření
 
+> **POVINNÁ PŘEJÍMKA UI OD 20. 9. 2026: DĚTI NEUMĚJÍ ČÍST. Žádný dlouhý text
+> nikde v herním UI; vysvětlení musí být obrázkové a názorné. Všechny kontroly
+> zahrnují [UI pro nečtenáře](UI_PRE_READER_GATES.md), včetně nejméně 2× větších `<`, `>` a `=`.
+> Starší výsledky testů nejsou dokladem splnění této nové podmínky.**
+
 1. Sdílené typy, pravidla obtížnosti, výběr, kanonické klíče a kompatibilní
    rozšíření savů. Otestovat deduplikaci napříč relacemi, export/import, selhání
    zápisu, kooperaci, obnovení instance a konečné vyčerpání.

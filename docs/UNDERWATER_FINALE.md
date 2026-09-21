@@ -33,6 +33,11 @@ Nová prostředí a druhý krystal vznikly pomocí skillu imagegen, s existujíc
 
 ## Ověření
 
+> **POVINNÁ PŘEJÍMKA UI OD 20. 9. 2026: DĚTI NEUMĚJÍ ČÍST. Žádný dlouhý text
+> nikde v herním UI; vysvětlení musí být obrázkové a názorné. Všechny kontroly
+> zahrnují [UI pro nečtenáře](UI_PRE_READER_GATES.md), včetně nejméně 2× větších `<`, `>` a `=`.
+> Starší výsledky testů nejsou dokladem splnění této nové podmínky.**
+
 - `npm test -- --silent --reporter=dot`: **292 testů / 40 souborů prošlo**. Součástí je export/import nového checkpointu a krystalu, jediné řešení optiky, brány, jednorázová odměna, co-op katalog a kontrakt názvů boss UI hostů.
 - `npm run build` prošlo. Projektový `tsc --noEmit` stále hlásí starší chyby mimo novou implementaci (nepoužívaná pole, nullability, chybějící Node typy a staré typy uložených dat). Žádná nová hlášená chyba v podvodních třídách, novém boss HUD, katalogu nebo upraveném battle docku. Cílený whitespace/diff check prošel.
 - Dvě sady finále/checkpointů: **8 scénářů prošlo v jednom běhu**, včetně všech 11 pokojů v idle/hover/pressed/pointer-out, reálných bojů v U09/U10, celého ponoru a všech tří boss fází v sólo i co-opu, obnovení hry před vyzvednutím odměny a optiky v Canvas/WebGL. Následně **4 aktualizované scénáře finále prošly znovu**, tentokrát co-op v Canvas 1280×800 bez volitelného požehnání.
