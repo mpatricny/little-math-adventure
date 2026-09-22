@@ -9,7 +9,7 @@ import type { Logger } from './logger.js';
 
 export interface AppDependencies {
   config: AppConfig;
-  auth: AuthService;
+  auth: AuthService | null;
   checkDatabase: () => Promise<void>;
   resolvePlayerAccount: (principal: AuthPrincipal) => Promise<PlayerAccount>;
   logger: Logger;
@@ -47,7 +47,9 @@ export function createApp({
     });
   });
 
-  app.all('/api/auth/*', context => auth.handler(context.req.raw));
+  app.all('/api/auth/*', context => auth
+    ? auth.handler(context.req.raw)
+    : context.json({ error: 'auth_not_configured' }, 503));
 
   app.get('/', context => context.json({
     service: 'cislokraj-api',
@@ -74,6 +76,7 @@ export function createApp({
   app.get('/v1/version', context => context.json({ release: config.appRelease }));
 
   app.get('/v1/me', async context => {
+    if (!auth) return context.json({ error: 'auth_not_configured' }, 503);
     const principal = await auth.getPrincipal(context.req.raw.headers);
     if (!principal) return context.json({ error: 'unauthorized' }, 401);
 

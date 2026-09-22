@@ -9,7 +9,8 @@ import { createLogger } from './logger.js';
 const config = loadConfig();
 const logger = createLogger(config.logLevel);
 const database = createDatabase(config.databaseUrl);
-const auth = createAuthService(config);
+const auth = config.auth ? createAuthService(config, config.auth) : null;
+if (!auth) logger.info('auth.not_configured');
 const app = createApp({
   config,
   auth,
@@ -34,7 +35,7 @@ server.on('error', error => {
   logger.error('server.listen_failed', { error: error.message });
   void Promise.all([
     database.end({ timeout: 5 }),
-    auth.close(),
+    auth?.close(),
   ]).finally(() => process.exit(1));
 });
 
@@ -53,7 +54,7 @@ function shutdown(signal: NodeJS.Signals): void {
   server.close(error => {
     void Promise.all([
       database.end({ timeout: 5 }),
-      auth.close(),
+      auth?.close(),
     ]).then(() => {
       clearTimeout(forceExit);
       if (error) {

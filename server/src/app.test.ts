@@ -10,10 +10,12 @@ const config: AppConfig = {
   port: 3000,
   databaseUrl: 'postgresql://example.invalid/test',
   corsOrigins: new Set(['https://cislokraj.cz']),
-  authBaseUrl: 'https://cislokraj.cz',
-  authSecret: '01234567890123456789012345678901',
-  googleClientId: 'google-client-id',
-  googleClientSecret: 'google-client-secret',
+  auth: {
+    authBaseUrl: 'https://cislokraj.cz',
+    authSecret: '01234567890123456789012345678901',
+    googleClientId: 'google-client-id',
+    googleClientSecret: 'google-client-secret',
+  },
   appRelease: 'test-release',
   logLevel: 'error',
 };
@@ -50,6 +52,24 @@ function appDependencies(auth = fakeAuth()) {
 }
 
 describe('Číslokraj API foundation', () => {
+  it('keeps health checks available without pretending that missing auth is a signed-out session', async () => {
+    let accountLookups = 0;
+    const app = createApp({
+      ...appDependencies(),
+      config: { ...config, auth: null },
+      auth: null,
+      resolvePlayerAccount: async () => { accountLookups += 1; throw new Error('must not query accounts'); },
+    });
+    assert.equal((await app.request('/health')).status, 200);
+    assert.equal((await app.request('/ready')).status, 200);
+    for (const [path, method] of [['/v1/me', 'GET'], ['/api/auth/get-session', 'GET'], ['/api/auth/sign-in/social', 'POST']] as const) {
+      const response = await app.request(path, { method });
+      assert.equal(response.status, 503);
+      assert.deepEqual(await response.json(), { error: 'auth_not_configured' });
+    }
+    assert.equal(accountLookups, 0);
+  });
+
   it('reports liveness and the deployed release', async () => {
     const app = createApp(appDependencies());
     const response = await app.request('/health');

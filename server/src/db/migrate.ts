@@ -1,12 +1,12 @@
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { loadConfig } from '../config.js';
+import { loadDatabaseConfig } from '../config.js';
 import { createDatabase } from './database.js';
 import { applyMigrations, discoverMigrations } from './migrations.js';
 
 const currentDirectory = path.dirname(fileURLToPath(import.meta.url));
 const migrationsDirectory = path.resolve(currentDirectory, '../../migrations');
-const config = loadConfig();
+const config = loadDatabaseConfig();
 const database = createDatabase(config.databaseUrl);
 
 try {

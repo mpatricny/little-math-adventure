@@ -1,6 +1,6 @@
 import { betterAuth } from 'better-auth';
 import { Pool } from 'pg';
-import type { AppConfig } from './config.js';
+import type { AppConfig, AuthConfig } from './config.js';
 
 export interface AuthPrincipal {
   provider: 'google';
@@ -14,7 +14,7 @@ export interface AuthService {
   close(): Promise<void>;
 }
 
-export function createAuthService(config: AppConfig): AuthService {
+export function createAuthService(config: AppConfig, authConfig: AuthConfig): AuthService {
   const pool = new Pool({
     connectionString: config.databaseUrl,
     max: 5,
@@ -23,14 +23,14 @@ export function createAuthService(config: AppConfig): AuthService {
   });
   const auth = betterAuth({
     appName: 'Číslokraj',
-    baseURL: config.authBaseUrl,
-    secret: config.authSecret,
+    baseURL: authConfig.authBaseUrl,
+    secret: authConfig.authSecret,
     database: pool,
     trustedOrigins: [...config.corsOrigins],
     socialProviders: {
       google: {
-        clientId: config.googleClientId,
-        clientSecret: config.googleClientSecret,
+        clientId: authConfig.googleClientId,
+        clientSecret: authConfig.googleClientSecret,
       },
     },
     user: {

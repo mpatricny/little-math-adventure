@@ -24,14 +24,16 @@ integration('Google authentication integration', () => {
       port: 3000,
       databaseUrl: databaseUrl!,
       corsOrigins: new Set(['http://localhost:8002']),
-      authBaseUrl: 'http://localhost:8002',
-      authSecret: '01234567890123456789012345678901',
-      googleClientId: 'test-client.apps.googleusercontent.com',
-      googleClientSecret: 'test-client-secret',
+      auth: {
+        authBaseUrl: 'http://localhost:8002',
+        authSecret: '01234567890123456789012345678901',
+        googleClientId: 'test-client.apps.googleusercontent.com',
+        googleClientSecret: 'test-client-secret',
+      },
       appRelease: 'test',
       logLevel: 'error',
     };
-    auth = createAuthService(config);
+    auth = createAuthService(config, config.auth!);
   });
 
   after(async () => {

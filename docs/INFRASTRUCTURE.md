@@ -44,6 +44,18 @@ Před DB testy a před startem nové verze vždy spustit migrace. Railway je spo
 jako `preDeploy`; neúspěšná migrace zastaví vydání. Každý aplikovaný SQL soubor má
 uložený checksum a staré migrace se neupravují.
 
+Migrační příkaz potřebuje pouze `DATABASE_URL`, ne HTTP ani OAuth konfiguraci.
+Základní API běží i před zřízením Google přihlášení: `/health` a `/ready`
+fungují, `/v1/me` a `/api/auth/*` vracejí 503 `auth_not_configured` a landing
+přihlášení nenabízí. Nejde o přihlášeného ani anonymního uživatele s přístupem
+k herním účtům; žádný účet se v tomto režimu nevyhledává.
+
+Přidání kteréhokoli z `BETTER_AUTH_SECRET`, `GOOGLE_CLIENT_ID` nebo
+`GOOGLE_CLIENT_SECRET` zapne přísnou kontrolu celé OAuth konfigurace včetně
+`BETTER_AUTH_URL`. Částečné nebo prázdné přístupové údaje nasazení zastaví;
+chybně nastavené přihlášení se nikdy potichu nevypíná. Samotné předem nastavené
+`BETTER_AUTH_URL` ještě nevyžaduje OAuth tajemství.
+
 ## Doppler
 
 1. Vytvořit projekt `cislokraj`; výchozí root configs `dev` a `prd` stačí.

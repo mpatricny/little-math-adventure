@@ -6,7 +6,7 @@
   "workers_dev": true,
   "preview_urls": true,
   "vars": {
-    "APP_RELEASE": "pilot-0.1.2",
+    "APP_RELEASE": "pilot-0.1.3",
     "API_ORIGIN": "https://api.cislokraj.cz"
   },
   "assets": {
