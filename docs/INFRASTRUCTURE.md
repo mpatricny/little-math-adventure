@@ -50,6 +50,12 @@ fungují, `/v1/me` a `/api/auth/*` vracejí 503 `auth_not_configured` a landing
 přihlášení nenabízí. Nejde o přihlášeného ani anonymního uživatele s přístupem
 k herním účtům; žádný účet se v tomto režimu nevyhledává.
 
+Herní menu má vlastní Google tlačítko v hostu `googleAccountHost`. Při nedostupném
+API zůstává viditelné, ale neaktivní, se stavem „Není dostupné“ a možností
+opakovat kontrolu. Po zapnutí OAuth vrací přihlášení hráče přímo na `/hra/`.
+Přihlášení ani odhlášení neupravuje lokální savy. Synchronizace savů na server
+zatím není implementována; existence účtu neznamená cloudovou zálohu postupu.
+
 Přidání kteréhokoli z `BETTER_AUTH_SECRET`, `GOOGLE_CLIENT_ID` nebo
 `GOOGLE_CLIENT_SECRET` zapne přísnou kontrolu celé OAuth konfigurace včetně
 `BETTER_AUTH_URL`. Částečné nebo prázdné přístupové údaje nasazení zastaví;

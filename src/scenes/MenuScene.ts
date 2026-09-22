@@ -10,6 +10,7 @@ import { requestLandscapeLock } from '../utils/mobileSetup';
 import { CoopSessionManager } from '../systems/CoopSessionManager';
 import { LocalizationService } from '../systems/LocalizationService';
 import { MedievalActionButton } from '../ui/MedievalActionButton';
+import { GameAccountControl } from '../ui/GameAccountControl';
 import { TvFullscreenController, TvFullscreenState } from '../remote/TvFullscreenController';
 import { createSaveFileInput, downloadSaveBundle, SaveFileReadResult } from '../utils/saveFileTransfer';
 
@@ -96,6 +97,9 @@ export class MenuScene extends Phaser.Scene {
         this.sceneBuilder.buildScene('MenuScene');
         this.createTransferNotice();
         this.createFullscreenControl();
+        new GameAccountControl(this, this.getHostLayout('googleAccountHost', {
+            x: 1110, y: 170, width: 270, height: 112, depth: 40,
+        }));
 
         const localization = LocalizationService.getInstance();
         this.continueButton = this.createMenuButton({

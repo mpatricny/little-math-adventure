@@ -15,6 +15,7 @@
     "test": "vitest run",
     "test:pilot-content": "node --test scripts/__tests__/pilot-content.test.mjs",
     "test:landing": "node scripts/check-landing.mjs",
+    "test:game-account": "node scripts/check-game-account.mjs",
     "test:infra": "node --test infra/cloudflare/worker.test.mjs && npm run api:test",
     "api:dev": "npm --prefix server run dev",
     "api:build": "npm --prefix server run build",

@@ -1,0 +1,90 @@
+@font-face {
+    font-family: 'Google Sans';
+    font-style: normal;
+    font-weight: 500;
+    font-display: swap;
+    src: url('./assets/google-sans-latin-ext.woff2') format('woff2');
+    unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+
+@font-face {
+    font-family: 'Google Sans';
+    font-style: normal;
+    font-weight: 500;
+    font-display: swap;
+    src: url('./assets/google-sans-latin.woff2') format('woff2');
+    unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+.game-account {
+    box-sizing: border-box;
+    font: 500 16px 'Google Sans', Arial, sans-serif;
+    text-align: center;
+    pointer-events: auto;
+}
+
+.game-account__button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    box-sizing: border-box;
+    width: 100%;
+    height: 56px;
+    padding: 0 16px;
+    border: 1px solid #747775;
+    border-radius: 28px;
+    background: #fff;
+    color: #1f1f1f;
+    box-shadow: 0 3px 7px #17110d55;
+    font: inherit;
+    cursor: pointer;
+    transition: box-shadow 120ms, background 120ms;
+}
+
+.game-account__button img {
+    flex: 0 0 24px;
+    object-fit: contain;
+}
+
+.game-account__button:hover:not(:disabled) {
+    background: #f4f6fb;
+    box-shadow: 0 4px 9px #17110d66;
+}
+
+.game-account__button:active:not(:disabled) {
+    background: #e7ecf4;
+    box-shadow: 0 1px 3px #17110d55;
+}
+
+.game-account__button:disabled {
+    opacity: 0.68;
+    cursor: default;
+}
+
+.game-account__status {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 56px;
+    gap: 8px;
+    color: #fff7db;
+    font-weight: 700;
+    text-shadow: 0 1px 3px #23140b, 0 0 6px #23140b;
+}
+
+.game-account__retry {
+    width: 56px;
+    height: 56px;
+    padding: 0;
+    border: 0;
+    border-radius: 50%;
+    background: #23140bcc;
+    color: #a9f7ff;
+    font: 32px Arial, sans-serif;
+    cursor: pointer;
+}
+
+.game-account__retry[hidden] { display: none; }
+.game-account__retry:hover { background: #49331bec; }
+.game-account button:focus-visible { outline: 3px solid #69e6ef; outline-offset: 4px; }
