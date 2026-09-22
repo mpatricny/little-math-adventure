@@ -1,5 +1,5 @@
 import { sfx, voice, gameAudio } from '../audio/AudioDirector';
-import { getCatacombFoxBonus } from '../systems/CatacombPetProgress';
+import { getPetAttackPower } from '../systems/CatacombPetProgress';
 import Phaser from 'phaser';
 import { DEV_TOOLS_ENABLED } from '../config/buildVariant';
 import { BattleState, BattlePhase, BattleEnemy, EnemyDefinition, ItemDefinition, PetDefinition, MathProblem, Crystal, PlayerState, PreparationKind } from '../types';
@@ -104,8 +104,7 @@ export class BattleScene extends Phaser.Scene implements BattleSceneCallbacks {
     private blockTimerEvent: Phaser.Time.TimerEvent | null = null;
     private pendingDamage: number = 0;
     private currentBlockPower: number = 1;
-    private mathBoardContext: 'attack' | 'block' | null = null;
-    private comparisonTestMode = false;
+    private mathBoardContext: 'attack' | 'block' | 'pet' | null = null;
 
     // Multi-enemy attack tracking
     private currentAttackingEnemyIndex: number = 0;
@@ -144,6 +143,7 @@ export class BattleScene extends Phaser.Scene implements BattleSceneCallbacks {
     // Pet turn system
     private petTargetIndex: number = 0;
     private petMathProblem: MathProblem | null = null;
+    private petAttackDamage = 0;
     private petAttackButton!: Phaser.GameObjects.Container;
     private petTargetIndicator: Phaser.GameObjects.Image | null = null;
     private petTargetIndicatorTween: Phaser.Tweens.Tween | null = null;
@@ -255,7 +255,6 @@ export class BattleScene extends Phaser.Scene implements BattleSceneCallbacks {
         this.gameState = GameStateManager.getInstance();
         const player = this.gameState.getPlayer();
         this.mockMode = data.mockMode === true;
-        this.comparisonTestMode = data.comparisonTest === true;
         this.storyVictory = data.storyVictory ?? null;
         this.ritualBossAttackReduction = Math.max(0, data.ritualBossAttackReduction ?? 0);
         this.mockProblemCursor = 0;
@@ -868,7 +867,7 @@ export class BattleScene extends Phaser.Scene implements BattleSceneCallbacks {
         });
     }
 
-    private createPetCompanion(player: { activePet: string | null }, petX: number, petY: number): void {
+    private createPetCompanion(player: PlayerState, petX: number, petY: number): void {
         // Reset pet references
         this.petContainer = null;
         this.petSprite = null;
@@ -882,7 +881,7 @@ export class BattleScene extends Phaser.Scene implements BattleSceneCallbacks {
         const petDef = petsData.find(p => p.id === player.activePet);
         if (!petDef) return;
 
-        this.equippedPetDef = petDef;
+        this.equippedPetDef = { ...petDef, damageMultiplier: getPetAttackPower(petDef, player) };
 
         // Create pet container at the specified position
         this.petContainer = this.add.container(petX, petY);
@@ -1058,7 +1057,7 @@ export class BattleScene extends Phaser.Scene implements BattleSceneCallbacks {
     /**
      * Co-op: Create Player B's pet companion.
      */
-    private createPlayerBPet(playerB: { activePet: string | null }, petX: number, petY: number): void {
+    private createPlayerBPet(playerB: PlayerState, petX: number, petY: number): void {
         this.petBContainer = null;
         this.petBSprite = null;
         this.equippedPetBDef = null;
@@ -1069,7 +1068,7 @@ export class BattleScene extends Phaser.Scene implements BattleSceneCallbacks {
         const petDef = petsData.find(p => p.id === playerB.activePet);
         if (!petDef) return;
 
-        this.equippedPetBDef = petDef;
+        this.equippedPetBDef = { ...petDef, damageMultiplier: getPetAttackPower(petDef, playerB) };
 
         this.petBContainer = this.add.container(petX, petY);
         const PET_BASE_SCALE = 0.5;
@@ -1181,13 +1180,17 @@ export class BattleScene extends Phaser.Scene implements BattleSceneCallbacks {
         }
 
         // Show in MathBoard with pet styling
-        this.mathBoard.showSingle(this.petMathProblem, this.onPetMathComplete.bind(this));
+        this.mathBoardContext = 'pet';
+        this.mathBoard.showSingle(this.petMathProblem, this.onPetMathComplete.bind(this),
+            this.getComparisonBoardOptions(this.getCoopSafeMasterySystem()));
     }
 
     /**
      * Handle pet math problem completion
      */
-    private onPetMathComplete(isCorrect: boolean, responseTimeMs: number): void {
+    private onPetMathComplete(isCorrect: boolean, responseTimeMs: number, assisted = false, damage = this.petMathProblem?.damageMultiplier ?? 1): void {
+        this.petAttackDamage = damage;
+        this.mathBoardContext = null;
         this.mathBoard.hide();
         this.hideActiveHighlight();
 
@@ -1202,6 +1205,10 @@ export class BattleScene extends Phaser.Scene implements BattleSceneCallbacks {
                     responseTimeMs,
                     'battle_pet'
                 );
+            }
+            if (this.petMathProblem.comparisonMeta) {
+                this.getCoopSafeMasterySystem().recordComparisonSolve(this.petMathProblem, isCorrect, responseTimeMs, assisted);
+                if (!this.isCoopMode) this.gameState.save();
             }
             if (this.isCoopMode) this.coopSession?.persistActiveMasteryProgress();
         }
@@ -1267,11 +1274,8 @@ export class BattleScene extends Phaser.Scene implements BattleSceneCallbacks {
             return;
         }
 
-        let damage = this.petMathProblem.damageMultiplier || 1;
-        // Apply catacomb mastery upgrades to catacomb pets
-        if (activePet.def.unlockedByEnemy?.startsWith('catacomb_creature_')) {
-            damage += getCatacombFoxBonus(this.gameState.getPlayer());
-        }
+        // The problem already carries this owner's complete pet attack, including training.
+        const damage = this.petAttackDamage;
         const targetIdx = this.petTargetIndex;
 
         // Check for spell attack effect (like Bodlina's lightning)
@@ -2330,7 +2334,7 @@ export class BattleScene extends Phaser.Scene implements BattleSceneCallbacks {
         this.remoteInput.publishState({
             screen: 'math',
             title: this.mathBoardContext === 'block' ? 'Blokuj útok' : 'Vyber odpověď',
-            subtitle: this.coopSession?.getActivePlayer() === 'B' ? 'Hráč 2' : undefined,
+            subtitle: this.isCoopMode ? this.gameState.getPlayer().name : undefined,
             problem: snapshot.problem,
             choices: snapshot.choices,
             comparison: snapshot.comparison,
@@ -2485,19 +2489,9 @@ export class BattleScene extends Phaser.Scene implements BattleSceneCallbacks {
         // Get mastery system with co-op safety (ensures correct player context)
         const masterySystem = this.getCoopSafeMasterySystem();
 
-        const comparisonState = masterySystem.getComparisonChapterState();
-        if (masterySystem.shouldTrainComparisonChapter()
-            || ((this.comparisonTestMode || this.isCoopMode) && comparisonState.status === 'exam_ready')) {
-            const count = this.getAttackProblemCount(masterySystem);
-            const problems = masterySystem.shouldTrainComparisonChapter()
-                ? masterySystem.generateComparisonTrainingProblems(count, this.comparisonTestMode)
-                : masterySystem.generateComparisonExamProblems().slice(0, count).map(problem => {
-                    if (problem.comparisonMeta) {
-                        problem.comparisonMeta.exam = false;
-                        problem.comparisonMeta.diagnosticMode = true;
-                    }
-                    return problem;
-                });
+        const comparisonProblems = masterySystem.generateComparisonBattleProblems(this.getAttackProblemCount(masterySystem));
+        if (comparisonProblems) {
+            const problems = comparisonProblems;
             if (equippedSword?.mathProblemType) problems.push(this.generateSwordProblem(equippedSword));
             this.applyAttackPowerDistribution(problems);
             this.battleState.currentProblems = problems;
@@ -2570,11 +2564,14 @@ export class BattleScene extends Phaser.Scene implements BattleSceneCallbacks {
     }
 
     private showComparisonLessonThenProblems(problems: MathProblem[], masterySystem: MasterySystem): void {
+        this.mathBoard.show(problems, { presentation: 'sequential', ...this.getComparisonBoardOptions(masterySystem) });
+    }
+
+    private getComparisonBoardOptions(masterySystem: MasterySystem) {
         const chapter = masterySystem.getComparisonChapterState();
         const stage = masterySystem.getCurrentComparisonStage();
         const owner = this.coopSession?.getActivePlayer();
-        this.mathBoard.show(problems, {
-            presentation: 'sequential',
+        return {
             introduction: masterySystem.needsComparisonStageIntro() ? stage ?? undefined : undefined,
             support: chapter.stages.find(progress => progress.stage === 'number_symbol'),
             onIntroComplete: () => {
@@ -2583,7 +2580,7 @@ export class BattleScene extends Phaser.Scene implements BattleSceneCallbacks {
                 if (this.isCoopMode) this.coopSession?.persistActiveMasteryProgress();
                 else this.gameState.save();
             },
-        });
+        };
     }
 
     private createMockProblems(count: number): MathProblem[] {
@@ -2641,6 +2638,10 @@ export class BattleScene extends Phaser.Scene implements BattleSceneCallbacks {
                     if (problem.masteryKey) {
                         const rt = timings[index] || 0;
                         masterySystem.recordSolve(problem.masteryKey, isCorrect, rt, 'battle_block');
+                    }
+                    if (problem.comparisonMeta) {
+                        masterySystem.recordComparisonSolve(problem, isCorrect, timings[index] || 0, assisted[index] === true);
+                        if (!this.isCoopMode) this.gameState.save();
                     }
                 }
                 if (isCorrect) {
@@ -2823,6 +2824,9 @@ export class BattleScene extends Phaser.Scene implements BattleSceneCallbacks {
         const masterySystem = this.getCoopSafeMasterySystem();
         const problems: MathProblem[] = [];
 
+        const comparison = masterySystem.generateComparisonBattleProblems(count);
+        if (comparison) return comparison;
+
         // 1. Try review pool (Fluent sub-atoms)
         const reviewKeys = masterySystem.drawFromReviewPool(count);
         for (const key of reviewKeys) {
@@ -2846,6 +2850,13 @@ export class BattleScene extends Phaser.Scene implements BattleSceneCallbacks {
     /** Generate pet problem from mastery review pool (Fluent sub-atoms), with fallbacks */
     private generatePetProblemFromPool(pet: PetDefinition): MathProblem | null {
         const masterySystem = this.getCoopSafeMasterySystem();
+
+        const comparison = masterySystem.generateComparisonBattleProblems(1)?.[0];
+        if (comparison) {
+            comparison.source = 'pet';
+            comparison.damageMultiplier = pet.damageMultiplier || 1;
+            return applyProblemComplexityDamage(comparison);
+        }
 
         // 1. Try review pool (Fluent sub-atoms) — same as shield block
         const reviewKeys = masterySystem.drawFromReviewPool(1);
@@ -2974,6 +2985,7 @@ export class BattleScene extends Phaser.Scene implements BattleSceneCallbacks {
 
         this.mathBoardContext = 'block';
         this.mathBoard.show(problems, {
+            ...this.getComparisonBoardOptions(this.getCoopSafeMasterySystem()),
             defense: { power: this.currentBlockPower, incomingDamage: damage },
         });
     }

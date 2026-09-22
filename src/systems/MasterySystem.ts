@@ -29,6 +29,7 @@ import {
     ensureComparisonChapter,
     needsComparisonStageIntro,
     recordComparisonAttempt as recordChapterAttempt,
+    comparisonChapterProgress,
 } from './ComparisonLearningSystem';
 
 // Non-difficulty thresholds (stay global)
@@ -132,8 +133,15 @@ export class MasterySystem {
         return createComparisonTrainingProblems(this.getComparisonChapterState(), count, diagnosticMode);
     }
 
-    generateComparisonExamProblems(): MathProblem[] {
-        return createComparisonExamProblems(this.getComparisonChapterState());
+    generateComparisonExamProblems(count = EXAM_CONFIGS.comparison_chapter.itemCount): MathProblem[] {
+        return createComparisonExamProblems(this.getComparisonChapterState(), count);
+    }
+
+    /** All three combat actions practice the active chapter, including the wait for its exam. */
+    generateComparisonBattleProblems(count: number): MathProblem[] | null {
+        const chapter = this.getComparisonChapterState();
+        if (chapter.status !== 'training' && chapter.status !== 'exam_ready') return null;
+        return createComparisonTrainingProblems(chapter, count);
     }
 
     recordComparisonSolve(problem: MathProblem, correct: boolean, responseTimeMs: number, assisted: boolean): void {
@@ -313,6 +321,54 @@ export class MasterySystem {
         return this.getSubAtomExamProgress(targetId);
     }
 
+    getComparisonExamProgress() {
+        const chapter = this.getComparisonChapterState();
+        if (chapter.status !== 'training' && chapter.status !== 'exam_ready') return null;
+        return {
+            targetId: 'comparison_symbols' as const,
+            percentage: Math.floor(comparisonChapterProgress(chapter) * 100),
+        };
+    }
+
+    /** Chapter answers and later mixed comparison practice share challenge eligibility. */
+    private getComparisonChallengeAttempts() {
+        const chapter = this.getComparisonChapterState().attempts
+            .filter(attempt => !attempt.diagnosticMode)
+            .map(attempt => ({ ...attempt, form: attempt.representation as string }));
+        const review = Object.values(this.data.problemRecords)
+            .filter(record => record.form === 'compare_equation_vs_number' || record.form === 'compare_equation_vs_equation')
+            .flatMap(record => record.attempts.map(attempt => ({ ...attempt, assisted: false, exam: !['battle', 'battle_block', 'battle_sword', 'battle_pet'].includes(attempt.context), form: record.form as string })));
+        return [...chapter, ...review].sort((a, b) => a.sequenceIndex - b.sequenceIndex);
+    }
+
+    private comparisonChallengeRelevant(type: 'fluency_challenge' | 'mastery_challenge'): boolean {
+        const chapter = this.getComparisonChapterState();
+        if (chapter.status !== 'complete') return false;
+        return type === 'fluency_challenge'
+            ? chapter.fluencyChallengeResult !== 'pass'
+            : chapter.fluencyChallengeResult === 'pass' && chapter.masteryChallengeResult !== 'pass';
+    }
+
+    checkComparisonChallengeEligibility(type: 'fluency_challenge' | 'mastery_challenge'): boolean {
+        if (!this.comparisonChallengeRelevant(type)) return false;
+        const attempts = this.getComparisonChallengeAttempts();
+        const correct = attempts.filter(attempt => attempt.correct && !attempt.assisted);
+        const recent = attempts.slice(-20);
+        const mastery = type === 'mastery_challenge';
+        const thresholds = getThresholdsForSubAtom('A3');
+        const rt = mastery ? thresholds.masteryRT : thresholds.fluentRT;
+        const times = correct.map(attempt => attempt.responseTimeMs).filter(time => time > 0 && time <= RT_IGNORE_THRESHOLD_MS);
+        const forms = [...new Set(attempts.map(attempt => attempt.form))].filter(form => {
+            const sample = attempts.filter(attempt => attempt.form === form).slice(-20);
+            const successes = sample.filter(attempt => attempt.correct && !attempt.assisted);
+            return successes.length / sample.length >= (mastery ? 0.9 : 0.8)
+                && (!mastery || this.median(successes.map(attempt => attempt.responseTimeMs)) <= rt);
+        });
+        return correct.length >= (mastery ? 50 : 30)
+            && recent.filter(attempt => attempt.correct && !attempt.assisted).length / recent.length >= (mastery ? 0.92 : 0.85)
+            && times.length > 0 && this.median(times) <= rt && forms.length >= 2;
+    }
+
     /** Check if fluency challenge is available */
     checkFluencyEligibility(subAtomId: SubAtomId): boolean {
         if (!this.isSubAtomAvailable(subAtomId)) return false;
@@ -457,7 +513,8 @@ export class MasterySystem {
     }
 
     /** Apply result of fluency challenge */
-    applyFluencyResult(subAtomId: SubAtomId, correctCount: number, sessionOnly: boolean = false): { passed: boolean; stateChanged: boolean; hpGain: number; attackGain: number; manaGain: number } {
+    applyFluencyResult(subAtomId: SubAtomId | 'comparison_symbols', correctCount: number, sessionOnly: boolean = false): { passed: boolean; stateChanged: boolean; hpGain: number; attackGain: number; manaGain: number } {
+        if (subAtomId === 'comparison_symbols') return this.applyComparisonChallengeResult('fluency_challenge', correctCount, sessionOnly);
         const config = EXAM_CONFIGS.fluency_challenge;
         const passed = correctCount >= (config.passThreshold ?? config.itemCount);
         const sa = this.data.subAtoms[subAtomId];
@@ -484,7 +541,8 @@ export class MasterySystem {
     }
 
     /** Apply result of mastery challenge */
-    applyMasteryResult(subAtomId: SubAtomId, correctCount: number, sessionOnly: boolean = false): { passed: boolean; stateChanged: boolean; hpGain: number; attackGain: number; manaGain: number; shardGain: number; coinGain: number } {
+    applyMasteryResult(subAtomId: SubAtomId | 'comparison_symbols', correctCount: number, sessionOnly: boolean = false): { passed: boolean; stateChanged: boolean; hpGain: number; attackGain: number; manaGain: number; shardGain: number; coinGain: number } {
+        if (subAtomId === 'comparison_symbols') return this.applyComparisonChallengeResult('mastery_challenge', correctCount, sessionOnly);
         const config = EXAM_CONFIGS.mastery_challenge;
         const passed = correctCount >= (config.passThreshold ?? config.itemCount);
         const sa = this.data.subAtoms[subAtomId];
@@ -508,6 +566,23 @@ export class MasterySystem {
             this.updatePlayerLevel();
         }
         return { passed, stateChanged, ...masteryRewards };
+    }
+
+    private applyComparisonChallengeResult(type: 'fluency_challenge' | 'mastery_challenge', correctCount: number, sessionOnly: boolean) {
+        const config = EXAM_CONFIGS[type];
+        const passed = correctCount >= (config.passThreshold ?? config.itemCount);
+        const chapter = this.getComparisonChapterState();
+        const field = type === 'fluency_challenge' ? 'fluencyChallengeResult' : 'masteryChallengeResult';
+        const stateChanged = passed && chapter[field] !== 'pass';
+        // A failed replay never takes away an already earned challenge.
+        if (chapter[field] !== 'pass') chapter[field] = passed ? 'pass' : 'fail';
+        const rewards = { hpGain: 0, attackGain: 0, manaGain: 0, shardGain: 0, coinGain: 0 };
+        if (!sessionOnly && passed) {
+            Object.assign(rewards, type === 'fluency_challenge' ? this.applyStatRewards('bronze') : this.applyMasteryRewards());
+            if (stateChanged) DailyProgressSystem.recordMilestone(this.gameState.getPlayer(), type === 'fluency_challenge' ? 'Porovnávání: Plynulost' : 'Porovnávání: Mistrovství');
+        }
+        if (!sessionOnly) this.updatePlayerLevel();
+        return { passed, stateChanged, ...rewards };
     }
 
     /** Apply result of band gate exam */
@@ -917,6 +992,12 @@ export class MasterySystem {
             });
         }
 
+        for (const type of ['fluency_challenge', 'mastery_challenge'] as const) {
+            if (this.checkComparisonChallengeEligibility(type)) {
+                exams.push({ type, targetId: 'comparison_symbols', label: type === 'fluency_challenge' ? 'Porovnávání: plynulost' : 'Porovnávání: mistrovství' });
+            }
+        }
+
         for (const band of ALL_BANDS) {
             for (const num of ALL_SUB_ATOM_NUMBERS) {
                 const id = `${band}${num}` as SubAtomId;
@@ -1049,6 +1130,8 @@ export class MasterySystem {
     private getCoopAutoPromotionCandidates(): Array<{ type: ExamType; targetId: MasteryTargetId }> {
         const candidates: Array<{ type: ExamType; targetId: MasteryTargetId }> = [
             { type: 'comparison_chapter', targetId: 'comparison_symbols' },
+            { type: 'fluency_challenge', targetId: 'comparison_symbols' },
+            { type: 'mastery_challenge', targetId: 'comparison_symbols' },
         ];
 
         for (const band of ALL_BANDS) {
@@ -1071,6 +1154,7 @@ export class MasterySystem {
     }
 
     private isCoopAutoPromotionEligible(type: ExamType, targetId: MasteryTargetId): boolean {
+        if (targetId === 'comparison_symbols' && (type === 'fluency_challenge' || type === 'mastery_challenge')) return this.checkComparisonChallengeEligibility(type);
         switch (type) {
             case 'comparison_chapter':
                 return this.getComparisonChapterState().status === 'exam_ready';
@@ -1088,6 +1172,7 @@ export class MasterySystem {
     }
 
     private isCoopAutoPromotionStageRelevant(type: ExamType, targetId: MasteryTargetId): boolean {
+        if (targetId === 'comparison_symbols' && (type === 'fluency_challenge' || type === 'mastery_challenge')) return this.comparisonChallengeRelevant(type);
         switch (type) {
             case 'comparison_chapter':
                 return this.getComparisonChapterState().status === 'exam_ready';
@@ -1106,13 +1191,13 @@ export class MasterySystem {
 
     private isCoopAutoPromotionReady(type: ExamType, targetId: MasteryTargetId, baseline: number): boolean {
         const config = EXAM_CONFIGS[type];
-        if (type === 'comparison_chapter') {
-            const buffer = this.getComparisonChapterState().attempts
+        if (targetId === 'comparison_symbols') {
+            const buffer = (type === 'comparison_chapter' ? this.getComparisonChapterState().attempts : this.getComparisonChallengeAttempts())
                 .filter(attempt => !attempt.exam && attempt.sequenceIndex > baseline)
                 .slice(-config.itemCount);
             if (buffer.length < config.itemCount) return false;
-            const correct = buffer.filter(attempt => attempt.correct).length;
-            const threshold = config.silverThreshold ?? config.bronzeThreshold ?? config.itemCount;
+            const correct = buffer.filter(attempt => attempt.correct && !attempt.assisted).length;
+            const threshold = config.silverThreshold ?? config.passThreshold ?? config.bronzeThreshold ?? config.itemCount;
             return correct >= threshold
                 && this.median(buffer.filter(attempt => attempt.correct).map(attempt => attempt.responseTimeMs))
                     <= COOP_AUTO_PROMOTION_RT_MS;
@@ -1136,6 +1221,8 @@ export class MasterySystem {
         switch (type) {
             case 'sub_atom':
                 return this.getDistinctCorrectForms(buffer) >= 2;
+            case 'comparison_chapter':
+                return false; // This exam only has the comparison_symbols target, handled above.
             case 'fluency_challenge':
                 return this.getScopedFormsWithAccuracy(buffer, 0.80) >= 2;
             case 'mastery_challenge':

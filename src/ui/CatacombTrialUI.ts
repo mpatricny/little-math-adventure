@@ -2,15 +2,19 @@ import Phaser from 'phaser';
 import type { MathProblem } from '../types';
 import { SceneBuilder } from '../systems/SceneBuilder';
 import { MedievalActionButton } from './MedievalActionButton';
-import { formatMathProblem } from '../utils/formatMathProblem';
+import { formatMathProblem, getComparisonExpressions } from '../utils/formatMathProblem';
+import { ComparisonExpressionView } from './ComparisonExpressionView';
+import { ComparisonProblemView, comparisonGlyph } from './ComparisonProblemView';
+import { comparisonChoiceWidth } from './ComparisonPresentation';
 
 type Host = {x:number; y:number; width:number; height:number; depth:number};
-type Presentation = {title:string; subtitle:string; body:string; stats:string; frame?:number; primary:string; onPrimary:()=>void; secondary?:string; onSecondary?:()=>void};
+type Presentation = {title:string; subtitle:string; body:string; bodyFontSize?:number; stats:string; statsFontSize?:number; frame?:number; primary:string; onPrimary:()=>void; secondary?:string; onSecondary?:()=>void};
 
 /** Shared slate, bronze and rune presentation for the complete catacomb trial. */
 export class CatacombTrialUI {
     readonly root: Phaser.GameObjects.Container;
     private question: Phaser.GameObjects.Text;
+    private comparison: ComparisonExpressionView | ComparisonProblemView | null = null;
     private feedback: Phaser.GameObjects.Text;
     private choices: MedievalActionButton[];
     private problem: MathProblem | null = null;
@@ -23,7 +27,7 @@ export class CatacombTrialUI {
         const h = this.host('catacombQuestionPanel');
         this.root = scene.add.container(0,0).setDepth(h.depth).setVisible(false);
         this.root.add(this.panel(h));
-        this.root.add(this.text('catacombQuestionLabel', 'PROLOM KOUZLO SPRÁVNOU ODPOVĚDÍ', 12, '#b9a17c'));
+        this.root.add(this.text('catacombQuestionLabel', 'PROLOM KOUZLO', 12, '#b9a17c'));
         this.question = this.text('catacombQuestion', '', 30, '#fff3d4');
         this.feedback = this.text('catacombFeedback', '', 14, '#c0d7df');
         this.root.add([this.question,this.feedback]);
@@ -65,10 +69,33 @@ export class CatacombTrialUI {
     show(problems:MathProblem[]):void {
         this.problem=problems[0];this.answered=false;this.startedAt=Date.now();
         this.question.setText(formatMathProblem(this.problem, 'question'));this.feedback.setText('');
+        this.comparison?.destroy(); this.comparison = null;
+        const comparison = Boolean(getComparisonExpressions(this.problem));
+        this.question.setVisible(!comparison);
+        if (this.problem.comparisonMeta) {
+            this.comparison = new ComparisonProblemView(this.scene, this.problem, {
+                left: this.host('catacombComparisonLeft'),
+                right: this.host('catacombComparisonRight'),
+                relation: this.host('catacombComparisonRelation'),
+            }, 0xfff3d4);
+            this.root.add(this.comparison.root);
+        } else if (comparison) {
+            this.comparison = new ComparisonExpressionView(this.scene, this.problem, {
+                ...this.host('catacombQuestion'), fontSize: 30, color: '#fff3d4',
+            });
+            this.root.add(this.comparison.root);
+        }
         this.choices.forEach((button,i)=>{
             const choice=this.problem!.choices[i];
-            const comparison=this.problem!.problemType==='comparison'||this.problem!.problemType==='comparison_eq_vs_eq';
-            button.setLabel(comparison?['<','=','>'][choice]:String(choice),24).setEnabled(true);
+            (button.root.getData('comparisonGlyph') as Phaser.GameObjects.Image | undefined)?.destroy();
+            button.root.setData('comparisonGlyph', null);
+            button.setLabel(comparison?'':String(choice),24).setEnabled(true);
+            if (comparison) {
+                const glyph = comparisonGlyph(this.scene, choice, true, comparisonChoiceWidth(button.root.width, button.root.height * 0.72))
+                    .setPosition(button.label.x, button.label.y);
+                button.label.parentContainer.add(glyph);
+                button.root.setData('comparisonGlyph', glyph);
+            }
             button.setPresentationState('enabled');
         });
         this.root.setVisible(true);
@@ -78,9 +105,11 @@ export class CatacombTrialUI {
         if(!this.problem||this.answered)return;
         this.answered=true;
         const correct=this.problem.choices[index]===this.problem.answer;
+        if (this.problem.comparisonMeta) this.problem.comparisonMeta.selectedRelation = (['less', 'equal', 'greater'] as const)[this.problem.choices[index]];
         this.choices.forEach(b=>b.setEnabled(false));
         this.choices[index].setPresentationState(correct?'selected':'disabled');
-        this.feedback.setColor(correct?'#a7e0b0':'#ffc0a5').setText(correct?'Správně · kouzlo slábne':`Správné řešení: ${formatMathProblem(this.problem,'answer')}`);
+        this.comparison?.reveal();
+        this.feedback.setColor(correct?'#a7e0b0':'#ffc0a5').setText(this.comparison ? (correct?'✓':'×') : correct?'Správně':formatMathProblem(this.problem,'answer'));
         this.onAnswer(correct?1:0,[correct],[Date.now()-this.startedAt]);
     }
 
@@ -102,8 +131,8 @@ export class CatacombTrialUI {
         const animation=p.frame===30?'rune-fox-freed':'rune-fox-idle';
         if(this.scene.anims.exists(animation))fox.play(animation);
         root.add(fox);
-        root.add(this.text('catacombBody',p.body,18,'#e0e7e8'));
-        root.add(this.text('catacombStats',p.stats,15,'#e6c58d'));
+        root.add(this.text('catacombBody',p.body,p.bodyFontSize??18,'#e0e7e8'));
+        root.add(this.text('catacombStats',p.stats,p.statsFontSize??15,'#e6c58d'));
         const primary=new MedievalActionButton(this.scene,{...this.host('catacombPrimary'),label:p.primary,
             layout:'text',accent:0x73b9be,labelFontSize:19,onClick:p.onPrimary});
         root.add(primary.root);

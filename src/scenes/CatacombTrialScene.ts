@@ -1,12 +1,12 @@
 import Phaser from 'phaser';
-import { EnemyDefinition, MathProblem, ExamType, SubAtomId, BandId, EXAM_CONFIGS } from '../types';
+import { EnemyDefinition, PetDefinition, MathProblem, ExamType, SubAtomId, BandId, EXAM_CONFIGS } from '../types';
 import { MathEngine } from '../systems/MathEngine';
 import { MasterySystem } from '../systems/MasterySystem';
 import { GameStateManager } from '../systems/GameStateManager';
 import { SceneBuilder } from '../systems/SceneBuilder';
 import { CatacombTrialUI } from '../ui/CatacombTrialUI';
 import { getPlayerSpriteConfig, PlayerSpriteConfig } from '../utils/characterUtils';
-import { getCatacombFoxBonus } from '../systems/CatacombPetProgress';
+import { awardCatacombFoxUpgrade, getPetAttackPower } from '../systems/CatacombPetProgress';
 import { CATACOMB_BANDS } from '../data/catacombTrials';
 import { BattleActorStatusHud } from '../ui/BattleActorStatusHud';
 
@@ -14,7 +14,7 @@ type CatacombPhase = 'intro' | 'charging' | 'resolve' | 'victory' | 'defeat';
 
 interface CatacombInitData {
     examType: 'fluency_challenge' | 'mastery_challenge';
-    subAtomId: SubAtomId;
+    subAtomId: SubAtomId | 'comparison_symbols';
     returnScene?: string;
 }
 
@@ -22,7 +22,7 @@ export class CatacombTrialScene extends Phaser.Scene {
 
     // === Config ===
     private examType!: ExamType;
-    private subAtomId!: SubAtomId;
+    private subAtomId!: SubAtomId | 'comparison_symbols';
     private bandId!: BandId;
     private returnScene: string = 'GuildScene';
 
@@ -86,7 +86,7 @@ export class CatacombTrialScene extends Phaser.Scene {
     init(data: CatacombInitData): void {
         this.examType = data.examType as ExamType;
         this.subAtomId = data.subAtomId;
-        this.bandId = data.subAtomId[0] as BandId;
+        this.bandId = data.subAtomId === 'comparison_symbols' ? 'A' : data.subAtomId[0] as BandId;
         this.returnScene = data.returnScene || 'GuildScene';
 
         const config = EXAM_CONFIGS[this.examType];
@@ -156,6 +156,10 @@ export class CatacombTrialScene extends Phaser.Scene {
 
     private generateProblems(): void {
         const masterySystem = MasterySystem.getInstance();
+        if (this.subAtomId === 'comparison_symbols') {
+            this.problemQueue = masterySystem.generateComparisonExamProblems(this.creatureMaxHp);
+            return;
+        }
         const problemKeys = masterySystem.generateChallengeProblemKeys(
             this.subAtomId,
             this.creatureMaxHp,
@@ -294,7 +298,7 @@ export class CatacombTrialScene extends Phaser.Scene {
         const h=this.sceneBuilder.get<Phaser.GameObjects.Container>('catacombTimerHost')!;
         const def=this.sceneBuilder.getElementDef('catacombTimerHost')!;
         const label=this.sceneBuilder.get<Phaser.GameObjects.Container>('catacombTimerLabel')!;
-        this.timerLabel=this.add.text(label.x,label.y,`ČAS NA ODPOVĚĎ · ${this.chargeTime} s`,{
+        this.timerLabel=this.add.text(label.x,label.y,`⏳ ${this.chargeTime} s`,{
             resolution:2,fontFamily:'Georgia, serif',fontSize:'14px',color:'#d6edf0',stroke:'#07111d',strokeThickness:4,
         }).setOrigin(0.5).setDepth(label.depth);
         this.add.rectangle(h.x,h.y,def.width!,def.height!,0x142c38).setStrokeStyle(2,0xb79a65).setDepth(h.depth);
@@ -312,13 +316,14 @@ export class CatacombTrialScene extends Phaser.Scene {
     }
 
     private createIntroOverlay(): void {
-        const examLabel = this.examType === 'fluency_challenge' ? 'Zkouška plynulosti' : 'Zkouška mistrovství';
+        const examLabel = this.examType === 'fluency_challenge' ? 'Plynulost' : 'Mistrovství';
+        const targetLabel = this.subAtomId === 'comparison_symbols' ? '<   =   >' : this.subAtomId;
         this.introOverlay = this.mathBoard.showPanel({
-            title: 'Osvoboď runovou lišku', subtitle: `${examLabel} · ${this.subAtomId}`,
-            body: 'Staré kouzlo uvěznilo lišku.\nKaždá správná odpověď ho oslabí.\n\nOdpověz dřív, než se runa nabije.\nChyba nebo vypršení času stojí život.',
-            stats: `${this.creatureMaxHp} příkladů     •     ${this.playerMaxLives} životy     •     ${this.chargeTime} s na odpověď`,
-            primary: 'ZAČÍT VÝZVU', onPrimary: () => this.startBattle(),
-            secondary: 'ZPĚT DO CECHU', onSecondary: () => this.scene.start(this.returnScene),
+            title: 'Osvoboď lišku', subtitle: `${examLabel} · ${targetLabel}`,
+            body: '✓ → ⚔\n× → −♥', bodyFontSize: 40,
+            stats: `✓ ${EXAM_CONFIGS[this.examType].passThreshold}/${this.creatureMaxHp}     ♥ ${this.playerMaxLives}     ⏳ ${this.chargeTime} s`, statsFontSize: 26,
+            primary: 'ZAČÍT', onPrimary: () => this.startBattle(),
+            secondary: 'ZPĚT', onSecondary: () => this.scene.start(this.returnScene),
         });
     }
 
@@ -375,6 +380,10 @@ export class CatacombTrialScene extends Phaser.Scene {
                 context as any
             );
         }
+        if (this.currentProblem?.comparisonMeta) {
+            MasterySystem.getInstance().recordComparisonSolve(this.currentProblem, isCorrect, responseTimeMs, false);
+        }
+        this.gameState.save();
 
         if (isCorrect) {
             this.resolveCorrect(responseTimeMs);
@@ -399,6 +408,10 @@ export class CatacombTrialScene extends Phaser.Scene {
                 context as any
             );
         }
+        if (this.currentProblem.comparisonMeta) {
+            MasterySystem.getInstance().recordComparisonSolve(this.currentProblem, false, this.chargeTime * 1000, false);
+        }
+        this.gameState.save();
 
         this.resolveWrong();
     }
@@ -439,7 +452,7 @@ export class CatacombTrialScene extends Phaser.Scene {
     private updateChargeBar(): void {
         const progress = Math.min(this.chargeElapsed / this.chargeTime, 1);
         const maxWidth = this.sceneBuilder.getElementDef('catacombTimerHost')!.width!;
-        this.timerLabel.setText(`ČAS NA ODPOVĚĎ · ${Math.max(0, this.chargeTime - this.chargeElapsed).toFixed(1)} s`);
+        this.timerLabel.setText(`⏳ ${Math.max(0, this.chargeTime - this.chargeElapsed).toFixed(1)} s`);
         this.chargeBarFill.width = maxWidth * progress;
 
         // Color: green → yellow → red
@@ -814,6 +827,7 @@ export class CatacombTrialScene extends Phaser.Scene {
     // === VICTORY / DEFEAT ===
 
     private onVictory(): void {
+        if (this.phase === 'victory' || this.phase === 'defeat') return;
         this.phase = 'victory';
         this.mathBoard.hide();
 
@@ -829,44 +843,31 @@ export class CatacombTrialScene extends Phaser.Scene {
             result = masterySystem.applyMasteryResult(this.subAtomId, this.correctCount);
         }
 
-        // Pet unlock (first fluency win in band)
+        if (!result.passed) {
+            this.phase = 'defeat';
+            this.gameState.save();
+            this.showEndScreen();
+            return;
+        }
+
+        // Every successful run trains the same fox, even before it is bound at Pythia's.
+        const fox = (this.cache.json.get('pets') as PetDefinition[]).find(pet => pet.id === bandConfig.petId)!;
+        const attackBefore = getPetAttackPower(fox, player);
+        awardCatacombFoxUpgrade(player);
+
+        // First successful rescue unlocks binding; later runs still grant +1 attack.
         let petUnlocked = false;
         if (!player.unlockedPets.includes(bandConfig.enemyId)) {
             player.unlockedPets.push(bandConfig.enemyId);
             petUnlocked = true;
         }
 
-        // Pet upgrade (mastery wins)
-        let petUpgraded = false;
-        if (this.examType === 'mastery_challenge') {
-            player.catacombPetUpgrades ??= {};
-            const current = getCatacombFoxBonus(player);
-            if (current < 4) {
-                player.catacombPetUpgrades[this.bandId] = current + 1;
-                petUpgraded = true;
-            }
-        }
-
         this.gameState.save();
-
-        const lines: string[] = ['TVOR OSVOBOZEN!', ''];
-        if (petUnlocked) {
-            lines.push('Runová liška je nyní volná!');
-            lines.push('Navštiv Pythii a připoutej si ji.');
-        }
-        if (petUpgraded) {
-            const upgrades = player.catacombPetUpgrades![this.bandId];
-            lines.push(`Mazlíček vylepšen! (+${upgrades} útok)`);
-        }
-        if (result.stateChanged) {
-            const newState = this.examType === 'fluency_challenge' ? 'Plynulost' : 'Mistrovství';
-            lines.push(`${this.subAtomId}: ${newState} dosažena!`);
-        }
-
-        this.showEndScreen(lines.join('\n'), 0x44aa44);
+        this.showEndScreen({ attackBefore, attackAfter: getPetAttackPower(fox, player), petUnlocked });
     }
 
     private onDefeat(): void {
+        if (this.phase === 'victory' || this.phase === 'defeat') return;
         this.phase = 'defeat';
         this.mathBoard.hide();
 
@@ -880,22 +881,19 @@ export class CatacombTrialScene extends Phaser.Scene {
 
         this.gameState.save();
 
-        this.showEndScreen(
-            'PORÁŽKA...\n\nTvor uniká hlouběji do katakomb.\nProcvič si příklady a zkus to znovu!',
-            0xcc4444
-        );
+        this.showEndScreen();
     }
 
-    private showEndScreen(message: string, _titleColor: number): void {
+    private showEndScreen(reward?: { attackBefore: number; attackAfter: number; petUnlocked: boolean }): void {
         const won = this.phase === 'victory';
-        const body = message.split('\n').slice(1).filter(Boolean).join('\n');
         this.mathBoard.showPanel({
-            title: won ? 'Kouzlo je zlomeno' : 'Liška ještě čeká',
-            subtitle: `${this.subAtomId} · ${won ? 'Výzva splněna' : 'Každý pokus tě posouvá dál'}`,
-            body, frame: won ? 30 : 0,
-            stats: `${this.correctCount} správně     •     ${this.wrongCount} chybně`,
-            primary: 'ZPĚT DO CECHU', onPrimary: () => this.scene.start(this.returnScene),
-            secondary: won ? undefined : 'ZKUSIT ZNOVU',
+            title: won ? 'Liška zesílila!' : 'Zkus to znovu',
+            subtitle: reward?.petUnlocked ? 'Nový mazlíček u Pythie' : 'Runová liška',
+            body: reward ? `Útok +1\n${reward.attackBefore} → ${reward.attackAfter}` : '',
+            bodyFontSize: 28, frame: won ? 30 : 0,
+            stats: `✓ ${this.correctCount}     × ${this.wrongCount}`, statsFontSize: 24,
+            primary: 'ZPĚT', onPrimary: () => this.scene.start(this.returnScene),
+            secondary: won ? undefined : 'ZNOVU',
             onSecondary: won ? undefined : () => this.scene.restart({examType:this.examType,subAtomId:this.subAtomId,returnScene:this.returnScene}),
         });
     }

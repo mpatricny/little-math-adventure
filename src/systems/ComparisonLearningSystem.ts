@@ -11,7 +11,7 @@ import {
     ALL_BANDS,
     TrialTier,
 } from '../types';
-import { COMPARISON_HINT_DELAYS_MS, COMPARISON_INTRO_VERSION, normalizeComparisonSupport, updateComparisonSupport } from './ComparisonSupport';
+import { COMPARISON_INSTANT_HINT_COUNT, COMPARISON_INTRO_VERSION, normalizeComparisonSupport, updateComparisonSupport } from './ComparisonSupport';
 
 export const COMPARISON_CHAPTER_ID = 'comparison_symbols' as const;
 
@@ -62,7 +62,7 @@ export function createInitialComparisonChapterState(
             stage,
             introSeen: status === 'complete',
             introVersionSeen: status === 'complete' ? COMPARISON_INTRO_VERSION : 0,
-            ...normalizeComparisonSupport(status === 'complete' ? { hintLevel: COMPARISON_HINT_DELAYS_MS.length - 1 } : undefined),
+            ...normalizeComparisonSupport(status === 'complete' ? { symbolAnswers: COMPARISON_INSTANT_HINT_COUNT } : undefined),
             attempts: 0,
             correctFirst: 0,
             correctIndependent: 0,
@@ -143,7 +143,7 @@ export function ensureComparisonChapter(data: MasteryData): void {
         data.comparisonChapter = migrateComparisonChapterState(undefined, a2Ready, beyondIntroBand);
     } else if (prior.status === 'locked' && (a2Ready || beyondIntroBand)) {
         data.comparisonChapter = migrateComparisonChapterState(prior, a2Ready, beyondIntroBand);
-    } else if (prior.stages.some(progress => progress.introVersionSeen === undefined || progress.hintLevel === undefined)) {
+    } else if (prior.stages.some(progress => progress.introVersionSeen === undefined || progress.symbolAnswers === undefined)) {
         data.comparisonChapter = migrateComparisonChapterState(prior, a2Ready, beyondIntroBand);
     }
 }
@@ -188,8 +188,7 @@ export function generateComparisonTrainingProblems(
     });
 }
 
-export function generateComparisonExamProblems(state: ComparisonChapterState): MathProblem[] {
-    const itemCount = EXAM_CONFIGS.comparison_chapter.itemCount;
+export function generateComparisonExamProblems(state: ComparisonChapterState, itemCount = EXAM_CONFIGS.comparison_chapter.itemCount): MathProblem[] {
     const representations: ComparisonRepresentation[] = [];
     const representationCycle: ComparisonRepresentation[] = ['size', 'count', 'number', 'expression'];
     for (let index = 0; index < itemCount; index++) {
@@ -198,15 +197,13 @@ export function generateComparisonExamProblems(state: ComparisonChapterState): M
 
     const shortRelation = state.examRotation % RELATIONS.length;
     const relations: ComparisonRelation[] = [];
-    for (const relation of RELATIONS) {
-        const amount = relation === RELATIONS[shortRelation]
-            ? Math.floor(itemCount / 3)
-            : Math.ceil(itemCount / 3);
-        for (let index = 0; index < amount && relations.length < itemCount; index++) {
+    for (const [relationIndex, relation] of RELATIONS.entries()) {
+        const extraIndex = (relationIndex - shortRelation - 1 + RELATIONS.length) % RELATIONS.length;
+        const amount = Math.floor(itemCount / RELATIONS.length) + (extraIndex < itemCount % RELATIONS.length ? 1 : 0);
+        for (let index = 0; index < amount; index++) {
             relations.push(relation);
         }
     }
-    while (relations.length < itemCount) relations.push(RELATIONS[relations.length % 3]);
 
     const problems = representations.map((representation, index) => {
         const stage = examStageForRepresentation(representation);
@@ -355,13 +352,14 @@ export function applyComparisonExamResult(
 export function comparisonChapterProgress(state: ComparisonChapterState): number {
     if (state.status === 'complete') return 1;
     if (state.status === 'locked') return 0;
-    if (state.status === 'exam_ready') return 0.95;
+    if (state.status === 'exam_ready') return 1;
     const stage = getCurrentComparisonStage(state);
     if (!stage) return 0;
     const requirement = STAGE_REQUIREMENTS[stage];
     const attempts = state.attempts.filter(entry => !entry.exam && entry.stage === stage).slice(-requirement.itemCount);
-    const stageFraction = Math.min(1, attempts.length / requirement.itemCount);
-    return (state.currentStageIndex + stageFraction) / (COMPARISON_STAGES.length + 1);
+    const qualifying = attempts.filter(attempt => attempt.correct && (!requirement.independent || !attempt.assisted));
+    const stageFraction = Math.min(attempts.length / requirement.itemCount, qualifying.length / requirement.correctCount, 1);
+    return (state.currentStageIndex + stageFraction) / COMPARISON_STAGES.length;
 }
 
 export function relationSymbol(relation: ComparisonRelation): '<' | '=' | '>' {

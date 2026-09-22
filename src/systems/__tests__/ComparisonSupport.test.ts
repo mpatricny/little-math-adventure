@@ -2,75 +2,61 @@ import { describe, expect, it } from 'vitest';
 import { COMPARISON_INTRO_VERSION, comparisonHintDelay, normalizeComparisonSupport, updateComparisonSupport } from '../ComparisonSupport';
 import { createInitialComparisonChapterState, generateComparisonTrainingProblems, migrateComparisonChapterState, needsComparisonStageIntro, recordComparisonAttempt } from '../ComparisonLearningSystem';
 
-describe('fading crocodile reminders', () => {
-    it('starts at 4 seconds, fades through 8/16/24 and switches off after correct first answers', () => {
+describe('crocodile reminders', () => {
+    it('shows the first five immediately, then always after ten seconds, including after mistakes', () => {
         const support = normalizeComparisonSupport();
-        const waits = [comparisonHintDelay(support)];
-        for (let i = 0; i < 4; i++) {
-            updateComparisonSupport(support, true);
-            expect(comparisonHintDelay(support)).toBe(waits.at(-1));
-            updateComparisonSupport(support, true);
-            waits.push(comparisonHintDelay(support));
-        }
-        expect(waits).toEqual([4000, 8000, 16000, 24000, null]);
-        for (let i = 0; i < 10; i++) updateComparisonSupport(support, true);
-        expect(comparisonHintDelay(support)).toBeNull();
-    });
-
-    it('restores exactly one step after each error, including from off, and resets the correct streak', () => {
-        const support = normalizeComparisonSupport({ hintLevel: 4, hintCorrectStreak: 1 });
-        const waits = [];
         for (let i = 0; i < 5; i++) {
-            updateComparisonSupport(support, false);
-            waits.push(comparisonHintDelay(support));
-            expect(support.hintCorrectStreak).toBe(0);
+            expect(comparisonHintDelay(support)).toBe(0);
+            updateComparisonSupport(support, i % 2 === 0);
         }
-        expect(waits).toEqual([24000, 16000, 8000, 4000, 4000]);
-        updateComparisonSupport(support, true);
-        expect(comparisonHintDelay(support)).toBe(4000);
+        for (let i = 0; i < 20; i++) {
+            expect(comparisonHintDelay(support)).toBe(10000);
+            updateComparisonSupport(support, i % 2 === 0);
+        }
     });
 
-    it('retains support across saved attack batches; assisted and slow correct answers can fade it', () => {
+    it('persists the five-answer boundary across batches and save hydration', () => {
         let state = createInitialComparisonChapterState('training');
         state.currentStageIndex = 3;
         for (let batch = 0; batch < 2; batch++) {
-            const problems = generateComparisonTrainingProblems(state, 2);
-            problems.forEach((problem, i) => recordComparisonAttempt(state, problem, true, 45000, true, batch * 2 + i));
+            generateComparisonTrainingProblems(state, 2).forEach((problem, i) => {
+                recordComparisonAttempt(state, problem, i === 0, 45000, true, batch * 2 + i);
+            });
             state = migrateComparisonChapterState(JSON.parse(JSON.stringify(state)), true, false);
         }
-        expect(state.stages[3].hintLevel).toBe(2);
-        expect(state.currentStageIndex).toBe(3);
+        expect(state.stages[3].symbolAnswers).toBe(4);
         expect(state.stages[3].correctIndependent).toBe(0);
         const [problem] = generateComparisonTrainingProblems(state, 1);
         recordComparisonAttempt(state, problem, false, 1000, false, 5);
-        expect(state.stages[3].hintLevel).toBe(1);
+        expect(comparisonHintDelay(normalizeComparisonSupport(state.stages[3]))).toBe(10000);
+        expect(state.currentStageIndex).toBe(3);
     });
 
-    it('ignores exam answers for support and keeps symbol choices after mistakes', () => {
+    it('ignores exam answers and keeps plain buttons after mistakes', () => {
         const state = createInitialComparisonChapterState('training');
         state.currentStageIndex = 3;
         state.stages[3].supportMode = true;
-        state.stages[3].hintLevel = 4;
+        state.stages[3].symbolAnswers = 5;
         const [problem] = generateComparisonTrainingProblems(state, 1);
         expect(problem.comparisonMeta!.showCrocodile).toBe(false);
         problem.comparisonMeta!.exam = true;
         recordComparisonAttempt(state, problem, false, 1000, false, 1);
-        expect(state.stages[3].hintLevel).toBe(4);
+        expect(state.stages[3].symbolAnswers).toBe(5);
     });
 
-    it('replays the new visual introduction for legacy in-progress saves without clearing progress', () => {
+    it('hydrates legacy attempt counts without resetting progress or introductions', () => {
         const old = createInitialComparisonChapterState('training');
-        old.currentStageIndex = 2;
-        old.stages[2].introSeen = true;
-        old.stages[2].attempts = 4;
-        old.stages.forEach(stage => { delete stage.introVersionSeen; delete stage.hintLevel; delete stage.hintCorrectStreak; });
+        old.currentStageIndex = 3;
+        old.stages[3].introSeen = true;
+        old.stages[3].attempts = 7;
+        old.stages.forEach(stage => { delete stage.introVersionSeen; delete stage.symbolAnswers; });
         const hydrated = migrateComparisonChapterState(old, true, false);
-        expect(hydrated.currentStageIndex).toBe(2);
-        expect(hydrated.stages[2].attempts).toBe(4);
+        expect(hydrated.currentStageIndex).toBe(3);
+        expect(hydrated.stages[3].attempts).toBe(7);
+        expect(hydrated.stages[3].symbolAnswers).toBe(7);
         expect(needsComparisonStageIntro(hydrated)).toBe(true);
-        expect(hydrated.stages[3].hintLevel).toBe(0);
         const complete = migrateComparisonChapterState({ ...old, status: 'complete' }, true, false);
         expect(complete.status).toBe('complete');
-        expect(complete.stages[2].introVersionSeen).toBe(COMPARISON_INTRO_VERSION);
+        expect(complete.stages[3].introVersionSeen).toBe(COMPARISON_INTRO_VERSION);
     });
 });

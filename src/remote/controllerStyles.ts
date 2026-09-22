@@ -93,6 +93,9 @@ export const CONTROLLER_STYLES = `
     .remote-comparison-side { display: grid; justify-items: center; gap: 8px; }
     .remote-comparison-side small { font-size: 26px; color: #486b35; }
     .remote-comparison-slot { width: 48px; height: 64px; border: 2px dashed #917747; border-radius: 9px; }
+    .remote-comparison-arithmetic { grid-template-columns: minmax(0, 1fr) 36px minmax(0, 1fr); gap: 8px; font-size: clamp(20px, 6vw, 32px); }
+    .remote-comparison-arithmetic .remote-comparison-side { white-space: nowrap; }
+    .remote-comparison-arithmetic .remote-comparison-slot { width: 36px; height: 36px; border-radius: 4px; }
     .remote-comparison-pieces { display: grid; grid-template-columns: repeat(3, 28px); min-height: 64px; gap: 3px; justify-content: center; align-content: center; }
     .remote-comparison-pieces img { width: 28px; height: auto; }
     .remote-comparison-pieces.size { width: 88px; height: 96px; display: flex; align-items: center; justify-content: center; }

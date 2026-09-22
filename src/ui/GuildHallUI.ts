@@ -94,11 +94,13 @@ export class GuildHallUI {
         const host = this.getHost('nextExamProgressHost', {
             x: 232, y: 282, width: 300, height: 72, depth: 30,
         });
-        const examProgress = MasterySystem.getInstance().getNextSubAtomExamProgress();
+        const mastery = MasterySystem.getInstance();
+        const comparisonProgress = mastery.getComparisonExamProgress();
+        const examProgress = mastery.getNextSubAtomExamProgress();
         const isReady = this.standardExam !== null;
-        const progress = isReady ? 100 : examProgress?.percentage ?? 0;
-        const targetId = this.standardExam?.targetId ?? examProgress?.targetId;
-        const title = isReady ? 'ZKOUŠKA JE PŘIPRAVENA' : 'POSTUP K DALŠÍ ZKOUŠCE';
+        const progress = isReady ? 100 : comparisonProgress?.percentage ?? examProgress?.percentage ?? 0;
+        const targetId = this.standardExam?.targetId ?? comparisonProgress?.targetId ?? examProgress?.targetId;
+        const title = isReady ? 'ZKOUŠKA PŘIPRAVENA' : 'KE ZKOUŠCE';
 
         this.scene.add.rectangle(host.x, host.y, host.width, host.height, 0x0d1117, 0.9)
             .setDepth(host.depth)
@@ -129,7 +131,9 @@ export class GuildHallUI {
                 1,
             ).setDepth(host.depth + 2);
         }
-        const progressDetail = examProgress && !isReady
+        const progressDetail = targetId === 'comparison_symbols'
+            ? `<   =   >     ${progress} %`
+            : examProgress && !isReady
             ? `${progress} %  •  ${examProgress.targetId}  •  ${examProgress.successfulSolves}/${examProgress.requiredSuccessfulSolves} správně`
             : `${progress} %${targetId ? `  •  ${targetId}` : ''}`;
         this.scene.add.text(host.x, host.y + 29, progressDetail, {
@@ -244,6 +248,9 @@ export class GuildHallUI {
         if (this.standardExam) {
             const config = EXAM_CONFIGS[this.standardExam.type] as ExamConfig;
             const threshold = config.passThreshold ?? config.bronzeThreshold ?? config.itemCount;
+            if (this.standardExam.targetId === 'comparison_symbols') {
+                return { title: '<   =   >', detail: `✓ ${threshold} / ${config.itemCount}`, actionLabel: 'ZAČÍT', enabled: true };
+            }
             return {
                 title: this.standardExam.label.toUpperCase(),
                 detail: `${config.itemCount} úloh  •  ${threshold}+ správně pro postup`,

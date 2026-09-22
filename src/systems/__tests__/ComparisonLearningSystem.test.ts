@@ -9,6 +9,17 @@ import {
 } from '../ComparisonLearningSystem';
 
 describe('comparison learning chapter', () => {
+    it('balances ten catacomb questions in every rotation without dropping a relation', () => {
+        const state = createInitialComparisonChapterState('complete');
+        for (let rotation = 0; rotation < 3; rotation++) {
+            const problems = generateComparisonExamProblems(state, 10);
+            expect(problems).toHaveLength(10);
+            expect(['less', 'equal', 'greater'].map(relation => problems.filter(p => p.comparisonMeta!.relation === relation).length).sort()).toEqual([3, 3, 4]);
+            expect(new Set(problems.map(p => p.comparisonMeta!.representation)).size).toBe(4);
+            expect(problems.every(p => p.comparisonMeta!.exam && !p.comparisonMeta!.showCrocodile)).toBe(true);
+        }
+    });
+
     it('balances all three relations and advances the first stage at 5 of 6', () => {
         const state = createInitialComparisonChapterState('training');
         const problems = generateComparisonTrainingProblems(state, 6);

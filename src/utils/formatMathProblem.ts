@@ -23,49 +23,49 @@ interface FormattableProblem {
     };
 }
 
+/** Keep full expressions on both sides; never infer a side from the answer code. */
+export function getComparisonExpressions(problem: FormattableProblem): { left: string; right: string } | null {
+    const { operand1, operand2, operand3, operand4, operator, operator2, operator3, comparisonMeta: meta } = problem;
+    if (meta) {
+        return {
+            left: meta.representation === 'expression' ? `${operand1} ${displayOp(operator)} ${operand2}` : String(meta.leftValue),
+            right: String(meta.rightValue),
+        };
+    }
+    if (problem.problemType !== 'comparison' && problem.problemType !== 'comparison_eq_vs_eq') return null;
+    const left = `${operand1} ${displayOp(operator)} ${operand2}`;
+    if (problem.problemType === 'comparison_eq_vs_eq') {
+        return { left, right: operand4 !== undefined && operator3
+            ? `${operand3} ${displayOp(operator3)} ${operand4}` : String(operand3) };
+    }
+    return operand4 !== undefined && operator2
+        ? { left: `${left} ${displayOp(operator2)} ${operand3}`, right: String(operand4) }
+        : { left, right: String(operand3) };
+}
+
 /**
  * Single source of truth for formatting math problems as display strings.
  *
  * @param mode
- *   - 'question' — active problem: uses ○ for comparisons, ? for unknowns
+ *   - 'question' — active problem: leaves a blank relation, ? for unknown numbers
  *   - 'answer'   — feedback/resolved: uses <​/=/> for comparisons, shows actual values
  */
 export function formatMathProblem(problem: FormattableProblem, mode: 'question' | 'answer'): string {
-    const { operand1, operand2, operand3, operand4, operator, operator2, operator3, answer } = problem;
+    const { operand1, operand2, operand3, operator, operator2, answer } = problem;
     const op = displayOp(operator);
-    const isThreeOp = operand4 !== undefined && operator2;
 
-    if (problem.comparisonMeta) {
-        const meta = problem.comparisonMeta;
-        const sym = mode === 'question' ? '○' : COMPARISON_SYMBOLS[answer];
-        if (meta.representation === 'number') {
-            return `${meta.leftValue} ${sym} ${meta.rightValue}`;
-        }
-        if (meta.representation === 'expression') {
-            return `${operand1} ${op} ${operand2} ${sym} ${meta.rightValue}`;
-        }
-        return mode === 'question' ? 'Vyber správný znak' : `Správně: ${sym}`;
+    // Visual consumers draw a dashed slot using getComparisonExpressions().
+    // Plain-text fallbacks also leave this space empty, never a circle or '='.
+    const comparison = getComparisonExpressions(problem);
+    if (comparison) {
+        if (mode === 'question') return `${comparison.left} \u2003 ${comparison.right}`;
+        const symbol = COMPARISON_SYMBOLS[answer];
+        const representation = problem.comparisonMeta?.representation;
+        if (representation === 'size' || representation === 'count') return `Správně: ${symbol}`;
+        return `${comparison.left} ${symbol} ${comparison.right}`;
     }
 
     switch (problem.problemType) {
-        case 'comparison_eq_vs_eq': {
-            const sym = mode === 'question' ? '○' : COMPARISON_SYMBOLS[answer];
-            if (operand4 !== undefined && operator3) {
-                const rightOp = displayOp(operator3);
-                return `${operand1} ${op} ${operand2} ${sym} ${operand3} ${rightOp} ${operand4}`;
-            }
-            return `${operand1} ${op} ${operand2} ${sym} ${operand3}`;
-        }
-
-        case 'comparison': {
-            const sym = mode === 'question' ? '○' : COMPARISON_SYMBOLS[answer];
-            if (isThreeOp) {
-                const op2 = displayOp(operator2);
-                return `${operand1} ${op} ${operand2} ${op2} ${operand3} ${sym} ${operand4}`;
-            }
-            return `${operand1} ${op} ${operand2} ${sym} ${operand3}`;
-        }
-
         case 'missing_operand': {
             const val = mode === 'question' ? '?' : String(answer);
             if (operand3 !== undefined && operator2) {

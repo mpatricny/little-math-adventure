@@ -18,7 +18,10 @@ for (const characterType of ['girl_knight', 'boy_knight']) {
         await clickHost(page, 'catacombPrimary');
         await page.evaluate(lethal => {
             const s = (window as any).__LITTLE_MATH_GAME__.scene.keys.CatacombTrialScene;
-            if (lethal) s.creatureHp = 1;
+            if (lethal) {
+                s.creatureHp = 1;
+                s.correctCount = s.creatureMaxHp - 1;
+            }
             // Phaser timers use smoothed delta, while Clock.now is wall time.
             // Measure game time so software WebGL stalls don't look like a delay.
             const clock = s.time.addEvent({ delay: 60_000 });

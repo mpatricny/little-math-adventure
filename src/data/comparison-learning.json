@@ -1,6 +1,6 @@
 {
     "introVersion": 2,
     "firstIntroDurationScale": 1.3,
-    "symbolHintDelaysMs": [4000, 8000, 16000, 24000, null],
-    "correctAnswersToFade": 2
+    "instantSymbolHintCount": 5,
+    "symbolHintDelayMs": 10000
 }

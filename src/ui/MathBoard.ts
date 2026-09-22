@@ -1,13 +1,15 @@
 import { sfx } from '../audio/AudioDirector';
 import Phaser from 'phaser';
 import { ComparisonStageId, MathProblem } from '../types';
-import { formatMathProblem } from '../utils/formatMathProblem';
+import { formatMathProblem, getComparisonExpressions } from '../utils/formatMathProblem';
+import { ComparisonExpressionView } from './ComparisonExpressionView';
+import { comparisonGlyph } from './ComparisonProblemView';
 import { MasterySystem } from '../systems/MasterySystem';
 import { MedievalActionButton } from './MedievalActionButton';
 import { MathBoardDefense, SequentialMathView } from './SequentialMathView';
-import { COMPARISON_CHOICE_SCALE } from './ComparisonPresentation';
+import { comparisonChoiceWidth } from './ComparisonPresentation';
 import { calculateShieldAnswerBlock } from '../systems/ShieldBlockSystem';
-import { ComparisonSupportProgress, comparisonHintDelay, normalizeComparisonSupport, updateComparisonSupport } from '../systems/ComparisonSupport';
+import { COMPARISON_LATER_HINT_DELAY_MS, ComparisonSupportProgress, comparisonHintDelay, normalizeComparisonSupport, updateComparisonSupport } from '../systems/ComparisonSupport';
 import type { RemoteComparisonPrompt } from '../remote/types';
 
 export interface MathBoardShowOptions {
@@ -72,6 +74,7 @@ export interface MathBoardRemoteSnapshot {
 interface ProblemRow {
     container: Phaser.GameObjects.Container;
     problemText: Phaser.GameObjects.Text;
+    comparison?: ComparisonExpressionView;
     sourceLabel: Phaser.GameObjects.Container | null;  // Container for icon + text
     buttons: Phaser.GameObjects.Container[];
     statusIcon: Phaser.GameObjects.Text;
@@ -362,6 +365,18 @@ export class MathBoard {
         }
         rowContainer.add(problemText);
 
+        let comparison: ComparisonExpressionView | undefined;
+        if (getComparisonExpressions(problem)) {
+            problemText.setVisible(false);
+            comparison = new ComparisonExpressionView(this.scene, problem, {
+                x: textX, y: 0, depth: problemText.depth, fontSize: useTwoColumns ? 22 : 32,
+                color: textColor, compact: useTwoColumns, align: 'left',
+            });
+            comparison.root.setX(Math.min(textX, problemRightLimit - comparison.width));
+            rowContainer.add(comparison.root);
+            problemLeftX = comparison.root.x;
+        }
+
         // Source label (pet, sword, or attack power bonus indicator)
         let sourceLabel: Phaser.GameObjects.Container | null = null;
         const hasAttackPowerBonus = problem.source !== 'pet' && problem.source !== 'sword'
@@ -439,8 +454,7 @@ export class MathBoard {
         }
 
         // Status icon (shows ✓ or ✗ after answering)
-        const defaultStatusX = useTwoColumns ? -185 : -210;
-        const statusX = Math.max(problemAreaLeft, Math.min(defaultStatusX, problemLeftX - 22));
+        const statusX = problemLeftX - 18;
         const statusIcon = this.scene.add.text(statusX, 0, '', {
             fontSize: useTwoColumns ? '20px' : '28px',
             fontFamily: 'Arial, sans-serif',
@@ -459,6 +473,7 @@ export class MathBoard {
         return {
             container: rowContainer,
             problemText,
+            comparison,
             sourceLabel,
             buttons,
             statusIcon,
@@ -505,12 +520,18 @@ export class MathBoard {
         const bg = this.scene.add.image(0, 0, 'ui-button').setScale(scale);
         const isSign = displayValue === '<' || displayValue === '=' || displayValue === '>';
         const text = this.scene.add.text(0, -2, displayValue ?? value.toString(), {
-            fontSize: isSign ? `${44 * COMPARISON_CHOICE_SCALE}px` : scale < 0.25 ? '18px' : '22px',
+            fontSize: scale < 0.25 ? '18px' : '22px',
             fontFamily: 'Arial, sans-serif', color: '#5a3825', fontStyle: 'bold', resolution: 2,
         }).setOrigin(0.5);
         const surface = this.scene.add.container(0, 0, [bg, text]);
+        if (isSign) {
+            text.setVisible(false);
+            const glyphWidth = comparisonChoiceWidth(bg.displayWidth, bg.displayHeight) * 0.9;
+            surface.add(comparisonGlyph(this.scene, value, true, glyphWidth).setName('comparisonChoiceGlyph'));
+        }
         const container = this.scene.add.container(x, y, [surface]);
-        container.setSize(bg.displayWidth, bg.displayHeight).setInteractive({ useHandCursor: true });
+        // At the supported 1024 px tablet width, 55 game units give a 44 px target.
+        container.setSize(bg.displayWidth, Math.max(bg.displayHeight, 55)).setInteractive({ useHandCursor: true });
         container.setData({ buttonIndex, rowIndex, value, isCorrect, text, bg, surface });
         container.on('pointerover', () => { if (container.input?.enabled) surface.setY(-2); });
         container.on('pointerout', () => surface.setY(0));
@@ -556,6 +577,7 @@ export class MathBoard {
         problems.forEach(problem => {
             if (problem.comparisonMeta) {
                 problem.comparisonMeta.assisted = false;
+                problem.comparisonMeta.reminderShown = false;
                 delete problem.comparisonMeta.selectedRelation;
             }
         });
@@ -627,6 +649,7 @@ export class MathBoard {
             this.setRowEnabled(row.buttons, true);
             this.scheduleHints(row.problem);
         }
+        this.updateActiveTime(0, 0);
         this.notifyActiveProblemChanged();
     }
 
@@ -636,14 +659,15 @@ export class MathBoard {
         if (!this.sequential) return;
         const meta = this.problems[this.currentProblemIndex]?.comparisonMeta;
         if (!meta || meta.exam || meta.assisted) return;
-        if (meta.stage === 'number_symbol') {
-            const delay = comparisonHintDelay(this.support);
-            if (delay !== null && this.activeTimeMs >= delay) {
+        if (!meta.showCrocodile && !meta.reminderShown && (meta.representation === 'number' || meta.representation === 'expression')) {
+            const delay = meta.stage === 'number_symbol' ? comparisonHintDelay(this.support) : COMPARISON_LATER_HINT_DELAY_MS;
+            if (this.activeTimeMs >= delay) {
                 this.sequentialView!.showHints();
-                meta.assisted = true;
+                meta.reminderShown = true;
                 this.notifyActiveProblemChanged();
             }
-        } else if (meta.autoArithmeticHintMs && this.activeTimeMs >= meta.autoArithmeticHintMs) {
+        }
+        if (meta.autoArithmeticHintMs && this.activeTimeMs >= meta.autoArithmeticHintMs) {
             this.sequentialView!.showArithmeticHint();
             meta.assisted = true;
             this.notifyActiveProblemChanged();
@@ -678,11 +702,11 @@ export class MathBoard {
     }
 
     // Legacy single-problem support (for shield block, pet turn, etc.)
-    showSingle(problem: MathProblem, onAnswer: (isCorrect: boolean, responseTimeMs: number, assisted: boolean) => void): void {
-        this.show([problem]);
-        this.onComplete = (_damage, results, timings, assisted) => {
+    showSingle(problem: MathProblem, onAnswer: (isCorrect: boolean, responseTimeMs: number, assisted: boolean, damage: number) => void, options: MathBoardShowOptions = {}): void {
+        this.show([problem], options);
+        this.onComplete = (damage, results, timings, assisted) => {
             this.onComplete = this.originalOnComplete;
-            onAnswer(results[0] || false, timings[0] || 0, assisted[0] || false);
+            onAnswer(results[0] || false, timings[0] || 0, assisted[0] || false, damage);
         };
     }
 
@@ -833,7 +857,7 @@ export class MathBoard {
         let chargeBonusDamage = 0;
         let speedCharges = 0;
         if (isCorrect && !this.defense) {
-            if (!usedAssistance && problem.masteryKey && responseTimeMs > 0) {
+            if (!usedAssistance && (problem.masteryKey || (problem.comparisonMeta && !problem.comparisonMeta.exam && !problem.comparisonMeta.diagnosticMode)) && responseTimeMs > 0) {
                 const speed = MasterySystem.getInstance().getSpeedBonus(responseTimeMs, problem.masteryKey);
                 if (speed.charges > 0 && speed.type !== 'none' && this.speedChargeCallback) {
                     speedCharges = speed.charges;
@@ -865,6 +889,7 @@ export class MathBoard {
         const row = this.problemRows[rowIndex];
         row.solved = true;
         row.correct = isCorrect;
+        row.comparison?.reveal();
         this.setRowEnabled(row.buttons, false);
         (row.buttons[buttonIndex].getData('bg') as Phaser.GameObjects.Image).setTint(isCorrect ? 0x88ff88 : 0xff8888);
         row.statusIcon.setText(isCorrect ? '✓' : '✗').setColor(isCorrect ? '#44aa44' : '#cc4444');
@@ -889,6 +914,7 @@ export class MathBoard {
         const problem = this.problems[this.currentProblemIndex];
         if (!problem) return null;
         const meta = problem.comparisonMeta;
+        const expressions = getComparisonExpressions(problem);
         return {
             problem: formatMathProblem(problem, 'question'),
             choices: problem.choices.map((_value, index) => ({ index: index as 0 | 1 | 2, label: this.getChoiceDisplayValue(problem, index) })),
@@ -898,6 +924,9 @@ export class MathBoard {
                 showReminders: !meta.exam && this.sequentialView?.hints.some(hint => hint.visible) === true,
                 expression: meta.representation === 'expression' ? `${problem.operand1} ${problem.operator} ${problem.operand2}` : undefined,
                 arithmeticHint: meta.representation === 'expression' && meta.assisted ? meta.leftValue : undefined,
+            } : expressions ? {
+                representation: 'arithmetic', leftExpression: expressions.left, rightExpression: expressions.right,
+                crocodileChoices: false, showReminders: false,
             } : undefined,
         };
     }

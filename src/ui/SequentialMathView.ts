@@ -2,7 +2,8 @@ import Phaser from 'phaser';
 import { ComparisonStageId, MathProblem } from '../types';
 import { SceneBuilder } from '../systems/SceneBuilder';
 import { createComparisonDemoProblems } from '../systems/ComparisonLearningSystem';
-import { formatMathProblem } from '../utils/formatMathProblem';
+import { formatMathProblem, getComparisonExpressions } from '../utils/formatMathProblem';
+import { ComparisonExpressionView } from './ComparisonExpressionView';
 import { ComparisonHost, ComparisonProblemView, comparisonGlyph } from './ComparisonProblemView';
 import { COMPARISON_CHOICE_SCALE } from './ComparisonPresentation';
 import comparisonConfig from '../data/comparison-learning.json';
@@ -19,6 +20,7 @@ export class SequentialMathView {
     readonly buttons: Phaser.GameObjects.Container[] = [];
     readonly hints: Phaser.GameObjects.Image[] = [];
     comparison: ComparisonProblemView | null = null;
+    expression: ComparisonExpressionView | null = null;
     private readonly builder: SceneBuilder;
     private readonly content: Phaser.GameObjects.Container;
     private readonly heading: Phaser.GameObjects.Text;
@@ -134,7 +136,7 @@ export class SequentialMathView {
         this.problem = problem;
         this.root.setVisible(true);
         const meta = problem.comparisonMeta;
-        this.heading.setText(this.defense ? 'Braň se' : meta?.showCrocodile ? 'Vyber tlamu' : meta ? 'Vyber znaménko' : 'Spočítej');
+        this.heading.setText(this.defense ? 'Braň se' : meta?.showCrocodile ? 'Vyber tlamu' : getComparisonExpressions(problem) ? 'Vyber znaménko' : 'Spočítej');
         this.feedback.setText('');
         this.bonus.setText('');
         this.arithmeticHint.setText('');
@@ -147,6 +149,11 @@ export class SequentialMathView {
                 relation: this.host(expression ? 'expressionRelation' : 'relation'),
             });
             this.content.add(this.comparison.root);
+        } else if (getComparisonExpressions(problem)) {
+            this.expression = new ComparisonExpressionView(this.scene, problem, {
+                ...this.host('arithmetic'), fontSize: 32, color: '#4a3826', compact: true,
+            });
+            this.content.add(this.expression.root);
         } else {
             const host = this.host('arithmetic');
             const text = this.text('arithmetic', formatMathProblem(problem, 'question'), 32);
@@ -213,6 +220,7 @@ export class SequentialMathView {
 
     answer(correct: boolean, choice: number, done: () => void): void {
         this.setEnabled(false); this.hideHints();
+        this.expression?.reveal();
         this.outline(this.buttons[choice], correct ? 0x668c43 : 0xad563b);
         this.feedback.setText(correct ? '✓' : 'Podívej').setColor(correct ? '#527b37' : '#9a4a30');
         if (!this.comparison) { this.later(this.bonus.text ? 1100 : 550, done); return; }
@@ -293,7 +301,7 @@ export class SequentialMathView {
     }
 
     private clearQuestion(): void {
-        this.content.removeAll(true); this.comparison = null;
+        this.content.removeAll(true); this.comparison = null; this.expression = null;
         this.buttons.length = 0; this.hints.length = 0;
     }
 

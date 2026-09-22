@@ -698,6 +698,55 @@ describe('MasterySystem co-op auto-promotion', () => {
         resetSingletons();
     });
 
+    it('unlocks the real comparison exam, then chapter fluency and mastery challenges', () => {
+        const data = createMasteryData();
+        data.subAtoms.A2.state = 'fluent';
+        const system = MasterySystem.getInstance();
+        system.setActiveData(data);
+        expect(system.getComparisonExamProgress()?.percentage).toBe(0);
+        for (const count of [6, 6, 6, 9, 6, 9]) {
+            const problems = system.generateComparisonBattleProblems(count)!;
+            expect(problems).toHaveLength(count);
+            for (const problem of problems) system.recordComparisonSolve(problem, true, 1000, false);
+        }
+        expect(system.getComparisonExamProgress()?.percentage).toBe(100);
+        expect(system.getAvailableExams()).toContainEqual({ type: 'comparison_chapter', targetId: 'comparison_symbols', label: 'Zkouška porovnávání' });
+        for (const problem of system.generateComparisonExamProblems()) system.recordComparisonSolve(problem, true, 1000, false);
+        system.applyComparisonExamResult(8, undefined, true);
+        expect(system.generateComparisonBattleProblems(1)).toBeNull();
+        expect(system.checkComparisonChallengeEligibility('fluency_challenge')).toBe(true);
+        expect(system.checkComparisonChallengeEligibility('mastery_challenge')).toBe(false);
+        const challenge = system.generateComparisonExamProblems(10);
+        expect(challenge).toHaveLength(10);
+        expect(new Set(challenge.map(p => p.comparisonMeta!.representation)).size).toBe(4);
+        expect(challenge.every(p => p.comparisonMeta!.exam && !p.comparisonMeta!.showCrocodile)).toBe(true);
+        const failed = system.applyFluencyResult('comparison_symbols', 0, true);
+        expect(failed.passed).toBe(false);
+        expect(system.checkComparisonChallengeEligibility('fluency_challenge')).toBe(true);
+        expect(system.applyFluencyResult('comparison_symbols', 10, true).stateChanged).toBe(true);
+        expect(system.checkComparisonChallengeEligibility('mastery_challenge')).toBe(true);
+        expect(system.applyMasteryResult('comparison_symbols', 10, true).stateChanged).toBe(true);
+        system.applyMasteryResult('comparison_symbols', 0, true);
+        expect(data.comparisonChapter!.masteryChallengeResult).toBe('pass');
+        expect(system.checkComparisonChallengeEligibility('mastery_challenge')).toBe(false);
+    });
+
+    it('buffers chapter challenges independently in co-op and counts later mixed comparison practice', () => {
+        const data = createMasteryData();
+        data.subAtoms.A2.state = 'secure';
+        completeComparisonLesson(data);
+        data.globalSolveSequence = data.comparisonChapter!.attempts.length;
+        const system = MasterySystem.getInstance();
+        system.setActiveData(data);
+        expect(system.applyCoopAutoPromotions(true)).toEqual([]);
+        const key = ProblemDatabase.getInstance().getProblemsForForm('A2', 'compare_equation_vs_number')[0].key;
+        for (let i = 0; i < 10; i++) system.recordSolve(key, true, 1000, 'battle_pet');
+        expect(system.applyCoopAutoPromotions(true)).toContainEqual({ type: 'fluency_challenge', targetId: 'comparison_symbols' });
+        const other = createMasteryData();
+        system.setActiveData(other);
+        expect(system.getComparisonChapterState().fluencyChallengeResult).not.toBe('pass');
+    });
+
     it('captures a baseline first and then auto-awards silver for sub-atom promotions after the extra buffer', () => {
         const masterySystem = MasterySystem.getInstance();
         const data = createMasteryData();

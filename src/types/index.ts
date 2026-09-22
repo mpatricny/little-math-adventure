@@ -142,7 +142,8 @@ export interface PlayerState {
     // === TOWN PROGRESS ===
     townProgress?: TownProgress;       // Track building unlocks and progressive town growth
     // === CATACOMB TRIALS ===
-    catacombPetUpgrades?: Record<string, number>;  // BandId → mastery upgrade count (0-4)
+    catacombFoxBonus?: number;                    // Persistent +1 attack per successful catacomb run
+    catacombPetUpgrades?: Record<string, number>;  // Legacy per-band bonus, migrated to catacombFoxBonus
     // === DAILY LEARNING SUMMARY ===
     dailyProgressLog?: Record<string, {
         coinsEarned: number;
@@ -297,6 +298,8 @@ export interface ComparisonProblemMeta {
     autoArithmeticHintMs?: number;
     arithmeticHintText?: string;
     assisted?: boolean;
+    /** All three jaw labels are visible; unlike a worked solution they reveal no answer. */
+    reminderShown?: boolean;
     selectedRelation?: ComparisonRelation;
     exam?: boolean;
     diagnosticMode?: boolean;
@@ -587,6 +590,7 @@ export interface ComparisonStageProgress {
     introVersionSeen?: number;
     hintLevel?: number;
     hintCorrectStreak?: number;
+    symbolAnswers?: number;
     attempts: number;
     correctFirst: number;
     correctIndependent: number;
@@ -631,6 +635,8 @@ export interface ComparisonChapterState {
     attempts: ComparisonAttempt[];
     examBestMedal: TrialTier | null;
     examRotation: number;
+    fluencyChallengeResult?: 'pass' | 'fail' | null;
+    masteryChallengeResult?: 'pass' | 'fail' | null;
 }
 
 /** Definition of a single problem in the mastery database */

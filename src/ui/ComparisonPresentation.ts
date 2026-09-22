@@ -6,3 +6,8 @@ export function comparisonObjectScale(value: number, otherValue: number): number
 
 /** Author's refinement: leave more breathing room inside the answer frames. */
 export const COMPARISON_CHOICE_SCALE = 0.9;
+
+/** Same comfortable sign-to-frame proportions as the chapter's wooden choices. */
+export function comparisonChoiceWidth(buttonWidth: number, buttonHeight: number): number {
+    return Math.min(buttonWidth * 0.72, buttonHeight * 0.83);
+}

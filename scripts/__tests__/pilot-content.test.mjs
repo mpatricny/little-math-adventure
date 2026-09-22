@@ -5,6 +5,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import test from 'node:test';
+import { collectSceneAssets } from '../scene-assets.mjs';
 import { collectPilotContent, preparePilotPublic, publicFilePath } from '../pilot-content.mjs';
 import { PILOT_SCENE_KEYS, SHARED_CHAPTER_TEXTURE_KEYS } from '../pilot-content.config.mjs';
 
@@ -161,4 +162,14 @@ test('unsafe paths and attempts to replace the source public tree are rejected',
     assert.throws(() => publicFilePath(filename), /Unsafe|Editor/);
   }
   assert.throws(() => preparePilotPublic(rootDir, { outputDir: path.join(rootDir, 'public') }), /separate/);
+});
+
+// Cold entry into a trial must not depend on having visited a battle first.
+test('comparison artwork is preloaded independently in guild and catacomb trials', () => {
+  const dependencies = collectSceneAssets(rootDir);
+  for (const scene of ['GuildScene', 'CatacombTrialScene']) {
+    for (const key of ['comparison-apple', 'comparison-equal', 'comparison-greater']) {
+      assert.ok(dependencies[scene].includes(key), `${scene} is missing ${key}`);
+    }
+  }
 });

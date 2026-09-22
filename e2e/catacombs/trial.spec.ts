@@ -48,6 +48,7 @@ for(const renderer of ['canvas','webgl'])test(`fox trial ${renderer}`,async({pag
  await screenshotPair(page,`${renderer}-victory`);
  const saved=await page.evaluate(()=>JSON.parse(localStorage.getItem('littleMathAdventure_slot_0')!));
  expect(saved.player.unlockedPets).toContain('catacomb_creature_A');
+ expect(saved.player.catacombFoxBonus).toBe(1);
  expect(saved.mathStats.masteryData.globalSolveSequence).toBe(answered);
  await click(page,'catacombPrimary');await waitForScene(page,'GuildScene');
 });
@@ -79,4 +80,5 @@ test('timeout, wrong answers, defeat and retry preserve working controls',async(
  await click(page,'catacombPrimary');
  await expect.poll(()=>page.evaluate(()=>(window as any).__LITTLE_MATH_GAME__.scene.keys.CatacombTrialScene.phase)).toBe('charging');
  expect(await page.evaluate(()=>JSON.parse(localStorage.getItem('littleMathAdventure_slot_0')!).player.unlockedPets)).not.toContain('catacomb_creature_A');
+ expect(await page.evaluate(()=>JSON.parse(localStorage.getItem('littleMathAdventure_slot_0')!).player.catacombFoxBonus)).toBe(0);
 });

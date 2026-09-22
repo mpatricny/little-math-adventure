@@ -9042,9 +9042,9 @@
           "id": "catacombQuestionPanel",
           "asset": "ui.containers.empty",
           "x": 640,
-          "y": 600,
+          "y": 584,
           "width": 840,
-          "height": 210,
+          "height": 244,
           "depth": 90,
           "visible": false
         },
@@ -9052,7 +9052,7 @@
           "id": "catacombQuestionLabel",
           "asset": "ui.containers.empty",
           "x": 640,
-          "y": 517,
+          "y": 483,
           "width": 720,
           "height": 22,
           "depth": 91,
@@ -9146,6 +9146,36 @@
           "width": 600,
           "height": 45,
           "depth": 80,
+          "visible": false
+        },
+        {
+          "id": "catacombComparisonLeft",
+          "asset": "ui.containers.empty",
+          "x": 460,
+          "y": 548,
+          "width": 148,
+          "height": 80,
+          "depth": 91,
+          "visible": false
+        },
+        {
+          "id": "catacombComparisonRelation",
+          "asset": "ui.containers.empty",
+          "x": 640,
+          "y": 548,
+          "width": 56,
+          "height": 56,
+          "depth": 91,
+          "visible": false
+        },
+        {
+          "id": "catacombComparisonRight",
+          "asset": "ui.containers.empty",
+          "x": 820,
+          "y": 548,
+          "width": 148,
+          "height": 80,
+          "depth": 91,
           "visible": false
         }
       ],

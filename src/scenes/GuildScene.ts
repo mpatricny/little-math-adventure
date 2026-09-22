@@ -1,5 +1,6 @@
 import { ComparisonProblemView, comparisonGlyph } from '../ui/ComparisonProblemView';
-import { COMPARISON_CHOICE_SCALE } from '../ui/ComparisonPresentation';
+import { ComparisonExpressionView } from '../ui/ComparisonExpressionView';
+import { comparisonChoiceWidth } from '../ui/ComparisonPresentation';
 import Phaser from 'phaser';
 import { GameStateManager } from '../systems/GameStateManager';
 import { MathEngine } from '../systems/MathEngine';
@@ -8,7 +9,7 @@ import { MasterySystem } from '../systems/MasterySystem';
 import { SceneDebugger } from '../systems/SceneDebugger';
 import { SceneBuilder } from '../systems/SceneBuilder';
 import { TrialFeedbackVisualizer } from '../ui/TrialFeedbackVisualizer';
-import { formatMathProblem } from '../utils/formatMathProblem';
+import { formatMathProblem, getComparisonExpressions } from '../utils/formatMathProblem';
 import { CoopSwitchUI } from '../ui/CoopSwitchUI';
 import { MasteryMapOverlay } from '../ui/MasteryMapOverlay';
 import { DailyProgressOverlay } from '../ui/DailyProgressOverlay';
@@ -77,6 +78,7 @@ export class GuildScene extends Phaser.Scene {
     private trialQuestionCounter!: Phaser.GameObjects.Text;
     private problemText!: Phaser.GameObjects.Text;
     private comparisonProblemVisual: ComparisonProblemView | null = null;
+    private comparisonExpressionVisual: ComparisonExpressionView | null = null;
     private answerButtons: MedievalActionButton[] = [];
     private answerButtonValues: number[] = [0, 0, 0];
     private progressDots: Phaser.GameObjects.Text[] = [];
@@ -461,7 +463,8 @@ export class GuildScene extends Phaser.Scene {
         const dialog = this.overviewOverlay.getData('dialog') as Phaser.GameObjects.Text;
         const desc = this.overviewOverlay.getData('desc') as Phaser.GameObjects.Text;
 
-        dialog.setText('Předstup před cechovní radu.\nUkaž klidnou hlavu a přesné počítání.');
+        const comparison = examType === 'comparison_chapter';
+        dialog.setFontSize(comparison ? 52 : 22).setText(comparison ? '<   =   >' : 'Ukaž, co umíš');
         if (examType && examTarget) {
             const config = EXAM_CONFIGS[examType];
             const examLabel = MasterySystem.getInstance().getAvailableExams()
@@ -469,7 +472,7 @@ export class GuildScene extends Phaser.Scene {
             const rules = config.bronzeThreshold
                 ? `${config.itemCount} příkladů • medaile podle počtu správných odpovědí`
                 : `${config.itemCount} příkladů • ${config.passThreshold}+ správně pro postup`;
-            desc.setText(`${examLabel.toUpperCase()}\n${rules}`);
+            desc.setText(comparison ? `${config.itemCount} příkladů` : `${examLabel.toUpperCase()}\n${rules}`);
 
             if (config.passThreshold) {
                 this.overviewMedalCards[0].setVisible(false);
@@ -478,9 +481,9 @@ export class GuildScene extends Phaser.Scene {
                 this.overviewMedalTexts[1].setText(`POSTUP\n${config.passThreshold} / ${config.itemCount}`);
             } else {
                 this.overviewMedalCards.forEach(card => card.setVisible(true));
-                this.overviewMedalTexts[0].setText(`BRONZ\n${config.bronzeThreshold}+ SPRÁVNĚ`);
-                this.overviewMedalTexts[1].setText(`STŘÍBRO\n${config.silverThreshold}+ SPRÁVNĚ`);
-                this.overviewMedalTexts[2].setText(`ZLATO\n${config.goldThreshold}+ SPRÁVNĚ`);
+                this.overviewMedalTexts[0].setText(comparison ? `✓ ${config.bronzeThreshold} / ${config.itemCount}` : `BRONZ\n${config.bronzeThreshold}+ SPRÁVNĚ`);
+                this.overviewMedalTexts[1].setText(comparison ? `✓ ${config.silverThreshold} / ${config.itemCount}` : `STŘÍBRO\n${config.silverThreshold}+ SPRÁVNĚ`);
+                this.overviewMedalTexts[2].setText(comparison ? `✓ ${config.goldThreshold} / ${config.itemCount}` : `ZLATO\n${config.goldThreshold}+ SPRÁVNĚ`);
             }
         }
 
@@ -1092,17 +1095,26 @@ export class GuildScene extends Phaser.Scene {
         this.trialState.phase = 'problem';
         this.problemStartTime = this.time.now;
 
-        this.trialQuestionCounter.setText(`OTÁZKA ${idx + 1} Z ${this.trialState.totalProblems}`);
+        this.trialQuestionCounter.setText(this.currentTrialProblem.comparisonMeta ? `${idx + 1} / ${this.trialState.totalProblems}` : `OTÁZKA ${idx + 1} Z ${this.trialState.totalProblems}`);
         this.problemText
             .setText(formatMathProblem(this.currentTrialProblem, 'question'))
             .setColor('#2f1a0d')
             .setVisible(true);
         this.comparisonProblemVisual?.destroy();
         this.comparisonProblemVisual = null;
+        this.comparisonExpressionVisual?.destroy();
+        this.comparisonExpressionVisual = null;
         const comparisonMeta = this.currentTrialProblem.comparisonMeta;
         if (comparisonMeta) {
             this.comparisonProblemVisual = this.createComparisonExamVisual(this.currentTrialProblem);
             this.trialOverlay.add(this.comparisonProblemVisual.root);
+            this.problemText.setVisible(false);
+        } else if (getComparisonExpressions(this.currentTrialProblem)) {
+            const host = this.trialOverlay.getData('problemHost') as GuildHostLayout;
+            this.comparisonExpressionVisual = new ComparisonExpressionView(this, this.currentTrialProblem, {
+                ...host, fontSize: 56, color: '#2f1a0d',
+            });
+            this.trialOverlay.add(this.comparisonExpressionVisual.root);
             this.problemText.setVisible(false);
         }
 
@@ -1118,7 +1130,8 @@ export class GuildScene extends Phaser.Scene {
             button.setLabel(isComparison ? '' : displayText, 34).setEnabled(true);
             button.label.setColor('#3c210f');
             if (isComparison) {
-                const glyph = comparisonGlyph(this, answers[i], true, 72 * COMPARISON_CHOICE_SCALE).setPosition(button.label.x, button.label.y);
+                // This ornate frame reserves more height for its metal rim.
+                const glyph = comparisonGlyph(this, answers[i], true, comparisonChoiceWidth(button.root.width, button.root.height * 0.72)).setPosition(button.label.x, button.label.y);
                 button.label.parentContainer.add(glyph);
                 button.root.setData('comparisonGlyph', glyph);
             }
@@ -1146,6 +1159,7 @@ export class GuildScene extends Phaser.Scene {
 
     private revealComparisonExamVisual(_problem: MathProblem): void {
         this.comparisonProblemVisual?.reveal(true);
+        this.comparisonExpressionVisual?.reveal();
     }
 
     private onProblemTick(): void {

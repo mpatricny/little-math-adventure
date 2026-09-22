@@ -166,6 +166,19 @@ function comparisonImage(name: string, flip = false): HTMLImageElement {
 function createComparisonCard(prompt: RemoteComparisonPrompt): HTMLElement {
     const card = document.createElement('section');
     card.className = 'remote-problem remote-comparison';
+    if (prompt.representation === 'arithmetic') {
+        card.classList.add('remote-comparison-arithmetic');
+        const side = (expression: string) => {
+            const element = document.createElement('span');
+            element.className = 'remote-comparison-side';
+            element.textContent = expression.replace(/\s/g, '').replace(/\*/g, '×');
+            return element;
+        };
+        const slot = document.createElement('div');
+        slot.className = 'remote-comparison-slot'; slot.setAttribute('aria-label', 'Prázdné místo');
+        card.append(side(prompt.leftExpression), slot, side(prompt.rightExpression));
+        return card;
+    }
     const operand = (value: number, left: boolean): HTMLElement => {
         const side = document.createElement('div'); side.className = 'remote-comparison-side';
         if (prompt.representation === 'size' || prompt.representation === 'count' || prompt.numberedObjects) {

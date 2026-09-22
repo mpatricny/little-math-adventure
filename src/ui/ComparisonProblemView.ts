@@ -26,6 +26,38 @@ export function comparisonGlyph(scene: Phaser.Scene, value: number, plain: boole
     return image;
 }
 
+/** One empty target style for chapter, ordinary exercises and advanced exams. */
+export function drawComparisonSlot(scene: Phaser.Scene, width: number, height: number, color = 0x917747): Phaser.GameObjects.Graphics {
+    const slot = scene.add.graphics().setName('emptyComparisonSlot');
+    slot.lineStyle(width < 40 ? 1.5 : 2, color, 0.85);
+    const step = Math.min(12, width / 4), dash = step / 2;
+    for (let x = -width / 2 + dash; x < width / 2 - dash; x += step) {
+        slot.lineBetween(x, -height / 2, Math.min(x + dash, width / 2 - dash), -height / 2);
+        slot.lineBetween(x, height / 2, Math.min(x + dash, width / 2 - dash), height / 2);
+    }
+    for (let y = -height / 2 + dash; y < height / 2 - dash; y += step) {
+        slot.lineBetween(-width / 2, y, -width / 2, Math.min(y + dash, height / 2 - dash));
+        slot.lineBetween(width / 2, y, width / 2, Math.min(y + dash, height / 2 - dash));
+    }
+    return slot;
+}
+
+/** Same plain-sign paths as the SVGs, with Canvas-safe ink on dark surfaces. */
+export function drawComparisonSymbol(scene: Phaser.Scene, answer: number, width: number, ink: number): Phaser.GameObjects.Graphics {
+    const glyph = scene.add.graphics().setName('filledComparisonRelation');
+    const scale = width / 240;
+    const paths = answer === 1
+        ? [[[30, 69], [210, 69]], [[30, 158], [210, 158]]]
+        : [[[35, 28], [207, 111], [35, 194]]];
+    glyph.lineStyle(26 * scale, ink, 1).fillStyle(ink, 1);
+    for (const path of paths) {
+        const points = path.map(([x, y]) => new Phaser.Geom.Point((x - 120) * scale * (answer === 0 ? -1 : 1), (y - 110) * scale));
+        glyph.strokePoints(points, false);
+        points.forEach(point => glyph.fillCircle(point.x, point.y, 13 * scale));
+    }
+    return glyph;
+}
+
 /** Pure presentation: no attempts, mastery, rewards or answer timers. */
 export class ComparisonProblemView {
     readonly root: Phaser.GameObjects.Container;
@@ -35,23 +67,12 @@ export class ComparisonProblemView {
     readonly relation: Phaser.GameObjects.Container;
     private readonly pairRings: Phaser.GameObjects.Graphics;
 
-    constructor(private scene: Phaser.Scene, readonly problem: MathProblem, readonly layout: ComparisonProblemLayout) {
+    constructor(private scene: Phaser.Scene, readonly problem: MathProblem, readonly layout: ComparisonProblemLayout, private ink?: number) {
         this.root = scene.add.container(0, 0).setName('comparisonProblem');
         this.left = this.createOperand(layout.left, true);
         this.right = this.createOperand(layout.right, false);
         this.relation = scene.add.container(layout.relation.x, layout.relation.y).setDepth(layout.relation.depth).setName('comparisonRelation');
-        this.slot = scene.add.graphics().setName('emptyComparisonSlot');
-        this.slot.lineStyle(2, 0x917747, 0.85);
-        const w = layout.relation.width, h = layout.relation.height;
-        // A genuinely empty, dashed target. No neutral head, ○ or question mark.
-        for (let x = -w / 2 + 8; x < w / 2 - 6; x += 12) {
-            this.slot.lineBetween(x, -h / 2, Math.min(x + 6, w / 2 - 6), -h / 2);
-            this.slot.lineBetween(x, h / 2, Math.min(x + 6, w / 2 - 6), h / 2);
-        }
-        for (let y = -h / 2 + 8; y < h / 2 - 6; y += 12) {
-            this.slot.lineBetween(-w / 2, y, -w / 2, Math.min(y + 6, h / 2 - 6));
-            this.slot.lineBetween(w / 2, y, w / 2, Math.min(y + 6, h / 2 - 6));
-        }
+        this.slot = drawComparisonSlot(scene, layout.relation.width, layout.relation.height, ink);
         this.relation.add(this.slot);
         this.pairRings = scene.add.graphics().setDepth(layout.relation.depth);
         this.root.add([this.left, this.right, this.relation, this.pairRings]);
@@ -64,7 +85,7 @@ export class ComparisonProblemView {
         const numberedObjects = meta.stage === 'number_crocodile';
         const textStyle: Phaser.Types.GameObjects.Text.TextStyle = {
             fontFamily: 'Arial, sans-serif', fontStyle: 'bold', fontSize: '64px',
-            color: '#4a3826', resolution: 2,
+            color: this.ink === undefined ? '#4a3826' : `#${this.ink.toString(16).padStart(6, '0')}`, resolution: 2,
         };
         if (meta.representation === 'size') {
             const item = this.scene.add.image(0, 0, 'comparison-apple');
@@ -97,9 +118,11 @@ export class ComparisonProblemView {
         return root;
     }
 
-    reveal(plain = !this.problem.comparisonMeta?.showCrocodile): Phaser.GameObjects.Image {
+    reveal(plain = !this.problem.comparisonMeta?.showCrocodile): Phaser.GameObjects.Image | Phaser.GameObjects.Graphics {
         this.relation.removeAll(true);
-        const symbol = comparisonGlyph(this.scene, this.problem.answer, plain, plain ? 52 : 86);
+        const symbol = plain && this.ink !== undefined
+            ? drawComparisonSymbol(this.scene, this.problem.answer, 52, this.ink)
+            : comparisonGlyph(this.scene, this.problem.answer, plain, plain ? 52 : 86);
         symbol.setName('filledComparisonRelation');
         this.relation.add(symbol);
         return symbol;

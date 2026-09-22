@@ -10,6 +10,7 @@ import {
     getPlayerAttackProblemCount,
 } from '../systems/CombatAttackSystem';
 import type { ItemDefinition, PetDefinition, PlayerState } from '../types';
+import { getPetAttackPower } from '../systems/CatacombPetProgress';
 import {
     CharacterBookLayout,
     CharacterBookOverlay,
@@ -245,7 +246,7 @@ export class WalkingSceneHud {
             potionCount: player.potions,
             petName: pet?.name ?? 'Žádný pet',
             petTexture: pet?.spriteKey ?? null,
-            petAttack: pet ? Math.max(1, Math.round(pet.damageMultiplier ?? 1)) : 0,
+            petAttack: pet ? getPetAttackPower(pet, player) : 0,
             preparationKind: preparation.kind
                 ?? (player.equippedShield && !player.equippedWeapon ? 'shield' : 'sword'),
             preparationCharges: preparation.charges,

@@ -32,6 +32,10 @@ textu zobrazovaného dítěti. Starší schválení screenshotu tato pravidla ne
   odpovědi jako ostatní příklady. Místo pro vztah je na začátku prázdné; bez
   neutrálního krokodýla, otazníku nebo předem vloženého znaménka. Tři větší
   volby mohou mít novou podobu; nesmějí založit oddělený výukový/bojový systém.
+- [ ] **Všechny porovnávací úlohy:** přerušované prázdné políčko také v běžné
+  smíšené sadě, obraně, pokročilých zkouškách, katakombách a mobilním ovladači.
+  Žádné kolečko místo vztahu. Zachovat všechny členy a operátory na obou stranách;
+  velké volby `<`, `=`, `>` se musejí vejít dovnitř skutečného rámu tlačítka.
 - [ ] **Ovládání a vzhled:** desktop i tablet; normální, hover, stisk, pointer-out,
   disabled, správně, špatně a hotovo. Bez překryvů, čitelné počty a čísla,
   zachované proporce. Dotykový cíl nejméně 44 CSS px.
@@ -73,11 +77,15 @@ textu zobrazovaného dítěti. Starší schválení screenshotu tato pravidla ne
 - [ ] **Přechodná podpora znaků:** případné krokodýlí připomínky nad volbami
   přijdou současně nad `<`, `=`, `>` a nevyznačují správnou odpověď. Místo
   pro vztah je dál prázdné; zobrazení podpory neposouvá tlačítka.
-- [ ] **Ubývání podpory:** čekání se prodlužuje podle správných prvních odpovědí,
-  až se automatická podpora vypne. Samotná pomalost není důvod ke zhoršení
-  výsledku ani vrácení etapy. Schválené čekání je **4 → 8 → 16 → 24 sekund →
-  vypnuto**; dvě správné první odpovědi posouvají o stupeň výš, každá chyba
-  o stupeň níž. Jediné nastavení je v `src/data/comparison-learning.json`.
+- [ ] **Aktuální čekání:** první pětice zodpovězených číselných příkladů má
+  krokodýly hned; od šestého vždy po 10 sekundách. Počítat správné i chybné
+  odpovědi napříč útokem, štítem a mazlíčkem, zvlášť pro každého hráče.
+  U pozdějších výrazů je čekání vždy 10 sekund. Toto nahrazuje staré kroky
+  4/8/16/24/vypnuto. Jediné nastavení je v `src/data/comparison-learning.json`.
+- [ ] **Postup a bonus:** připomínky nad všemi třemi volbami neprozrazují
+  odpověď, a proto neblokují postup ke zkoušce ani rychlostní energii.
+  Skutečné dopočtení výsledku / nová ukázka jsou stále asistencí. Porovnávání
+  musí fungovat i v obraně, útoku mazlíčka, cechovní zkoušce a katakombách.
 - [ ] Timer počítá jen aktivní zadání. Po odpovědi nebo změně úlohy už nápověda
   nepřijde; pozastavení nevyčerpá čekání. Pomoc se zaznamená až po skutečném
   objevení. Podpora nepřidává body sama a ve zkoušce se automaticky nespouští.

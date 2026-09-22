@@ -183,7 +183,13 @@ for (const renderer of ['canvas', 'webgl']) {
                 await page.mouse.up();
                 await page.waitForFunction(() => (window as any).__LITTLE_MATH_GAME__.scene.keys.BattleScene.mathBoard.sequentialView.comparison?.relation.list.some((c:any) => c.name === 'filledComparisonRelation'));
                 await screenshot(page, `${renderer}-${question === 1 ? 'equal' : 'correct'}-${stage}`);
-                expect(await page.evaluate(() => (window as any).__LITTLE_MATH_GAME__.scene.keys.BattleScene.mathBoard.getActiveProblemSnapshot())).toBeNull();
+                const gate = await page.evaluate(() => {
+                    const board = (window as any).__LITTLE_MATH_GAME__.scene.keys.BattleScene.mathBoard;
+                    return { index: board.currentProblemIndex, snapshot: board.getActiveProblemSnapshot() };
+                });
+                // Capturing a GPU screenshot may outlast the feedback animation.
+                // Input must remain locked for this question, then reopen only for the next.
+                expect(gate.snapshot === null || gate.index === question + 1).toBe(true);
                 await page.waitForFunction(question => (window as any).__LITTLE_MATH_GAME__.scene.keys.BattleScene.mathBoard.currentProblemIndex === question + 1, question);
             }
             expect(await page.evaluate(() => (window as any).__LITTLE_MATH_GAME__.scene.keys.BattleScene.mathBoard.results)).toEqual([false, true, true]);
@@ -201,8 +207,7 @@ test('actual attack, sword batch and persisted hint progression', async ({page})
         return b.battleState.currentProblems.map((p:any)=>({source:p.source,multiplier:p.damageMultiplier||1}));
     });
     expect(input.some((p:any)=>p.source==='sword')).toBe(true);
-    await page.waitForTimeout(1000);
-    expect(await page.evaluate(() => (window as any).__LITTLE_MATH_GAME__.scene.keys.BattleScene.mathBoard.sequentialView.hints.some((h:any)=>h.visible))).toBe(false);
+    expect(await page.evaluate(() => (window as any).__LITTLE_MATH_GAME__.scene.keys.BattleScene.mathBoard.sequentialView.hints.every((h:any)=>h.visible))).toBe(true);
     await page.waitForFunction(() => (window as any).__LITTLE_MATH_GAME__.scene.keys.BattleScene.mathBoard.sequentialView.hints.every((h:any)=>h.visible));
     await screenshot(page,'hints');
     for(let i=0;i<input.length;i++) {
@@ -210,7 +215,7 @@ test('actual attack, sword batch and persisted hint progression', async ({page})
         await page.evaluate(i => {
             const b=(window as any).__LITTLE_MATH_GAME__.scene.keys.BattleScene.mathBoard;
             const p=b.problems[b.currentProblemIndex], correct=p.choices.indexOf(p.answer);
-            b.submitChoice(i===1?(correct+1)%3:correct);
+            b.activeTimeMs=30000; b.submitChoice(i===1?(correct+1)%3:correct);
         }, i);
         if(i<input.length-1) await page.waitForFunction(i=>(window as any).__LITTLE_MATH_GAME__.scene.keys.BattleScene.mathBoard.currentProblemIndex===i+1,i);
     }
@@ -221,13 +226,13 @@ test('actual attack, sword batch and persisted hint progression', async ({page})
     });
     expect(result.calls[0][1]).toEqual(input.map((_p:any,i:number)=>i!==1));
     expect(result.calls[0][0]).toBe(input.reduce((sum:number,p:any,i:number)=>sum+(i===1?0:p.multiplier),0));
-    expect(result.calls[0][3][0]).toBe(true); expect(result.calls[0][3][1]).toBe(false);
+    expect(result.calls[0][3][0]).toBe(false); expect(result.calls[0][3][1]).toBe(false);
     expect(result.state.attempts.length).toBe(input.length-1);
     expect(result.state.attempts[1].correct).toBe(false);
     await screenshot(page,'attack');
     await page.evaluate(()=>sessionStorage.setItem('lma-e2e-preserve-saves','true'));
     await page.reload(); await waitForScene(page,'MenuScene');
-    expect(await page.evaluate(()=>JSON.parse(localStorage.getItem('littleMathAdventure_slot_0')!).mathStats.masteryData.comparisonChapter.stages[3].hintLevel)).toBe(result.state.stages[3].hintLevel);
+    expect(await page.evaluate(()=>JSON.parse(localStorage.getItem('littleMathAdventure_slot_0')!).mathStats.masteryData.comparisonChapter.stages[3].symbolAnswers)).toBe(result.state.stages[3].symbolAnswers);
 });
 
 test('active-time reminders, cancellation, and support isolation in co-op', async ({page})=>{
@@ -237,14 +242,14 @@ test('active-time reminders, cancellation, and support isolation in co-op', asyn
         const {createInitialComparisonChapterState}=await import('/src/systems/ComparisonLearningSystem.ts');
         const g=GameStateManager.getInstance();
         for(let i=0;i<2;i++) {g.loadSlot(i);const m=g.getMasteryData();m.subAtoms.A2.state='fluent';m.comparisonChapter=createInitialComparisonChapterState('training');m.comparisonChapter.currentStageIndex=3;
-            Object.assign(m.comparisonChapter.stages[3],{introSeen:true,introVersionSeen:2,hintLevel:i?0:3});g.save();}g.loadSlot(0);
+            Object.assign(m.comparisonChapter.stages[3],{introSeen:true,introVersionSeen:2,symbolAnswers:i?0:5});g.save();}g.loadSlot(0);
     });
     await activateCoopSession(page);
     await page.evaluate(()=>(window as any).__LITTLE_MATH_GAME__.scene.keys.TownScene.scene.start('BattleScene',{fromArena:true,arenaLevel:1,wave:0}));
     await waitForScene(page,'BattleScene');
     await page.waitForFunction(()=>(window as any).__LITTLE_MATH_GAME__.scene.keys.BattleScene.battleState.phase==='player_turn');
     await page.evaluate(()=>(window as any).__LITTLE_MATH_GAME__.scene.keys.BattleScene.onAttackClicked()); await ready(page);
-    expect(await page.evaluate(()=>(window as any).__LITTLE_MATH_GAME__.scene.keys.BattleScene.mathBoard.support.hintLevel)).toBe(3);
+    expect(await page.evaluate(()=>(window as any).__LITTLE_MATH_GAME__.scene.keys.BattleScene.mathBoard.support.symbolAnswers)).toBe(5);
     const paused=await page.evaluate(()=>{
         const b=(window as any).__LITTLE_MATH_GAME__.scene.keys.BattleScene.mathBoard;
         Object.defineProperty(document,'hidden',{configurable:true,get:()=>true});document.dispatchEvent(new Event('visibilitychange'));
@@ -256,11 +261,11 @@ test('active-time reminders, cancellation, and support isolation in co-op', asyn
         const b=(window as any).__LITTLE_MATH_GAME__.scene.keys.BattleScene;
         b.mathBoard.hide();b.setPhase('player_b_turn');b.onAttackClicked();
     });await ready(page);
-    expect(await page.evaluate(()=>(window as any).__LITTLE_MATH_GAME__.scene.keys.BattleScene.mathBoard.support.hintLevel)).toBe(0);
+    expect(await page.evaluate(()=>(window as any).__LITTLE_MATH_GAME__.scene.keys.BattleScene.mathBoard.support.symbolAnswers)).toBe(0);
     await screenshot(page,'coop');
     await page.evaluate(()=>{
         const b=(window as any).__LITTLE_MATH_GAME__.scene.keys.BattleScene.mathBoard;
-        b.updateActiveTime(0,3990-b.activeTimeMs); // just below the production 4-second boundary
+        b.updateActiveTime(0,9990-b.activeTimeMs); // later answers wait ten active seconds
     });
     await page.waitForFunction(()=>(window as any).__LITTLE_MATH_GAME__.scene.keys.BattleScene.mathBoard.sequentialView.hints.every((h:any)=>h.visible));
     await page.evaluate(()=>{const b=(window as any).__LITTLE_MATH_GAME__.scene.keys.BattleScene.mathBoard;b.hide();b.updateActiveTime(0,40000);});
@@ -281,17 +286,17 @@ for (const renderer of ['canvas','webgl']) {
         });await waitForScene(page,'GuildScene');
         await page.evaluate(()=>{
             const g=(window as any).__LITTLE_MATH_GAME__.scene.keys.GuildScene;
-            g.currentMasteryExamType='comparison_chapter';g.currentMasteryExamTarget='comparison_symbols';g.startTrial();
+            if(g.currentMasteryExamType!=='comparison_chapter'||g.currentMasteryExamTarget!=='comparison_symbols')throw new Error('Comparison exam was not naturally selected');g.startTrial();
         });
         expect(await page.evaluate(()=>['comparison-apple','comparison-crocodile','comparison-equal','comparison-greater'].every(key=>(window as any).__LITTLE_MATH_GAME__.textures.exists(key)))).toBe(true);
         for(let i=0;i<8;i++){
             await page.waitForFunction(i=>{const g=(window as any).__LITTLE_MATH_GAME__.scene.keys.GuildScene;return g.trialState.currentProblemIndex===i&&g.trialState.phase==='problem'},i);
             const state=await page.evaluate(()=>{
                 const g=(window as any).__LITTLE_MATH_GAME__.scene.keys.GuildScene;
-                return {slot:g.comparisonProblemVisual.relation.list.map((c:any)=>c.name),meta:g.currentTrialProblem.comparisonMeta,signs:g.answerButtons.map((b:any)=>{const glyph=b.root.getData('comparisonGlyph');return {w:glyph.displayWidth,h:glyph.displayHeight,sameSurface:glyph.parentContainer===b.label.parentContainer}})};
+                return {slot:g.comparisonProblemVisual.relation.list.map((c:any)=>c.name),meta:g.currentTrialProblem.comparisonMeta,signs:g.answerButtons.map((b:any)=>{const glyph=b.root.getData('comparisonGlyph');return {w:glyph.displayWidth,h:glyph.displayHeight,frameHeight:b.root.height,sameSurface:glyph.parentContainer===b.label.parentContainer}})};
             });
             expect(state.slot).toEqual(['emptyComparisonSlot']);expect(state.meta.showCrocodile).toBe(false);expect(state.meta.exam).toBe(true);
-            expect(state.signs.every((s:any)=>Math.abs(s.w-64.8)<0.1&&s.h>54&&s.sameSurface)).toBe(true);
+            expect(state.signs.every((s:any)=>s.w>50&&s.h<s.frameHeight*0.6&&s.sameSurface)).toBe(true);
             await screenshot(page,`${renderer}-exam-${state.meta.representation}`);
             await page.evaluate(i=>{const g=(window as any).__LITTLE_MATH_GAME__.scene.keys.GuildScene;const p=g.currentTrialProblem;const correct=p.choices.indexOf(p.answer);g.checkTrialAnswer(i===0?(correct+1)%3:correct)},i);
             if(i===0){await page.waitForTimeout(2400);await screenshot(page,`${renderer}-exam-feedback`);await page.evaluate(()=>(window as any).__LITTLE_MATH_GAME__.scene.keys.GuildScene.closeFeedback());}
@@ -415,7 +420,7 @@ for (const renderer of ['canvas', 'webgl']) {
             expect(await page.evaluate(()=>{
                 const b=(window as any).__LITTLE_MATH_GAME__.scene.keys.BattleScene,v=b.mathBoard.sequentialView;
                 return {count:b.battleState.currentProblems.length,title:v.heading.text,oldBanner:b.blockUI.visible,defense:b.mathBoard.defense,chapter:Boolean(b.battleState.currentProblems[0].comparisonMeta)};
-            })).toEqual({count:1,title:'Braň se',oldBanner:false,defense:{power:3,incomingDamage:9},chapter:false});
+            })).toEqual({count:1,title:'Braň se',oldBanner:false,defense:{power:3,incomingDamage:9},chapter:true});
             expect(await page.evaluate(()=>(window as any).__LITTLE_MATH_GAME__.scene.keys.BattleScene.blockResultText)).toBeNull();
             await screenshot(page,`${renderer}-shield-${state.name}-question`);
             await page.evaluate(state=>{
@@ -437,6 +442,6 @@ for (const renderer of ['canvas', 'webgl']) {
         expect(await page.evaluate(()=>{
             const b=(window as any).__LITTLE_MATH_GAME__.scene.keys.BattleScene.mathBoard;
             return [b.defense,b.sequentialView.heading.text,b.sequentialView.bonus.text];
-        })).toEqual([null,'Spočítej','']);
+        })).toEqual([null,'Vyber znaménko','']);
     });
 }

@@ -1,5 +1,5 @@
 import {describe,it,expect} from 'vitest';
-import { migrateCatacombPets,getCatacombFoxBonus } from '../CatacombPetProgress';
+import { awardCatacombFoxUpgrade, getPetAttackPower, migrateCatacombPets, getCatacombFoxBonus, CATACOMB_FOX_PET } from '../CatacombPetProgress';
 import type { PlayerState } from '../../types';
 import pets from '../../../public/assets/data/pets.json';
 import enemies from '../../../public/assets/data/enemies.json';
@@ -24,4 +24,46 @@ describe('canonical fox and forest wolf',()=>{
    expect(pets.find(p=>p.id===config.petId)?.animPrefix).toBe('rune-fox');
   }
  });
+});
+
+describe('persistent fox training', () => {
+    const fox = pets.find(pet => pet.id === CATACOMB_FOX_PET)!;
+
+    it('adds exactly one point for every win, including the first rescue and repeats beyond four', () => {
+        const player: Pick<PlayerState, 'catacombFoxBonus'> = {};
+        for (let win = 1; win <= 12; win++) {
+            expect(awardCatacombFoxUpgrade(player)).toBe(win);
+            expect(getPetAttackPower(fox, player)).toBe(fox.damageMultiplier! + win);
+        }
+    });
+
+    it('keeps the earned effective bonus from legacy saves and continues above the old cap', () => {
+        const player = { catacombPetUpgrades: { A: 2, B: 4, E: 3 } } as unknown as PlayerState;
+        migrateCatacombPets(player);
+        expect(player.catacombFoxBonus).toBe(4);
+        awardCatacombFoxUpgrade(player);
+        const reloaded = JSON.parse(JSON.stringify(player)) as PlayerState;
+        migrateCatacombPets(reloaded);
+        expect(getCatacombFoxBonus(reloaded)).toBe(5);
+        expect(getPetAttackPower(fox, reloaded)).toBe(fox.damageMultiplier! + 5);
+        expect(awardCatacombFoxUpgrade(reloaded)).toBe(6);
+    });
+
+    it('uses the canonical saved total without reapplying or capping the legacy bonus', () => {
+        expect(getCatacombFoxBonus({ catacombFoxBonus: 7, catacombPetUpgrades: { E: 4 } })).toBe(7);
+        expect(getCatacombFoxBonus({ catacombFoxBonus: 0, catacombPetUpgrades: { E: 4 } })).toBe(0);
+    });
+
+    it('keeps co-op owners and catalog data independent, and does not strengthen other pets', () => {
+        const playerA = { catacombFoxBonus: 2 };
+        const playerB = { catacombFoxBonus: 7 };
+        const catalogBefore = JSON.stringify(pets);
+        awardCatacombFoxUpgrade(playerA);
+        expect(getPetAttackPower(fox, playerA)).toBe(fox.damageMultiplier! + 3);
+        expect(getPetAttackPower(fox, playerB)).toBe(fox.damageMultiplier! + 7);
+        for (const pet of pets.filter(pet => pet.id !== CATACOMB_FOX_PET)) {
+            expect(getPetAttackPower(pet, playerA)).toBe(pet.damageMultiplier);
+        }
+        expect(JSON.stringify(pets)).toBe(catalogBefore);
+    });
 });

@@ -21,7 +21,7 @@ export interface RemoteAnswerChoice {
     label: string;
 }
 
-export interface RemoteComparisonPrompt {
+export type RemoteComparisonPrompt = {
     representation: 'size' | 'count' | 'number' | 'expression';
     left: number;
     right: number;
@@ -30,7 +30,13 @@ export interface RemoteComparisonPrompt {
     showReminders: boolean;
     expression?: string;
     arithmeticHint?: number;
-}
+} | {
+    representation: 'arithmetic';
+    leftExpression: string;
+    rightExpression: string;
+    crocodileChoices: false;
+    showReminders: false;
+};
 
 export interface RemoteEnemyTarget {
     index: number;

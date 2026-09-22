@@ -7,6 +7,7 @@ import { ManaSystem } from '../systems/ManaSystem';
 import { SceneBuilder } from '../systems/SceneBuilder';
 import { UiElementBuilder } from '../systems/UiElementBuilder';
 import { PetDefinition, Crystal, PlayerState, CrystalTier } from '../types';
+import { getPetAttackPower } from '../systems/CatacombPetProgress';
 import { CoopSwitchUI } from '../ui/CoopSwitchUI';
 
 export interface PythiaWorkshopSceneOptions {
@@ -808,7 +809,7 @@ export class PythiaWorkshopScene extends Phaser.Scene {
             }
 
             // Sort by power (damageMultiplier)
-            return (b.damageMultiplier ?? 1) - (a.damageMultiplier ?? 1);
+            return getPetAttackPower(b, player) - getPetAttackPower(a, player);
         });
     }
 
@@ -879,7 +880,7 @@ export class PythiaWorkshopScene extends Phaser.Scene {
             }
 
             // Always show attack multiplier
-            attackTextInfo?.text.setText(`${pet.damageMultiplier ?? 1}x`);
+            attackTextInfo?.text.setText(`${getPetAttackPower(pet, player)}x`);
 
             // Update cost display based on owned status
             if (!isOwned) {
