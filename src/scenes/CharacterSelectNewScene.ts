@@ -17,6 +17,8 @@ const BAND_RANGE_LABELS: Record<BandId, string> = {
 
 interface CharacterSelectData {
     slotIndex?: number;
+    characterName?: string;
+    selectedCharacter?: CharacterType;
     /** Returned from BandSelectScene */
     selectedBand?: BandId;
 }
@@ -48,7 +50,8 @@ export class CharacterSelectNewScene extends Phaser.Scene {
 
     init(data: CharacterSelectData): void {
         this.targetSlotIndex = data.slotIndex ?? 0;
-        this.characterName = 'Hrdina';
+        this.characterName = data.characterName ?? 'Hrdina';
+        this.selectedCharacter = data.selectedCharacter ?? 'girl_knight';
         // Preserve band selection when returning from BandSelectScene
         this.selectedBand = data.selectedBand ?? 'A';
     }
@@ -71,6 +74,8 @@ export class CharacterSelectNewScene extends Phaser.Scene {
 
         // Create level display + "Změnit" button
         this.createLevelDisplay();
+
+        this.events.once(Phaser.Scenes.Events.SHUTDOWN, this.shutdown, this);
     }
 
     private createCharacterPreviews(): void {
@@ -206,51 +211,47 @@ export class CharacterSelectNewScene extends Phaser.Scene {
     }
 
     private createNameInput(): void {
-        // Centered in the name frame layer: bounds(113, 360, 280, 100) in template
-        // Template at (638, 378), origin (0.5, 0.5) → frame center = (641, 538)
-        const inputX = 641;
-        const inputY = 538;
-
-        // Create HTML input element - transparent to blend with UI
-        const inputHtml = `
-            <input type="text"
-                   id="characterNameInput"
-                   maxlength="12"
-                   placeholder="Hrdina"
-                   value="Hrdina"
-                   style="
-                       width: 200px;
-                       font-size: 22px;
-                       text-align: center;
-                       padding: 4px 8px;
-                       border: none;
-                       background: transparent;
-                       color: #ffffff;
-                       font-family: Arial, sans-serif;
-                       outline: none;
-                       caret-color: #ffd700;
-                   "
-            />
+        const host = this.sceneBuilder.get<Phaser.GameObjects.Container>('characterNameInputHost');
+        const layout = this.sceneBuilder.getElementDef('characterNameInputHost');
+        const input = document.createElement('input');
+        input.id = 'characterNameInput';
+        input.type = 'text';
+        input.maxLength = 12;
+        input.placeholder = 'Hrdina';
+        input.value = this.characterName;
+        input.autocomplete = 'off';
+        input.spellcheck = false;
+        input.enterKeyHint = 'done';
+        input.setAttribute('aria-label', 'Jméno');
+        input.style.cssText = `
+            box-sizing: border-box;
+            width: ${layout?.width ?? 216}px;
+            height: ${layout?.height ?? 90}px;
+            font: 28px Arial, sans-serif;
+            text-align: center;
+            padding: 0 8px;
+            border: none;
+            background: transparent;
+            color: #ffffff;
+            outline: none;
+            caret-color: #ffd700;
         `;
+        this.nameInputElement = this.add.dom(host?.x ?? 641, host?.y ?? 538, input)
+            .setDepth(host?.depth ?? 100);
 
-        this.nameInputElement = this.add.dom(inputX, inputY).createFromHTML(inputHtml);
-        this.nameInputElement.setDepth(100);
-
-        // Listen for input changes
-        const inputEl = this.nameInputElement.getChildByID('characterNameInput') as HTMLInputElement;
-        if (inputEl) {
-            inputEl.addEventListener('input', (e) => {
-                const target = e.target as HTMLInputElement;
-                this.characterName = target.value || 'Hrdina';
-            });
-
-            // Handle Enter key to confirm
-            inputEl.addEventListener('keydown', (e) => {
-                if (e.key === 'Enter') {
-                    this.confirmSelection();
-                }
-            });
-        }
+        input.addEventListener('input', () => { this.characterName = input.value; });
+        // Replacing the default name needs one tap, not a long-press selection.
+        input.addEventListener('focus', () => {
+            if (input.value === 'Hrdina') input.select();
+        });
+        input.addEventListener('keydown', (event) => {
+            event.stopPropagation();
+            if (event.key === 'Enter' && !event.isComposing) {
+                event.preventDefault();
+                // "Done" closes the keyboard; the framed play button starts play.
+                input.blur();
+            }
+        });
     }
 
     // ============ LEVEL DISPLAY + ZMĚNIT BUTTON ============
@@ -305,7 +306,11 @@ export class CharacterSelectNewScene extends Phaser.Scene {
             isReturningPlayer: storySystem.hasCompletedIntro(),
             returnScene: 'CharacterSelectNewScene',
             selectedBand: this.selectedBand,
-            returnData: { slotIndex: this.targetSlotIndex },
+            returnData: {
+                slotIndex: this.targetSlotIndex,
+                characterName: this.characterName,
+                selectedCharacter: this.selectedCharacter,
+            },
         });
     }
 
@@ -339,6 +344,8 @@ export class CharacterSelectNewScene extends Phaser.Scene {
 
     shutdown(): void {
         if (this.nameInputElement) {
+            // Phaser may already have destroyed the display list on shutdown.
+            if (this.nameInputElement.node instanceof HTMLInputElement) this.nameInputElement.node.blur();
             this.nameInputElement.destroy();
             this.nameInputElement = null;
         }

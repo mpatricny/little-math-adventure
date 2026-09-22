@@ -4,6 +4,7 @@ import { SceneAudioPlugin } from './audio/SceneAudioPlugin';
 import { destroyGameAudio } from './audio/AudioDirector';
 import Phaser from 'phaser';
 import { setupMobile } from './utils/mobileSetup';
+import { setupGameViewport } from './utils/gameViewport';
 import { ALL_BANDS, ALL_SUB_ATOM_NUMBERS, BandId, SaveSlotData, SubAtomId } from './types';
 import { mountRemoteControllerApp } from './remote/controllerApp';
 import { isControllerMode, isTvMode } from './remote/remoteMode';
@@ -137,6 +138,7 @@ async function startGame(): Promise<void> {
     };
 
     const game = new Phaser.Game(config);
+    setupGameViewport(game);
     game.events.once(Phaser.Core.Events.DESTROY, destroyGameAudio);
     if (DEV_TOOLS_ENABLED) (globalThis as any).__LITTLE_MATH_GAME__ = game;
 }

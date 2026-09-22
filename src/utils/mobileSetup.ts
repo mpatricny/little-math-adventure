@@ -34,7 +34,11 @@ export function setupMobile(): void {
 
     // Prevent long-press context menu — ONLY on touch devices
     if (isTouchDevice()) {
-        document.addEventListener('contextmenu', (e) => e.preventDefault());
+        document.addEventListener('contextmenu', (e) => {
+            // Native text fields need their selection/paste menu on phones.
+            if (e.target instanceof Element && e.target.closest('input, textarea')) return;
+            e.preventDefault();
+        });
     }
 }
 

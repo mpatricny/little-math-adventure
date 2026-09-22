@@ -6171,6 +6171,15 @@
       ],
       "ui": [
         {
+          "id": "characterNameInputHost",
+          "asset": "ui.containers.empty",
+          "x": 641,
+          "y": 538,
+          "width": 216,
+          "height": 90,
+          "depth": 100
+        },
+        {
           "id": "Scroll title",
           "asset": "Scroll title",
           "x": 641,
