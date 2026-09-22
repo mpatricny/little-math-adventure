@@ -12,6 +12,7 @@ const message = root?.querySelector<HTMLElement>('[data-auth-message]');
 
 function setAnonymous(messageText?: string): void {
   if (!root || !signInButton || !signInLabel || !signedInPanel || !message) return;
+  root.hidden = false;
   root.dataset.authState = 'anonymous';
   signInButton.hidden = false;
   signInButton.disabled = false;
@@ -24,10 +25,18 @@ function setAnonymous(messageText?: string): void {
 
 function setAuthenticated(): void {
   if (!root || !signInButton || !signedInPanel || !message) return;
+  root.hidden = false;
   root.dataset.authState = 'authenticated';
   signInButton.hidden = true;
   signedInPanel.hidden = false;
   message.hidden = true;
+}
+
+function setUnavailable(): void {
+  if (!root) return;
+  root.dataset.authState = 'unavailable';
+  root.hidden = true;
+  if (signInButton) signInButton.disabled = true;
 }
 
 async function refreshSession(): Promise<void> {
@@ -45,9 +54,9 @@ async function refreshSession(): Promise<void> {
       setAnonymous(authError ? 'Přihlášení se nepodařilo. Zkus to prosím znovu.' : undefined);
       return;
     }
-    setAnonymous('Přihlášení je teď nedostupné. Hru lze dál spustit bez něj.');
+    setUnavailable();
   } catch {
-    setAnonymous('Přihlášení je teď nedostupné. Hru lze dál spustit bez něj.');
+    setUnavailable();
   }
 }
 

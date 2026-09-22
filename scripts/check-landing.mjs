@@ -149,13 +149,34 @@ async function checkAuthenticatedState() {
   return screenshot;
 }
 
+async function checkUnavailableAuth() {
+  const screenshots = [];
+  for (const status of [404, 503, 'offline']) {
+    const page = await browser.newPage({ viewport: { width: 1024, height: 768 } });
+    await page.route('**/v1/me', route => status === 'offline'
+      ? route.abort('failed')
+      : route.fulfill({ status, contentType: 'application/json', body: '{}' }));
+    await page.goto(`${baseUrl}/landing.html`);
+    await page.waitForFunction(() => document.querySelector('[data-auth-root]')?.dataset.authState === 'unavailable');
+    assert.equal(await page.locator('[data-auth-root]').isHidden(), true);
+    assert.equal(await page.locator('[data-auth-sign-in]').isDisabled(), true);
+    assert.equal(await page.locator('.hero .actions .button').isVisible(), true);
+    const screenshot = `/private/tmp/cislokraj-auth-unavailable-${status}.png`;
+    await page.screenshot({ path: screenshot });
+    screenshots.push(screenshot);
+    await page.close();
+  }
+  return screenshots;
+}
+
 try {
   const results = [];
   results.push(await checkViewport('desktop', { width: 1440, height: 1000 }));
   results.push(await checkViewport('tablet', { width: 1024, height: 768 }));
   await checkAuthFlow();
   const authenticatedState = await checkAuthenticatedState();
-  console.log(JSON.stringify({ baseUrl, results, authenticatedState }, null, 2));
+  const unavailableStates = await checkUnavailableAuth();
+  console.log(JSON.stringify({ baseUrl, results, authenticatedState, unavailableStates }, null, 2));
 } finally {
   await browser.close();
 }

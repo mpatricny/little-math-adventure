@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
-import { handleRequest } from './worker.mjs';
+import worker, { handleRequest } from './worker.mjs';
 
 function fakeAssets() {
   const paths = [];
@@ -26,6 +26,23 @@ function fakeAssets() {
 }
 
 describe('Cloudflare pilot routing', () => {
+  it('accepts the production execution context when forwarding an API request', async context => {
+    const requests = [];
+    context.mock.method(globalThis, 'fetch', async request => {
+      requests.push(request.url);
+      return new Response(JSON.stringify({ release: 'pilot-0.1.0' }), {
+        headers: { 'Content-Type': 'application/json' },
+      });
+    });
+    const response = await worker.fetch(new Request('https://cislokraj.cz/v1/version'), {
+      ASSETS: fakeAssets(), APP_RELEASE: 'pilot-0.1.2', API_ORIGIN: 'https://api.cislokraj.cz',
+    }, { waitUntil() {}, passThroughOnException() {} });
+
+    assert.equal(response.status, 200);
+    assert.deepEqual(await response.json(), { release: 'pilot-0.1.0' });
+    assert.deepEqual(requests, ['https://api.cislokraj.cz/v1/version']);
+  });
+
   it('keeps OAuth cookies on one canonical hostname', async () => {
     const response = await handleRequest(new Request('https://www.cislokraj.cz/hra/?from=www'), {
       ASSETS: fakeAssets(),

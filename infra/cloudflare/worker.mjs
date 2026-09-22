@@ -86,5 +86,9 @@ export async function handleRequest(request, env, fetcher = fetch) {
 }
 
 export default {
-  fetch: handleRequest,
+  // Workers pass an ExecutionContext as the third argument. Keep that separate
+  // from the injectable fetch function used by handleRequest's unit tests.
+  fetch(request, env) {
+    return handleRequest(request, env);
+  },
 };
