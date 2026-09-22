@@ -44,7 +44,8 @@ describe('Google account access from the game', () => {
         const fetcher = reply(200, { success: true });
         await expect(signOutGoogle(undefined, fetcher)).resolves.toBeUndefined();
         expect(fetcher).toHaveBeenCalledWith('/api/auth/sign-out', expect.objectContaining({
-            method: 'POST', credentials: 'include',
+            method: 'POST', credentials: 'include', body: '{}',
+            headers: expect.objectContaining({ 'Content-Type': 'application/json' }),
         }));
         await expect(signOutGoogle(undefined, reply(500, {}))).rejects.toThrow();
     });

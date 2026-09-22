@@ -56,6 +56,12 @@ opakovat kontrolu. Po zapnutí OAuth vrací přihlášení hráče přímo na `/
 Přihlášení ani odhlášení neupravuje lokální savy. Synchronizace savů na server
 zatím není implementována; existence účtu neznamená cloudovou zálohu postupu.
 
+Google účet je určen rodiči nebo dospělému, nikoli přímému přihlašování dítěte.
+Herní menu i landing používají společné `signOutGoogle()`. Odhlášení posílá
+`Content-Type: application/json` a tělo `{}`; prázdný POST bez této hlavičky
+produkční HTTP server odmítá stavem 415. Kontrakt proti skutečnému HTTP
+adaptéru a Better Auth ověřuje `npm run test:auth-contract` bez databáze.
+
 Přidání kteréhokoli z `BETTER_AUTH_SECRET`, `GOOGLE_CLIENT_ID` nebo
 `GOOGLE_CLIENT_SECRET` zapne přísnou kontrolu celé OAuth konfigurace včetně
 `BETTER_AUTH_URL`. Částečné nebo prázdné přístupové údaje nasazení zastaví;

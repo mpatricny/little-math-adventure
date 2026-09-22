@@ -28,9 +28,15 @@ try {
         signInBody = route.request().postDataJSON();
         await route.fulfill({ status: 503, contentType: 'application/json', body: '{}' });
       });
-      await page.route('**/api/auth/sign-out', route => route.fulfill({
-        status: failSignOut ? 503 : 200, contentType: 'application/json', body: '{}',
-      }));
+      await page.route('**/api/auth/sign-out', route => {
+        assert.equal(route.request().headers()['content-type'], 'application/json');
+        assert.deepEqual(route.request().postDataJSON(), {});
+        if (!failSignOut) session = 401;
+        return route.fulfill({
+          status: failSignOut ? 503 : 200, contentType: 'application/json',
+          body: JSON.stringify(failSignOut ? {} : { success: true }),
+        });
+      });
       await page.goto(`${baseUrl}/${query}`, { waitUntil: 'domcontentloaded' });
       const waitState = state => page.locator(`.game-account[data-auth-state="${state}"]`).waitFor();
       await waitState('anonymous');
@@ -79,6 +85,8 @@ try {
       await waitState('authenticated');
       failSignOut = false;
       await button.click();
+      await waitState('anonymous');
+      await page.reload({ waitUntil: 'domcontentloaded' });
       await waitState('anonymous');
       assert.equal(await page.evaluate(() => JSON.stringify(localStorage)), initialSaves);
 

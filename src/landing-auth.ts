@@ -1,3 +1,5 @@
+import { signOutGoogle } from './auth/googleAuth';
+
 interface SignInResponse {
   redirect?: boolean;
   url?: string;
@@ -89,12 +91,7 @@ signInButton?.addEventListener('click', async () => {
 signOutButton?.addEventListener('click', async () => {
   signOutButton.disabled = true;
   try {
-    const response = await fetch('/api/auth/sign-out', {
-      method: 'POST',
-      credentials: 'include',
-      headers: { Accept: 'application/json' },
-    });
-    if (!response.ok) throw new Error('Sign out failed');
+    await signOutGoogle();
     setAnonymous();
   } catch {
     if (message) {

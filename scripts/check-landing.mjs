@@ -39,7 +39,8 @@ async function checkViewport(name, viewport) {
   assert.equal(layout.authLabel, 'Přihlásit se přes Google');
   assert.equal(layout.figures, 3);
   assert.ok(layout.imageRatios.every(ratio => Math.abs(ratio - (16 / 9)) < 0.01));
-  assert.ok(scripts.length <= 2, `Landing loads too many scripts: ${scripts.join(', ')}`);
+  // Landing entry, Vite preload helper, and the small shared authentication module.
+  assert.ok(scripts.length <= 3, `Landing loads too many scripts: ${scripts.join(', ')}`);
   assert.ok(
     scripts.every(url => !url.includes('phaser') && !url.includes('/src/main.ts')),
     'Landing must not load Phaser or the game entry point',
@@ -127,16 +128,22 @@ async function checkAuthFlow() {
 
 async function checkAuthenticatedState() {
   const page = await browser.newPage({ viewport: { width: 1024, height: 768 } });
+  let session = 200;
   await page.route('**/v1/me', route => route.fulfill({
-    status: 200,
+    status: session,
     contentType: 'application/json',
-    body: JSON.stringify({ authenticated: true, accountId: 'test-account' }),
+    body: JSON.stringify(session === 200 ? { authenticated: true, accountId: 'test-account' } : {}),
   }));
-  await page.route('**/api/auth/sign-out', route => route.fulfill({
-    status: 200,
-    contentType: 'application/json',
-    body: JSON.stringify({ success: true }),
-  }));
+  await page.route('**/api/auth/sign-out', route => {
+    assert.equal(route.request().headers()['content-type'], 'application/json');
+    assert.deepEqual(route.request().postDataJSON(), {});
+    session = 401;
+    return route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ success: true }),
+    });
+  });
 
   await page.goto(`${baseUrl}/landing.html`);
   const root = page.locator('[data-auth-root][data-auth-state="authenticated"]');
@@ -144,6 +151,8 @@ async function checkAuthenticatedState() {
   const screenshot = '/private/tmp/cislokraj-google-authenticated.png';
   await root.screenshot({ path: screenshot });
   await page.locator('[data-auth-sign-out]').click();
+  await page.locator('[data-auth-root][data-auth-state="anonymous"]').waitFor();
+  await page.reload({ waitUntil: 'domcontentloaded' });
   await page.locator('[data-auth-root][data-auth-state="anonymous"]').waitFor();
   await page.close();
   return screenshot;

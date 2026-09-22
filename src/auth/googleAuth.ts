@@ -59,6 +59,11 @@ export async function startGoogleSignIn(
 }
 
 export async function signOutGoogle(signal?: AbortSignal, fetcher: Fetcher = fetch): Promise<void> {
-    const response = await request('/api/auth/sign-out', { method: 'POST', signal }, fetcher);
+    const response = await request('/api/auth/sign-out', {
+        method: 'POST',
+        signal,
+        headers: { 'Content-Type': 'application/json' },
+        body: '{}',
+    }, fetcher);
     if (!response.ok) throw new Error('Sign out failed');
 }
