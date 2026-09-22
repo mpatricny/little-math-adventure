@@ -17,6 +17,8 @@
     "test:landing": "node scripts/check-landing.mjs",
     "test:game-account": "node scripts/check-game-account.mjs",
     "test:auth-contract": "server/node_modules/.bin/tsx --test scripts/__tests__/google-auth-contract.test.ts",
+    "test:gameplay-sync": "server/node_modules/.bin/tsx scripts/check-gameplay-sync.mts",
+    "api:gameplay:report": "npm --prefix server run gameplay:report --",
     "test:mobile-layout": "node scripts/check-mobile-layout.mjs",
     "test:infra": "node --test infra/cloudflare/worker.test.mjs && npm run api:test",
     "api:dev": "npm --prefix server run dev",

@@ -124,3 +124,36 @@ describe('Číslokraj API foundation', () => {
     });
   });
 });
+
+describe('gameplay write authorization', () => {
+  const accountId = '4f6e45c8-dd44-49c7-86f8-93a2bb79619c';
+  const payload = { version: 1, accountId,
+    profileId: 'dd55fd83-e8cf-4639-906e-d4e4c1050e3a',
+    deviceId: '4c0997fc-bbfb-4b5a-9a94-8423c65c0e14',
+    slotNumber: 1, revision: 1, savedAt: Date.now(), release: 'test',
+    progress: { player: { name: 'Child profile' }, mathStats: {} }, attempts: [] };
+  const headers = { Origin: 'https://cislokraj.cz', 'Content-Type': 'application/json', Authorization: `Bearer ${'a'.repeat(64)}` };
+  it('accepts registered anonymous browsers but rejects unknown, cross-origin, malformed and cross-browser writes', async () => {
+    let writes = 0;
+    const dependencies = { ...appDependencies(fakeAuth(true)),
+      resolvePlayerAccount: async () => ({ id: accountId }),
+      collectGameplay: async () => { writes++; }, gameplaySummary: async () => [],
+      resolveGameplayBrowser: async (token: string) => token === 'a'.repeat(64) ? { id: accountId } : null };
+    const app = createApp(dependencies);
+    const anonymous = createApp({ ...dependencies, auth: fakeAuth(false) });
+    const post = (body: unknown, extraHeaders = headers) => ({ method: 'POST', headers: extraHeaders, body: JSON.stringify(body) });
+    assert.equal((await anonymous.request('/v1/gameplay/batch', post(payload, { ...headers, Authorization: '' }))).status, 401);
+    assert.equal((await app.request('/v1/gameplay/batch', post(payload, { ...headers, Origin: 'https://evil.invalid' }))).status, 403);
+    assert.equal((await app.request('/v1/gameplay/batch', post({ ...payload, accountId: crypto.randomUUID() }))).status, 409);
+    assert.equal((await app.request('/v1/gameplay/batch', post({ ...payload, slotNumber: 9 }))).status, 400);
+    assert.equal((await app.request('/v1/gameplay/batch', { ...post(payload), body: '{' })).status, 400);
+    assert.equal((await app.request('/v1/gameplay/batch', post({ ...payload, padding: 'x'.repeat(2 * 1024 * 1024) }))).status, 413);
+    assert.equal(writes, 0);
+    const response = await app.request('/v1/gameplay/batch', post(payload));
+    assert.equal(response.status, 200); assert.equal(writes, 1);
+    assert.deepEqual(await response.json(), { stored: true, profileId: payload.profileId, revision: 1, eventKeys: [] });
+    assert.equal((await anonymous.request('/v1/gameplay/batch', post(payload))).status, 200);
+    assert.equal(writes, 2);
+    assert.equal((await anonymous.request('/v1/gameplay/summary')).status, 401);
+  });
+});

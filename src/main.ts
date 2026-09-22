@@ -8,6 +8,8 @@ import { setupGameViewport } from './utils/gameViewport';
 import { ALL_BANDS, ALL_SUB_ATOM_NUMBERS, BandId, SaveSlotData, SubAtomId } from './types';
 import { mountRemoteControllerApp } from './remote/controllerApp';
 import { isControllerMode, isTvMode } from './remote/remoteMode';
+import { startGameplaySync } from './telemetry/GameplaySync';
+import { SaveSystem } from './systems/SaveSystem';
 
 if (isControllerMode()) {
     mountRemoteControllerApp();
@@ -110,6 +112,11 @@ async function startGame(): Promise<void> {
 
     if (DEV_TOOLS_ENABLED) repairBrokenT4BandPlacement();
 
+    const stopGameplaySync = IS_PILOT ? startGameplaySync(() =>
+        Array.from({ length: 8 }, (_, slot) => ({ slot, save: SaveSystem.load(slot) }))
+            .filter((entry): entry is { slot: number; save: SaveSlotData } => entry.save !== null)
+    ) : () => {};
+
     const forceCanvasRenderer = new URLSearchParams(window.location.search).get('renderer') === 'canvas';
     const config: Phaser.Types.Core.GameConfig = {
         plugins: { scene: [{ key: 'sceneAssets', plugin: SceneAssetPlugin, mapping: 'sceneAssets' }, { key: 'sceneAudio', plugin: SceneAudioPlugin, mapping: 'sceneAudio' }] },
@@ -140,5 +147,6 @@ async function startGame(): Promise<void> {
     const game = new Phaser.Game(config);
     setupGameViewport(game);
     game.events.once(Phaser.Core.Events.DESTROY, destroyGameAudio);
+    game.events.once(Phaser.Core.Events.DESTROY, stopGameplaySync);
     if (DEV_TOOLS_ENABLED) (globalThis as any).__LITTLE_MATH_GAME__ = game;
 }

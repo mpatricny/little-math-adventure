@@ -11,6 +11,9 @@ import { preparePilotPublic } from './scripts/pilot-content.mjs';
  */
 function debugSavePlugin(): Plugin {
     return {
+    define: {
+        'import.meta.env.VITE_APP_RELEASE': JSON.stringify(JSON.parse(fs.readFileSync(path.join(rootDir, 'wrangler.jsonc'), 'utf8')).vars.APP_RELEASE),
+    },
         name: 'debug-save',
         configureServer(server) {
             server.middlewares.use('/__save-debug', (req, res) => {

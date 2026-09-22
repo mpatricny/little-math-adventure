@@ -102,6 +102,8 @@ export interface PreparationState {
 }
 
 export interface PlayerState {
+    /** Stable analytics identity; a new game gets a new ID even when reusing its slot. */
+    gameplayProfileId?: string;
     puzzleProgress?: import('./puzzles').PuzzleProgress;
     name: string;
     characterType: CharacterType;
@@ -526,6 +528,8 @@ export const ALL_PROBLEM_FORMS: ProblemForm[] = ['result_unknown', 'missing_part
 
 /** A single attempt at solving a mastery problem */
 export interface MasteryAttempt {
+    /** Legacy totals converted into synthetic history must not enter analytics as real answers. */
+    synthetic?: boolean;
     timestamp: number;
     correct: boolean;
     responseTimeMs: number;

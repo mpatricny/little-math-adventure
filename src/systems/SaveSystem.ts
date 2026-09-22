@@ -1,4 +1,6 @@
 import { PlayerState, MathStats, SaveSlotMeta, SaveSlotData } from '../types';
+import { gameplayId } from '../telemetry/gameplayData';
+import { notifyGameplaySave } from '../telemetry/gameplayBridge';
 
 // Storage keys
 const SAVE_DATA_PREFIX = 'littleMathAdventure_slot_';       // Per-slot: slot_0, slot_1...
@@ -105,6 +107,7 @@ export class SaveSystem {
             return;
         }
 
+        player.gameplayProfileId ??= gameplayId();
         const saveData: SaveSlotData = {
             player,
             mathStats,
@@ -114,6 +117,7 @@ export class SaveSystem {
         try {
             const key = `${SAVE_DATA_PREFIX}${slotIndex}`;
             localStorage.setItem(key, JSON.stringify(saveData));
+            notifyGameplaySave(slotIndex, saveData);
             console.log(`[SaveSystem] Game saved to slot ${slotIndex}`);
         } catch (error) {
             console.error('[SaveSystem] Failed to save:', error);
@@ -212,6 +216,10 @@ export class SaveSystem {
             : assignments.find(entry => entry.sourceSlot === parsed.activeSlot) ?? null;
         const activeSlot = activeAssignment?.targetSlot ?? assignments[0]?.targetSlot ?? null;
         if (activeSlot !== null) this.setActiveSlot(activeSlot);
+        for (const slot of writtenSlots) {
+            const save = this.load(slot);
+            if (save) notifyGameplaySave(slot, save);
+        }
 
         console.log(`[SaveSystem] Imported ${writtenSlots.length} save slot(s)`);
         return { ok: true, importedSlots: writtenSlots, activeSlot };
@@ -236,6 +244,11 @@ export class SaveSystem {
             }
 
             const saveData = JSON.parse(saveDataStr) as SaveSlotData;
+            if (saveData.player && !saveData.player.gameplayProfileId) {
+                saveData.player.gameplayProfileId = gameplayId();
+                try { localStorage.setItem(key, JSON.stringify(saveData)); }
+                catch { console.warn('[SaveSystem] Could not persist analytics identity'); }
+            }
             console.log(`[SaveSystem] Game loaded from slot ${slotIndex}`);
             return saveData;
         } catch (error) {

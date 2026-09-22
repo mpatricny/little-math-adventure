@@ -66,4 +66,5 @@ export async function signOutGoogle(signal?: AbortSignal, fetcher: Fetcher = fet
         body: '{}',
     }, fetcher);
     if (!response.ok) throw new Error('Sign out failed');
+    if (typeof window !== 'undefined') window.dispatchEvent(new Event('cislokraj-auth-changed'));
 }

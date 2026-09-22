@@ -155,6 +155,8 @@ export class MasterySystem {
             assisted,
             data.globalSolveSequence,
         );
+        // Co-op checkpoints use their explicit player tracks in CoopSessionManager.
+        if (!this.activeData) this.gameState.save();
     }
 
     applyComparisonExamResult(correctCount: number, tierOverride?: TrialTier, sessionOnly = false) {
@@ -706,6 +708,7 @@ export class MasterySystem {
 
         // Check automatic state transitions
         this.checkAutomaticTransitions(problem.subAtomId);
+        if (!this.activeData) this.gameState.save();
     }
 
     // ========================================

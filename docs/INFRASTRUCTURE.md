@@ -53,8 +53,13 @@ k herním účtům; žádný účet se v tomto režimu nevyhledává.
 Herní menu má vlastní Google tlačítko v hostu `googleAccountHost`. Při nedostupném
 API zůstává viditelné, ale neaktivní, se stavem „Není dostupné“ a možností
 opakovat kontrolu. Po zapnutí OAuth vrací přihlášení hráče přímo na `/hra/`.
-Přihlášení ani odhlášení neupravuje lokální savy. Synchronizace savů na server
-zatím není implementována; existence účtu neznamená cloudovou zálohu postupu.
+Přihlášení ani odhlášení nemaže lokální savy. Od `pilot-0.1.7` se odpovědi,
+postup a odměny automaticky odesílají do PostgreSQL také bez přihlášení.
+Identita prohlížeče se uchovává v IndexedDB a jednotlivé hry mají vlastní UUID.
+První přihlášení rodiče propojí jeho herní profily s Google účtem bez duplikace
+odpovědí. Jde o sběr herních dat; načítání uložené hry na jiném zařízení zatím
+implementované není. Podrobnosti a příkazy pro reporty jsou v
+[GAMEPLAY_DATA.md](GAMEPLAY_DATA.md).
 
 Google účet je určen rodiči nebo dospělému, nikoli přímému přihlašování dítěte.
 Herní menu i landing používají společné `signOutGoogle()`. Odhlášení posílá

@@ -125,6 +125,7 @@ export class MasteryMigration {
             const record = data.problemRecords[key];
             for (let i = 0; i < stats.correctCount; i++) {
                 record.attempts.push({
+                    synthetic: true,
                     timestamp: stats.lastAttempt - (stats.correctCount - i) * 60000,
                     correct: true,
                     responseTimeMs: 5000, // Default, we don't have historical RT
@@ -134,6 +135,7 @@ export class MasteryMigration {
             }
             for (let i = 0; i < stats.wrongCount; i++) {
                 record.attempts.push({
+                    synthetic: true,
                     timestamp: stats.lastAttempt - (stats.wrongCount - i) * 60000,
                     correct: false,
                     responseTimeMs: 10000,

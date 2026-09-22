@@ -5,6 +5,7 @@ import { loadConfig } from './config.js';
 import { checkDatabase, createDatabase } from './db/database.js';
 import { ensurePlayerAccount } from './domain/playerAccounts.js';
 import { createLogger } from './logger.js';
+import { collectGameplay, gameplaySummary, resolveGameplayBrowser } from './domain/gameplay.js';
 
 const config = loadConfig();
 const logger = createLogger(config.logLevel);
@@ -17,6 +18,9 @@ const app = createApp({
   checkDatabase: () => checkDatabase(database),
   resolvePlayerAccount: principal => ensurePlayerAccount(database, principal),
   logger,
+  collectGameplay: (accountId, batch, parent) => collectGameplay(database, accountId, batch, parent),
+  gameplaySummary: (accountId, parentView) => gameplaySummary(database, accountId, parentView),
+  resolveGameplayBrowser: (token, device) => resolveGameplayBrowser(database, token, device),
 });
 
 const server = serve({
