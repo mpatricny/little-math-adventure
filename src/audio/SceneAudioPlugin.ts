@@ -17,8 +17,8 @@ export function sceneMusic(key: string, boss = false): string | null {
 
 const greetings: Record<string, string> = {
     ForestAdventureStartScene: 'vo.forest.enter', LetterLockPuzzleScene: 'vo.lock.intro', SpinLockPuzzleScene: 'vo.lock.intro',
-    ArenaScene: 'vo.arena.intro', PythiaWorkshopScene: 'vo.pythia.welcome', WitchHutScene: 'vo.pythia.welcome',
-    SilverpondPythiaWorkshopMockScene: 'vo.pythia.welcome', SilverpondTownMockScene: 'vo.silverpond.enter',
+    WitchHutScene: 'vo.pythia.welcome',
+    SilverpondTownMockScene: 'vo.silverpond.enter',
     ZyxCrystalMachineScene: 'vo.machine.numbers',
 };
 

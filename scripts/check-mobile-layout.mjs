@@ -116,11 +116,12 @@ try {
             }
             await tap({ x: 743, y: 290 });
             await capture('boy-selected');
-            await tap({ x: 711, y: 598 });
+            await tap(host('CharacterSelectNewScene', 'Green_button'));
+            assert.equal(await page.evaluate(() => localStorage.getItem('littleMathAdventure_slot_0')), null, 'character step keeps a draft');
             await waitScene('BandSelectScene');
             assert.equal(await input.count(), 0, 'scene shutdown removes the HTML input');
-            await tap({ x: 360, y: 440 });
-            await tap({ x: 640, y: 650 });
+            await tap({ x: 406, y: 345 });
+            await tap({ x: 160, y: 630 });
             await waitScene('CharacterSelectNewScene');
             await input.waitFor();
             assert.equal(await input.count(), 1);
@@ -130,6 +131,9 @@ try {
             await capture('difficulty-return');
             await tap(host('CharacterSelectNewScene', 'Green_button'));
             await input.waitFor({ state: 'detached' });
+            await waitScene('BandSelectScene');
+            await tap({ x: 640, y: 630 });
+            await page.waitForFunction(() => localStorage.getItem('littleMathAdventure_slot_0'));
             const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('littleMathAdventure_slot_0')));
             assert.equal(saved.player.name, 'Anežka123456');
             assert.equal(saved.player.characterType, 'boy_knight');

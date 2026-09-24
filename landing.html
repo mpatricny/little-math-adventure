@@ -6,13 +6,13 @@
     <meta name="theme-color" content="#132922" />
     <meta
       name="description"
-      content="Číslokraj je dobrodružná hra, ve které děti procvičují matematiku při objevování kouzelného světa."
+      content="Číslokraj učí děti počítat hravou formou. Objevují kouzelný svět a s každým vyřešeným příkladem jejich hrdina sílí a postupuje dál."
     />
     <link
       rel="icon"
       href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cpath fill='%236f45cf' stroke='%23e5cc7e' stroke-width='4' d='M32 4 54 22 46 52 18 52 10 22Z'/%3E%3Cpath fill='%23cbb6ff' d='m32 11 12 12-12 22-12-22Z'/%3E%3C/svg%3E"
     />
-    <title>Číslokraj — matematika jako dobrodružství</title>
+    <title>Číslokraj: Tajemství krystalů</title>
     <style>
       :root {
         color-scheme: dark;
@@ -124,7 +124,7 @@
 
       .hero {
         display: grid;
-        grid-template-columns: minmax(0, 0.86fr) minmax(0, 1.14fr);
+        grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
         align-items: center;
         gap: clamp(2.5rem, 6vw, 5rem);
         min-height: calc(100svh - 5rem);
@@ -163,7 +163,7 @@
       }
 
       h1 {
-        max-width: 13ch;
+        max-width: 100%;
         margin-bottom: 1.25rem;
         font-size: clamp(2.8rem, 5.4vw, 4.75rem);
         letter-spacing: -0.04em;
@@ -506,6 +506,73 @@
         font-size: 0.96rem;
       }
 
+      .research {
+        border-top: 1px solid var(--line);
+      }
+
+      .research-lead {
+        display: grid;
+        grid-template-columns: 0.8fr 1.2fr;
+        gap: clamp(2rem, 8vw, 7rem);
+        margin-bottom: 2.5rem;
+      }
+
+      .research-lead .intro-copy p:first-child {
+        margin-top: 0;
+      }
+
+      .research-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 1.25rem;
+      }
+
+      .research-card {
+        display: flex;
+        flex-direction: column;
+        padding: clamp(1.25rem, 2.5vw, 1.8rem);
+        border: 1px solid var(--line);
+        border-top: 3px solid var(--violet);
+        border-radius: 0.3rem 0.3rem 1rem 1rem;
+        background: var(--panel);
+      }
+
+      .research-card h3 {
+        color: var(--gold);
+        line-height: 1.25;
+      }
+
+      .research-card p {
+        margin: 0.6rem 0;
+        color: var(--muted);
+      }
+
+      .research-card strong {
+        color: var(--ink);
+      }
+
+      .research-card .research-source {
+        margin-top: auto;
+        padding-top: 1rem;
+        font-size: 0.85rem;
+      }
+
+      .research a {
+        text-underline-offset: 0.2em;
+        text-decoration-color: var(--gold-deep);
+      }
+
+      .research a:hover {
+        color: var(--gold);
+      }
+
+      .research-note {
+        max-width: 85ch;
+        margin: 1.5rem 0 0;
+        color: var(--muted);
+        font-size: 0.88rem;
+      }
+
       .gallery {
         border-top: 1px solid var(--line);
       }
@@ -517,6 +584,7 @@
       }
 
       .gallery figure {
+        grid-column: span 6;
         margin: 0;
         padding: 0.55rem;
         border: 1px solid var(--line);
@@ -524,16 +592,13 @@
         background: rgba(14, 30, 25, 0.74);
       }
 
-      .gallery figure:first-child {
-        grid-column: span 7;
+      .gallery a {
+        display: block;
+        border-radius: 0.65rem;
       }
 
-      .gallery figure:nth-child(2) {
-        grid-column: span 5;
-      }
-
-      .gallery figure:nth-child(3) {
-        grid-column: 3 / span 8;
+      .gallery a:hover img {
+        filter: brightness(1.06);
       }
 
       .gallery img {
@@ -621,6 +686,7 @@
         .hero,
         .intro,
         .learning-path,
+        .research-lead,
         .support {
           grid-template-columns: 1fr;
         }
@@ -642,14 +708,8 @@
           display: block;
         }
 
-        .gallery figure:first-child,
-        .gallery figure:nth-child(2),
-        .gallery figure:nth-child(3) {
-          grid-column: span 6;
-        }
-
-        .gallery figure:nth-child(3) {
-          grid-column-start: 4;
+        .research-grid {
+          grid-template-columns: 1fr;
         }
       }
 
@@ -676,9 +736,7 @@
           grid-template-columns: 1fr;
         }
 
-        .gallery figure:first-child,
-        .gallery figure:nth-child(2),
-        .gallery figure:nth-child(3) {
+        .gallery figure {
           grid-column: auto;
         }
 
@@ -710,6 +768,7 @@
       <nav aria-label="Hlavní navigace">
         <a href="#o-hre">O hře</a>
         <a href="#jak-to-funguje">Jak se učí</a>
+        <a href="#proc-procvicovat">Proč procvičovat</a>
         <a class="button" href="/hra/">Hrát</a>
       </nav>
     </header>
@@ -717,11 +776,11 @@
     <main id="obsah">
       <section class="hero" aria-labelledby="hero-title">
         <div class="hero-copy">
-          <p class="eyebrow">Pilotní verze</p>
+          <p class="eyebrow">Číslokraj: Tajemství krystalů</p>
           <h1 id="hero-title">Matematika jako <span>dobrodružství.</span></h1>
           <p>
-            Číslokraj propojuje počítání s objevováním světa, příběhem a souboji.
-            Dítě postupuje vlastním tempem a každá vyřešená úloha posouvá výpravu dál.
+            Číslokraj učí děti počítat hravou formou. Objevují kouzelný svět
+            a s každým vyřešeným příkladem jejich hrdina sílí a postupuje dál.
           </p>
           <div class="actions">
             <a class="button" href="/hra/">Vstoupit do Číslokraje</a>
@@ -752,7 +811,7 @@
             src="/assets/images/backgrounds/menu-mathoria.webp"
             width="1280"
             height="720"
-            alt="Hrdinka na cestě krajinou Mathorie mezi městem, krystaly a kouzelnou lodí"
+            alt="Hrdinka na cestě Číslokrajem mezi městečkem, krystaly a kouzelnou lodí"
             fetchpriority="high"
           />
         </figure>
@@ -765,14 +824,13 @@
         </div>
         <div class="intro-copy">
           <p>
-            Hráč prochází Mathorií a Kouzelným lesem, řeší matematické úlohy,
-            pomáhá obyvatelům a získává krystaly. Počítání není samostatný test —
-            je součástí dobrodružství.
+            Dobrodružství začíná v městečku Mathoria. Odtud se hráč vydává
+            do Kouzelného lesa, pomáhá obyvatelům a objevuje tajemství krystalů.
           </p>
           <p>
             Záměrem Číslokraje je proměnit procvičování počítání, které se bez opakování
-            neobejde, v zábavu. Místo řad příkladů na papíře čekají souboje, hlavolamy
-            a hry s čísly. Učení nemusí být nuda ani nucený dril — cílem je, aby děti
+            neobejde, v zábavu. Místo řad příkladů na papíře čekají hlavolamy,
+            objevování a hry s čísly. Učení nemusí být nuda ani nucený dril — cílem je, aby děti
             v Číslokraji chtěly počítat samy.
           </p>
         </div>
@@ -820,7 +878,7 @@
           <article class="principle-card">
             <span class="principle-number">01</span>
             <h3>Počítání v ději</h3>
-            <p>Úlohy otevírají cestu, pomáhají v soubojích a posouvají příběh.</p>
+            <p>Úlohy otevírají cestu, posilují hrdinu a posouvají příběh.</p>
           </article>
           <article class="principle-card">
             <span class="principle-number">02</span>
@@ -840,26 +898,121 @@
         </div>
       </section>
 
+      <section class="research" id="proc-procvicovat" aria-labelledby="research-title">
+        <div class="research-lead">
+          <div>
+            <p class="eyebrow">Věda a pedagogika</p>
+            <h2 id="research-title">Procvičování, které dává chuť pokračovat.</h2>
+          </div>
+          <div class="intro-copy">
+            <p>
+              Jistota v počítání se buduje postupně. Pravidelné upevňování základních
+              početních vztahů patří mezi doporučené postupy podpory dětí, které
+              s matematikou zápasí.
+              <a href="https://ies.ed.gov/ncee/wwc/PracticeGuide/2">(IES, 2009)</a>
+            </p>
+            <p>
+              Ne každé dítě ale láká další řada příkladů na papíře. Číslokraj proto
+              dává opakování smysl v dobrodružství: vyřešený příklad pomůže hrdinovi,
+              zvládnutá dovednost otevře nové možnosti. Cílem je, aby dítě zažívalo
+              pokrok a chtělo se k počítání vracet.
+            </p>
+          </div>
+        </div>
+        <div class="research-grid">
+          <article class="research-card">
+            <h3>Cílené procvičování</h3>
+            <p>
+              K. Anders Ericsson popsal <strong>cílené procvičování</strong>
+              (<em lang="en">deliberate practice</em>): trénink konkrétní dovednosti
+              s jasným cílem, soustředěním a zpětnou vazbou. V knize <cite>Peak</cite>
+              s Robertem Poolem vysvětluje, proč záleží na způsobu procvičování
+              i na čase, který mu věnujeme.
+            </p>
+            <p>
+              Číslokraj se tím inspiruje: vrací se k dovednostem, které je potřeba
+              upevnit, a další postup váže na jejich zvládnutí.
+            </p>
+            <p class="research-source">
+              <a href="https://doi.org/10.1037/0033-295X.100.3.363">Ericsson, Krampe a Tesch-Römer (1993)</a><br />
+              <a href="https://books.google.com/books?id=GmcpCgAAQBAJ">Ericsson a Pool: Peak (2016)</a>
+            </p>
+          </article>
+          <article class="research-card">
+            <h3>Škola hrou</h3>
+            <p>
+              Jan Amos Komenský v díle <cite>Schola ludus</cite> zapojoval žáky
+              do učení prostřednictvím divadelních her. Pro Číslokraj je to inspirace
+              k <strong>názornému učení a aktivnímu zapojení</strong>.
+            </p>
+            <p>
+              Dítě počítá, aby přešlo řeku, pomohlo tvorovi nebo objevilo další část
+              světa. Hra má dát chuť začít, vlastní pokrok důvod pokračovat —
+              až k zajímavějším a náročnějším úlohám.
+            </p>
+            <p class="research-source">
+              <a href="https://komensky.mjakub.cz/schola-ludus-idc387">Komenský: Schola ludus (1656)</a><br />
+              Dílo představuje Muzeum J. A. Komenského v Uherském Brodě.
+            </p>
+          </article>
+          <article class="research-card">
+            <h3>Výzva tak akorát</h3>
+            <p>
+              Mihaly Csikszentmihalyi popsal <strong>flow</strong>, stav hlubokého
+              zaujetí činností. K takovému zaujetí přispívají jasné cíle, průběžná zpětná vazba
+              a výzva, která je zvládnutelná, ale vyžaduje soustředění.
+              Příliš snadné úkoly mohou nudit, příliš těžké odrazovat.
+            </p>
+            <p>
+              Číslokraj proto usiluje o přiměřenou obtížnost: dítě začíná na své
+              úrovni a s rostoucí jistotou dostává prostor pro nové výzvy
+              i objevování.
+            </p>
+            <p class="research-source">
+              <a href="https://doi.org/10.1007/978-94-017-9088-8_16">Nakamura a Csikszentmihalyi: The Concept of Flow (2002, přetištěno 2014)</a>
+            </p>
+          </article>
+        </div>
+        <p class="research-note">
+          Procvičování je důležitou součástí učení; samotný počet hodin ale nevysvětluje
+          všechny rozdíly ve výsledcích.
+          <a href="https://doi.org/10.1177/0956797614535810">(Macnamara, Hambrick a Oswald, 2014)</a>
+          Uvedené práce jsou východiskem návrhu, nikoli důkazem účinnosti samotného Číslokraje.
+        </p>
+      </section>
+
       <section class="gallery" aria-labelledby="gallery-title">
         <div class="section-heading">
           <div>
             <p class="eyebrow">Ze hry</p>
-            <h2 id="gallery-title">Mathoria a Kouzelný les.</h2>
+            <h2 id="gallery-title">Každý příklad posune dobrodružství.</h2>
           </div>
-          <p>Tři pohledy přímo z vydávané pilotní verze.</p>
+          <p>Obchod, hlavolamy i porovnávání s krokodýlem přímo z pilotní verze. Snímky si můžete rozkliknout.</p>
         </div>
         <div class="gallery-grid">
           <figure>
-            <img src="/assets/images/screenshots/landing-menu.webp" width="1280" height="720" alt="Hlavní menu Číslokraje" loading="lazy" />
-            <figcaption>Výprava začíná v Mathorii.</figcaption>
+            <a href="/assets/images/screenshots/landing-menu.webp" target="_blank" rel="noopener" aria-label="Zvětšit hlavní menu">
+              <img src="/assets/images/screenshots/landing-menu.webp" width="1280" height="720" alt="Hlavní menu Číslokraje" loading="lazy" />
+            </a>
+            <figcaption>Číslokraj: Tajemství krystalů.</figcaption>
           </figure>
           <figure>
-            <img src="/assets/images/screenshots/landing-town.webp" width="1280" height="720" alt="Město Mathoria ve hře Číslokraj" loading="lazy" />
-            <figcaption>Ve městě čekají postavy, dílny a nové výzvy.</figcaption>
+            <a href="/assets/images/screenshots/landing-shop.webp" target="_blank" rel="noopener" aria-label="Zvětšit obchod">
+              <img src="/assets/images/screenshots/landing-shop.webp" width="1280" height="720" alt="Vnitřek obchodu s meči, štíty a přípravou výbavy" loading="lazy" />
+            </a>
+            <figcaption>V obchodě si hrdina vybírá a připravuje výbavu na další cestu.</figcaption>
           </figure>
           <figure>
-            <img src="/assets/images/screenshots/landing-forest.webp" width="1280" height="720" alt="Dobrodružství v Kouzelném lese" loading="lazy" />
-            <figcaption>V lese se počítání propojuje s průzkumem a hádankami.</figcaption>
+            <a href="/assets/images/screenshots/landing-river-puzzle.webp" target="_blank" rel="noopener" aria-label="Zvětšit hlavolam u řeky">
+              <img src="/assets/images/screenshots/landing-river-puzzle.webp" width="1280" height="720" alt="Vyřešený číselný most přes řeku a velká houba na druhém břehu" loading="lazy" />
+            </a>
+            <figcaption>Číselný hlavolam otevře cestu přes řeku. Za mostem čeká obří houba.</figcaption>
+          </figure>
+          <figure>
+            <a href="/assets/images/screenshots/landing-arena-comparison.webp" target="_blank" rel="noopener" aria-label="Zvětšit porovnávání v aréně">
+              <img src="/assets/images/screenshots/landing-arena-comparison.webp" width="1280" height="720" alt="Souboj v aréně s početní tabulí, jablíčky a třemi krokodýlími volbami pro porovnávání" loading="lazy" />
+            </a>
+            <figcaption>V aréně děti porovnávají jablíčka pomocí krokodýla.</figcaption>
           </figure>
         </div>
       </section>
@@ -885,7 +1038,7 @@
       <section class="closing" aria-labelledby="closing-title">
         <p class="pilot-note">Pilotní verze</p>
         <h2 id="closing-title">Připraven vyrazit?</h2>
-        <p>Vstup do Mathorie, vyber si hrdinu a začni první dobrodružství.</p>
+        <p>Vyber si hrdinu a vydej se z městečka Mathoria za dobrodružstvím.</p>
         <a class="button" href="/hra/">Hrát Číslokraj</a>
       </section>
     </main>

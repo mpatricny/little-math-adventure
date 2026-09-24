@@ -16,10 +16,10 @@ function leaves(value, predicate, prefix = '', output = new Map()) {
 }
 
 /** Build dependencies from the editor catalogs and each scene's actual imported helpers. */
-export function collectSceneAssets(root, dataDir = path.join(root, 'public/assets/data')) {
+export function collectSceneAssets(root, dataDir = path.join(root, 'public/assets/data'), extraResourceKeys = []) {
     const load = name => readJson(path.join(dataDir, name));
     const textures = load('textures.json');
-    const textureKeys = new Set([...Object.keys(textures.images), ...Object.keys(textures.spritesheets)]);
+    const textureKeys = new Set([...Object.keys(textures.images), ...Object.keys(textures.spritesheets), ...extraResourceKeys]);
     const scenes = load('scenes.json').scenes;
     const layouts = new Map(Object.entries(scenes));
     const assets = leaves(load('assets.json'), item => typeof item.type === 'string');
@@ -41,7 +41,7 @@ export function collectSceneAssets(root, dataDir = path.join(root, 'public/asset
         if (visited.has(filename) || !existsSync(filename)) return [];
         visited.add(filename);
         // Debugger string inventories do not describe a scene's runtime dependencies.
-        if (filename.startsWith(path.join(root, 'src/types')) || /SceneDebugger|DebugOverlay|SceneAssetPlugin|GameStateManager|MasterySystem|ProgressionSystem|SilverpondProgressSystem|JourneySystem|PlacementInitializer/.test(filename)) return [];
+        if (filename.startsWith(path.join(root, 'src/types')) || filename.startsWith(path.join(root, 'src/loading')) || /SceneDebugger|DebugOverlay|SceneAssetPlugin|GameStateManager|MasterySystem|ProgressionSystem|SilverpondProgressSystem|JourneySystem|PlacementInitializer/.test(filename)) return [];
         if (filename.endsWith('.json')) {
             const dataName = path.basename(filename);
             if (existsSync(path.join(dataDir, dataName))) return [load(dataName)];

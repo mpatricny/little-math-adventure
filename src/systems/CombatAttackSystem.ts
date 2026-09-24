@@ -24,7 +24,7 @@ function normalizeNonNegativeInteger(value: number): number {
     return Math.max(0, Math.floor(value));
 }
 
-/** Number of base math problems in a solo player attack. */
+/** Number of base math problems from earned hero power, excluding equipment. */
 export function getPlayerAttackProblemCount(attack: number): number {
     return Math.min(
         normalizeNonNegativeInteger(attack),

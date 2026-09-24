@@ -25,3 +25,10 @@ test('destination scenes include helper UI, character animations and editor layo
 test('each scene queues every texture once', () => {
     for (const keys of Object.values(manifest)) assert.equal(new Set(keys).size, keys.length);
 });
+
+test('forecast also finds scene-specific spoken guides without putting audio in texture queues', () => {
+    const resources = collectSceneAssets(root, undefined, ['vo.arena.free']);
+    assert.ok(resources.ArenaScene.includes('vo.arena.free'));
+    assert.ok(!resources.MenuScene.includes('vo.arena.free'));
+    assert.ok(!manifest.ArenaScene.includes('vo.arena.free'));
+});

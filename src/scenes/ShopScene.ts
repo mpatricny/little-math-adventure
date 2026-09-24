@@ -1,3 +1,4 @@
+import { VisualGuide, hasSeenGuide, GuidePage } from '../ui/VisualGuide';
 import { sfx, voice } from '../audio/AudioDirector';
 import Phaser from 'phaser';
 import {
@@ -178,6 +179,29 @@ export class ShopScene extends Phaser.Scene {
 
         // Setup debugger
         this.setupDebugger();
+        this.time.delayedCall(450, () => this.showShopGuides());
+    }
+
+    private showShopGuides(purchasedKind?: PreparationKind): void {
+        const player = this.gameState.getPlayer();
+        const pages: GuidePage[] = [];
+        if (!purchasedKind && !hasSeenGuide(player, 'shop.intro.v1')) {
+            pages.push({ id: 'shop.intro.v1', title: 'MEČE A ŠTÍTY', voiceId: 'vo.guide.shop.intro',
+                before: [{ texture: 'shop-coins-sheet', frame: 0 }],
+                after: [{ texture: 'shop-swords-sheet', frame: 1 }, { texture: 'shop-shields-sheet', frame: 0 }],
+                target: this.sceneBuilder.get('item-container'),
+            });
+        }
+        for (const kind of (purchasedKind ? [purchasedKind] : ['sword', 'shield']) as PreparationKind[]) {
+            if (!PreparationSystem.hasRequiredEquipment(player, kind) || hasSeenGuide(player, `shop.${kind}.v1`)) continue;
+            pages.push({ id: `shop.${kind}.v1`, title: kind === 'sword' ? 'NABROUSIT MEČ' : 'NABÍT ŠTÍT',
+                voiceId: `vo.guide.shop.${kind}`, preparation: kind,
+                before: [{ texture: `prep-${kind}-normal-v2` }],
+                after: [{ texture: `prep-${kind}-active-v2` }],
+                target: this.prepButtons[kind].root,
+            });
+        }
+        if (pages.length) new VisualGuide(this, this.sceneBuilder, pages, this.persistChanges);
     }
 
     private captureTransientState(): void {
@@ -242,10 +266,6 @@ export class ShopScene extends Phaser.Scene {
 
         const root = this.sceneBuilder.get<Phaser.GameObjects.Container>('prepOverlayHost')
             ?? this.add.container(640, 360).setDepth(300);
-        if (PreparationSystem.hasRequiredEquipment(player, 'sword')
-            || PreparationSystem.hasRequiredEquipment(player, 'shield')) {
-            this.time.delayedCall(500, () => voice(this, 'vo.shop.prep', true));
-        }
         this.preparationOverlay = new PreparationTrainingOverlay(this, {
             root,
             problemProvider: () => this.createPreparationProblems(),
@@ -976,6 +996,9 @@ export class ShopScene extends Phaser.Scene {
         this.updatePaymentTotal();
         this.updateResourceDisplay();
         this.refreshPreparationUi();
+        if (purchasedItem.type === 'weapon' || purchasedItem.type === 'shield') {
+            this.time.delayedCall(350, () => this.showShopGuides(purchasedItem.type === 'weapon' ? 'sword' : 'shield'));
+        }
     }
 
     private returnAllCoins(): void {
@@ -1000,17 +1023,9 @@ export class ShopScene extends Phaser.Scene {
 
         switch (item.type) {
             case 'weapon':
-                // Remove old weapon bonus
-                if (player.equippedWeapon) {
-                    const oldWeapon = this.allItems.find(i => i.id === player.equippedWeapon);
-                    if (oldWeapon?.attackBonus) {
-                        player.attack -= oldWeapon.attackBonus;
-                    }
-                }
+                // A sword contributes its own bonus problem in battle. It must
+                // never change earned hero power or unlock more base attacks.
                 player.equippedWeapon = item.id;
-                if (item.attackBonus) {
-                    player.attack += item.attackBonus;
-                }
                 break;
 
             case 'shield':
@@ -1048,10 +1063,7 @@ export class ShopScene extends Phaser.Scene {
 
         // Line 3+: Stats based on item type
         if (item.type === 'weapon') {
-            if (item.attackBonus) lines.push({ text: `Útok: +${item.attackBonus}`, color: '#66ff66' });
-            if (item.damageMultiplier && item.damageMultiplier > 1) {
-                lines.push({ text: `${item.damageMultiplier}× síla`, color: '#66ccff' });
-            }
+            lines.push({ text: `⚔ +${item.damageMultiplier ?? 1}`, color: '#66ff66' });
         } else if (item.type === 'shield') {
             lines.push({ text: 'Jedna obranná úloha', color: '#aaddff' });
             lines.push({ text: `Blok: ${item.blockPower ?? item.blockAttempts ?? 1}`, color: '#aaddff' });

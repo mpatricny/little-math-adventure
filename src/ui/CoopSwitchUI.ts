@@ -42,7 +42,7 @@ export class CoopSwitchUI {
             .setStrokeStyle(1, 0xffcc00)
             .setInteractive({ useHandCursor: true });
 
-        const switchText = scene.add.text(80, 0, 'Switch', {
+        const switchText = scene.add.text(80, 0, 'Vyměnit', {
             fontSize: '14px', fontFamily: 'Arial, sans-serif',
             color: '#ffffff', fontStyle: 'bold',
         }).setOrigin(0.5);

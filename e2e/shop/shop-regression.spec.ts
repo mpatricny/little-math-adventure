@@ -16,8 +16,8 @@ async function tap(page: Page, p: Point) {
     await page.mouse.move(at.x, at.y); await frame(page);
     await page.mouse.down(); await frame(page); await page.mouse.up(); await frame(page);
 }
-async function start(page: Page, sceneKey: string) {
-    await page.evaluate(({ key, sceneKey }) => (window as any)[key].scene.getScenes(true).at(-1).scene.start(sceneKey), { key: KEY, sceneKey });
+async function start(page: Page, sceneKey: string, data = {}) {
+    await page.evaluate(({ key, sceneKey, data }) => (window as any)[key].scene.getScenes(true).at(-1).scene.start(sceneKey, data), { key: KEY, sceneKey, data });
     await waitForScene(page, sceneKey);
     if (shops.includes(sceneKey)) await page.waitForFunction(({ key, sceneKey }) => {
         const s = (window as any)[key].scene.keys[sceneKey]; return s.preparationOverlay && s.paymentArea && s.itemContainers.size > 0;
@@ -62,6 +62,10 @@ async function pay(page: Page, sceneKey: string, amount: number) {
 }
 
 test.beforeEach(async ({ page }, info) => {
+    // Shop/arena regressions use only local saves and do not require an account server.
+    await page.route('**/v1/me', route => route.fulfill({
+        status: 200, contentType: 'application/json', body: JSON.stringify({ authenticated: false }),
+    }));
     if (info.project.name.includes('canvas')) await page.addInitScript(() => {
         const get = HTMLCanvasElement.prototype.getContext;
         HTMLCanvasElement.prototype.getContext = function (kind: string, ...args: any[]) {
@@ -82,9 +86,10 @@ test('both shops open with no gear, sword only, shield only and both; voice foll
     ];
     for (let i = 0; i < combinations.length; i++) {
         for (const sceneKey of shops) {
-            await page.evaluate(async equipment => {
+            const since = await page.evaluate(async equipment => {
                 const { GameStateManager } = await import('/src/systems/GameStateManager.ts');
-                Object.assign(GameStateManager.getInstance().getPlayer(), equipment);
+                Object.assign(GameStateManager.getInstance().getPlayer(), equipment, { seenGuides: ['shop.intro.v1'] });
+                return performance.now();
             }, combinations[i]);
             await start(page, sceneKey);
             const s = await state(page, sceneKey);
@@ -92,9 +97,21 @@ test('both shops open with no gear, sword only, shield only and both; voice foll
             expect(s.enabled).toEqual({ sword: Boolean(combinations[i].equippedWeapon), shield: Boolean(combinations[i].equippedShield) });
             // Allow the scheduled greeting to execute, including in the empty-gear case.
             await page.evaluate(({ key, sceneKey }) => new Promise<void>(resolve => (window as any)[key].scene.keys[sceneKey].time.delayedCall(650, () => resolve())), { key: KEY, sceneKey });
-            const voiceStarted = () => page.evaluate(async () => (await import('/src/audio/AudioDirector.ts')).gameAudio().snapshot().events.some(e => e.id === 'vo.shop.prep'));
-            if (i === 0) expect(await voiceStarted()).toBe(false);
-            else await expect.poll(voiceStarted).toBe(true);
+            // Equipment guidance replaced the old generic vo.shop.prep greeting.
+            // Compare fresh events so a previous shop cannot satisfy this assertion.
+            const expectedKind = combinations[i].equippedWeapon ? 'sword' : combinations[i].equippedShield ? 'shield' : null;
+            const guideVoices = () => page.evaluate(async since =>
+                (await import('/src/audio/AudioDirector.ts')).gameAudio().snapshot().events
+                    .filter(e => e.time >= since && e.type === 'voice' && /^vo\.guide\.shop\.(sword|shield)$/.test(e.id))
+                    .map(e => e.id), since);
+            if (!expectedKind) expect(await guideVoices()).toEqual([]);
+            else {
+                await expect.poll(guideVoices).toEqual([`vo.guide.shop.${expectedKind}`]);
+                expect(await page.evaluate(({ key, sceneKey, expectedKind }) =>
+                    (window as any)[key].scene.keys[sceneKey].children.list.some((child: any) =>
+                        child.active && child.getData?.('guideId') === `shop.${expectedKind}.v1`),
+                { key: KEY, sceneKey, expectedKind })).toBe(true);
+            }
             if (i === 0 || i === 3) await page.screenshot({ path: `artifacts/shop/${info.project.name}-${sceneKey}-${i ? 'equipped' : 'empty'}.png` });
         }
     }
@@ -103,7 +120,7 @@ test('both shops open with no gear, sword only, shield only and both; voice foll
 });
 
 for (const sceneKey of shops) test(`${sceneKey}: drag payment, wrong total, purchase, upgrade and saved return`, async ({ page }, info) => {
-    await openSeededGame(page, false, {}, {}, { coins: { copper: 50, silver: 0, gold: 0, pouch: 0 }, attack: 1 });
+    await openSeededGame(page, false, {}, {}, { coins: { copper: 50, silver: 0, gold: 0, pouch: 0 }, attack: 1, seenGuides: completedGuides });
     await start(page, sceneKey);
     const initial = await state(page, sceneKey);
     await buyButton(page, sceneKey); // No selected item is a safe no-op.
@@ -126,7 +143,7 @@ for (const sceneKey of shops) test(`${sceneKey}: drag payment, wrong total, purc
         await buyButton(page, sceneKey); expect((await state(page, sceneKey)).player).toEqual(after.player);
     }
     const final = await state(page, sceneKey);
-    expect(final.player.attack).toBe(initial.player.attack + upgrade.attackBonus!);
+    expect(final.player.attack).toBe(initial.player.attack);
     expect(final.enabled).toEqual({ sword: true, shield: true });
     const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('littleMathAdventure_slot_0')!).player);
     expect(saved.equippedWeapon).toBe(upgrade.id); expect(saved.equippedShield).toBe(shield.id);
@@ -140,7 +157,10 @@ for (const sceneKey of shops) test(`${sceneKey}: drag payment, wrong total, purc
 });
 
 test('co-op shop restart uses the active player equipment', async ({ page }) => {
-    await openSeededGame(page, true, {}, {}, { equippedWeapon: 'sword_wooden' }, { equippedShield: 'shield_wooden' });
+    // This checks the switch itself; first-visit guide overlays are covered separately.
+    await openSeededGame(page, true, {}, {},
+        { equippedWeapon: 'sword_wooden', seenGuides: completedGuides },
+        { equippedShield: 'shield_wooden', seenGuides: completedGuides });
     await activateCoopSession(page); await start(page, 'ShopScene');
     expect((await state(page, 'ShopScene')).enabled).toEqual({ sword: true, shield: false });
     await tap(page, { x: 380, y: 640 });
@@ -149,4 +169,100 @@ test('co-op shop restart uses the active player equipment', async ({ page }) => 
     await tap(page, { x: 380, y: 640 });
     await expect.poll(async () => (await state(page, 'ShopScene')).player.name).toBe('Ada');
     expect((await state(page, 'ShopScene')).enabled).toEqual({ sword: true, shield: false });
+});
+
+const swordIds = ['sword_wooden', 'sword_iron', 'sword_reinforced'];
+const completedGuides = ['shop.intro.v1', 'shop.sword.v1', 'shop.shield.v1', 'arena.free.v1'];
+
+async function setLevelTwoLearning(page: Page) {
+    await page.evaluate(async () => {
+        const { GameStateManager } = await import('/src/systems/GameStateManager.ts');
+        const { MasterySystem } = await import('/src/systems/MasterySystem.ts');
+        const game = GameStateManager.getInstance();
+        const data = game.getMasteryData();
+        Object.assign(data.subAtoms.A1, { state: 'secure', examBestMedal: 'silver' });
+        // Keep this regression on ordinary arithmetic, without first-visit demos.
+        data.comparisonChapter!.status = 'locked';
+        MasterySystem.getInstance().updatePlayerLevel();
+        game.save();
+    });
+}
+
+async function verifyBookAndArena(page: Page, bonus: number, screenshotPrefix: string) {
+    await start(page, 'TownScene');
+    await tap(page, { x: 245, y: 65 });
+    await page.waitForFunction(key => (window as any)[key].scene.keys.TownScene.children.list.some((object: any) =>
+        object.visible && object.alpha === 1 && object.list?.some((child: any) => child.texture?.key === 'character-book-frame')), KEY);
+    await page.mouse.move(1270, 710);
+    const texts = await page.evaluate(key => {
+        const scene = (window as any)[key].scene.keys.TownScene;
+        const book = scene.children.list.find((object: any) => object.visible && object.list?.some((child: any) => child.texture?.key === 'character-book-frame'));
+        if (!book) throw new Error('Character book did not open');
+        return book.list.filter((child: any) => child.visible && child.type === 'Text').map((child: any) => child.text);
+    }, KEY);
+    expect(texts).toContain('LEVEL 2');
+    expect(texts).toContain(`⚔ +${bonus}`);
+    expect(texts.filter((text: string) => /^\d+$/.test(text))).toEqual(['1', '1']);
+    await page.screenshot({ path: `${screenshotPrefix}-book.png` });
+
+    await start(page, 'BattleScene', { fromArena: true, arenaLevel: 1, wave: 0 });
+    await page.waitForFunction(key => (window as any)[key].scene.keys.BattleScene.battleState.phase === 'player_turn', KEY);
+    const attackPoint = await page.evaluate(key => {
+        const root = (window as any)[key].scene.keys.BattleScene.battleActionDock.attackRoot;
+        return { x: root.x, y: root.y };
+    }, KEY);
+    await tap(page, attackPoint);
+    await page.waitForFunction(key => (window as any)[key].scene.keys.BattleScene.mathBoard.acceptingAnswer, KEY);
+    const problems = await page.evaluate(key => (window as any)[key].scene.keys.BattleScene.battleState.currentProblems.map((p: any) => ({ source: p.source ?? 'player', power: p.damageMultiplier ?? 1 })), KEY);
+    expect(problems).toEqual([
+        { source: 'player', power: 1 }, { source: 'player', power: 1 }, { source: 'sword', power: bonus },
+    ]);
+    await page.screenshot({ path: `${screenshotPrefix}-arena.png` });
+}
+
+test('all three swords keep earned attacks through purchase, upgrade, book, arena and reload', async ({ page }, info) => {
+    test.setTimeout(240_000);
+    await openSeededGame(page, false, {}, {}, { attack: 2, hp: 11, maxHp: 11,
+        coins: { copper: 70, silver: 0, gold: 0, pouch: 0 }, seenGuides: completedGuides });
+    await setLevelTwoLearning(page);
+    for (const id of swordIds) {
+        await start(page, 'ShopScene');
+        const item = items.find(item => item.id === id)!;
+        const before = await state(page, 'ShopScene');
+        await selectItem(page, 'ShopScene', id);
+        await pay(page, 'ShopScene', item.price);
+        await buyButton(page, 'ShopScene');
+        const after = await state(page, 'ShopScene');
+        expect(after.player).toMatchObject({ attack: 2, level: 2, hp: 11, maxHp: 11, equippedWeapon: id });
+        expect(wallet(after.player.coins)).toBe(wallet(before.player.coins) - item.price);
+        await verifyBookAndArena(page, item.damageMultiplier!, `artifacts/shop/${info.project.name}-${id}`);
+    }
+    await page.evaluate(async () => {
+        const game = (await import('/src/systems/GameStateManager.ts')).GameStateManager.getInstance();
+        game.save(); game.loadSlot(0);
+    });
+    await start(page, 'ShopScene');
+    expect((await state(page, 'ShopScene')).player).toMatchObject({ attack: 2, level: 2, equippedWeapon: 'sword_reinforced', attackPowerVersion: 1 });
+});
+
+test('old saves with +1, +2 and +3 swords recover earned attacks once', async ({ page }, info) => {
+    test.setTimeout(240_000);
+    await openSeededGame(page, false, {}, {}, { attack: 2, hp: 11, maxHp: 11, seenGuides: completedGuides });
+    await setLevelTwoLearning(page);
+    for (const id of swordIds) {
+        const item = items.find(item => item.id === id)!;
+        await page.evaluate(async ({ id, bonus }) => {
+            const game = (await import('/src/systems/GameStateManager.ts')).GameStateManager.getInstance();
+            const saved = JSON.parse(localStorage.getItem('littleMathAdventure_slot_0')!);
+            Object.assign(saved.player, { attack: 2 + bonus, equippedWeapon: id,
+                equippedShield: 'shield_wooden', preparation: { kind: 'sword', charges: 3 } });
+            delete saved.player.attackPowerVersion;
+            localStorage.setItem('littleMathAdventure_slot_0', JSON.stringify(saved));
+            game.loadSlot(0);
+            game.save(); game.loadSlot(0);
+        }, { id, bonus: item.attackBonus! });
+        await verifyBookAndArena(page, item.damageMultiplier!, `artifacts/shop/${info.project.name}-${id}-migrated`);
+        const player = await page.evaluate(key => (window as any)[key].scene.keys.BattleScene.gameState.getPlayer(), KEY);
+        expect(player).toMatchObject({ attack: 2, level: 2, preparation: { kind: 'sword', charges: 3 }, attackPowerVersion: 1 });
+    }
 });

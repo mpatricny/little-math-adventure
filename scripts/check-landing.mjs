@@ -33,11 +33,11 @@ async function checkViewport(name, viewport) {
     figures: document.querySelectorAll('.gallery figure').length,
   }));
 
-  assert.equal(layout.title, 'Číslokraj — matematika jako dobrodružství');
+  assert.equal(layout.title, 'Číslokraj: Tajemství krystalů');
   assert.equal(layout.contentWidth, layout.viewportWidth, `${name} has horizontal overflow`);
   assert.equal(layout.gameHref, '/hra/');
   assert.equal(layout.authLabel, 'Přihlásit se přes Google');
-  assert.equal(layout.figures, 3);
+  assert.equal(layout.figures, 4);
   assert.ok(layout.imageRatios.every(ratio => Math.abs(ratio - (16 / 9)) < 0.01));
   // Landing entry, Vite preload helper, and the small shared authentication module.
   assert.ok(scripts.length <= 3, `Landing loads too many scripts: ${scripts.join(', ')}`);
@@ -49,6 +49,8 @@ async function checkViewport(name, viewport) {
 
   const screenshot = `/private/tmp/cislokraj-landing-${name}.png`;
   await page.screenshot({ path: screenshot, fullPage: true });
+  await page.locator('.research').screenshot({ path: `/private/tmp/cislokraj-research-${name}.png` });
+  await page.locator('.gallery').screenshot({ path: `/private/tmp/cislokraj-gallery-${name}.png` });
 
   const button = page.locator('.hero .actions .button');
   await button.scrollIntoViewIfNeeded();
@@ -182,6 +184,7 @@ try {
   const results = [];
   results.push(await checkViewport('desktop', { width: 1440, height: 1000 }));
   results.push(await checkViewport('tablet', { width: 1024, height: 768 }));
+  results.push(await checkViewport('phone', { width: 390, height: 844 }));
   await checkAuthFlow();
   const authenticatedState = await checkAuthenticatedState();
   const unavailableStates = await checkUnavailableAuth();

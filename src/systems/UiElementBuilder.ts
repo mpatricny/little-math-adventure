@@ -188,6 +188,7 @@ export class UiElementBuilder {
 
       // Build Phaser text style
       const style: Phaser.Types.GameObjects.Text.TextStyle = {
+        resolution: 2,
         fontFamily: textArea.fontFamily || 'Arial',
         fontSize: `${textArea.fontSize || 16}px`,
         color: textArea.textStyle?.fill || '#ffffff',

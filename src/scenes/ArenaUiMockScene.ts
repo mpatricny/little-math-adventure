@@ -24,9 +24,9 @@ export class ArenaUiMockScene extends Phaser.Scene {
     private waveTitleText?: Phaser.GameObjects.Text;
 
     private readonly mockChoices = [
-        { status: 'POKRAČOVAT V PŘÍBĚHU  ·  1/3', wave: 'VLNA 3/5' },
-        { status: 'PROCVIČIT DŘÍVĚJŠÍ VLNU  ·  2/3', wave: 'VLNA 1/5' },
-        { status: 'VYLEPŠIT VÝSLEDEK  ·  3/3', wave: 'VLNA 2/5' },
+        { status: 'POKRAČOVAT V PŘÍBĚHU  ·  1/3', wave: 'KOLO 3/5' },
+        { status: 'PROCVIČIT DŘÍVĚJŠÍ KOLO  ·  2/3', wave: 'KOLO 1/5' },
+        { status: 'VYLEPŠIT VÝSLEDEK  ·  3/3', wave: 'KOLO 2/5' },
     ];
 
     constructor() {

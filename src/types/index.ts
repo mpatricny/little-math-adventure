@@ -113,7 +113,10 @@ export interface PlayerState {
     coins: CoinCurrency;              // Replaces gold: number
     diamonds: DiamondInventory;       // LEGACY: Multi-tier diamond inventory (migrated to crystals)
     status: 'healthy' | 'přizabitý';  // Health status
+    /** Earned hero power only; equipment contributes a separate bonus problem. */
     attack: number;
+    /** Version 1 excludes the equipped weapon bonus; absent in legacy saves. */
+    attackPowerVersion?: 1;
     defense: number;
     equippedWeapon: string | null;
     equippedArmor: string | null;
@@ -140,6 +143,8 @@ export interface PlayerState {
     trialHistory?: TrialHistory;
     // === STORY PROGRESS ===
     storyProgress?: StoryProgress;     // Track story milestones for visual storytelling
+    /** Completed visual demonstrations, independently persisted for each hero. */
+    seenGuides?: string[];
     underwaterProgress?: import('./underwater').UnderwaterProgress;
     // === TOWN PROGRESS ===
     townProgress?: TownProgress;       // Track building unlocks and progressive town growth
@@ -415,6 +420,7 @@ export interface ItemDefinition {
     // Consumable effects
     healAmount?: number;
     // Equipment stats
+    /** Legacy contribution, retained for save migration and catalog ranking only. */
     attackBonus?: number;
     defenseBonus?: number;
     tier?: number;

@@ -381,7 +381,7 @@ export class CharacterBookOverlay {
         this.addText(
             petLabel.x,
             petLabel.y,
-            'AKTIVNÍ PET',
+            'MAZLÍČEK',
             13,
             INK_SOFT,
             true,
@@ -555,10 +555,10 @@ export class CharacterBookOverlay {
         this.levelText.setText(`LEVEL ${view.level}`);
         this.hpText.setText(`${view.hp} / ${view.maxHp}`);
         this.swordValueText.setText(
-            view.swordFrame === null ? 'NEMÁ' : `+${view.swordBonus} DMG`
+            view.swordFrame === null ? 'NEMÁ' : `⚔ +${view.swordBonus}`
         );
         this.shieldValueText.setText(
-            view.shieldFrame === null ? 'NEMÁ' : `−${view.shieldBlock} DMG`
+            view.shieldFrame === null ? 'NEMÁ' : `🛡 ${view.shieldBlock}`
         );
         this.renderAttacks(view);
         this.potionStatusText
@@ -571,7 +571,7 @@ export class CharacterBookOverlay {
         }
         this.petNameText.setText(view.petName.toLocaleUpperCase('cs-CZ'));
         this.petAttackText.setText(
-            view.petTexture ? `${view.petAttack} DMG` : '—'
+            view.petTexture ? `⚔ ${view.petAttack}` : '—'
         );
         this.preparationLabel.setText(
             `PŘÍPRAVA · ${view.preparationKind === 'sword' ? 'MEČ' : 'ŠTÍT'}`

@@ -10,7 +10,7 @@ export function downloadSaveBundle(contents: string): void {
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.download = `little-math-adventure-saves-${date}.json`;
+    link.download = `cislokraj-postup-${date}.json`;
     link.style.display = 'none';
     document.body.appendChild(link);
     link.click();

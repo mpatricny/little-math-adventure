@@ -3797,7 +3797,7 @@
           "id": "subtitle",
           "asset": "ui.labels.game-subtitle",
           "x": 640,
-          "y": 151,
+          "y": 143,
           "depth": 20
         },
         {
@@ -4464,6 +4464,14 @@
       ],
       "ui": [
         {
+          "id": "townTitle",
+          "asset": "ui.labels.town-title",
+          "x": 640,
+          "y": 150,
+          "depth": 30,
+          "text": "$ui.titles.TTL_MATHORIA"
+        },
+        {
           "id": "workshop-label",
           "asset": "ui.labels.building-label",
           "x": 817,
@@ -5009,6 +5017,78 @@
           "x": 640,
           "y": 665,
           "depth": 20
+        },
+        {
+          "id": "guidePanelHost",
+          "asset": "ui.containers.empty",
+          "x": 640,
+          "y": 535,
+          "depth": 650,
+          "height": 310
+        },
+        {
+          "id": "guideTitleHost",
+          "asset": "ui.containers.empty",
+          "x": 640,
+          "y": 415,
+          "depth": 650
+        },
+        {
+          "id": "guideBeforeHost",
+          "asset": "ui.containers.empty",
+          "x": 393,
+          "y": 505,
+          "depth": 650
+        },
+        {
+          "id": "guideAfterHost",
+          "asset": "ui.containers.empty",
+          "x": 887,
+          "y": 505,
+          "depth": 650
+        },
+        {
+          "id": "guideArrowHost",
+          "asset": "ui.containers.empty",
+          "x": 640,
+          "y": 505,
+          "depth": 650
+        },
+        {
+          "id": "guideEquationHost",
+          "asset": "ui.containers.empty",
+          "x": 640,
+          "y": 575,
+          "depth": 650
+        },
+        {
+          "id": "guideReplayHost",
+          "asset": "ui.containers.empty",
+          "x": 270,
+          "y": 640,
+          "depth": 650
+        },
+        {
+          "id": "guideNextHost",
+          "asset": "ui.containers.empty",
+          "x": 1000,
+          "y": 640,
+          "depth": 650
+        },
+        {
+          "id": "guideCloseHost",
+          "asset": "ui.containers.empty",
+          "x": 1080,
+          "y": 415,
+          "depth": 650
+        },
+        {
+          "id": "guideFrameSource",
+          "asset": "misc.results-frame-cropped",
+          "x": -1000,
+          "y": -1000,
+          "depth": -50,
+          "visible": false
         }
       ],
       "ui": [
@@ -5165,10 +5245,42 @@
           "width": 350,
           "height": 124
         },
-        { "id": "nextExamTitleHost", "asset": "ui.containers.empty", "x": 232, "y": 240, "depth": 31, "width": 326, "height": 30 },
-        { "id": "nextExamBarHost", "asset": "ui.containers.empty", "x": 232, "y": 277, "depth": 31, "width": 288, "height": 14 },
-        { "id": "nextExamTargetHost", "asset": "ui.containers.empty", "x": 166, "y": 313, "depth": 32, "width": 194, "height": 42 },
-        { "id": "nextExamValueHost", "asset": "ui.containers.empty", "x": 338, "y": 313, "depth": 32, "width": 116, "height": 42 },
+        {
+          "id": "nextExamTitleHost",
+          "asset": "ui.containers.empty",
+          "x": 232,
+          "y": 240,
+          "depth": 31,
+          "width": 326,
+          "height": 30
+        },
+        {
+          "id": "nextExamBarHost",
+          "asset": "ui.containers.empty",
+          "x": 232,
+          "y": 277,
+          "depth": 31,
+          "width": 288,
+          "height": 14
+        },
+        {
+          "id": "nextExamTargetHost",
+          "asset": "ui.containers.empty",
+          "x": 166,
+          "y": 313,
+          "depth": 32,
+          "width": 194,
+          "height": 42
+        },
+        {
+          "id": "nextExamValueHost",
+          "asset": "ui.containers.empty",
+          "x": 338,
+          "y": 313,
+          "depth": 32,
+          "width": 116,
+          "height": 42
+        },
         {
           "id": "challengePanelHost",
           "asset": "ui.containers.empty",
@@ -5178,10 +5290,42 @@
           "width": 256,
           "height": 196
         },
-        { "id": "challengeKindHost", "asset": "ui.containers.empty", "x": 658, "y": 249, "depth": 31, "width": 236, "height": 26 },
-        { "id": "challengeTitleHost", "asset": "ui.containers.empty", "x": 658, "y": 280, "depth": 31, "width": 236, "height": 30 },
-        { "id": "challengePreviewHost", "asset": "ui.containers.empty", "x": 658, "y": 318, "depth": 31, "width": 236, "height": 44 },
-        { "id": "challengeRequirementHost", "asset": "ui.containers.empty", "x": 658, "y": 355, "depth": 31, "width": 236, "height": 26 },
+        {
+          "id": "challengeKindHost",
+          "asset": "ui.containers.empty",
+          "x": 658,
+          "y": 249,
+          "depth": 31,
+          "width": 236,
+          "height": 26
+        },
+        {
+          "id": "challengeTitleHost",
+          "asset": "ui.containers.empty",
+          "x": 658,
+          "y": 280,
+          "depth": 31,
+          "width": 236,
+          "height": 30
+        },
+        {
+          "id": "challengePreviewHost",
+          "asset": "ui.containers.empty",
+          "x": 658,
+          "y": 318,
+          "depth": 31,
+          "width": 236,
+          "height": 44
+        },
+        {
+          "id": "challengeRequirementHost",
+          "asset": "ui.containers.empty",
+          "x": 658,
+          "y": 355,
+          "depth": 31,
+          "width": 236,
+          "height": 26
+        },
         {
           "id": "challengeActionHost",
           "asset": "ui.containers.empty",
@@ -5430,11 +5574,56 @@
           "height": 610,
           "visible": false
         },
-        { "id": "trialKindHost", "asset": "ui.containers.empty", "x": 640, "y": 157, "depth": 203, "width": 560, "height": 28, "visible": false },
-        { "id": "trialOverviewPreviewHost", "asset": "ui.containers.empty", "x": 640, "y": 280, "depth": 204, "width": 840, "height": 140, "visible": false },
-        { "id": "trialRangeHost", "asset": "ui.containers.empty", "x": 640, "y": 380, "depth": 204, "width": 760, "height": 42, "visible": false },
-        { "id": "trialIdentityHost", "asset": "ui.containers.empty", "x": 640, "y": 103, "depth": 203, "width": 760, "height": 42, "visible": false },
-        { "id": "trialCounterHost", "asset": "ui.containers.empty", "x": 640, "y": 141, "depth": 203, "width": 180, "height": 28, "visible": false },
+        {
+          "id": "trialKindHost",
+          "asset": "ui.containers.empty",
+          "x": 640,
+          "y": 157,
+          "depth": 203,
+          "width": 560,
+          "height": 28,
+          "visible": false
+        },
+        {
+          "id": "trialOverviewPreviewHost",
+          "asset": "ui.containers.empty",
+          "x": 640,
+          "y": 280,
+          "depth": 204,
+          "width": 840,
+          "height": 140,
+          "visible": false
+        },
+        {
+          "id": "trialRangeHost",
+          "asset": "ui.containers.empty",
+          "x": 640,
+          "y": 380,
+          "depth": 204,
+          "width": 760,
+          "height": 42,
+          "visible": false
+        },
+        {
+          "id": "trialIdentityHost",
+          "asset": "ui.containers.empty",
+          "x": 640,
+          "y": 103,
+          "depth": 203,
+          "width": 760,
+          "height": 42,
+          "visible": false
+        },
+        {
+          "id": "trialCounterHost",
+          "asset": "ui.containers.empty",
+          "x": 640,
+          "y": 141,
+          "depth": 203,
+          "width": 180,
+          "height": 28,
+          "visible": false
+        },
         {
           "id": "trialHeaderHost",
           "asset": "ui.containers.empty",
@@ -5697,6 +5886,77 @@
           "y": 360,
           "depth": -10,
           "visible": true
+        },
+        {
+          "id": "guidePanelHost",
+          "asset": "ui.containers.empty",
+          "x": 640,
+          "y": 484,
+          "depth": 650
+        },
+        {
+          "id": "guideTitleHost",
+          "asset": "ui.containers.empty",
+          "x": 640,
+          "y": 334,
+          "depth": 650
+        },
+        {
+          "id": "guideBeforeHost",
+          "asset": "ui.containers.empty",
+          "x": 393,
+          "y": 410,
+          "depth": 650
+        },
+        {
+          "id": "guideAfterHost",
+          "asset": "ui.containers.empty",
+          "x": 887,
+          "y": 410,
+          "depth": 650
+        },
+        {
+          "id": "guideArrowHost",
+          "asset": "ui.containers.empty",
+          "x": 640,
+          "y": 410,
+          "depth": 650
+        },
+        {
+          "id": "guideEquationHost",
+          "asset": "ui.containers.empty",
+          "x": 640,
+          "y": 544,
+          "depth": 650
+        },
+        {
+          "id": "guideReplayHost",
+          "asset": "ui.containers.empty",
+          "x": 270,
+          "y": 620,
+          "depth": 650
+        },
+        {
+          "id": "guideNextHost",
+          "asset": "ui.containers.empty",
+          "x": 1000,
+          "y": 620,
+          "depth": 650
+        },
+        {
+          "id": "guideCloseHost",
+          "asset": "ui.containers.empty",
+          "x": 1080,
+          "y": 329,
+          "depth": 650
+        },
+        {
+          "id": "guideFrameSource",
+          "asset": "misc.results-frame-cropped",
+          "x": -1000,
+          "y": -1000,
+          "depth": -50,
+          "visible": false
         }
       ],
       "ui": [
@@ -5706,7 +5966,7 @@
           "x": 889,
           "y": 204,
           "depth": 10,
-          "text": "VLNA 1",
+          "text": "KOLO 1",
           "visible": true,
           "color": "#ffffff"
         },
@@ -6207,7 +6467,10 @@
           "x": 641,
           "y": 670,
           "uiElement": {
-            "templateId": "1768922130266-28htorb5x"
+            "templateId": "1768922130266-28htorb5x",
+            "textOverrides": {
+              "1768922299962-lij5d6x4j": "DÁL  ▶"
+            }
           },
           "events": {
             "click": "onConfirm"
@@ -6393,6 +6656,84 @@
           "y": 339,
           "scaleX": 0.18868040804680905,
           "scaleY": 0.18868040804680886
+        },
+        {
+          "id": "guidePanelHost",
+          "asset": "ui.containers.empty",
+          "x": 640,
+          "y": 484,
+          "depth": 650
+        },
+        {
+          "id": "guideTitleHost",
+          "asset": "ui.containers.empty",
+          "x": 640,
+          "y": 334,
+          "depth": 650
+        },
+        {
+          "id": "guideBeforeHost",
+          "asset": "ui.containers.empty",
+          "x": 393,
+          "y": 410,
+          "depth": 650
+        },
+        {
+          "id": "guideAfterHost",
+          "asset": "ui.containers.empty",
+          "x": 887,
+          "y": 410,
+          "depth": 650
+        },
+        {
+          "id": "guideArrowHost",
+          "asset": "ui.containers.empty",
+          "x": 640,
+          "y": 410,
+          "depth": 650
+        },
+        {
+          "id": "guideEquationHost",
+          "asset": "ui.containers.empty",
+          "x": 640,
+          "y": 544,
+          "depth": 650
+        },
+        {
+          "id": "guideReplayHost",
+          "asset": "ui.containers.empty",
+          "x": 270,
+          "y": 620,
+          "depth": 650
+        },
+        {
+          "id": "guideNextHost",
+          "asset": "ui.containers.empty",
+          "x": 1000,
+          "y": 620,
+          "depth": 650
+        },
+        {
+          "id": "guideCloseHost",
+          "asset": "ui.containers.empty",
+          "x": 1080,
+          "y": 329,
+          "depth": 650
+        },
+        {
+          "id": "pythiaTitleHost",
+          "asset": "ui.containers.empty",
+          "x": 630,
+          "y": 73,
+          "depth": 30
+        },
+        {
+          "id": "guideFrameSource",
+          "asset": "misc.results-frame-cropped",
+          "x": -1000,
+          "y": -1000,
+          "depth": -50,
+          "visible": false
         }
       ],
       "ui": [
@@ -6700,6 +7041,77 @@
           "x": 656,
           "y": 497,
           "scale": 0.2
+        },
+        {
+          "id": "guidePanelHost",
+          "asset": "ui.containers.empty",
+          "x": 640,
+          "y": 484,
+          "depth": 650
+        },
+        {
+          "id": "guideTitleHost",
+          "asset": "ui.containers.empty",
+          "x": 640,
+          "y": 334,
+          "depth": 650
+        },
+        {
+          "id": "guideBeforeHost",
+          "asset": "ui.containers.empty",
+          "x": 393,
+          "y": 410,
+          "depth": 650
+        },
+        {
+          "id": "guideAfterHost",
+          "asset": "ui.containers.empty",
+          "x": 887,
+          "y": 410,
+          "depth": 650
+        },
+        {
+          "id": "guideArrowHost",
+          "asset": "ui.containers.empty",
+          "x": 640,
+          "y": 410,
+          "depth": 650
+        },
+        {
+          "id": "guideEquationHost",
+          "asset": "ui.containers.empty",
+          "x": 640,
+          "y": 544,
+          "depth": 650
+        },
+        {
+          "id": "guideReplayHost",
+          "asset": "ui.containers.empty",
+          "x": 270,
+          "y": 620,
+          "depth": 650
+        },
+        {
+          "id": "guideNextHost",
+          "asset": "ui.containers.empty",
+          "x": 1000,
+          "y": 620,
+          "depth": 650
+        },
+        {
+          "id": "guideCloseHost",
+          "asset": "ui.containers.empty",
+          "x": 1080,
+          "y": 329,
+          "depth": 650
+        },
+        {
+          "id": "guideFrameSource",
+          "asset": "misc.results-frame-cropped",
+          "x": -1000,
+          "y": -1000,
+          "depth": -50,
+          "visible": false
         }
       ],
       "ui": [
@@ -7005,7 +7417,93 @@
         "width": 1280,
         "height": 720
       },
-      "elements": [],
+      "elements": [
+        {
+          "id": "background",
+          "asset": "misc.new-game-background-1280",
+          "x": 640,
+          "y": 360,
+          "depth": -10
+        },
+        {
+          "id": "bandShade",
+          "asset": "ui.containers.empty",
+          "x": 640,
+          "y": 360,
+          "depth": -5
+        },
+        {
+          "id": "bandTitle",
+          "asset": "ui.containers.empty",
+          "x": 640,
+          "y": 78,
+          "depth": 10
+        },
+        {
+          "id": "bandStep",
+          "asset": "ui.containers.empty",
+          "x": 640,
+          "y": 126,
+          "depth": 10
+        },
+        {
+          "id": "bandA",
+          "asset": "ui.containers.empty",
+          "x": 172,
+          "y": 345,
+          "depth": 10
+        },
+        {
+          "id": "bandB",
+          "asset": "ui.containers.empty",
+          "x": 406,
+          "y": 345,
+          "depth": 10
+        },
+        {
+          "id": "bandC",
+          "asset": "ui.containers.empty",
+          "x": 640,
+          "y": 345,
+          "depth": 10
+        },
+        {
+          "id": "bandD",
+          "asset": "ui.containers.empty",
+          "x": 874,
+          "y": 345,
+          "depth": 10
+        },
+        {
+          "id": "bandE",
+          "asset": "ui.containers.empty",
+          "x": 1108,
+          "y": 345,
+          "depth": 10
+        },
+        {
+          "id": "bandConfirm",
+          "asset": "ui.containers.empty",
+          "x": 640,
+          "y": 630,
+          "depth": 20
+        },
+        {
+          "id": "bandBack",
+          "asset": "ui.containers.empty",
+          "x": 160,
+          "y": 630,
+          "depth": 20
+        },
+        {
+          "id": "guideFrameSource",
+          "asset": "misc.results-frame-cropped",
+          "x": -1000,
+          "y": -1000,
+          "depth": -50,
+          "visible": false
+        }
+      ],
       "ui": []
     },
     "ArenaUiMockScene": {
@@ -7737,17 +8235,105 @@
           "width": 1054,
           "height": 446
         },
-        { "id": "comparisonTitleHost", "asset": "ui.containers.empty", "x": 18, "y": 16, "depth": 2, "width": 720, "height": 30 },
-        { "id": "comparisonStatusHost", "asset": "ui.containers.empty", "x": 864, "y": 16, "depth": 2, "width": 170, "height": 30 },
-        { "id": "comparisonCorrectHost", "asset": "ui.containers.empty", "x": 128, "y":  60, "depth": 2, "width": 210, "height": 66 },
-        { "id": "comparisonWrongHost", "asset": "ui.containers.empty", "x": 370, "y":  60, "depth": 2, "width": 210, "height": 66 },
-        { "id": "comparisonAccuracyHost", "asset": "ui.containers.empty", "x": 628, "y":  60, "depth": 2, "width": 230, "height": 66 },
-        { "id": "comparisonTimeHost", "asset": "ui.containers.empty", "x": 896, "y":  60, "depth": 2, "width": 250, "height": 66 },
-        { "id": "comparisonStepColumn", "asset": "ui.containers.empty", "x": 18, "y": 144, "depth": 2, "width": 320, "height": 282 },
-        { "id": "comparisonCorrectColumn", "asset": "ui.containers.empty", "x": 370, "y": 144, "depth": 2, "width": 135, "height": 282 },
-        { "id": "comparisonWrongColumn", "asset": "ui.containers.empty", "x": 530, "y": 144, "depth": 2, "width": 125, "height": 282 },
-        { "id": "comparisonAccuracyColumn", "asset": "ui.containers.empty", "x": 680, "y": 144, "depth": 2, "width": 145, "height": 282 },
-        { "id": "comparisonTimeColumn", "asset": "ui.containers.empty", "x": 864, "y": 144, "depth": 2, "width": 172, "height": 282 }
+        {
+          "id": "comparisonTitleHost",
+          "asset": "ui.containers.empty",
+          "x": 18,
+          "y": 16,
+          "depth": 2,
+          "width": 720,
+          "height": 30
+        },
+        {
+          "id": "comparisonStatusHost",
+          "asset": "ui.containers.empty",
+          "x": 864,
+          "y": 16,
+          "depth": 2,
+          "width": 170,
+          "height": 30
+        },
+        {
+          "id": "comparisonCorrectHost",
+          "asset": "ui.containers.empty",
+          "x": 128,
+          "y": 60,
+          "depth": 2,
+          "width": 210,
+          "height": 66
+        },
+        {
+          "id": "comparisonWrongHost",
+          "asset": "ui.containers.empty",
+          "x": 370,
+          "y": 60,
+          "depth": 2,
+          "width": 210,
+          "height": 66
+        },
+        {
+          "id": "comparisonAccuracyHost",
+          "asset": "ui.containers.empty",
+          "x": 628,
+          "y": 60,
+          "depth": 2,
+          "width": 230,
+          "height": 66
+        },
+        {
+          "id": "comparisonTimeHost",
+          "asset": "ui.containers.empty",
+          "x": 896,
+          "y": 60,
+          "depth": 2,
+          "width": 250,
+          "height": 66
+        },
+        {
+          "id": "comparisonStepColumn",
+          "asset": "ui.containers.empty",
+          "x": 18,
+          "y": 144,
+          "depth": 2,
+          "width": 320,
+          "height": 282
+        },
+        {
+          "id": "comparisonCorrectColumn",
+          "asset": "ui.containers.empty",
+          "x": 370,
+          "y": 144,
+          "depth": 2,
+          "width": 135,
+          "height": 282
+        },
+        {
+          "id": "comparisonWrongColumn",
+          "asset": "ui.containers.empty",
+          "x": 530,
+          "y": 144,
+          "depth": 2,
+          "width": 125,
+          "height": 282
+        },
+        {
+          "id": "comparisonAccuracyColumn",
+          "asset": "ui.containers.empty",
+          "x": 680,
+          "y": 144,
+          "depth": 2,
+          "width": 145,
+          "height": 282
+        },
+        {
+          "id": "comparisonTimeColumn",
+          "asset": "ui.containers.empty",
+          "x": 864,
+          "y": 144,
+          "depth": 2,
+          "width": 172,
+          "height": 282
+        }
       ]
     },
     "WalkingHudOverlay": {
@@ -7913,7 +8499,7 @@
           "depth": 604,
           "width": 100,
           "height": 28,
-          "text": "+2 DMG"
+          "text": "⚔ +2"
         },
         {
           "id": "characterBookShieldLabelHost",
@@ -7942,7 +8528,7 @@
           "depth": 604,
           "width": 100,
           "height": 28,
-          "text": "−2 DMG"
+          "text": "⚔ −2"
         },
         {
           "id": "characterBookTitleHost",
@@ -8125,7 +8711,7 @@
           "depth": 604,
           "width": 140,
           "height": 22,
-          "text": "AKTIVNÍ PET"
+          "text": "MAZLÍČEK"
         },
         {
           "id": "characterBookPetHost",
@@ -8154,7 +8740,7 @@
           "depth": 604,
           "width": 80,
           "height": 28,
-          "text": "1 DMG"
+          "text": "⚔ 1"
         },
         {
           "id": "characterBookPreparationLabelHost",

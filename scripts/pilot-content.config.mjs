@@ -55,6 +55,7 @@ export const PILOT_DATA_FILES = Object.freeze([
 // becoming runtime dependencies of the Phaser game.
 export const PILOT_LANDING_FILES = Object.freeze([
   'assets/images/screenshots/landing-menu.webp',
-  'assets/images/screenshots/landing-town.webp',
-  'assets/images/screenshots/landing-forest.webp',
+  'assets/images/screenshots/landing-shop.webp',
+  'assets/images/screenshots/landing-river-puzzle.webp',
+  'assets/images/screenshots/landing-arena-comparison.webp',
 ]);

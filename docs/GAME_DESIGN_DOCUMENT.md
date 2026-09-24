@@ -1,4 +1,10 @@
-# Little Math Adventure - Game Design Document
+# Číslokraj: Tajemství krystalů - Game Design Document
+
+Public name: **Číslokraj: Tajemství krystalů**; short brand/world name:
+**Číslokraj**. **Mathoria** is the first town where the adventure begins.
+Use these names in the website, menu, browser title, TV/controller and screenshots.
+The historical repository name and save/storage identifiers remain unchanged for
+compatibility; they are not player-facing branding.
 
 **Version:** 1.4
 **Status:** Full Game Design - Arena Wave System, Crystal & Pet Systems, Forest Journey Room-Based Exploration
@@ -27,7 +33,7 @@
 
 ### Concept
 
-**Little Math Adventure** is an educational math game for children (ages 5-10) where players solve arithmetic problems to battle creatures, collect crystals, and help a stranded alien return home.
+**Číslokraj: Tajemství krystalů** is an educational math game for children (ages 5-10). Children explore a magical world, strengthen their hero by solving arithmetic problems, collect crystals, and help a stranded alien return home. The adventure starts in the town of **Mathoria**.
 
 ### Core Loop
 

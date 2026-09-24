@@ -37,8 +37,9 @@
             "TTL_004": "HEALING",
             "TTL_005": "PETS",
             "TTL_006": "YOUR DIAMONDS",
-            "TTL_GAME_TITLE": "LITTLE MATH\nADVENTURE",
-            "TTL_GAME_SUBTITLE": "MATH ADVENTURE"
+            "TTL_GAME_TITLE": "ČÍSLOKRAJ",
+            "TTL_GAME_SUBTITLE": "CRYSTAL MYSTERY",
+            "TTL_MATHORIA": "MATHORIA · FIRST TOWN"
         },
         "messages": {
             "MSG_001": "VICTORY!",

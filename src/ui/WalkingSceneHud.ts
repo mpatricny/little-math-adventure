@@ -234,7 +234,7 @@ export class WalkingSceneHud {
                 ? 'town-hud-hero-portrait'
                 : 'town-hud-heroine-portrait',
             swordFrame: sword?.iconFrame ?? null,
-            swordBonus: sword?.attackBonus ?? 0,
+            swordBonus: sword?.damageMultiplier ?? 0,
             shieldFrame: shield?.iconFrame ?? null,
             shieldBlock: shield?.blockPower ?? shield?.blockAttempts ?? shield?.defenseBonus ?? 0,
             attackCount,
@@ -244,7 +244,7 @@ export class WalkingSceneHud {
                 attackDamage[2] ?? 0,
             ],
             potionCount: player.potions,
-            petName: pet?.name ?? 'Žádný pet',
+            petName: pet?.name ?? 'Bez mazlíčka',
             petTexture: pet?.spriteKey ?? null,
             petAttack: pet ? getPetAttackPower(pet, player) : 0,
             preparationKind: preparation.kind

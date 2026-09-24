@@ -1431,7 +1431,7 @@
             "h": 132
           },
           "fontFamily": "Georgia",
-          "fontSize": 88,
+          "fontSize": 104,
           "textAlign": "center",
           "verticalAlign": "middle",
           "fitMode": "shrinkToFit",
@@ -1557,9 +1557,9 @@
           "id": "1770151305912-jgyluh2pg",
           "name": "Attack",
           "bounds": {
-            "x": 125,
+            "x": 108,
             "y": 98,
-            "w": 53,
+            "w": 76,
             "h": 46
           },
           "fontFamily": "Arial",
@@ -1567,7 +1567,7 @@
           "textAlign": "center",
           "verticalAlign": "middle",
           "fitMode": "shrinkToFit",
-          "defaultText": "2x",
+          "defaultText": "⚔ 2",
           "textStyle": {
             "shadowColor": "#ffffff",
             "shadowBlur": 4,

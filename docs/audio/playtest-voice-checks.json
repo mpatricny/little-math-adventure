@@ -1,0 +1,157 @@
+{
+  "method": "Offline Web Audio decode; peak normalized to at most 0.7",
+  "assets": [
+    {
+      "id": "vo.level.intro",
+      "duration": 4.4117913832199545,
+      "peak": 0.5423139333724976,
+      "gain": 1,
+      "rms": 0.05840328078504478,
+      "pronunciationReview": "pending"
+    },
+    {
+      "id": "vo.level.five",
+      "duration": 1.5325170068027212,
+      "peak": 0.431427001953125,
+      "gain": 1,
+      "rms": 0.055554193686427444,
+      "pronunciationReview": "pending"
+    },
+    {
+      "id": "vo.level.eight",
+      "duration": 1.4396371882086167,
+      "peak": 0.38836669921875,
+      "gain": 1,
+      "rms": 0.05229245733290534,
+      "pronunciationReview": "pending"
+    },
+    {
+      "id": "vo.level.ten",
+      "duration": 1.486077097505669,
+      "peak": 0.492767333984375,
+      "gain": 1,
+      "rms": 0.053549275640836176,
+      "pronunciationReview": "pending"
+    },
+    {
+      "id": "vo.level.twenty",
+      "duration": 3.1579138321995464,
+      "peak": 0.551300048828125,
+      "gain": 1,
+      "rms": 0.05988357275026648,
+      "pronunciationReview": "pending"
+    },
+    {
+      "id": "vo.level.crossing",
+      "duration": 2.7399546485260773,
+      "peak": 0.576171875,
+      "gain": 1,
+      "rms": 0.05847931561514546,
+      "pronunciationReview": "pending"
+    },
+    {
+      "id": "vo.battle.sword",
+      "duration": 2.507755102040816,
+      "peak": 0.63861083984375,
+      "gain": 1,
+      "rms": 0.058103319457891885,
+      "pronunciationReview": "pending"
+    },
+    {
+      "id": "vo.arena.free",
+      "duration": 5.61922902494331,
+      "peak": 0.6793725490570068,
+      "gain": 1,
+      "rms": 0.06485032880465451,
+      "pronunciationReview": "pending"
+    },
+    {
+      "id": "vo.guide.shop.intro",
+      "duration": 6.548027210884354,
+      "peak": 0.813568115234375,
+      "gain": 0.8604073671180463,
+      "rms": 0.06141265618395094,
+      "pronunciationReview": "pending"
+    },
+    {
+      "id": "vo.guide.shop.sword",
+      "duration": 8.916462585034013,
+      "peak": 0.72265625,
+      "gain": 0.9686486486486486,
+      "rms": 0.06383526084329427,
+      "pronunciationReview": "pending"
+    },
+    {
+      "id": "vo.guide.shop.shield",
+      "duration": 9.659501133786849,
+      "peak": 0.650115966796875,
+      "gain": 1,
+      "rms": 0.05922378098804623,
+      "pronunciationReview": "pending"
+    },
+    {
+      "id": "vo.pythia.missingCrystal",
+      "duration": 5.526349206349207,
+      "peak": 0.581024169921875,
+      "gain": 1,
+      "rms": 0.07200874193042887,
+      "pronunciationReview": "pending"
+    },
+    {
+      "id": "vo.pythia.exactCrystal",
+      "duration": 7.291065759637188,
+      "peak": 0.6536865234375,
+      "gain": 1,
+      "rms": 0.07418013679552288,
+      "pronunciationReview": "pending"
+    },
+    {
+      "id": "vo.guide.forge.merge",
+      "duration": 10.7740589569161,
+      "peak": 0.48149052262306213,
+      "gain": 1,
+      "rms": 0.06725779289257583,
+      "pronunciationReview": "pending"
+    },
+    {
+      "id": "vo.guide.forge.split",
+      "duration": 12.213696145124716,
+      "peak": 0.5716552734375,
+      "gain": 1,
+      "rms": 0.06813477609677962,
+      "pronunciationReview": "pending"
+    },
+    {
+      "id": "vo.guide.forge.fragment",
+      "duration": 7.894784580498866,
+      "peak": 0.468841552734375,
+      "gain": 1,
+      "rms": 0.06364106878395133,
+      "pronunciationReview": "pending"
+    },
+    {
+      "id": "vo.guide.forge.splitFragment",
+      "duration": 5.944308390022676,
+      "peak": 0.879974365234375,
+      "gain": 0.7954777180509797,
+      "rms": 0.06685725653831842,
+      "pronunciationReview": "pending"
+    },
+    {
+      "id": "vo.guide.forge.refine",
+      "duration": 8.962902494331066,
+      "peak": 0.552276611328125,
+      "gain": 1,
+      "rms": 0.060419847860683745,
+      "pronunciationReview": "pending"
+    },
+    {
+      "id": "vo.guide.forge.prism",
+      "duration": 11.888616780045352,
+      "peak": 0.524993896484375,
+      "gain": 1,
+      "rms": 0.06383597827555842,
+      "pronunciationReview": "pending"
+    }
+  ]
+}

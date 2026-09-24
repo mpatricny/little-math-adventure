@@ -167,7 +167,7 @@ export class SaveSystem {
         }
 
         if (!this.isSaveExportBundle(parsed)) {
-            return { ok: false, error: 'Soubor není platný export Little Math Adventure.' };
+            return { ok: false, error: 'Neplatná záloha Číslokraje.' };
         }
 
         const occupiedSlots = new Set(

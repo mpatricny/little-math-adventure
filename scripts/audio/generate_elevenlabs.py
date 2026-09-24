@@ -18,7 +18,7 @@ BASE = 'https://api.elevenlabs.io'
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--generate', action='store_true', help='Without this flag, only inspect the batch locally.')
-    parser.add_argument('--phase', choices=['pilot', 'P0', 'P1', 'P2', 'voice'], default='pilot')
+    parser.add_argument('--phase', choices=['pilot', 'P0', 'P1', 'P2', 'voice', 'playtest'], default='pilot')
     parser.add_argument('--max-credits', type=int, default=3000, help='Conservative batch estimate cap; never enables overage.')
     parser.add_argument('--doppler-config', help='Explicitly authorized RemoteExam configuration. Otherwise use ELEVENLABS_API_KEY environment variable.')
     args = parser.parse_args()

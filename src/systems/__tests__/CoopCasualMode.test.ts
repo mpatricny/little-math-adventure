@@ -273,6 +273,27 @@ describe('CoopSessionManager casual progression', () => {
         resetSingletons();
     });
 
+    it('migrates each hero weapon contribution once across co-op swaps', () => {
+        const game = GameStateManager.getInstance();
+        for (const [slot, sword, bonus] of [[0, 'sword_iron', 2], [1, 'sword_reinforced', 3]] as const) {
+            game.reset('girl_knight', `Player${slot}`, slot);
+            const player = game.getPlayer();
+            player.attack = 2 + slot + bonus;
+            player.equippedWeapon = sword;
+            delete player.attackPowerVersion;
+            game.save();
+        }
+        const coop = CoopSessionManager.getInstance();
+        expect(coop.startSession(0, 1)).toBe(true);
+        for (let turn = 0; turn < 3; turn++) {
+            coop.activatePlayerA();
+            expect(game.getPlayer()).toMatchObject({ attack: 2, equippedWeapon: 'sword_iron', attackPowerVersion: 1 });
+            coop.activatePlayerB();
+            expect(game.getPlayer()).toMatchObject({ attack: 3, equippedWeapon: 'sword_reinforced', attackPowerVersion: 1 });
+        }
+        expect(coop.getSharedAttackCount()).toBe(1);
+    });
+
     it('starts at one shared attack, grows every two wins, and caps at five', () => {
         const coop = CoopSessionManager.getInstance() as any;
         coop._isActive = true;

@@ -117,8 +117,11 @@ test('public media is selected from runtime dependencies, with no chapter or edi
     assert.ok(content.publicFiles.has(asset.url.slice(1)), asset.url);
   }
   assert.ok(!JSON.stringify(json('ui-element-templates.json')).includes('data:image/'));
-  for (const filename of ['landing-menu.webp', 'landing-town.webp', 'landing-forest.webp']) {
-    assert.ok(content.publicFiles.has(`assets/images/screenshots/${filename}`), filename);
+  const landingHtml = readFileSync(path.join(rootDir, 'landing.html'), 'utf8');
+  const screenshots = [...landingHtml.matchAll(/src="\/(assets\/images\/screenshots\/[^\"]+)"/g)];
+  assert.ok(screenshots.length > 0, 'Landing gallery must contain screenshots');
+  for (const [, filename] of screenshots) {
+    assert.ok(content.publicFiles.has(filename), filename);
   }
 });
 

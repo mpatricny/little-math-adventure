@@ -1,5 +1,4 @@
 import Phaser from 'phaser';
-import { GameStateManager } from '../systems/GameStateManager';
 import { SceneBuilder } from '../systems/SceneBuilder';
 import { CharacterType } from '../types';
 import { getPlayerSpriteConfig } from '../utils/characterUtils';
@@ -175,16 +174,13 @@ export class CharacterSelectScene extends Phaser.Scene {
     }
 
     private confirmSelection(): void {
-        // Get name from input (use default if empty)
-        const finalName = this.characterName.trim() || 'Hrdina';
-
-        // Get GameStateManager and set up the new game
-        const gameState = GameStateManager.getInstance();
-        gameState.setActiveSlotIndex(this.targetSlotIndex);
-        gameState.reset(this.selectedCharacter, finalName, this.targetSlotIndex);
-
-        // Start the game
-        this.scene.start('TownScene');
+        this.scene.start('BandSelectScene', {
+            slotIndex: this.targetSlotIndex,
+            characterDraft: {
+                characterName: this.characterName.trim() || 'Hrdina',
+                selectedCharacter: this.selectedCharacter,
+            },
+        });
     }
 
     shutdown(): void {

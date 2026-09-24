@@ -216,20 +216,28 @@ bloku. V UI nahradit zastaralé údaje o sekundách a počtu pokusů textem
 
 Výchozí návrh cen v měďácích:
 
-| Stupeň | Meč: původní → nová cena | Útok přidaný mečem / síla jeho bonusové úlohy | Štít: původní → nová cena | Síla bloku |
+| Stupeň | Meč: původní → nová cena | Síla bonusové úlohy meče | Štít: původní → nová cena | Síla bloku |
 |---|---|---|---|---|
-| 1. Dřevěný | 8 → 8 | +1 / 1 | 3 → 3 | 1 |
-| 2. Železný | 20 → 16 | +2 / 2 | 15 → 12 | 2 |
-| 3. Zpevněný — nový | nový: 28 | +3 / 3 | nový: 20 | 3 |
+| 1. Dřevěný | 8 → 8 | 1 | 3 → 3 | 1 |
+| 2. Železný | 20 → 16 | 2 | 15 → 12 | 2 |
+| 3. Zpevněný — nový | nový: 28 | 3 | nový: 20 | 3 |
 
 Železná sada zlevní celkem z 35 na 28. Nová sada stojí 48 a tvoří další dostupný
 krok. Ceny se ověří proti skutečným výdělkům v Mathorii; nejde o hotový výsledek
 ekonomické simulace.
 
-Síla meče zachovává současnou dvojí funkci: zvyšuje celkový útok hráče a sílu
-dodatečné mečové úlohy. Například nová bonusová úloha má základ 3, při skutečně
-tříoperandovém zadání 6. Nákup silnějšího meče sám nevynucuje neznámé operace.
-Příklady dál vybírá výukový systém a podmínky zvládnutí.
+Oprava podle playtestu z 24. září: meč přidává jednu samostatnou bonusovou úlohu.
+Nákup ani výměna meče nemění úroveň, získanou sílu hrdiny ani počet a sílu jeho
+základních útoků. To platí pro všechny meče. Například bonusová úloha zpevněného
+meče má základ 3, při skutečně tříoperandovém zadání 6. Nákup silnějšího meče
+sám nevynucuje neznámé operace; příklady dál vybírá výukový systém.
+
+`PlayerState.attack` obsahuje pouze získanou sílu hrdiny. Nové a opravené záznamy
+mají `attackPowerVersion: 1`. Při načtení starého záznamu se jednorázově odečte
+`attackBonus` vybaveného meče, který starý obchod chybně přičítal. Úroveň ani
+odměny ze zkoušek se nepřepočítávají. Hodnoty `attackBonus` v katalogu zůstávají
+pro tuto migraci a řazení staršího vybavení; sílu bonusové úlohy i její údaj
+v kartě postavy určuje `damageMultiplier`.
 
 Přidat nové stabilní ID `sword_reinforced` a `shield_reinforced`. Existující ocelové
 a zlaté předměty v katalogu mají jiné vlastnosti a zůstanou zachované pro staré savy.

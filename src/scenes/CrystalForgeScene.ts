@@ -1,4 +1,4 @@
-import { sfx, voice } from '../audio/AudioDirector';
+import { sfx } from '../audio/AudioDirector';
 import Phaser from 'phaser';
 import { GameStateManager } from '../systems/GameStateManager';
 import { CrystalSystem } from '../systems/CrystalSystem';
@@ -28,7 +28,8 @@ import { CoopSwitchUI } from '../ui/CoopSwitchUI';
  * 5. Answer wrong = smoke + mana loss
  */
 
-type ForgeOperation = 'merge' | 'split' | 'createFragment' | 'splitFragment' | 'refine' | 'createPrism';
+import { FORGE_GUIDES, ForgeOperation } from '../data/forgeGuides';
+import { VisualGuide, hasSeenGuide, GuidePage } from '../ui/VisualGuide';
 
 export interface CrystalForgeSceneOptions {
     key?: string;
@@ -167,6 +168,20 @@ export class CrystalForgeScene extends Phaser.Scene {
             stroke: '#000000',
             strokeThickness: 4
         }).setOrigin(0.5).setAlpha(0).setDepth(100);
+        this.time.delayedCall(450, () => this.showNewOperationGuides());
+    }
+
+    private showNewOperationGuides(): void {
+        const player = this.gameState.getPlayer();
+        const pages: GuidePage[] = [];
+        this.operationPanelButtons.forEach(({ btn, locked }, operation) => {
+            const op = operation as ForgeOperation;
+            const guide = FORGE_GUIDES[op];
+            if (!locked && !hasSeenGuide(player, guide.id)) {
+                pages.push({ ...guide, target: btn, onShow: () => this.setOperation(op) });
+            }
+        });
+        if (pages.length) new VisualGuide(this, this.sceneBuilder, pages, this.persistChanges);
     }
 
     private captureTransientState(): void {
@@ -1645,10 +1660,6 @@ export class CrystalForgeScene extends Phaser.Scene {
             const btn = this.sceneBuilder.get<Phaser.GameObjects.Image>(mapping.id);
             if (!btn) return;
 
-            // Store base scale for highlight system (before any modifications)
-            btn.setData('baseScaleX', btn.scaleX);
-            btn.setData('baseScaleY', btn.scaleY);
-
             // Store reference for highlighting
             this.operationPanelButtons.set(mapping.operation, { btn, locked: mapping.locked });
 
@@ -1666,50 +1677,24 @@ export class CrystalForgeScene extends Phaser.Scene {
                 return;
             }
 
-            // Bind click handler for unlocked buttons
-            this.sceneBuilder.bindClick(mapping.id, () => {
+            // Keep the hit area fixed while the complete illustrated surface moves.
+            const root = this.add.container(btn.x, btn.y).setDepth(btn.depth);
+            const width = btn.displayWidth, height = btn.displayHeight;
+            const outline = this.add.rectangle(0, 0, width + 6, height + 6, 0xffd776, 0)
+                .setStrokeStyle(2, 0xffd776).setVisible(false);
+            btn.disableInteractive().setPosition(0, 0);
+            root.add([outline, btn]).setSize(width, height).setInteractive({ useHandCursor: true });
+            btn.setData('selectionOutline', outline);
+            root.setName(`forge-operation-${mapping.operation}`);
+            let pressed = false;
+            root.on('pointerover', () => { if (!pressed) btn.setY(-2); });
+            root.on('pointerout', () => { pressed = false; btn.setY(0); });
+            root.on('pointerdown', () => { pressed = true; btn.setY(2); });
+            root.on('pointerup', () => {
+                if (!pressed) return;
+                pressed = false;
+                btn.setY(-2);
                 this.setOperation(mapping.operation);
-            });
-
-            // Scale-based hover/pressed effects
-            const baseScaleX = btn.scaleX;
-            const baseScaleY = btn.scaleY;
-            let isPressed = false;
-
-            btn.on('pointerover', () => {
-                if (!isPressed) {
-                    this.tweens.killTweensOf(btn);
-                    btn.setScale(baseScaleX * 1.05, baseScaleY * 1.05);
-                    btn.clearTint();
-                }
-            });
-            btn.on('pointerout', () => {
-                isPressed = false;
-                this.tweens.killTweensOf(btn);
-                this.updateOperationPanelHighlights();
-            });
-            btn.on('pointerdown', () => {
-                isPressed = true;
-                this.tweens.killTweensOf(btn);
-                this.tweens.add({
-                    targets: btn,
-                    scaleX: baseScaleX * 1.08,
-                    scaleY: baseScaleY * 1.08,
-                    duration: 150,
-                    ease: 'Power2.easeOut'
-                });
-            });
-            btn.on('pointerup', () => {
-                isPressed = false;
-                this.tweens.killTweensOf(btn);
-                this.tweens.add({
-                    targets: btn,
-                    scaleX: baseScaleX * 1.05,
-                    scaleY: baseScaleY * 1.05,
-                    duration: 150,
-                    ease: 'Power2.easeOut'
-                });
-                btn.clearTint();
             });
         });
 
@@ -1720,27 +1705,18 @@ export class CrystalForgeScene extends Phaser.Scene {
     private operationPanelButtons: Map<string, { btn: Phaser.GameObjects.Image; locked: boolean }> = new Map();
 
     private updateOperationPanelHighlights(): void {
-        // Highlight uses tint + scale: active button stays enlarged, inactive are dimmed
         this.operationPanelButtons.forEach((data, op) => {
-            const baseX = data.btn.getData('baseScaleX') as number;
-            const baseY = data.btn.getData('baseScaleY') as number;
-
-            if (data.locked) {
-                data.btn.setTint(0x333333);
-                data.btn.setScale(baseX, baseY);
-            } else if (this.currentOperation === op) {
+            if (data.locked) data.btn.setTint(0x333333);
+            else {
                 data.btn.clearTint();
-                data.btn.setScale(baseX * 1.05, baseY * 1.05);
-            } else {
-                data.btn.setTint(0x808080); // 50% black overlay for inactive (testing visibility)
-                data.btn.setScale(baseX, baseY);
+                const outline = data.btn.getData('selectionOutline') as Phaser.GameObjects.Rectangle;
+                outline?.setVisible(this.currentOperation === op);
             }
         });
     }
 
     private setOperation(op: ForgeOperation): void {
         if (this.equationVisible) return;
-        voice(this, String(op).includes('split') ? 'vo.forge.split' : 'vo.forge.merge', true);
 
         this.currentOperation = op;
 

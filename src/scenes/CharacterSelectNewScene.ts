@@ -1,19 +1,7 @@
 import Phaser from 'phaser';
 import { SceneBuilder } from '../systems/SceneBuilder';
-import { GameStateManager } from '../systems/GameStateManager';
-import { StorySystem } from '../systems/StorySystem';
-import { PlacementInitializer } from '../systems/PlacementInitializer';
 import { CharacterType, BandId } from '../types';
 import { getPlayerSpriteConfig } from '../utils/characterUtils';
-
-/** Band-to-display-range mapping */
-const BAND_RANGE_LABELS: Record<BandId, string> = {
-    A: '0–5',
-    B: '0–8',
-    C: '0–10',
-    D: '0–20 (bez přechodu)',
-    E: '0–20 (přes desítku)',
-};
 
 interface CharacterSelectData {
     slotIndex?: number;
@@ -32,7 +20,7 @@ export class CharacterSelectNewScene extends Phaser.Scene {
     private selectedCharacter: CharacterType = 'girl_knight';
     private targetSlotIndex: number = 0;
     private characterName: string = 'Hrdina';
-    private selectedBand: BandId = 'A';
+    private selectedBand?: BandId;
 
     // Sprites and frame layer references
     private girlPreview!: Phaser.GameObjects.Sprite;
@@ -40,9 +28,6 @@ export class CharacterSelectNewScene extends Phaser.Scene {
     private leftFrame?: Phaser.GameObjects.Image;
     private rightFrame?: Phaser.GameObjects.Image;
     private nameInputElement: Phaser.GameObjects.DOMElement | null = null;
-
-    // Level display (stored for potential future updates)
-    private levelText: Phaser.GameObjects.Text | null = null;
 
     constructor() {
         super({ key: 'CharacterSelectNewScene' });
@@ -53,7 +38,7 @@ export class CharacterSelectNewScene extends Phaser.Scene {
         this.characterName = data.characterName ?? 'Hrdina';
         this.selectedCharacter = data.selectedCharacter ?? 'girl_knight';
         // Preserve band selection when returning from BandSelectScene
-        this.selectedBand = data.selectedBand ?? 'A';
+        this.selectedBand = data.selectedBand;
     }
 
     create(): void {
@@ -72,8 +57,6 @@ export class CharacterSelectNewScene extends Phaser.Scene {
         // Create name input over the Text 4 area
         this.createNameInput();
 
-        // Create level display + "Změnit" button
-        this.createLevelDisplay();
 
         this.events.once(Phaser.Scenes.Events.SHUTDOWN, this.shutdown, this);
     }
@@ -254,92 +237,20 @@ export class CharacterSelectNewScene extends Phaser.Scene {
         });
     }
 
-    // ============ LEVEL DISPLAY + ZMĚNIT BUTTON ============
-
-    private createLevelDisplay(): void {
-        const centerX = 641;
-        const y = 598;
-
-        // "Úroveň: 0–5" text
-        const rangeLabel = BAND_RANGE_LABELS[this.selectedBand];
-        this.levelText = this.add.text(centerX - 50, y, `Úroveň: ${rangeLabel}`, {
-            fontSize: '16px',
-            fontFamily: 'Arial, sans-serif',
-            color: '#cccccc',
-            fontStyle: 'bold',
-        }).setOrigin(0.5).setDepth(50);
-
-        // Green "Změnit" button
-        const btnX = centerX + 70;
-        const btn = this.add.container(btnX, y).setDepth(50);
-
-        const bg = this.add.rectangle(0, 0, 90, 30, 0x2a6a2a)
-            .setStrokeStyle(2, 0x4daa4d);
-        const btnText = this.add.text(0, 0, 'Změnit', {
-            fontSize: '14px',
-            fontFamily: 'Arial, sans-serif',
-            color: '#88dd88',
-            fontStyle: 'bold',
-        }).setOrigin(0.5);
-
-        btn.add([bg, btnText]);
-        btn.setSize(90, 30);
-        btn.setInteractive({ useHandCursor: true });
-
-        btn.on('pointerover', () => {
-            bg.setFillStyle(0x3a8a3a);
-            btnText.setColor('#aaffaa');
-        });
-        btn.on('pointerout', () => {
-            bg.setFillStyle(0x2a6a2a);
-            btnText.setColor('#88dd88');
-        });
-        btn.on('pointerdown', () => {
-            this.openBandSelect();
-        });
-    }
-
-    private openBandSelect(): void {
-        const storySystem = StorySystem.getInstance();
-        this.scene.start('BandSelectScene', {
-            slotIndex: this.targetSlotIndex,
-            isReturningPlayer: storySystem.hasCompletedIntro(),
-            returnScene: 'CharacterSelectNewScene',
-            selectedBand: this.selectedBand,
-            returnData: {
-                slotIndex: this.targetSlotIndex,
-                characterName: this.characterName,
-                selectedCharacter: this.selectedCharacter,
-            },
-        });
-    }
-
     private selectCharacter(type: CharacterType): void {
         this.selectedCharacter = type;
         this.updateSelectionVisuals();
     }
 
     private confirmSelection(): void {
-        const finalName = this.characterName.trim() || 'Hrdina';
-
-        const gameState = GameStateManager.getInstance();
-        gameState.setActiveSlotIndex(this.targetSlotIndex);
-        gameState.reset(this.selectedCharacter, finalName, this.targetSlotIndex);
-
-        // Apply band selection directly (no longer routing to BandSelectScene)
-        PlacementInitializer.applyBandSelection(this.selectedBand, gameState);
-
-        import('../systems/MasterySystem').then(({ MasterySystem }) => {
-            MasterySystem.getInstance().updatePlayerLevel();
-        }).catch(() => { /* ok */ });
-
-        // Proceed to game
-        const storySystem = StorySystem.getInstance();
-        if (storySystem.hasCompletedIntro()) {
-            this.scene.start('TownScene');
-        } else {
-            this.scene.start('ComicScene');
-        }
+        this.scene.start('BandSelectScene', {
+            slotIndex: this.targetSlotIndex,
+            selectedBand: this.selectedBand,
+            characterDraft: {
+                characterName: this.characterName.trim() || 'Hrdina',
+                selectedCharacter: this.selectedCharacter,
+            },
+        });
     }
 
     shutdown(): void {

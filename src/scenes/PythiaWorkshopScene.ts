@@ -1,3 +1,4 @@
+import { VisualGuide, hasSeenGuide } from '../ui/VisualGuide';
 import { sfx, voice } from '../audio/AudioDirector';
 import Phaser from 'phaser';
 import { GameStateManager } from '../systems/GameStateManager';
@@ -101,11 +102,25 @@ export class PythiaWorkshopScene extends Phaser.Scene {
 
         this.sceneBuilder.buildScene(this.layoutSceneKey);
         this.applyBackgroundTexture();
+        const titleHost = this.sceneBuilder.get<Phaser.GameObjects.Container>('pythiaTitleHost');
+        if (titleHost) this.add.text(titleHost.x, titleHost.y, 'PYTHIINA DÍLNA', {
+            resolution: 2, fontFamily: 'Georgia', fontSize: '27px', color: '#f7dda5',
+            stroke: '#241209', strokeThickness: 3,
+        }).setOrigin(0.5).setDepth(titleHost.depth);
+
 
         // Co-op: add player switch UI
         new CoopSwitchUI(this, 300, 640);
 
         // Create dynamic UI components
+        const justBefriendedPet = this.registry.get('audioPetBound') === true;
+        this.time.delayedCall(450, () => {
+            if (!justBefriendedPet && !hasSeenGuide(this.gameState.getPlayer(), 'pythia.intro.v1')) new VisualGuide(this, this.sceneBuilder, [{
+                id: 'pythia.intro.v1', title: 'NOVÝ MAZLÍČEK', voiceId: 'vo.pythia.welcome',
+                before: [{ texture: 'gemstone-icons', frame: 1, value: 5 }],
+                after: [{ texture: 'slime-sheet', frame: 0, badge: '♥' }],
+            }], this.persistChanges);
+        });
         this.createResourceDisplay();
         this.createPotionPanel();
         this.createCrystalGrid();
@@ -487,7 +502,7 @@ export class PythiaWorkshopScene extends Phaser.Scene {
             }
 
             const value = this.add.text(0, 25, `${this.selectedCrystal.value}`, {
-                fontSize: '14px',
+                resolution: 2, fontSize: '30px',
                 color: config.color,
                 fontStyle: 'bold'
             }).setOrigin(0.5);
@@ -880,7 +895,7 @@ export class PythiaWorkshopScene extends Phaser.Scene {
             }
 
             // Always show attack multiplier
-            attackTextInfo?.text.setText(`${getPetAttackPower(pet, player)}x`);
+            attackTextInfo?.text.setText(`⚔ ${getPetAttackPower(pet, player)}`);
 
             // Update cost display based on owned status
             if (!isOwned) {
@@ -913,7 +928,7 @@ export class PythiaWorkshopScene extends Phaser.Scene {
                 costTextInfo?.text.setText(String(pet.requiredAmulet.value));
                 // Reset font size for cost value
                 if (costTextInfo) {
-                    costTextInfo.text.setFontSize(22);
+                    costTextInfo.text.setFontSize(36);
                     costTextInfo.text.setColor('#e6e944');
                     // Bring text to front so it's not covered by crystal sprite
                     container.bringToTop(costTextInfo.text);
@@ -964,10 +979,42 @@ export class PythiaWorkshopScene extends Phaser.Scene {
             this.scene.restart();
         } else {
             // Unowned pets: select for binding
-            voice(this, 'vo.pythia.bind', true);
             this.selectedPet = (this.selectedPet?.id === pet.id) ? null : pet;
             this.refreshUI();
+            if (this.selectedPet) {
+                const available = player.crystals?.crystals ?? [];
+                const required = pet.requiredAmulet;
+                const matching = available.some(crystal => !crystal.locked && crystal.tier === required.tier && crystal.value === required.value);
+                if (!matching) this.showMissingCrystal(pet);
+                else voice(this, 'vo.pythia.bind');
+            }
         }
+    }
+
+    private showMissingCrystal(pet: PetDefinition): void {
+        const player = this.gameState.getPlayer();
+        const required = pet.requiredAmulet;
+        const available = player.crystals?.crystals ?? [];
+        const tooSmall = !available.some(crystal => !crystal.locked && crystal.tier === required.tier && crystal.value >= required.value);
+        const frames: Record<string, number> = { shard: 1, fragment: 3, prism: 5 };
+        const gem = (value: number, frame = 1) => ({ texture: 'gemstone-icons', frame, value });
+        let before = [gem(Math.floor(required.value / 2)), gem(Math.ceil(required.value / 2))];
+        let equation = `${Math.floor(required.value / 2)} + ${Math.ceil(required.value / 2)} → ${required.value}`;
+        let after = [gem(required.value, frames[required.tier] ?? 1)];
+        if (required.tier === 'fragment') {
+            before = [gem(1), gem(1), gem(required.value - 2)];
+            equation = `1 + 1 + ${required.value - 2} → ${required.value}`;
+        } else if (required.tier === 'prism') {
+            before = [gem(10), gem(required.value + 10, 3)];
+            equation = `10 + ${required.value + 10} − 20 → ${required.value}`;
+        } else if (required.value === 1) {
+            before = [gem(2)]; after = [gem(1), gem(1)]; equation = '2 − 1 → 1';
+        }
+        new VisualGuide(this, this.sceneBuilder, [{
+            id: 'pythia.missingCrystal', title: 'DO KOVÁRNY',
+            voiceId: tooSmall && required.value > 1 ? 'vo.pythia.missingCrystal' : 'vo.pythia.exactCrystal',
+            before, after, equation,
+        }], false);
     }
 
     private isPetUnlocked(pet: PetDefinition, player: PlayerState): boolean {

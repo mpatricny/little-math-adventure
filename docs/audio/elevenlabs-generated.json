@@ -73,7 +73,7 @@
       "id": "reward.crystal",
       "kind": "sfx",
       "phase": "pilot",
-      "duration_seconds": 1.0,
+      "duration_seconds": 1,
       "prompt": "A small magical crystal acquired, delicate glass ping followed by a short sparkling shimmer. Warm rounded highs. Isolated, no voice or background music.",
       "loop": false,
       "trigger": "Převzetí běžného krystalu",
@@ -81,7 +81,7 @@
       "request": {
         "text": "A small magical crystal acquired, delicate glass ping followed by a short sparkling shimmer. Warm rounded highs. Isolated, no voice or background music.",
         "model_id": "eleven_text_to_sound_v2",
-        "duration_seconds": 1.0,
+        "duration_seconds": 1,
         "loop": false,
         "prompt_influence": 0.3
       },
@@ -490,7 +490,7 @@
       "id": "reward.milestone",
       "kind": "sfx",
       "phase": "P1",
-      "duration_seconds": 3.0,
+      "duration_seconds": 3,
       "prompt": "A short luminous crystal achievement flourish, rising warm glass tones opening into a gentle shimmer. Wholesome and restrained. Isolated, no voice or background track.",
       "loop": false,
       "trigger": "První významná odměna, nový region, lodní krystal",
@@ -498,7 +498,7 @@
       "request": {
         "text": "A short luminous crystal achievement flourish, rising warm glass tones opening into a gentle shimmer. Wholesome and restrained. Isolated, no voice or background track.",
         "model_id": "eleven_text_to_sound_v2",
-        "duration_seconds": 3.0,
+        "duration_seconds": 3,
         "loop": false,
         "prompt_influence": 0.3
       },
@@ -559,7 +559,7 @@
       "id": "combat.retreat",
       "kind": "sfx",
       "phase": "P1",
-      "duration_seconds": 1.0,
+      "duration_seconds": 1,
       "prompt": "A gentle settling magical exhale, neutral soft ending with a small warm tone. No sad trombone, failure buzzer, human voice or background music.",
       "loop": false,
       "trigger": "Prohra a návrat do bezpečí",
@@ -567,7 +567,7 @@
       "request": {
         "text": "A gentle settling magical exhale, neutral soft ending with a small warm tone. No sad trombone, failure buzzer, human voice or background music.",
         "model_id": "eleven_text_to_sound_v2",
-        "duration_seconds": 1.0,
+        "duration_seconds": 1,
         "loop": false,
         "prompt_influence": 0.3
       },
@@ -582,7 +582,7 @@
       "id": "prep.charge",
       "kind": "sfx",
       "phase": "P1",
-      "duration_seconds": 1.0,
+      "duration_seconds": 1,
       "prompt": "A small rune charging with a warm glass pulse and soft shimmer. Isolated one-shot, no electricity crack, voice or music.",
       "loop": false,
       "trigger": "Uložení přípravy meče/štítu",
@@ -590,7 +590,7 @@
       "request": {
         "text": "A small rune charging with a warm glass pulse and soft shimmer. Isolated one-shot, no electricity crack, voice or music.",
         "model_id": "eleven_text_to_sound_v2",
-        "duration_seconds": 1.0,
+        "duration_seconds": 1,
         "loop": false,
         "prompt_influence": 0.3
       },
@@ -904,7 +904,7 @@
       "id": "water.splash",
       "kind": "sfx",
       "phase": "P1",
-      "duration_seconds": 1.0,
+      "duration_seconds": 1,
       "prompt": "One gentle small splash entering calm water with a few bubbles, close and soft. Isolated, no voice, music or other ambience.",
       "loop": false,
       "trigger": "Vstup do vody",
@@ -912,7 +912,7 @@
       "request": {
         "text": "One gentle small splash entering calm water with a few bubbles, close and soft. Isolated, no voice, music or other ambience.",
         "model_id": "eleven_text_to_sound_v2",
-        "duration_seconds": 1.0,
+        "duration_seconds": 1,
         "loop": false,
         "prompt_influence": 0.3
       },
@@ -996,7 +996,7 @@
       "id": "water.bell",
       "kind": "sfx",
       "phase": "P1",
-      "duration_seconds": 2.0,
+      "duration_seconds": 2,
       "prompt": "One single mellow underwater bronze bell strike, rounded clear pitch and short soft resonance, no repeated ringing, no voice, music or ambience.",
       "loop": false,
       "trigger": "Herní zvon/získaná nota",
@@ -1004,7 +1004,7 @@
       "request": {
         "text": "One single mellow underwater bronze bell strike, rounded clear pitch and short soft resonance, no repeated ringing, no voice, music or ambience.",
         "model_id": "eleven_text_to_sound_v2",
-        "duration_seconds": 2.0,
+        "duration_seconds": 2,
         "loop": false,
         "prompt_influence": 0.3
       },
@@ -2294,6 +2294,481 @@
       "status": "generated_not_listened",
       "integrated": false,
       "sha256": "bed16bff9ea0d4bc960cd052fd69938c27eb4805500f87498e598fb03364d051"
+    },
+    {
+      "id": "vo.level.intro",
+      "kind": "voice",
+      "phase": "playtest",
+      "role": "Zyx",
+      "text": "Vyber, s jakými čísly chceš začít. Potom stiskni zelenou šipku.",
+      "voice_id": "bIHbv24MWmeRgasZH58o",
+      "model_id": "eleven_multilingual_v2",
+      "trigger": "Playtest: nový krok nebo názorná ukázka",
+      "file": "public/assets/audio/incoming/elevenlabs/voice/vo.level.intro.mp3",
+      "request": {
+        "text": "Vyber, s jakými čísly chceš začít. Potom stiskni zelenou šipku.",
+        "model_id": "eleven_multilingual_v2",
+        "language_code": "cs",
+        "voice_settings": {
+          "stability": 0.5,
+          "similarity_boost": 0.75
+        }
+      },
+      "created_at": "2026-09-24T09:12:06.357018+00:00",
+      "reported_credit_cost": "32",
+      "bytes": 71515,
+      "status": "generated_not_listened",
+      "integrated": true
+    },
+    {
+      "id": "vo.level.five",
+      "kind": "voice",
+      "phase": "playtest",
+      "role": "Zyx",
+      "text": "Počítání do pěti.",
+      "voice_id": "bIHbv24MWmeRgasZH58o",
+      "model_id": "eleven_multilingual_v2",
+      "trigger": "Playtest: nový krok nebo názorná ukázka",
+      "file": "public/assets/audio/incoming/elevenlabs/voice/vo.level.five.mp3",
+      "request": {
+        "text": "Počítání do pěti.",
+        "model_id": "eleven_multilingual_v2",
+        "language_code": "cs",
+        "voice_settings": {
+          "stability": 0.5,
+          "similarity_boost": 0.75
+        }
+      },
+      "created_at": "2026-09-24T09:12:09.591973+00:00",
+      "reported_credit_cost": "8",
+      "bytes": 25539,
+      "status": "generated_not_listened",
+      "integrated": true
+    },
+    {
+      "id": "vo.level.eight",
+      "kind": "voice",
+      "phase": "playtest",
+      "role": "Zyx",
+      "text": "Počítání do osmi.",
+      "voice_id": "bIHbv24MWmeRgasZH58o",
+      "model_id": "eleven_multilingual_v2",
+      "trigger": "Playtest: nový krok nebo názorná ukázka",
+      "file": "public/assets/audio/incoming/elevenlabs/voice/vo.level.eight.mp3",
+      "request": {
+        "text": "Počítání do osmi.",
+        "model_id": "eleven_multilingual_v2",
+        "language_code": "cs",
+        "voice_settings": {
+          "stability": 0.5,
+          "similarity_boost": 0.75
+        }
+      },
+      "created_at": "2026-09-24T09:12:12.837886+00:00",
+      "reported_credit_cost": "8",
+      "bytes": 24285,
+      "status": "generated_not_listened",
+      "integrated": true
+    },
+    {
+      "id": "vo.level.ten",
+      "kind": "voice",
+      "phase": "playtest",
+      "role": "Zyx",
+      "text": "Počítání do deseti.",
+      "voice_id": "bIHbv24MWmeRgasZH58o",
+      "model_id": "eleven_multilingual_v2",
+      "trigger": "Playtest: nový krok nebo názorná ukázka",
+      "file": "public/assets/audio/incoming/elevenlabs/voice/vo.level.ten.mp3",
+      "request": {
+        "text": "Počítání do deseti.",
+        "model_id": "eleven_multilingual_v2",
+        "language_code": "cs",
+        "voice_settings": {
+          "stability": 0.5,
+          "similarity_boost": 0.75
+        }
+      },
+      "created_at": "2026-09-24T09:12:15.935033+00:00",
+      "reported_credit_cost": "10",
+      "bytes": 24703,
+      "status": "generated_not_listened",
+      "integrated": true
+    },
+    {
+      "id": "vo.level.twenty",
+      "kind": "voice",
+      "phase": "playtest",
+      "role": "Zyx",
+      "text": "Počítání do dvaceti, bez přechodu přes desítku.",
+      "voice_id": "bIHbv24MWmeRgasZH58o",
+      "model_id": "eleven_multilingual_v2",
+      "trigger": "Playtest: nový krok nebo názorná ukázka",
+      "file": "public/assets/audio/incoming/elevenlabs/voice/vo.level.twenty.mp3",
+      "request": {
+        "text": "Počítání do dvaceti, bez přechodu přes desítku.",
+        "model_id": "eleven_multilingual_v2",
+        "language_code": "cs",
+        "voice_settings": {
+          "stability": 0.5,
+          "similarity_boost": 0.75
+        }
+      },
+      "created_at": "2026-09-24T09:12:19.233960+00:00",
+      "reported_credit_cost": "24",
+      "bytes": 51453,
+      "status": "generated_not_listened",
+      "integrated": true
+    },
+    {
+      "id": "vo.level.crossing",
+      "kind": "voice",
+      "phase": "playtest",
+      "role": "Zyx",
+      "text": "Počítání do dvaceti, i přes desítku.",
+      "voice_id": "bIHbv24MWmeRgasZH58o",
+      "model_id": "eleven_multilingual_v2",
+      "trigger": "Playtest: nový krok nebo názorná ukázka",
+      "file": "public/assets/audio/incoming/elevenlabs/voice/vo.level.crossing.mp3",
+      "request": {
+        "text": "Počítání do dvaceti, i přes desítku.",
+        "model_id": "eleven_multilingual_v2",
+        "language_code": "cs",
+        "voice_settings": {
+          "stability": 0.5,
+          "similarity_boost": 0.75
+        }
+      },
+      "created_at": "2026-09-24T09:12:22.440452+00:00",
+      "reported_credit_cost": "18",
+      "bytes": 44765,
+      "status": "generated_not_listened",
+      "integrated": true
+    },
+    {
+      "id": "vo.battle.sword",
+      "kind": "voice",
+      "phase": "playtest",
+      "role": "Zyx",
+      "text": "Klikni na meč. Pak spočítej příklad.",
+      "voice_id": "bIHbv24MWmeRgasZH58o",
+      "model_id": "eleven_multilingual_v2",
+      "trigger": "Playtest: nový krok nebo názorná ukázka",
+      "file": "public/assets/audio/incoming/elevenlabs/voice/vo.battle.sword.mp3",
+      "request": {
+        "text": "Klikni na meč. Pak spočítej příklad.",
+        "model_id": "eleven_multilingual_v2",
+        "language_code": "cs",
+        "voice_settings": {
+          "stability": 0.5,
+          "similarity_boost": 0.75
+        }
+      },
+      "created_at": "2026-09-24T09:12:25.694537+00:00",
+      "reported_credit_cost": "18",
+      "bytes": 41004,
+      "status": "generated_not_listened",
+      "integrated": true
+    },
+    {
+      "id": "vo.arena.free",
+      "kind": "voice",
+      "phase": "playtest",
+      "role": "Zyx",
+      "text": "V aréně je spousta zmatených tvorů. Pomoz je osvobodit! Čeká tě pět kol.",
+      "voice_id": "bIHbv24MWmeRgasZH58o",
+      "model_id": "eleven_multilingual_v2",
+      "trigger": "Playtest: nový krok nebo názorná ukázka",
+      "file": "public/assets/audio/incoming/elevenlabs/voice/vo.arena.free.mp3",
+      "request": {
+        "text": "V aréně je spousta zmatených tvorů. Pomoz je osvobodit! Čeká tě pět kol.",
+        "model_id": "eleven_multilingual_v2",
+        "language_code": "cs",
+        "voice_settings": {
+          "stability": 0.5,
+          "similarity_boost": 0.75
+        }
+      },
+      "created_at": "2026-09-24T09:12:29.106956+00:00",
+      "reported_credit_cost": "36",
+      "bytes": 91159,
+      "status": "generated_not_listened",
+      "integrated": true
+    },
+    {
+      "id": "vo.guide.shop.intro",
+      "kind": "voice",
+      "phase": "playtest",
+      "role": "Zyx",
+      "text": "Tady si můžeš koupit lepší meče a štíty. Vyber si výbavu a přesuň správný počet mincí na tác.",
+      "voice_id": "bIHbv24MWmeRgasZH58o",
+      "model_id": "eleven_multilingual_v2",
+      "trigger": "Playtest: nový krok nebo názorná ukázka",
+      "file": "public/assets/audio/incoming/elevenlabs/voice/vo.guide.shop.intro.mp3",
+      "request": {
+        "text": "Tady si můžeš koupit lepší meče a štíty. Vyber si výbavu a přesuň správný počet mincí na tác.",
+        "model_id": "eleven_multilingual_v2",
+        "language_code": "cs",
+        "voice_settings": {
+          "stability": 0.5,
+          "similarity_boost": 0.75
+        }
+      },
+      "created_at": "2026-09-24T09:12:32.642663+00:00",
+      "reported_credit_cost": "46",
+      "bytes": 105787,
+      "status": "generated_not_listened",
+      "integrated": true
+    },
+    {
+      "id": "vo.guide.shop.sword",
+      "kind": "voice",
+      "phase": "playtest",
+      "role": "Zyx",
+      "text": "Svůj meč můžeš nabrousit počítáním. Získáš až tři runy. Každá posílí jeden úspěšný útok o jedna. Pak si meč můžeš nabrousit znovu.",
+      "voice_id": "bIHbv24MWmeRgasZH58o",
+      "model_id": "eleven_multilingual_v2",
+      "trigger": "Playtest: nový krok nebo názorná ukázka",
+      "file": "public/assets/audio/incoming/elevenlabs/voice/vo.guide.shop.sword.mp3",
+      "request": {
+        "text": "Svůj meč můžeš nabrousit počítáním. Získáš až tři runy. Každá posílí jeden úspěšný útok o jedna. Pak si meč můžeš nabrousit znovu.",
+        "model_id": "eleven_multilingual_v2",
+        "language_code": "cs",
+        "voice_settings": {
+          "stability": 0.5,
+          "similarity_boost": 0.75
+        }
+      },
+      "created_at": "2026-09-24T09:12:36.423214+00:00",
+      "reported_credit_cost": "65",
+      "bytes": 143822,
+      "status": "generated_not_listened",
+      "integrated": true
+    },
+    {
+      "id": "vo.guide.shop.shield",
+      "kind": "voice",
+      "phase": "playtest",
+      "role": "Zyx",
+      "text": "Svůj štít můžeš nabít počítáním. Získáš až tři runy. Každá zachytí jedno poškození navíc. Pak si štít můžeš nabít znovu.",
+      "voice_id": "bIHbv24MWmeRgasZH58o",
+      "model_id": "eleven_multilingual_v2",
+      "trigger": "Playtest: nový krok nebo názorná ukázka",
+      "file": "public/assets/audio/incoming/elevenlabs/voice/vo.guide.shop.shield.mp3",
+      "request": {
+        "text": "Svůj štít můžeš nabít počítáním. Získáš až tři runy. Každá zachytí jedno poškození navíc. Pak si štít můžeš nabít znovu.",
+        "model_id": "eleven_multilingual_v2",
+        "language_code": "cs",
+        "voice_settings": {
+          "stability": 0.5,
+          "similarity_boost": 0.75
+        }
+      },
+      "created_at": "2026-09-24T09:12:40.233452+00:00",
+      "reported_credit_cost": "60",
+      "bytes": 155524,
+      "status": "generated_not_listened",
+      "integrated": true
+    },
+    {
+      "id": "vo.pythia.missingCrystal",
+      "kind": "voice",
+      "phase": "playtest",
+      "role": "Pythia",
+      "text": "Zatím nemáš takhle velký krystal. V krystalové kovárně si ho můžeš vyrobit z menších krystalů.",
+      "voice_id": "pFZP5JQG7iQjIQuC4Bku",
+      "model_id": "eleven_multilingual_v2",
+      "trigger": "Playtest: nový krok nebo názorná ukázka",
+      "file": "public/assets/audio/incoming/elevenlabs/voice/vo.pythia.missingCrystal.mp3",
+      "request": {
+        "text": "Zatím nemáš takhle velký krystal. V krystalové kovárně si ho můžeš vyrobit z menších krystalů.",
+        "model_id": "eleven_multilingual_v2",
+        "language_code": "cs",
+        "voice_settings": {
+          "stability": 0.5,
+          "similarity_boost": 0.75
+        }
+      },
+      "created_at": "2026-09-24T09:12:43.978443+00:00",
+      "reported_credit_cost": "47",
+      "bytes": 89487,
+      "status": "generated_not_listened",
+      "integrated": true
+    },
+    {
+      "id": "vo.pythia.exactCrystal",
+      "kind": "voice",
+      "phase": "playtest",
+      "role": "Pythia",
+      "text": "Tenhle kamarád potřebuje krystal se stejným číslem i tvarem. Krystal si můžeš upravit v krystalové kovárně.",
+      "voice_id": "pFZP5JQG7iQjIQuC4Bku",
+      "model_id": "eleven_multilingual_v2",
+      "trigger": "Playtest: nový krok nebo názorná ukázka",
+      "file": "public/assets/audio/incoming/elevenlabs/voice/vo.pythia.exactCrystal.mp3",
+      "request": {
+        "text": "Tenhle kamarád potřebuje krystal se stejným číslem i tvarem. Krystal si můžeš upravit v krystalové kovárně.",
+        "model_id": "eleven_multilingual_v2",
+        "language_code": "cs",
+        "voice_settings": {
+          "stability": 0.5,
+          "similarity_boost": 0.75
+        }
+      },
+      "created_at": "2026-09-24T09:12:47.455423+00:00",
+      "reported_credit_cost": "54",
+      "bytes": 117908,
+      "status": "generated_not_listened",
+      "integrated": true
+    },
+    {
+      "id": "vo.guide.forge.merge",
+      "kind": "voice",
+      "phase": "playtest",
+      "role": "Pythia",
+      "text": "Tady můžeš spojovat krystaly. Dva a tři dají dohromady pět. Ze dvou menších krystalů vznikne jeden větší. Vyber krystaly, stiskni spojit a spočítej příklad.",
+      "voice_id": "pFZP5JQG7iQjIQuC4Bku",
+      "model_id": "eleven_multilingual_v2",
+      "trigger": "Playtest: nový krok nebo názorná ukázka",
+      "file": "public/assets/audio/incoming/elevenlabs/voice/vo.guide.forge.merge.mp3",
+      "request": {
+        "text": "Tady můžeš spojovat krystaly. Dva a tři dají dohromady pět. Ze dvou menších krystalů vznikne jeden větší. Vyber krystaly, stiskni spojit a spočítej příklad.",
+        "model_id": "eleven_multilingual_v2",
+        "language_code": "cs",
+        "voice_settings": {
+          "stability": 0.5,
+          "similarity_boost": 0.75
+        }
+      },
+      "created_at": "2026-09-24T09:12:51.350580+00:00",
+      "reported_credit_cost": "78",
+      "bytes": 173497,
+      "status": "generated_not_listened",
+      "integrated": true
+    },
+    {
+      "id": "vo.guide.forge.split",
+      "kind": "voice",
+      "phase": "playtest",
+      "role": "Pythia",
+      "text": "Tady můžeš krystal rozdělit na dva menší. Z pěti oddělíme dva a zůstanou tři. Vyber krystal, nastav velikost oddělené části a spočítej, kolik zbude.",
+      "voice_id": "pFZP5JQG7iQjIQuC4Bku",
+      "model_id": "eleven_multilingual_v2",
+      "trigger": "Playtest: nový krok nebo názorná ukázka",
+      "file": "public/assets/audio/incoming/elevenlabs/voice/vo.guide.forge.split.mp3",
+      "request": {
+        "text": "Tady můžeš krystal rozdělit na dva menší. Z pěti oddělíme dva a zůstanou tři. Vyber krystal, nastav velikost oddělené části a spočítej, kolik zbude.",
+        "model_id": "eleven_multilingual_v2",
+        "language_code": "cs",
+        "voice_settings": {
+          "stability": 0.5,
+          "similarity_boost": 0.75
+        }
+      },
+      "created_at": "2026-09-24T09:12:55.354044+00:00",
+      "reported_credit_cost": "74",
+      "bytes": 196484,
+      "status": "generated_not_listened",
+      "integrated": true
+    },
+    {
+      "id": "vo.guide.forge.fragment",
+      "kind": "voice",
+      "phase": "playtest",
+      "role": "Pythia",
+      "text": "Nově můžeš spojit tři malé krystaly do fragmentu. Sečti jejich čísla. Dva, tři a čtyři dají dohromady devět.",
+      "voice_id": "pFZP5JQG7iQjIQuC4Bku",
+      "model_id": "eleven_multilingual_v2",
+      "trigger": "Playtest: nový krok nebo názorná ukázka",
+      "file": "public/assets/audio/incoming/elevenlabs/voice/vo.guide.forge.fragment.mp3",
+      "request": {
+        "text": "Nově můžeš spojit tři malé krystaly do fragmentu. Sečti jejich čísla. Dva, tři a čtyři dají dohromady devět.",
+        "model_id": "eleven_multilingual_v2",
+        "language_code": "cs",
+        "voice_settings": {
+          "stability": 0.5,
+          "similarity_boost": 0.75
+        }
+      },
+      "created_at": "2026-09-24T09:12:58.959194+00:00",
+      "reported_credit_cost": "54",
+      "bytes": 127521,
+      "status": "generated_not_listened",
+      "integrated": true
+    },
+    {
+      "id": "vo.guide.forge.splitFragment",
+      "kind": "voice",
+      "phase": "playtest",
+      "role": "Pythia",
+      "text": "Fragment můžeš rozdělit na tři malé krystaly. Z devíti oddělíme dva a tři. Zůstanou čtyři.",
+      "voice_id": "pFZP5JQG7iQjIQuC4Bku",
+      "model_id": "eleven_multilingual_v2",
+      "trigger": "Playtest: nový krok nebo názorná ukázka",
+      "file": "public/assets/audio/incoming/elevenlabs/voice/vo.guide.forge.splitFragment.mp3",
+      "request": {
+        "text": "Fragment můžeš rozdělit na tři malé krystaly. Z devíti oddělíme dva a tři. Zůstanou čtyři.",
+        "model_id": "eleven_multilingual_v2",
+        "language_code": "cs",
+        "voice_settings": {
+          "stability": 0.5,
+          "similarity_boost": 0.75
+        }
+      },
+      "created_at": "2026-09-24T09:13:03.033898+00:00",
+      "reported_credit_cost": "45",
+      "bytes": 96174,
+      "status": "generated_not_listened",
+      "integrated": true
+    },
+    {
+      "id": "vo.guide.forge.refine",
+      "kind": "voice",
+      "phase": "playtest",
+      "role": "Pythia",
+      "text": "Tady můžeš odseknout kousek fragmentu nebo prizmatu. Z devíti odsekneme tři. Zbude šest a vedle vznikne malý krystal o síle tři.",
+      "voice_id": "pFZP5JQG7iQjIQuC4Bku",
+      "model_id": "eleven_multilingual_v2",
+      "trigger": "Playtest: nový krok nebo názorná ukázka",
+      "file": "public/assets/audio/incoming/elevenlabs/voice/vo.guide.forge.refine.mp3",
+      "request": {
+        "text": "Tady můžeš odseknout kousek fragmentu nebo prizmatu. Z devíti odsekneme tři. Zbude šest a vedle vznikne malý krystal o síle tři.",
+        "model_id": "eleven_multilingual_v2",
+        "language_code": "cs",
+        "voice_settings": {
+          "stability": 0.5,
+          "similarity_boost": 0.75
+        }
+      },
+      "created_at": "2026-09-24T09:13:07.131503+00:00",
+      "reported_credit_cost": "64",
+      "bytes": 144657,
+      "status": "generated_not_listened",
+      "integrated": true
+    },
+    {
+      "id": "vo.guide.forge.prism",
+      "kind": "voice",
+      "phase": "playtest",
+      "role": "Pythia",
+      "text": "Spoj malý krystal a fragment. Oba musí mít alespoň deset. Sečti jejich čísla a odečti dvacet. Z dvanácti a třinácti vznikne prizma o síle pět.",
+      "voice_id": "pFZP5JQG7iQjIQuC4Bku",
+      "model_id": "eleven_multilingual_v2",
+      "trigger": "Playtest: nový krok nebo názorná ukázka",
+      "file": "public/assets/audio/incoming/elevenlabs/voice/vo.guide.forge.prism.mp3",
+      "request": {
+        "text": "Spoj malý krystal a fragment. Oba musí mít alespoň deset. Sečti jejich čísla a odečti dvacet. Z dvanácti a třinácti vznikne prizma o síle pět.",
+        "model_id": "eleven_multilingual_v2",
+        "language_code": "cs",
+        "voice_settings": {
+          "stability": 0.5,
+          "similarity_boost": 0.75
+        }
+      },
+      "created_at": "2026-09-24T09:13:11.188327+00:00",
+      "reported_credit_cost": "71",
+      "bytes": 191469,
+      "status": "generated_not_listened",
+      "integrated": true
     }
   ],
   "in_flight": null

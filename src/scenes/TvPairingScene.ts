@@ -87,7 +87,8 @@ export class TvPairingScene extends Phaser.Scene {
             .setDepth(panel.depth)
             .setStrokeStyle(3, 0xfacc15);
 
-        this.titleText = this.add.text(title.x, title.y, 'Little Math Adventure TV', {
+        this.titleText = this.add.text(title.x, title.y, 'Číslokraj TV', {
+            resolution: 2,
             fontSize: '42px',
             fontFamily: 'Arial, sans-serif',
             color: '#facc15',
@@ -357,7 +358,7 @@ export class TvPairingScene extends Phaser.Scene {
             : 'Ovladač zatím není připojený, ale stránka si tento stav načte po připojení.';
         const state: RemoteControllerState = {
             screen: 'home',
-            title: 'Little Math Adventure',
+            title: 'Číslokraj',
             subtitle,
             actions: [
                 {

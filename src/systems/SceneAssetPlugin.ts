@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import sceneAssets from 'virtual:scene-assets';
 import { TexturesFile } from '../types/assets';
+import { assetPreparation, queueTexture } from '../loading/AssetPreparation';
 
 type AnimationDefinition = {
     texture: string;
@@ -39,11 +40,13 @@ export class SceneAssetPlugin extends Phaser.Plugins.ScenePlugin {
         const originalCreate = (scene as Phaser.Scene & { create?: (data: unknown) => void }).create;
         Object.assign(scene, {
             preload: () => {
+                assetPreparation(scene.game).entering(scene.sys.settings.key);
                 this.queueSceneTextures();
                 originalPreload?.call(scene);
             },
             create: (data: unknown) => {
                 registerLoadedAnimations(scene);
+                scene.events.once(Phaser.Scenes.Events.CREATE, () => assetPreparation(scene.game).ready(scene));
                 originalCreate?.call(scene, data);
             },
         });
@@ -83,14 +86,7 @@ export class SceneAssetPlugin extends Phaser.Plugins.ScenePlugin {
             addDynamic(scene.cache.json.get('pets'));
         }
         for (const key of required) {
-            if (scene.textures.exists(key)) continue;
-            const sheet = catalog.spritesheets[key];
-            const file = sheet?.path ?? catalog.images[key];
-            if (!file) continue;
-            const url = file.startsWith('library:') ? `assets/library/${file.slice(8)}` : `assets/${file}`;
-            if (sheet?.frameWidth && sheet.frameHeight) {
-                scene.load.spritesheet(key, url, { frameWidth: sheet.frameWidth, frameHeight: sheet.frameHeight });
-            } else scene.load.image(key, url);
+            queueTexture(scene, key, catalog);
         }
     }
 }

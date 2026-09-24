@@ -1,381 +1,381 @@
 {
     "version": "1.0",
     "spritesheets": {
-      "silverpond-depth-guardian-friendly-idle-sheet": {
-        "path": "sprites/silverpond/depth-guardian-friendly-idle.webp",
-        "frameWidth": 512,
-        "frameHeight": 512,
-        "frameCount": 13
-      },
-      "knight-idle-sheet": {
-        "path": "sprites/knight-idle.webp",
-        "frameWidth": 200,
-        "frameHeight": 200
-      },
-      "knight-attack-sheet": {
-        "path": "sprites/knight-attack.webp",
-        "frameWidth": 200,
-        "frameHeight": 200
-      },
-      "boy-knight-idle-sheet": {
-        "path": "sprites/boy-knight-idle.webp",
-        "frameWidth": 200,
-        "frameHeight": 200
-      },
-      "boy-knight-attack-sheet": {
-        "path": "sprites/boy-knight-attack.webp",
-        "frameWidth": 200,
-        "frameHeight": 200
-      },
-      "slime-sheet": {
-        "path": "sprites/slime.webp",
-        "frameWidth": 200,
-        "frameHeight": 200
-      },
-      "pink-idle-sheet": {
-        "path": "sprites/pink-idle.webp",
-        "frameWidth": 210,
-        "frameHeight": 200
-      },
-      "pink-attack-sheet": {
-        "path": "sprites/pink-attack.webp",
-        "frameWidth": 213,
-        "frameHeight": 200
-      },
-      "pink-hit-sheet": {
-        "path": "sprites/pink-hit.webp",
-        "frameWidth": 210,
-        "frameHeight": 200
-      },
-      "purple-attack-sheet": {
-        "path": "sprites/Purple-attack.webp",
-        "frameWidth": 187,
-        "frameHeight": 200
-      },
-      "purple-hit-sheet": {
-        "path": "sprites/purple-hit-fall.webp",
-        "frameWidth": 200,
-        "frameHeight": 200
-      },
-      "leafy-idle-sheet": {
-        "path": "sprites/leafy-idle.webp",
-        "frameWidth": 220,
-        "frameHeight": 200
-      },
-      "leafy-attack-sheet": {
-        "path": "sprites/leafy-attack.webp",
-        "frameWidth": 220,
-        "frameHeight": 200
-      },
-      "leafy-hit-sheet": {
-        "path": "sprites/leafy-hit.webp",
-        "frameWidth": 217,
-        "frameHeight": 200
-      },
-      "silverpond-frog-enemy-idle-sheet": {
-        "path": "sprites/silverpond/frog-enemy-idle.webp",
-        "frameWidth": 512,
-        "frameHeight": 512
-      },
-      "silverpond-bubble-crab-idle-sheet": {
-        "path": "sprites/silverpond/bubble-crab-idle.webp",
-        "frameWidth": 512,
-        "frameHeight": 512,
-        "frameCount": 13
-      },
-      "silverpond-bubble-crab-attack-sheet": {
-        "path": "sprites/silverpond/bubble-crab-attack.webp",
-        "frameWidth": 512,
-        "frameHeight": 512,
-        "frameCount": 7
-      },
-      "silverpond-bubble-crab-defend-sheet": {
-        "path": "sprites/silverpond/bubble-crab-defend.webp",
-        "frameWidth": 512,
-        "frameHeight": 512,
-        "frameCount": 7
-      },
-      "silverpond-bubble-crab-defeat-sheet": {
-        "path": "sprites/silverpond/bubble-crab-defeat.webp",
-        "frameWidth": 512,
-        "frameHeight": 512,
-        "frameCount": 7
-      },
-      "silverpond-bubble-fish-idle-sheet": {
-        "path": "sprites/silverpond/bubble-fish-idle.webp",
-        "frameWidth": 512,
-        "frameHeight": 512,
-        "frameCount": 13
-      },
-      "silverpond-bubble-fish-attack-sheet": {
-        "path": "sprites/silverpond/bubble-fish-attack.webp",
-        "frameWidth": 512,
-        "frameHeight": 512,
-        "frameCount": 7
-      },
-      "silverpond-bubble-fish-defend-sheet": {
-        "path": "sprites/silverpond/bubble-fish-defend.webp",
-        "frameWidth": 512,
-        "frameHeight": 512,
-        "frameCount": 7
-      },
-      "silverpond-bubble-fish-defeat-sheet": {
-        "path": "sprites/silverpond/bubble-fish-defeat.webp",
-        "frameWidth": 512,
-        "frameHeight": 512,
-        "frameCount": 7
-      },
-      "silverpond-mill-turtle-idle-sheet": {
-        "path": "sprites/silverpond/mill-turtle-idle.webp",
-        "frameWidth": 512,
-        "frameHeight": 512,
-        "frameCount": 13
-      },
-      "silverpond-mill-turtle-attack-sheet": {
-        "path": "sprites/silverpond/mill-turtle-attack.webp",
-        "frameWidth": 512,
-        "frameHeight": 512,
-        "frameCount": 7
-      },
-      "silverpond-mill-turtle-defend-sheet": {
-        "path": "sprites/silverpond/mill-turtle-defend.webp",
-        "frameWidth": 512,
-        "frameHeight": 512,
-        "frameCount": 7
-      },
-      "silverpond-mill-turtle-defeat-sheet": {
-        "path": "sprites/silverpond/mill-turtle-defeat.webp",
-        "frameWidth": 512,
-        "frameHeight": 512,
-        "frameCount": 7
-      },
-      "silverpond-ruin-axolotl-idle-sheet": {
-        "path": "sprites/silverpond/ruin-axolotl-idle.webp",
-        "frameWidth": 512,
-        "frameHeight": 512,
-        "frameCount": 13
-      },
-      "silverpond-ruin-axolotl-attack-sheet": {
-        "path": "sprites/silverpond/ruin-axolotl-attack.webp",
-        "frameWidth": 512,
-        "frameHeight": 512,
-        "frameCount": 7
-      },
-      "silverpond-ruin-axolotl-defend-sheet": {
-        "path": "sprites/silverpond/ruin-axolotl-defend.webp",
-        "frameWidth": 512,
-        "frameHeight": 512,
-        "frameCount": 7
-      },
-      "silverpond-ruin-axolotl-defeat-sheet": {
-        "path": "sprites/silverpond/ruin-axolotl-defeat.webp",
-        "frameWidth": 512,
-        "frameHeight": 512,
-        "frameCount": 7
-      },
-      "silverpond-lake-fairy-idle-sheet": {
-        "path": "sprites/silverpond/lake-fairy-idle.webp",
-        "frameWidth": 512,
-        "frameHeight": 512,
-        "frameCount": 15
-      },
-      "silverpond-lake-fairy-give-sheet": {
-        "path": "sprites/silverpond/lake-fairy-give.webp",
-        "frameWidth": 512,
-        "frameHeight": 512,
-        "frameCount": 8
-      },
-      "hint-items-sheet": {
-        "path": "sprites/hint-items.webp",
-        "frameWidth": 200,
-        "frameHeight": 200
-      },
-      "shop-coins-sheet": {
-        "path": "town/shop/coins.webp",
-        "frameWidth": 239,
-        "frameHeight": 241
-      },
-      "shop-swords-sheet": {
-        "path": "town/shop/sword-set.webp",
-        "frameWidth": 239,
-        "frameHeight": 300
-      },
-      "shop-shields-sheet": {
-        "path": "town/shop/shield-set.webp",
-        "frameWidth": 260,
-        "frameHeight": 232
-      },
-      "pet-porcupine-sheet": {
-        "path": "sprites/pets/pet-porcupine.webp",
-        "frameWidth": 200,
-        "frameHeight": 200
-      },
-      "pet-porcupine-2": {
-        "path": "sprites/spritesheet (23).webp",
-        "frameWidth": 200,
-        "frameHeight": 200
-      },
-      "boy-knight-walk-sheet": {
-        "path": "sprites/boy-knight-walk.webp",
-        "frameWidth": 200,
-        "frameHeight": 200
-      },
-      "girl-knight-walk-sheet": {
-        "path": "sprites/girl-knight-walk.webp",
-        "frameWidth": 200,
-        "frameHeight": 200
-      },
-      "girl-knight-def-sheet": {
-        "path": "sprites/girl-knight-def.webp",
-        "frameWidth": 200,
-        "frameHeight": 200
-      },
-      "gemstone-icons": {
-        "path": "library:originals/ccc479d2-b77f0473.webp",
-        "frameWidth": 137,
-        "frameHeight": 146
-      },
-      "gemstone-icons-cropped-cropped": {
-        "path": "library:originals/57142073-ccfbbb47.webp",
-        "frameWidth": 132,
-        "frameHeight": 139,
-        "frameCount": 6,
-        "frameNames": [
-          "frame-0-T1-badge",
-          "frame-1-T1",
-          "frame-2-T2-badge",
-          "frame-3-T2",
-          "frame-4-T3-badge",
-          "frame-5-T3"
-        ]
-      },
-      "spritesheet-zyx-sheet": {
-        "path": "sprites/spritesheet-zyx.webp",
-        "frameWidth": 512,
-        "frameHeight": 512
-      },
-      "spritesheet-zyx-transparent2-sheet": {
-        "path": "sprites/spritesheet-zyx-transparent2.webp",
-        "frameWidth": 341,
-        "frameHeight": 341
-      },
-      "wolves-only-transparent-sheet": {
-        "path": "sprites/wolves_only_transparent.webp",
-        "frameWidth": 455,
-        "frameHeight": 256
-      },
-      "spritesheet--36--sheet": {
-        "path": "sprites/spritesheet (36).webp",
-        "frameWidth": 512,
-        "frameHeight": 512
-      },
-      "spritesheet--37--sheet": {
-        "path": "sprites/spritesheet (37).webp",
-        "frameWidth": 512,
-        "frameHeight": 512
-      },
-      "spritesheet--38--sheet": {
-        "path": "sprites/spritesheet (38).webp",
-        "frameWidth": 512,
-        "frameHeight": 512
-      },
-      "spritesheet--39--sheet": {
-        "path": "sprites/spritesheet (39).webp",
-        "frameWidth": 512,
-        "frameHeight": 512
-      },
-      "spritesheet--40--sheet": {
-        "path": "sprites/spritesheet (40).webp",
-        "frameWidth": 512,
-        "frameHeight": 512
-      },
-      "rune-fox-sheet": {
-        "path": "sprites/catacombs/rune-fox-compact.png",
-        "frameWidth": 512,
-        "frameHeight": 512
-      },
-      "silverpond-pearl-jellyfish-idle-sheet": {
-        "path": "sprites/silverpond/pearl-jellyfish-idle.webp",
-        "frameWidth": 512,
-        "frameHeight": 512,
-        "frameCount": 13
-      },
-      "silverpond-pearl-jellyfish-attack-sheet": {
-        "path": "sprites/silverpond/pearl-jellyfish-attack.webp",
-        "frameWidth": 512,
-        "frameHeight": 512,
-        "frameCount": 9
-      },
-      "silverpond-pearl-jellyfish-defend-sheet": {
-        "path": "sprites/silverpond/pearl-jellyfish-defend.webp",
-        "frameWidth": 512,
-        "frameHeight": 512,
-        "frameCount": 7
-      },
-      "silverpond-pearl-jellyfish-defeat-sheet": {
-        "path": "sprites/silverpond/pearl-jellyfish-defeat.webp",
-        "frameWidth": 512,
-        "frameHeight": 512,
-        "frameCount": 9
-      },
-      "silverpond-depth-guardian-idle-sheet": {
-        "path": "sprites/silverpond/depth-guardian-idle.webp",
-        "frameWidth": 512,
-        "frameHeight": 512,
-        "frameCount": 13
-      },
-      "silverpond-depth-guardian-attack-sheet": {
-        "path": "sprites/silverpond/depth-guardian-attack.webp",
-        "frameWidth": 512,
-        "frameHeight": 512,
-        "frameCount": 9
-      },
-      "silverpond-depth-guardian-attack-tide-sheet": {
-        "path": "sprites/silverpond/depth-guardian-attack-tide.webp",
-        "frameWidth": 512,
-        "frameHeight": 512,
-        "frameCount": 9
-      },
-      "silverpond-depth-guardian-attack-crystal-sheet": {
-        "path": "sprites/silverpond/depth-guardian-attack-crystal.webp",
-        "frameWidth": 512,
-        "frameHeight": 512,
-        "frameCount": 13
-      },
-      "silverpond-depth-guardian-defend-sheet": {
-        "path": "sprites/silverpond/depth-guardian-defend.webp",
-        "frameWidth": 512,
-        "frameHeight": 512,
-        "frameCount": 7
-      },
-      "silverpond-depth-guardian-defeat-sheet": {
-        "path": "sprites/silverpond/depth-guardian-defeat.webp",
-        "frameWidth": 512,
-        "frameHeight": 512,
-        "frameCount": 9
-      }
+        "silverpond-depth-guardian-friendly-idle-sheet": {
+            "path": "sprites/silverpond/depth-guardian-friendly-idle.webp",
+            "frameWidth": 512,
+            "frameHeight": 512,
+            "frameCount": 13
+        },
+        "knight-idle-sheet": {
+            "path": "sprites/knight-idle.webp",
+            "frameWidth": 200,
+            "frameHeight": 200
+        },
+        "knight-attack-sheet": {
+            "path": "sprites/knight-attack.webp",
+            "frameWidth": 200,
+            "frameHeight": 200
+        },
+        "boy-knight-idle-sheet": {
+            "path": "sprites/boy-knight-idle.webp",
+            "frameWidth": 200,
+            "frameHeight": 200
+        },
+        "boy-knight-attack-sheet": {
+            "path": "sprites/boy-knight-attack.webp",
+            "frameWidth": 200,
+            "frameHeight": 200
+        },
+        "slime-sheet": {
+            "path": "sprites/slime.webp",
+            "frameWidth": 200,
+            "frameHeight": 200
+        },
+        "pink-idle-sheet": {
+            "path": "sprites/pink-idle.webp",
+            "frameWidth": 210,
+            "frameHeight": 200
+        },
+        "pink-attack-sheet": {
+            "path": "sprites/pink-attack.webp",
+            "frameWidth": 213,
+            "frameHeight": 200
+        },
+        "pink-hit-sheet": {
+            "path": "sprites/pink-hit.webp",
+            "frameWidth": 210,
+            "frameHeight": 200
+        },
+        "purple-attack-sheet": {
+            "path": "sprites/Purple-attack.webp",
+            "frameWidth": 187,
+            "frameHeight": 200
+        },
+        "purple-hit-sheet": {
+            "path": "sprites/purple-hit-fall.webp",
+            "frameWidth": 200,
+            "frameHeight": 200
+        },
+        "leafy-idle-sheet": {
+            "path": "sprites/leafy-idle.webp",
+            "frameWidth": 220,
+            "frameHeight": 200
+        },
+        "leafy-attack-sheet": {
+            "path": "sprites/leafy-attack.webp",
+            "frameWidth": 220,
+            "frameHeight": 200
+        },
+        "leafy-hit-sheet": {
+            "path": "sprites/leafy-hit.webp",
+            "frameWidth": 217,
+            "frameHeight": 200
+        },
+        "silverpond-frog-enemy-idle-sheet": {
+            "path": "sprites/silverpond/frog-enemy-idle.webp",
+            "frameWidth": 512,
+            "frameHeight": 512
+        },
+        "silverpond-bubble-crab-idle-sheet": {
+            "path": "sprites/silverpond/bubble-crab-idle.webp",
+            "frameWidth": 512,
+            "frameHeight": 512,
+            "frameCount": 13
+        },
+        "silverpond-bubble-crab-attack-sheet": {
+            "path": "sprites/silverpond/bubble-crab-attack.webp",
+            "frameWidth": 512,
+            "frameHeight": 512,
+            "frameCount": 7
+        },
+        "silverpond-bubble-crab-defend-sheet": {
+            "path": "sprites/silverpond/bubble-crab-defend.webp",
+            "frameWidth": 512,
+            "frameHeight": 512,
+            "frameCount": 7
+        },
+        "silverpond-bubble-crab-defeat-sheet": {
+            "path": "sprites/silverpond/bubble-crab-defeat.webp",
+            "frameWidth": 512,
+            "frameHeight": 512,
+            "frameCount": 7
+        },
+        "silverpond-bubble-fish-idle-sheet": {
+            "path": "sprites/silverpond/bubble-fish-idle.webp",
+            "frameWidth": 512,
+            "frameHeight": 512,
+            "frameCount": 13
+        },
+        "silverpond-bubble-fish-attack-sheet": {
+            "path": "sprites/silverpond/bubble-fish-attack.webp",
+            "frameWidth": 512,
+            "frameHeight": 512,
+            "frameCount": 7
+        },
+        "silverpond-bubble-fish-defend-sheet": {
+            "path": "sprites/silverpond/bubble-fish-defend.webp",
+            "frameWidth": 512,
+            "frameHeight": 512,
+            "frameCount": 7
+        },
+        "silverpond-bubble-fish-defeat-sheet": {
+            "path": "sprites/silverpond/bubble-fish-defeat.webp",
+            "frameWidth": 512,
+            "frameHeight": 512,
+            "frameCount": 7
+        },
+        "silverpond-mill-turtle-idle-sheet": {
+            "path": "sprites/silverpond/mill-turtle-idle.webp",
+            "frameWidth": 512,
+            "frameHeight": 512,
+            "frameCount": 13
+        },
+        "silverpond-mill-turtle-attack-sheet": {
+            "path": "sprites/silverpond/mill-turtle-attack.webp",
+            "frameWidth": 512,
+            "frameHeight": 512,
+            "frameCount": 7
+        },
+        "silverpond-mill-turtle-defend-sheet": {
+            "path": "sprites/silverpond/mill-turtle-defend.webp",
+            "frameWidth": 512,
+            "frameHeight": 512,
+            "frameCount": 7
+        },
+        "silverpond-mill-turtle-defeat-sheet": {
+            "path": "sprites/silverpond/mill-turtle-defeat.webp",
+            "frameWidth": 512,
+            "frameHeight": 512,
+            "frameCount": 7
+        },
+        "silverpond-ruin-axolotl-idle-sheet": {
+            "path": "sprites/silverpond/ruin-axolotl-idle.webp",
+            "frameWidth": 512,
+            "frameHeight": 512,
+            "frameCount": 13
+        },
+        "silverpond-ruin-axolotl-attack-sheet": {
+            "path": "sprites/silverpond/ruin-axolotl-attack.webp",
+            "frameWidth": 512,
+            "frameHeight": 512,
+            "frameCount": 7
+        },
+        "silverpond-ruin-axolotl-defend-sheet": {
+            "path": "sprites/silverpond/ruin-axolotl-defend.webp",
+            "frameWidth": 512,
+            "frameHeight": 512,
+            "frameCount": 7
+        },
+        "silverpond-ruin-axolotl-defeat-sheet": {
+            "path": "sprites/silverpond/ruin-axolotl-defeat.webp",
+            "frameWidth": 512,
+            "frameHeight": 512,
+            "frameCount": 7
+        },
+        "silverpond-lake-fairy-idle-sheet": {
+            "path": "sprites/silverpond/lake-fairy-idle.webp",
+            "frameWidth": 512,
+            "frameHeight": 512,
+            "frameCount": 15
+        },
+        "silverpond-lake-fairy-give-sheet": {
+            "path": "sprites/silverpond/lake-fairy-give.webp",
+            "frameWidth": 512,
+            "frameHeight": 512,
+            "frameCount": 8
+        },
+        "hint-items-sheet": {
+            "path": "sprites/hint-items.webp",
+            "frameWidth": 200,
+            "frameHeight": 200
+        },
+        "shop-coins-sheet": {
+            "path": "town/shop/coins.webp",
+            "frameWidth": 239,
+            "frameHeight": 241
+        },
+        "shop-swords-sheet": {
+            "path": "town/shop/sword-set.webp",
+            "frameWidth": 239,
+            "frameHeight": 300
+        },
+        "shop-shields-sheet": {
+            "path": "town/shop/shield-set.webp",
+            "frameWidth": 260,
+            "frameHeight": 232
+        },
+        "pet-porcupine-sheet": {
+            "path": "sprites/pets/pet-porcupine.webp",
+            "frameWidth": 200,
+            "frameHeight": 200
+        },
+        "pet-porcupine-2": {
+            "path": "sprites/spritesheet (23).webp",
+            "frameWidth": 200,
+            "frameHeight": 200
+        },
+        "boy-knight-walk-sheet": {
+            "path": "sprites/boy-knight-walk.webp",
+            "frameWidth": 200,
+            "frameHeight": 200
+        },
+        "girl-knight-walk-sheet": {
+            "path": "sprites/girl-knight-walk.webp",
+            "frameWidth": 200,
+            "frameHeight": 200
+        },
+        "girl-knight-def-sheet": {
+            "path": "sprites/girl-knight-def.webp",
+            "frameWidth": 200,
+            "frameHeight": 200
+        },
+        "gemstone-icons": {
+            "path": "library:originals/ccc479d2-b77f0473.webp",
+            "frameWidth": 137,
+            "frameHeight": 146
+        },
+        "gemstone-icons-cropped-cropped": {
+            "path": "library:originals/57142073-ccfbbb47.webp",
+            "frameWidth": 132,
+            "frameHeight": 139,
+            "frameCount": 6,
+            "frameNames": [
+                "frame-0-T1-badge",
+                "frame-1-T1",
+                "frame-2-T2-badge",
+                "frame-3-T2",
+                "frame-4-T3-badge",
+                "frame-5-T3"
+            ]
+        },
+        "spritesheet-zyx-sheet": {
+            "path": "sprites/spritesheet-zyx.webp",
+            "frameWidth": 512,
+            "frameHeight": 512
+        },
+        "spritesheet-zyx-transparent2-sheet": {
+            "path": "sprites/spritesheet-zyx-transparent2.webp",
+            "frameWidth": 341,
+            "frameHeight": 341
+        },
+        "wolves-only-transparent-sheet": {
+            "path": "sprites/wolves_only_transparent.webp",
+            "frameWidth": 455,
+            "frameHeight": 256
+        },
+        "spritesheet--36--sheet": {
+            "path": "sprites/spritesheet (36).webp",
+            "frameWidth": 512,
+            "frameHeight": 512
+        },
+        "spritesheet--37--sheet": {
+            "path": "sprites/spritesheet (37).webp",
+            "frameWidth": 512,
+            "frameHeight": 512
+        },
+        "spritesheet--38--sheet": {
+            "path": "sprites/spritesheet (38).webp",
+            "frameWidth": 512,
+            "frameHeight": 512
+        },
+        "spritesheet--39--sheet": {
+            "path": "sprites/spritesheet (39).webp",
+            "frameWidth": 512,
+            "frameHeight": 512
+        },
+        "spritesheet--40--sheet": {
+            "path": "sprites/spritesheet (40).webp",
+            "frameWidth": 512,
+            "frameHeight": 512
+        },
+        "rune-fox-sheet": {
+            "path": "sprites/catacombs/rune-fox-compact.png",
+            "frameWidth": 512,
+            "frameHeight": 512
+        },
+        "silverpond-pearl-jellyfish-idle-sheet": {
+            "path": "sprites/silverpond/pearl-jellyfish-idle.webp",
+            "frameWidth": 512,
+            "frameHeight": 512,
+            "frameCount": 13
+        },
+        "silverpond-pearl-jellyfish-attack-sheet": {
+            "path": "sprites/silverpond/pearl-jellyfish-attack.webp",
+            "frameWidth": 512,
+            "frameHeight": 512,
+            "frameCount": 9
+        },
+        "silverpond-pearl-jellyfish-defend-sheet": {
+            "path": "sprites/silverpond/pearl-jellyfish-defend.webp",
+            "frameWidth": 512,
+            "frameHeight": 512,
+            "frameCount": 7
+        },
+        "silverpond-pearl-jellyfish-defeat-sheet": {
+            "path": "sprites/silverpond/pearl-jellyfish-defeat.webp",
+            "frameWidth": 512,
+            "frameHeight": 512,
+            "frameCount": 9
+        },
+        "silverpond-depth-guardian-idle-sheet": {
+            "path": "sprites/silverpond/depth-guardian-idle.webp",
+            "frameWidth": 512,
+            "frameHeight": 512,
+            "frameCount": 13
+        },
+        "silverpond-depth-guardian-attack-sheet": {
+            "path": "sprites/silverpond/depth-guardian-attack.webp",
+            "frameWidth": 512,
+            "frameHeight": 512,
+            "frameCount": 9
+        },
+        "silverpond-depth-guardian-attack-tide-sheet": {
+            "path": "sprites/silverpond/depth-guardian-attack-tide.webp",
+            "frameWidth": 512,
+            "frameHeight": 512,
+            "frameCount": 9
+        },
+        "silverpond-depth-guardian-attack-crystal-sheet": {
+            "path": "sprites/silverpond/depth-guardian-attack-crystal.webp",
+            "frameWidth": 512,
+            "frameHeight": 512,
+            "frameCount": 13
+        },
+        "silverpond-depth-guardian-defend-sheet": {
+            "path": "sprites/silverpond/depth-guardian-defend.webp",
+            "frameWidth": 512,
+            "frameHeight": 512,
+            "frameCount": 7
+        },
+        "silverpond-depth-guardian-defeat-sheet": {
+            "path": "sprites/silverpond/depth-guardian-defeat.webp",
+            "frameWidth": 512,
+            "frameHeight": 512,
+            "frameCount": 9
+        }
     },
-  "images": {
-    "underwater-glow-grotto-bg": "images/underwater/glow-grotto.webp",
-    "underwater-depth-gate-bg": "images/underwater/depth-gate.webp",
-    "underwater-lake-heart-bg": "images/underwater/lake-heart-fissure.webp",
-    "underwater-descent-bg": "images/underwater/descent.webp",
-    "underwater-guardian-still": "images/underwater/guardian-still.webp",
-    "underwater-guardian-calm": "images/underwater/guardian-calm.webp",
-    "underwater-jellyfish-still": "images/underwater/jellyfish-still.webp",
-    "underwater-depth-crystal": "images/underwater/depth-crystal.webp",
-    "underwater-post-wreck-bg": "images/underwater/post-wreck.webp",
-    "underwater-wreck-hold-bg": "images/underwater/wreck-hold.webp",
-    "enamel-control-socket": "ui/enamel/control-socket.webp",
-    "enamel-clue-plaque": "ui/enamel/clue-plaque.webp",
-    "enamel-check-normal": "ui/enamel/check-normal.webp",
-    "enamel-check-active": "ui/enamel/check-active.webp",
-    "enamel-close-normal": "ui/enamel/close-normal.webp",
-    "enamel-close-active": "ui/enamel/close-active.webp",
-    "enamel-hint-normal": "ui/enamel/hint-normal.webp",
-    "enamel-hint-active": "ui/enamel/hint-active.webp",
-    "enamel-continue-normal": "ui/enamel/continue-normal.webp",
-    "enamel-continue-active": "ui/enamel/continue-active.webp",
+    "images": {
+        "underwater-glow-grotto-bg": "images/underwater/glow-grotto.webp",
+        "underwater-depth-gate-bg": "images/underwater/depth-gate.webp",
+        "underwater-lake-heart-bg": "images/underwater/lake-heart-fissure.webp",
+        "underwater-descent-bg": "images/underwater/descent.webp",
+        "underwater-guardian-still": "images/underwater/guardian-still.webp",
+        "underwater-guardian-calm": "images/underwater/guardian-calm.webp",
+        "underwater-jellyfish-still": "images/underwater/jellyfish-still.webp",
+        "underwater-depth-crystal": "images/underwater/depth-crystal.webp",
+        "underwater-post-wreck-bg": "images/underwater/post-wreck.webp",
+        "underwater-wreck-hold-bg": "images/underwater/wreck-hold.webp",
+        "enamel-control-socket": "ui/enamel/control-socket.webp",
+        "enamel-clue-plaque": "ui/enamel/clue-plaque.webp",
+        "enamel-check-normal": "ui/enamel/check-normal.webp",
+        "enamel-check-active": "ui/enamel/check-active.webp",
+        "enamel-close-normal": "ui/enamel/close-normal.webp",
+        "enamel-close-active": "ui/enamel/close-active.webp",
+        "enamel-hint-normal": "ui/enamel/hint-normal.webp",
+        "enamel-hint-active": "ui/enamel/hint-active.webp",
+        "enamel-continue-normal": "ui/enamel/continue-normal.webp",
+        "enamel-continue-active": "ui/enamel/continue-active.webp",
         "underwater-shallows-bg": "images/underwater/shallows.webp",
         "underwater-bell-bg": "images/underwater/bell-hub-open.webp",
         "underwater-bell-instrument": "images/underwater/bell-instrument.webp",
@@ -461,7 +461,7 @@
         "forest-wolf": "sprites/forest-wolf.webp",
         "forest-sprite": "sprites/forest-sprite.webp",
         "potion_frame-cropped": "library:originals/8bf14d35-3140b988.webp",
-        "workshop-cropped-saved": "library:originals/3f568795-56a6e242.webp",
+        "workshop-cropped-saved": "ui/workshop/pythia-sign-blank.webp",
         "Frame_black_empty-cropped": "library:originals/c2eeb9e4-b953a9bc.webp",
         "Frame metalic": "library:originals/d2345e03-ec353c0a.webp",
         "isolate-2026-01-30T15-27-16": "library:originals/d2345e03-dc913696.webp",

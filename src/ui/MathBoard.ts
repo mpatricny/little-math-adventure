@@ -411,7 +411,7 @@ export class MathBoard {
                 sourceLabel.add(swordIcon);
 
                 const multiplier = problem.damageMultiplier || 1;
-                const labelText = this.scene.add.text(18, 0, `Meč (×${multiplier})`, {
+                const labelText = this.scene.add.text(18, 0, `${multiplier}`, {
                     fontSize: labelFontSize,
                     fontFamily: 'Arial, sans-serif',
                     color: labelColor,
@@ -421,7 +421,7 @@ export class MathBoard {
             } else {
                 // Pet: use emoji + text
                 const multiplier = problem.damageMultiplier || 1;
-                const labelText = this.scene.add.text(0, 0, `🐾 Mazlíček (×${multiplier})`, {
+                const labelText = this.scene.add.text(0, 0, `🐾 ⚔ ${multiplier}`, {
                     fontSize: labelFontSize,
                     fontFamily: 'Arial, sans-serif',
                     color: labelColor,

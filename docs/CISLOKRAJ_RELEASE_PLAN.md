@@ -1,6 +1,12 @@
 # Číslokraj — jednoduchý plán pilotu
 
-Aktualizováno 11. 9. 2026: pilotní build, hosting, lehký landing, Google OAuth a první schéma účtů/savů jsou implementované. Cíl: rozeslat funkční hru několika kamarádům, ukládat postup a zjistit, jak se učí a kde hra potřebuje zlepšit. Google OAuth je lokálně ověřený; vytvoření produkčního OAuth klienta, tajemství v Doppleru, produkční migrace a nasazení čekají na výslovné dokončení vydání. Příkazy, rozsah a ověření jsou v [BUILD_VARIANTS.md](BUILD_VARIANTS.md).
+Aktualizováno 24. 9. 2026: pilot, HTTPS hosting, Google OAuth a sběr herních dat
+už běží na produkci. Vydání [pilot-0.1.10](releases/pilot-0.1.10.md) zahrnuje
+nový web, první obrázkové návody, opravu síly mečů a načítání dopředu s offline
+režimem. Přesný stav nasazení a omezení jsou u vydání; další části tohoto
+dokumentu zachovávají původní návrh pilotu, nikoli úplný provozní changelog.
+Cíl: rozeslat funkční hru několika kamarádům, ukládat postup a zjistit, jak se
+učí a kde hra potřebuje zlepšit. Příkazy a varianty jsou v [BUILD_VARIANTS.md](BUILD_VARIANTS.md).
 
 ## Rozsah pilotu
 
@@ -35,7 +41,7 @@ První pracovní balík: **1 + 2**, paralelně lehký landing, návrh událostí
 
 ## Webový vstup
 
-Menu má FIT škálování, fullscreen a dotykové základy. Pilotní build už vypíná vývojové zkratky a debugger; vývojový build je zachovává. Obě varianty mají samostatné adresy a výstupní složky. HTML a manifest používají Číslokraj, nefunkční Vite favicon je odstraněná. Lehký webový vstup je implementovaný jako samostatný Vite dokument bez Phaseru a tří skutečných screenshotů pilotu; před veřejným vydáním ještě zbývá nahradit obrázkové logo s původním názvem přímo ve hře.
+Menu má FIT škálování, fullscreen a dotykové základy. Pilotní build už vypíná vývojové zkratky a debugger; vývojový build je zachovává. Obě varianty mají samostatné adresy a výstupní složky. Web, menu, HTML a manifest používají název **Číslokraj: Tajemství krystalů**, běžné ovládání krátce **Číslokraj**. Název v menu je lokalizovaný runtime text. **Mathoria** je první městečko výpravy. Nefunkční Vite favicon je odstraněná. Lehký webový vstup je implementovaný jako samostatný Vite dokument bez Phaseru se třemi skutečnými screenshoty pilotu.
 
 `cislokraj.cz` bude lehký responzivní landing; hra na `/hra/`. Landing obsahuje jasné **Hrát**, krátké „Co je Číslokraj“, tři skutečné screenshoty vydávané verze, principy učení, podporovaná zařízení a označení pilotu. Principy popsat konkrétně: procvičování v dobrodružství, přizpůsobování úloh, návraty k obtížným příkladům a názorné vysvětlení. Rozlišit existující mechanismy a připravované funkce; zatím neslibovat prokázaný učební účinek.
 

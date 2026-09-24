@@ -1,321 +1,145 @@
+import { createMedievalPanel } from '../ui/MedievalPanel';
 import Phaser from 'phaser';
-import { BandId, ALL_BANDS } from '../types';
+import { BandId, CharacterType } from '../types';
 import { GameStateManager } from '../systems/GameStateManager';
 import { PlacementInitializer } from '../systems/PlacementInitializer';
-import { LocalizationService } from '../systems/LocalizationService';
+import { MasterySystem } from '../systems/MasterySystem';
+import { SceneBuilder } from '../systems/SceneBuilder';
+import { MedievalActionButton } from '../ui/MedievalActionButton';
+import { voice } from '../audio/AudioDirector';
 
 interface BandSelectData {
-    slotIndex: number;
-    isReturningPlayer: boolean;
-    /** If set, confirm returns to this scene instead of ComicScene/TownScene */
+    slotIndex?: number;
+    isReturningPlayer?: boolean;
     returnScene?: string;
-    /** Pre-select this band (when returning from CharacterSelect) */
     selectedBand?: BandId;
-    /** Data to pass back to returnScene along with selectedBand */
     returnData?: Record<string, unknown>;
+    characterDraft?: { characterName: string; selectedCharacter: CharacterType };
 }
 
-/** Band config for the staircase steps */
-const BAND_CONFIG: { band: BandId; labelKey: string; descKey: string }[] = [
-    { band: 'A', labelKey: 'band_select.band_A', descKey: 'band_select.band_A_desc' },
-    { band: 'B', labelKey: 'band_select.band_B', descKey: 'band_select.band_B_desc' },
-    { band: 'C', labelKey: 'band_select.band_C', descKey: 'band_select.band_C_desc' },
-    { band: 'D', labelKey: 'band_select.band_D', descKey: 'band_select.band_D_desc' },
-    { band: 'E', labelKey: 'band_select.band_E', descKey: 'band_select.band_E_desc' },
+const BANDS: { band: BandId; range: string; example: string; label: string; voice: string }[] = [
+    { band: 'A', range: '0–5', example: '2 + 1', label: 'Do pěti', voice: 'five' },
+    { band: 'B', range: '0–8', example: '5 + 3', label: 'Do osmi', voice: 'eight' },
+    { band: 'C', range: '0–10', example: '6 + 4', label: 'Do deseti', voice: 'ten' },
+    { band: 'D', range: '0–20', example: '12 + 3', label: 'Bez přechodu', voice: 'twenty' },
+    { band: 'E', range: '0–20', example: '8 + 5', label: 'Přes desítku', voice: 'crossing' },
 ];
 
-/**
- * BandSelectScene: Medieval staircase for picking starting difficulty.
- * Shown between CharacterSelectNewScene and ComicScene/TownScene.
- * Each step represents a band (A-E), higher = harder.
- *
- * Supports "return mode": when returnScene is set, confirm goes back
- * to that scene with the selectedBand in the data payload.
- */
+/** Mandatory second step. A draft is saved only after an explicit band choice. */
 export class BandSelectScene extends Phaser.Scene {
-    private isReturningPlayer: boolean = false;
-    private selectedBand: BandId = 'A';
-    private stepContainers: Phaser.GameObjects.Container[] = [];
-    private torch!: Phaser.GameObjects.Container;
-    private confirmButton!: Phaser.GameObjects.Container;
-    private returnScene: string | null = null;
-    private returnData: Record<string, unknown> = {};
-    private slotIndex: number = 0;
+    private selectionData!: BandSelectData;
+    private selectedBand?: BandId;
+    private sceneBuilder!: SceneBuilder;
+    private confirmButton!: MedievalActionButton;
+    private cards: { band: BandId; surface: Phaser.GameObjects.Container; glow: Phaser.GameObjects.Rectangle; check: Phaser.GameObjects.Text }[] = [];
+    private confirmed = false;
+    private introTimer?: Phaser.Time.TimerEvent;
 
-    constructor() {
-        super({ key: 'BandSelectScene' });
-    }
+    constructor() { super({ key: 'BandSelectScene' }); }
 
-    init(data: BandSelectData): void {
-        this.isReturningPlayer = data.isReturningPlayer ?? false;
-        this.selectedBand = data.selectedBand ?? 'A';
-        this.returnScene = data.returnScene ?? null;
-        this.returnData = data.returnData ?? {};
-        this.slotIndex = data.slotIndex ?? 0;
-        this.stepContainers = [];
+    init(data: BandSelectData = {}): void {
+        this.selectionData = data;
+        this.selectedBand = data.selectedBand;
+        this.cards = [];
+        this.confirmed = false;
     }
 
     create(): void {
-        const loc = LocalizationService.getInstance();
+        this.sceneBuilder = new SceneBuilder(this);
+        this.sceneBuilder.buildScene('BandSelectScene');
+        const shade = this.host('bandShade');
+        this.add.rectangle(shade.x, shade.y, 1280, 720, 0x10121a, 0.62).setDepth(shade.depth);
+        const title = this.host('bandTitle');
+        this.add.text(title.x, title.y, 'VYBER POČÍTÁNÍ', {
+            resolution: 2, fontFamily: 'Georgia', fontSize: '38px', color: '#ffe7ad',
+            stroke: '#23170f', strokeThickness: 5,
+        }).setOrigin(0.5).setDepth(title.depth);
+        const step = this.host('bandStep');
+        this.add.text(step.x, step.y, '2 / 2', {
+            resolution: 2, fontFamily: 'Georgia', fontSize: '22px', color: '#e0c391',
+        }).setOrigin(0.5).setDepth(step.depth);
+        BANDS.forEach((config, index) => this.createCard(config, index));
+        this.confirmButton = new MedievalActionButton(this, {
+            ...this.host('bandConfirm'), width: 280, height: 80, layout: 'text', label: 'HRÁT  ▶',
+            labelFontSize: 25, accent: 0x98d77b, enabled: false,
+            name: 'band-confirm', onClick: () => this.confirmSelection(),
+        });
+        new MedievalActionButton(this, {
+            ...this.host('bandBack'), width: 190, height: 70, layout: 'text', label: '◀  ZPĚT',
+            labelFontSize: 21, accent: 0xe8c283, onClick: () => this.goBack(),
+        });
+        if (this.selectedBand) this.selectBand(this.selectedBand, false);
+        this.introTimer = this.time.delayedCall(450, () => voice(this, 'vo.level.intro'));
+    }
 
-        // Dark medieval background
-        this.add.rectangle(640, 360, 1280, 720, 0x1a1a2e).setOrigin(0.5);
+    private host(id: string): { x: number; y: number; depth: number } {
+        const host = this.sceneBuilder.get<Phaser.GameObjects.Container>(id)!;
+        return { x: host.x, y: host.y, depth: host.depth };
+    }
 
-        // Stone wall texture effect (subtle grid lines)
-        for (let y = 0; y < 720; y += 60) {
-            this.add.rectangle(640, y, 1280, 1, 0x2a2a3e, 0.3);
-        }
-        for (let x = 0; x < 1280; x += 80) {
-            this.add.rectangle(x, 360, 1, 720, 0x2a2a3e, 0.2);
-        }
-
-        // Title
-        const titleText = loc.t('band_select.title') || 'CHOOSE YOUR LEVEL';
-        this.add.text(640, 50, titleText, {
-            fontSize: '36px',
-            fontFamily: 'Arial, sans-serif',
-            color: '#ffd700',
-            fontStyle: 'bold',
-            stroke: '#000000',
-            strokeThickness: 4,
+    private createCard(config: typeof BANDS[number], index: number): void {
+        const host = this.host(`band${config.band}`);
+        const root = this.add.container(host.x, host.y).setDepth(host.depth).setName(`band-${config.band}`);
+        const surface = this.add.container(0, 0);
+        const frame = createMedievalPanel(this, 0, 0, 218, 330, 28);
+        const glow = this.add.rectangle(0, 0, 182, 288, 0xf3c75b, 0.08)
+            .setStrokeStyle(3, 0xffd77b).setVisible(false);
+        const text = (y: number, value: string, size: number, color = '#f9e6ba') => this.add.text(0, y, value, {
+            resolution: 2, fontFamily: 'Georgia', fontSize: `${size}px`, color,
+            stroke: '#171411', strokeThickness: 2,
         }).setOrigin(0.5);
-
-        // Description
-        const descText = loc.t('band_select.description') || 'Where do you want to start?';
-        this.add.text(640, 95, descText, {
-            fontSize: '20px',
-            fontFamily: 'Arial, sans-serif',
-            color: '#cccccc',
-            fontStyle: 'italic',
-        }).setOrigin(0.5);
-
-        // Create staircase steps (ascending left-to-right)
-        this.createStaircase(loc);
-
-        // Create torch indicator
-        this.createTorch();
-
-        // Create confirm button
-        this.createConfirmButton(loc);
-
-        // Apply initial selection
-        this.selectBand(this.selectedBand);
-    }
-
-    private createStaircase(loc: LocalizationService): void {
-        const startX = 120;
-        const startY = 520;
-        const stepWidth = 240;
-        const stepHeight = 65;
-        const risePerStep = 80;
-
-        for (let i = 0; i < BAND_CONFIG.length; i++) {
-            const config = BAND_CONFIG[i];
-            const x = startX + i * stepWidth;
-            const y = startY - i * risePerStep;
-
-            const container = this.add.container(x, y);
-
-            // Stone step (rectangle with border)
-            const step = this.add.rectangle(0, 0, stepWidth - 10, stepHeight, 0x4a4a5e)
-                .setStrokeStyle(3, 0x6a6a7e)
-                .setOrigin(0.5);
-            container.add(step);
-
-            // Step number in top-left corner
-            const stepNum = this.add.text(-stepWidth / 2 + 18, -stepHeight / 2 + 8, `${i + 1}`, {
-                fontSize: '14px',
-                fontFamily: 'Arial, sans-serif',
-                color: '#6a6a8a',
-                fontStyle: 'bold',
-            }).setOrigin(0, 0);
-            container.add(stepNum);
-
-            // Band label — centered in step
-            const label = loc.t(config.labelKey) || config.band;
-            const labelText = this.add.text(0, -10, label, {
-                fontSize: '18px',
-                fontFamily: 'Arial, sans-serif',
-                color: '#ffffff',
-                fontStyle: 'bold',
-            }).setOrigin(0.5, 0.5);
-            container.add(labelText);
-
-            // Band description — centered below label
-            const desc = loc.t(config.descKey) || '';
-            const descText = this.add.text(0, 14, desc, {
-                fontSize: '12px',
-                fontFamily: 'Arial, sans-serif',
-                color: '#aaaacc',
-            }).setOrigin(0.5, 0.5);
-            container.add(descText);
-
-            // Vertical riser (connecting to step below) - except for first step
-            if (i > 0) {
-                const riserHeight = risePerStep - stepHeight;
-                const riser = this.add.rectangle(
-                    -stepWidth / 2 + 2, stepHeight / 2 + riserHeight / 2,
-                    stepWidth - 10, riserHeight,
-                    0x3a3a4e
-                ).setStrokeStyle(2, 0x5a5a6e).setOrigin(0.5);
-                container.add(riser);
-                container.sendToBack(riser);
-            }
-
-            // Make interactive
-            container.setSize(stepWidth - 10, stepHeight);
-            container.setInteractive({ useHandCursor: true });
-            container.on('pointerdown', () => this.selectBand(config.band));
-            container.on('pointerover', () => {
-                if (config.band !== this.selectedBand) {
-                    step.setFillStyle(0x5a5a6e);
-                }
-            });
-            container.on('pointerout', () => {
-                if (config.band !== this.selectedBand) {
-                    step.setFillStyle(0x4a4a5e);
-                }
-            });
-
-            // Store references
-            container.setData('step', step);
-            container.setData('band', config.band);
-            this.stepContainers.push(container);
+        surface.add([frame, glow, text(-94, config.range, 45), text(-35, config.label, 19),
+            text(27, config.example, 31, '#ffffff')]);
+        // Increasing stars show progression even with all prose hidden.
+        for (let star = 0; star < 5; star++) {
+            surface.add(this.add.text((star - 2) * 28, 84, star <= index ? '★' : '☆', {
+                resolution: 2, fontSize: '23px', color: star <= index ? '#ffce63' : '#7a746e',
+            }).setOrigin(0.5));
         }
+        const check = text(123, '✓', 30, '#aceda0').setVisible(false);
+        surface.add(check);
+        root.add(surface).setSize(218, 330).setInteractive({ useHandCursor: true });
+        root.on('pointerover', () => surface.setY(-3));
+        root.on('pointerdown', () => { surface.setY(2); this.selectBand(config.band); });
+        root.on('pointerup', () => surface.setY(-3));
+        root.on('pointerout', () => surface.setY(0));
+        this.cards.push({ band: config.band, surface, glow, check });
     }
 
-    private createTorch(): void {
-        // Torch indicator (flame-like marker above selected step)
-        this.torch = this.add.container(0, 0);
-
-        // Flame body (triangle)
-        const flame = this.add.triangle(0, -15, 0, -20, -12, 10, 12, 10, 0xff8800);
-        this.torch.add(flame);
-
-        // Inner flame
-        const innerFlame = this.add.triangle(0, -10, 0, -12, -6, 6, 6, 6, 0xffcc00);
-        this.torch.add(innerFlame);
-
-        // Glow effect
-        const glow = this.add.circle(0, -5, 25, 0xff8800, 0.2);
-        this.torch.add(glow);
-
-        this.torch.setDepth(10);
-
-        // Flicker animation
-        this.tweens.add({
-            targets: [flame, innerFlame],
-            scaleX: { from: 0.9, to: 1.1 },
-            scaleY: { from: 0.95, to: 1.05 },
-            duration: 300,
-            yoyo: true,
-            repeat: -1,
-            ease: 'Sine.easeInOut',
-        });
-
-        this.tweens.add({
-            targets: glow,
-            alpha: { from: 0.15, to: 0.3 },
-            scale: { from: 0.9, to: 1.2 },
-            duration: 400,
-            yoyo: true,
-            repeat: -1,
-            ease: 'Sine.easeInOut',
-        });
-    }
-
-    private createConfirmButton(loc: LocalizationService): void {
-        const btnX = 640;
-        const btnY = 650;
-
-        this.confirmButton = this.add.container(btnX, btnY);
-
-        // Button background
-        const bg = this.add.rectangle(0, 0, 250, 55, 0x2d7d2d)
-            .setStrokeStyle(3, 0x4dbd4d)
-            .setOrigin(0.5);
-        this.confirmButton.add(bg);
-
-        // Button text
-        const text = loc.t('band_select.confirm') || 'CONFIRM';
-        const btnText = this.add.text(0, 0, text, {
-            fontSize: '24px',
-            fontFamily: 'Arial, sans-serif',
-            color: '#ffffff',
-            fontStyle: 'bold',
-        }).setOrigin(0.5);
-        this.confirmButton.add(btnText);
-
-        // Interactive
-        this.confirmButton.setSize(250, 55);
-        this.confirmButton.setInteractive({ useHandCursor: true });
-
-        this.confirmButton.on('pointerover', () => {
-            bg.setFillStyle(0x3d9d3d);
-        });
-        this.confirmButton.on('pointerout', () => {
-            bg.setFillStyle(0x2d7d2d);
-        });
-        this.confirmButton.on('pointerdown', () => {
-            this.confirmSelection();
-        });
-    }
-
-    private selectBand(band: BandId): void {
+    private selectBand(band: BandId, speak = true): void {
         this.selectedBand = band;
-        const index = ALL_BANDS.indexOf(band);
-
-        // Update step visuals
-        for (const container of this.stepContainers) {
-            const step = container.getData('step') as Phaser.GameObjects.Rectangle;
-            const stepBand = container.getData('band') as BandId;
-
-            if (stepBand === band) {
-                step.setFillStyle(0x7a6a2e); // Golden highlight
-                step.setStrokeStyle(3, 0xffd700);
-            } else {
-                step.setFillStyle(0x4a4a5e);
-                step.setStrokeStyle(3, 0x6a6a7e);
-            }
+        this.cards.forEach(card => { card.glow.setVisible(card.band === band); card.check.setVisible(card.band === band); });
+        this.confirmButton.setEnabled(true);
+        if (speak) {
+            this.introTimer?.remove();
+            voice(this, `vo.level.${BANDS.find(item => item.band === band)!.voice}`);
         }
+    }
 
-        // Move torch above selected step
-        const selectedContainer = this.stepContainers[index];
-        if (selectedContainer) {
-            this.tweens.killTweensOf(this.torch);
-            this.tweens.add({
-                targets: this.torch,
-                x: selectedContainer.x,
-                y: selectedContainer.y - 55,
-                duration: 200,
-                ease: 'Power2.easeOut',
-            });
-        }
+    private goBack(): void {
+        this.scene.start(this.selectionData.returnScene ?? 'CharacterSelectNewScene', {
+            ...this.selectionData.returnData, ...this.selectionData.characterDraft,
+            slotIndex: this.selectionData.slotIndex ?? 0, selectedBand: this.selectedBand,
+        });
     }
 
     private confirmSelection(): void {
-        // Return mode: go back to the calling scene with the selected band
-        if (this.returnScene) {
-            this.scene.start(this.returnScene, {
-                ...this.returnData,
-                selectedBand: this.selectedBand,
-                slotIndex: this.slotIndex,
+        if (!this.selectedBand || this.confirmed) return;
+        this.confirmed = true;
+        if (this.selectionData.returnScene) {
+            this.scene.start(this.selectionData.returnScene, {
+                ...this.selectionData.returnData, selectedBand: this.selectedBand, slotIndex: this.selectionData.slotIndex ?? 0,
             });
             return;
         }
-
-        // Default mode: apply band selection and proceed to game
         const gameState = GameStateManager.getInstance();
-        PlacementInitializer.applyBandSelection(this.selectedBand, gameState);
-
-        import('../systems/MasterySystem').then(({ MasterySystem }) => {
-            MasterySystem.getInstance().updatePlayerLevel();
-        }).catch(() => { /* ok */ });
-
-        if (this.isReturningPlayer) {
-            this.scene.start('TownScene');
-        } else {
-            this.scene.start('ComicScene');
+        if (this.selectionData.characterDraft) {
+            const slot = this.selectionData.slotIndex ?? 0;
+            gameState.setActiveSlotIndex(slot);
+            gameState.reset(this.selectionData.characterDraft.selectedCharacter, this.selectionData.characterDraft.characterName, slot);
         }
+        PlacementInitializer.applyBandSelection(this.selectedBand, gameState);
+        MasterySystem.getInstance().updatePlayerLevel();
+        this.scene.start(this.selectionData.isReturningPlayer ? 'TownScene' : 'ComicScene');
     }
 }

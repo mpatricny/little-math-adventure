@@ -66,6 +66,19 @@ describe('Save transfer', () => {
             .toEqual(['Kitten', 'Mina']);
     });
 
+    it('keeps tutorial completion independent for each imported hero', () => {
+        saveSlot(0, 'Ada');
+        saveSlot(1, 'Filip');
+        const ada = SaveSystem.load(0)!;
+        ada.player.seenGuides = ['forge.merge.v1', 'shop.sword.v1'];
+        SaveSystem.save(0, ada.player, ada.mathStats);
+        const bundle = SaveSystem.exportBundle()!;
+        installLocalStorage();
+        expect(SaveSystem.importBundle(bundle).ok).toBe(true);
+        expect(SaveSystem.load(0)?.player.seenGuides).toEqual(['forge.merge.v1', 'shop.sword.v1']);
+        expect(SaveSystem.load(1)?.player.seenGuides).toBeUndefined();
+    });
+
     it('imports into free slots without overwriting an existing local save', () => {
         saveSlot(2, 'Kitten');
         saveSlot(5, 'Mina');

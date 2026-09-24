@@ -1485,6 +1485,7 @@
                 "category": "ui.label",
                 "textKey": "$ui.titles.TTL_GAME_TITLE",
                 "style": {
+                    "resolution": 2,
                     "fontSize": "52px",
                     "fontFamily": "Chalkboard SE, Comic Sans MS, Trebuchet MS, cursive",
                     "color": "#fff0b8",
@@ -1505,6 +1506,7 @@
                 "category": "ui.label",
                 "textKey": "$ui.titles.TTL_GAME_SUBTITLE",
                 "style": {
+                    "resolution": 2,
                     "fontSize": "18px",
                     "fontFamily": "Chalkboard SE, Comic Sans MS, Trebuchet MS, cursive",
                     "color": "#fff8dc",
@@ -1517,6 +1519,22 @@
                     0.5
                 ],
                 "depth": 10
+            },
+            "town-title": {
+                "type": "text",
+                "category": "ui.label",
+                "style": {
+                    "resolution": 2,
+                    "fontSize": "26px",
+                    "fontFamily": "Georgia, serif",
+                    "color": "#fff0b8",
+                    "fontStyle": "bold",
+                    "align": "center",
+                    "stroke": "#3b2818",
+                    "strokeThickness": 4
+                },
+                "origin": [0.5, 0.5],
+                "depth": 30
             },
             "building-label": {
                 "type": "text",

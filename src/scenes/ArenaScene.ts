@@ -1,3 +1,4 @@
+import { VisualGuide, hasSeenGuide } from '../ui/VisualGuide';
 import Phaser from 'phaser';
 import { DEV_TOOLS_ENABLED } from '../config/buildVariant';
 import { EnemyDefinition, PetDefinition, PlayerState } from '../types';
@@ -341,7 +342,7 @@ export class ArenaScene extends Phaser.Scene {
         // Get wave text from builder and update it
         this.waveText = this.sceneBuilder.get('waveText') as Phaser.GameObjects.Text;
         if (this.waveText) {
-            this.waveText.setText(`VLNA ${this.currentWave + 1}/${this.arenaDefinition.waves.length}`);
+            this.waveText.setText(`KOLO ${this.currentWave + 1}/${this.arenaDefinition.waves.length}`);
         }
 
         // Get buttons from builder
@@ -462,6 +463,16 @@ export class ArenaScene extends Phaser.Scene {
 
         // Setup debugger
         this.setupDebugger();
+        this.time.delayedCall(450, () => {
+            if (!isFullyPerfect && !hasSeenGuide(this.gameState.getPlayer(), 'arena.free.v1')) {
+                new VisualGuide(this, this.sceneBuilder, [{
+                    id: 'arena.free.v1', title: 'OSVOBOĎ TVORY', voiceId: 'vo.arena.free',
+                    before: [{ texture: 'slime-sheet', frame: 0, tint: 0xff99bb, badge: '?' }, { texture: 'shop-swords-sheet', frame: 1 }],
+                    after: [{ texture: 'slime-sheet', frame: 0, tint: 0xaaffaa, badge: '♥' }],
+                    equation: '1 + 1 → 2',
+                }], this.persistChanges);
+            }
+        });
     }
 
     private applyBackgroundTexture(): void {
@@ -503,7 +514,7 @@ export class ArenaScene extends Phaser.Scene {
         const label = this.arenaChoiceKind === 'improvement'
             ? 'DOPILOVAT ★'
             : this.arenaChoiceKind === 'complete'
-                ? 'VŠECHNY VLNY PERFEKTNÍ'
+                ? 'VŠECHNA KOLA DOKONALÁ'
                 : 'POKRAČOVAT V PŘÍBĚHU';
         this.arenaOptionStatus.setText(`${label}  •  ${position}`).setVisible(true);
     }

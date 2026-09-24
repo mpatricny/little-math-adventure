@@ -140,7 +140,7 @@ export class SequentialMathView {
         this.feedback.setText('');
         this.bonus.setText('');
         this.arithmeticHint.setText('');
-        this.source.setText(this.defense ? `⚔ ${this.defense.incomingDamage}` : problem.source === 'sword' ? '⚔ ×' + (problem.damageMultiplier || 1) : problem.source === 'pet' ? '🐾 ×' + (problem.damageMultiplier || 1) : '');
+        this.source.setText(this.defense ? `⚔ ${this.defense.incomingDamage}` : problem.source === 'sword' ? '⚔ ' + (problem.damageMultiplier || 1) : problem.source === 'pet' ? '🐾 ⚔ ' + (problem.damageMultiplier || 1) : '');
         if (meta) {
             const expression = meta.representation === 'expression';
             this.comparison = new ComparisonProblemView(this.scene, problem, {

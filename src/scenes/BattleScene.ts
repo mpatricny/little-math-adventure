@@ -1862,7 +1862,7 @@ export class BattleScene extends Phaser.Scene implements BattleSceneCallbacks {
             .setDisplaySize(54, 54);
         this.blockUI.add([bg, shield]);
 
-        this.blockDamageText = this.add.text(-108, -13, 'ÚTOK: 5 DMG', {
+        this.blockDamageText = this.add.text(-108, -13, '⚔ 5', {
             fontSize: '17px',
             fontFamily: 'Palatino Linotype, Book Antiqua, Georgia, serif',
             color: '#ff9a86',
@@ -1879,7 +1879,7 @@ export class BattleScene extends Phaser.Scene implements BattleSceneCallbacks {
         }).setOrigin(0, 0.5);
         this.blockUI.add(this.blockTimerText);
 
-        this.blockAttemptsText = this.add.text(18, 14, 'BLOKUJI: 0 DMG', {
+        this.blockAttemptsText = this.add.text(18, 14, '🛡 0', {
             fontSize: '13px',
             fontFamily: 'Palatino Linotype, Book Antiqua, Georgia, serif',
             color: '#9cf4ff',
@@ -2012,7 +2012,7 @@ export class BattleScene extends Phaser.Scene implements BattleSceneCallbacks {
     // These are called by TurnManager when entering each phase.
 
     onEnterPlayerTurn(): void {
-        voice(this, 'vo.battle.intro', true);
+        voice(this, 'vo.battle.sword', true);
         // Swap to Player A's context
         if (this.isCoopMode && this.coopSession) {
             this.coopSession.activatePlayerA();
@@ -2674,7 +2674,7 @@ export class BattleScene extends Phaser.Scene implements BattleSceneCallbacks {
             this.blockCorrectCount = correctCount;
             // Update UI with final count
             const currentBlock = Math.min(this.blockCorrectCount, this.pendingDamage);
-            this.blockAttemptsText.setText(`BLOKUJI: ${currentBlock} DMG`);
+            this.blockAttemptsText.setText(`🛡 ${currentBlock}`);
 
             // End block phase
             this.endBlockPhase();
@@ -2962,9 +2962,9 @@ export class BattleScene extends Phaser.Scene implements BattleSceneCallbacks {
         // The common board carries the shield and incoming attack in its footer.
         // Keep the former top banner hidden so it cannot cover the lesson header.
         this.blockUI.setVisible(false);
-        this.blockDamageText.setText(`ÚTOK: ${damage} DMG`);
+        this.blockDamageText.setText(`⚔ ${damage}`);
         this.blockTimerText.setVisible(false); // Timer removed; block ends on completion
-        this.blockAttemptsText.setText(`BLOKUJI: 0 DMG`);
+        this.blockAttemptsText.setText(`🛡 0`);
 
         // Generate block problems from mastery review pool (Fluent sub-atoms)
         const problems = this.generateBlockProblemsFromPool(1);
@@ -3019,7 +3019,7 @@ export class BattleScene extends Phaser.Scene implements BattleSceneCallbacks {
         if (damageBlocked > 0) {
             const blockMessage = finalDamage === 0
                 ? 'ZABLOKOVÁNO!'
-                : `-${damageBlocked} dmg`;
+                : `-${damageBlocked}`;
 
             const blockText = this.add.text(640, 180, blockMessage.toUpperCase(), {
                 resolution: 2,
@@ -4504,7 +4504,7 @@ export class BattleScene extends Phaser.Scene implements BattleSceneCallbacks {
                     waveCompletionBonus.firstCompletion,
                     crystalDrops,
                     crystalLabels,
-                    'Za první dokončení vlny',
+                    'První dokončené kolo',
                 ) || crystalOverflow;
             }
             if (isPerfect && !wasPerfectBefore) {
@@ -4831,7 +4831,7 @@ export class BattleScene extends Phaser.Scene implements BattleSceneCallbacks {
                         waveCompletionBonus.firstCompletion,
                         crystalDrops,
                         crystalLabels,
-                        'Za první dokončení vlny',
+                        'První dokončené kolo',
                     ) || crystalOverflow;
                 }
                 if (isPerfect && !wasPerfectBefore) {

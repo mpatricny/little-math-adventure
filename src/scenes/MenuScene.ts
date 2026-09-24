@@ -281,7 +281,8 @@ export class MenuScene extends Phaser.Scene {
             frameTexture: 'menu-button-frame',
             labelOffsetX: host.width * 0.1,
             labelMaxWidth: host.width * 0.62,
-            labelFontSize: 16,
+            labelFontSize: 14,
+            labelLineSpacing: -2,
             onClick: () => { void this.toggleFullscreen(); },
         });
         this.unsubscribeFullscreen = this.fullscreen.onChange(state => {
@@ -297,8 +298,8 @@ export class MenuScene extends Phaser.Scene {
             x: 740, y: 625, width: 210, height: 62, depth: 40,
         });
 
-        this.exportSavesButton = this.createTextButton(exportHost, 'EXPORT SAVŮ', () => this.exportSaves());
-        this.importSavesButton = this.createTextButton(importHost, 'IMPORT SAVŮ', () => this.importSaves());
+        this.exportSavesButton = this.createTextButton(exportHost, 'STÁHNOUT\nULOŽENÉ HRY', () => this.exportSaves());
+        this.importSavesButton = this.createTextButton(importHost, 'NAHRÁT\nULOŽENÉ HRY', () => this.importSaves());
     }
 
     private createTextButton(
@@ -318,7 +319,8 @@ export class MenuScene extends Phaser.Scene {
             frameTexture: 'menu-button-frame',
             labelOffsetX: host.width * 0.1,
             labelMaxWidth: host.width * 0.62,
-            labelFontSize: 16,
+            labelFontSize: 14,
+            labelLineSpacing: -2,
             onClick,
         });
     }
@@ -350,7 +352,7 @@ export class MenuScene extends Phaser.Scene {
         try {
             downloadSaveBundle(bundle);
             const count = SaveSystem.getUsedSlotCount();
-            this.showNotice(`EXPORTOVÁNO: ${count} ${count === 1 ? 'SAVE' : 'SAVŮ'}`, '#bce8a4');
+            this.showNotice(`EXPORTOVÁNO: ${count} ${count === 1 ? 'HRA' : count < 5 ? 'HRY' : 'HER'}`, '#bce8a4');
         } catch (error) {
             console.error('[MenuScene] Save export failed:', error);
             this.showNotice('EXPORT SE NEPODAŘIL', '#f0b08f');
@@ -379,7 +381,7 @@ export class MenuScene extends Phaser.Scene {
 
         this.applySaveState(true);
         const count = importResult.importedSlots.length;
-        this.showNotice(`IMPORTOVÁNO: ${count} ${count === 1 ? 'SAVE' : 'SAVŮ'}`, '#bce8a4');
+        this.showNotice(`IMPORTOVÁNO: ${count} ${count === 1 ? 'HRA' : count < 5 ? 'HRY' : 'HER'}`, '#bce8a4');
     }
 
     private async toggleFullscreen(): Promise<void> {

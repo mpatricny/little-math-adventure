@@ -122,9 +122,9 @@
             "tier": "shard",
             "value": 5
         },
-        "mathProblemType": "addition",
-        "mathProblemMax": 5,
-        "damageMultiplier": 3,
+        "mathProblemType": "subtraction",
+        "mathProblemMax": 10,
+        "damageMultiplier": 7,
         "scale": 0.5
     }
 ]

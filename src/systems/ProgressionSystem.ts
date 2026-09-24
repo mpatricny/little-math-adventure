@@ -5,6 +5,7 @@ import { ManaSystem } from './ManaSystem';
 import { ensureArenaEncounterProgress, legacyArenaEncounterId } from './ArenaProgressSystem';
 import { PreparationSystem } from './PreparationSystem';
 import { DailyProgressSystem } from './DailyProgressSystem';
+import items from '../../public/assets/data/items.json';
 
 /**
  * Create initial TownProgress for a new player.
@@ -239,6 +240,7 @@ export class ProgressionSystem {
             },
             status: 'healthy',
             attack: 1,
+            attackPowerVersion: 1,
             defense: 0,
             equippedWeapon: null,
             equippedArmor: null,
@@ -314,6 +316,14 @@ export class ProgressionSystem {
      * Called when loading old saves
      */
     static migratePlayerState(player: PlayerState): PlayerState {
+        if (player.attackPowerVersion !== 1) {
+            // Old shop purchases added gear power to earned hero power even though
+            // the sword already has its own bonus problem. Remove it exactly once;
+            // deriving attack from level would lose independent exam stat rewards.
+            const weapon = items.find(item => item.type === 'weapon' && item.id === player.equippedWeapon);
+            player.attack = Math.max(1, player.attack - (weapon?.attackBonus ?? 0));
+            player.attackPowerVersion = 1;
+        }
         migrateCatacombPets(player);
         // Migrate: Add crystals if missing
         if (!player.crystals) {

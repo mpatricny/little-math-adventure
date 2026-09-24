@@ -83,6 +83,7 @@ function makeSaveSlot(
             diamonds: { common: 0, red: 0, green: 0 },
             status: 'healthy',
             attack: 5,
+            attackPowerVersion: 1,
             defense: 0,
             equippedWeapon: null,
             equippedArmor: null,

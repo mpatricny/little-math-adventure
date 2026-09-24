@@ -62,7 +62,7 @@ function installControllerStyles(): void {
 
 function renderConnecting(root: HTMLElement): void {
     root.replaceChildren(
-        createHeader('Little Math Adventure', 'Připojuji ovladač k TV...'),
+        createHeader('Číslokraj', 'Připojuji k TV…'),
         createStatus('Navazuji spojení.'),
     );
 }

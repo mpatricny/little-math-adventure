@@ -65,10 +65,10 @@ nikoli celé `dist` nebo `public`. Další práce na `main` vydanou hru nezměn�
 vědomě nevydáme další verzi. Pro lokální práci na starším vydání lze později
 přidat Git worktree; samostatný fork a dvojí ruční údržba nejsou potřeba.
 
-Zatím není nastavený hosting ani automatické vydávání a nevznikl release tag.
-Přihlášení, serverové savy, analytika, landing a kapitola porovnávání zůstávají
-v plánu. Název karty a manifest jsou Číslokraj; obrázkové logo v menu ještě používá
-původní název a potřebuje vlastní výtvarnou úpravu před veřejným vydáním.
+Aktualizace názvosloví 24. 9. 2026: karta, manifest a menu používají
+**Číslokraj: Tajemství krystalů**. Menu skládá název a podtitul z lokalizovaného
+textu; Mathoria je první městečko výpravy. Aktuální stav nasazení popisuje
+[plán vydání](CISLOKRAJ_RELEASE_PLAN.md).
 
 ## Ověření oddělení
 
