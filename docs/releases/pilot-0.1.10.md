@@ -90,3 +90,42 @@ Předchozí Cloudflare verze pro případ návratu:
 `1f3ae337-f0ac-4f81-9189-4d1d8b1d5ee2` (`pilot-0.1.9`). Předchozí Railway
 deployment: `c5c182fa-ca24-434c-b4a8-538d3cc88155`. Návrat frontendové verze
 nesmí mazat místní uložené hry ani účetní data.
+
+## Nasazeno 24. 9. 2026
+
+- Zdrojový commit `245bc03fff8f366b00db787554c6c729c7b9852b`, anotovaný tag
+  `pilot-0.1.10`; obojí ověřeno na GitHubu. Čistý checkout na tomto tagu byl
+  znovu sestaven a offline revize je shodná s otestovanou verzí.
+- Cloudflare deployment `0e80bc81-96a4-4949-9ffe-dbc50b9af624`, aktivní verze
+  `4d35e03d-93e7-4e3f-b6bc-02a79df4f43f` na 100 %. Nahráno 40 změněných
+  souborů, zbývajících 312 již bylo na serveru.
+- V Doppleru `cislokraj/prd` změněn pouze `APP_RELEASE`. Synchronizace do
+  Railway `production/api` byla ověřena bez výpisu ostatních proměnných.
+  Doppler automaticky spustil deployment `e4133466-243f-44ae-899b-4515a7d46c8a`,
+  stav `SUCCESS`. Další duplicitní upload API nebyl potřeba: celý adresář
+  `server/` je mezi tagy 0.1.9 a 0.1.10 shodný.
+- Pre-deploy: `database.migrations_complete applied=[] total=4`.
+  Produkční `/health` i `/ready` vracejí HTTP 200 a `pilot-0.1.10`.
+- Root a `/hra/` mají HTTP 200 a `X-Cislokraj-Release: pilot-0.1.10`;
+  `www.cislokraj.cz/hra/` má kanonické přesměrování 308. SHA-256 obou HTML,
+  vstupního JavaScriptu, katalogů scén/mazlíčků/zvuků, offline manifestu
+  i workeru odpovídají lokálnímu čistému buildu. Nepřihlášený `/v1/me`
+  vrací očekávané 401.
+- Izolovaný produkční Chromium: responzivní web na desktopu/tabletu/telefonu,
+  všechny obrázky načtené a žádný vodorovný přetok. Menu zkontrolováno na
+  desktopu 1280 × 720 a tabletu 1024 × 768. Bez chyb JavaScriptu.
+- Produkční service worker dosáhl `ready=true`, 344 souborů a 92 949 884
+  bajtů se správnou revizí a bez chyby úložiště. Po úplném zavření a novém
+  spuštění téhož izolovaného prohlížeče s vypnutou sítí fungoval průchod
+  `/hra/` → menu → město → aréna → souboj. Lokální testovací save zůstal
+  zachovaný; offline zvuk vrátil 206 a požadovaných 64 bajtů.
+- Produkční API zápisy byly po celou browser kontrolu blokované. Zachycen
+  jeden pokus `POST /v1/gameplay/session`, vrácena pouze místní testovací
+  odpověď 503; žádná herní data testu nebyla odeslána. Použit nově vytvořený
+  QA profil, nikoli skutečné uložení dítěte. Profil byl po kontrole odstraněn.
+
+Prohlédnuté produkční snímky: `artifacts/release-0.1.10/landing-desktop.png`,
+`landing-tablet.png`, `landing-phone.png` (galerie), `menu-desktop-online.png`,
+`menu-tablet-online.png` a `battle-tablet-offline.png`. Rámy, postavy a ovládání
+jsou načtené bez překryvů; tabletové okraje respektují poměr stran hry.
+Doklad je následný dokumentační commit; release tag se neposouvá.
