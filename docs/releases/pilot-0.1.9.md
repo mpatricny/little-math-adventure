@@ -48,3 +48,37 @@ identifikátor vydání. Stávající pre-deploy kontrola migrací zůstává za
 
 Nejde o plošné schválení všech starších herních obrazovek podle pre-reader
 pravidel. Konkrétní prohlédnuté snímky a omezení jsou uvedené v obou kontrolách.
+
+## Nasazeno 24. 9. 2026
+
+- Zdrojový commit `2fbecb6322b5274127a3a7ae79585c3ee5796035`, anotovaný tag
+  `pilot-0.1.9`; obojí ověřeno na GitHubu. Tento následný záznam nemění build
+  ani neposouvá release tag.
+- Čistý tag: 78 cílených testů v devíti souborech prošlo.
+  `npm run cloudflare:check` i Wrangler dry-run prošly: 332 souborů,
+  největší 7 240 124 bajtů. Build obsahuje identifikátor `pilot-0.1.9`.
+- Doppler `cislokraj/prd` a Railway `production/api`: změněn pouze
+  `APP_RELEASE`, synchronizace hodnoty byla ověřena bez výpisu tajemství.
+- Railway deployment `c5c182fa-ca24-434c-b4a8-538d3cc88155`: `SUCCESS`.
+  Build a healthcheck prošly; pre-deploy zaznamenal
+  `database.migrations_complete applied=[] total=4`.
+- Cloudflare Worker `cislokraj-web`, version
+  `1f3ae337-f0ac-4f81-9189-4d1d8b1d5ee2`. Nahrány čtyři změněné soubory;
+  zbývajících 328 bylo již na serveru.
+- `https://cislokraj.cz/` a `/hra/`: HTTP 200,
+  `X-Cislokraj-Release: pilot-0.1.9`, `Cache-Control: no-cache`.
+  SHA-256 servírovaných obou HTML, vstupního JavaScriptu, herního chunku,
+  `scenes.json` a `pets.json` odpovídají čistému buildu.
+- `https://api.cislokraj.cz/health` i `/ready`: HTTP 200 a release
+  `pilot-0.1.9`. Produkční data hráčů nebyla ručně upravována.
+- Playwright MCP: hlavní menu na produkci, desktop 1280 × 720 a tablet
+  1024 × 768. Oba snímky byly prohlédnuty; menu, rámy a přihlášení se načetly
+  bez překryvů, chyb JavaScriptu nebo chybějících obrázků. GET `/v1/me` vrací
+  očekávané 401 v nepřihlášeném kontextu; bylo ověřeno skutečné API, nikoli
+  simulované přihlášení. Zápisy do herního API byly v izolovaném QA prohlížeči
+  blokovány a žádný zápis se při kontrole menu nepokusil odeslat.
+
+Prohlédnuté produkční snímky jsou lokálně v
+`artifacts/release-0.1.9-production-desktop.png` a
+`artifacts/release-0.1.9-production-tablet.png`. Produkční smoke test je kontrola
+načtení menu; podrobné herní scénáře byly ověřeny lokálně, jak je uvedeno výše.
