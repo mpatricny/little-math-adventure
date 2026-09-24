@@ -6,9 +6,10 @@ import { GameStateManager } from '../systems/GameStateManager';
 import { SceneBuilder } from '../systems/SceneBuilder';
 import { CatacombTrialUI } from '../ui/CatacombTrialUI';
 import { getPlayerSpriteConfig, PlayerSpriteConfig } from '../utils/characterUtils';
-import { awardCatacombFoxUpgrade, getPetAttackPower } from '../systems/CatacombPetProgress';
+import { awardCatacombFoxVictory, getPetAttackPower } from '../systems/CatacombPetProgress';
 import { CATACOMB_BANDS } from '../data/catacombTrials';
 import { BattleActorStatusHud } from '../ui/BattleActorStatusHud';
+import { getExamPresentation } from '../ui/ExamPresentation';
 
 type CatacombPhase = 'intro' | 'charging' | 'resolve' | 'victory' | 'defeat';
 
@@ -316,10 +317,9 @@ export class CatacombTrialScene extends Phaser.Scene {
     }
 
     private createIntroOverlay(): void {
-        const examLabel = this.examType === 'fluency_challenge' ? 'Plynulost' : 'Mistrovství';
-        const targetLabel = this.subAtomId === 'comparison_symbols' ? '<   =   >' : this.subAtomId;
+        const identity = getExamPresentation(this.subAtomId, this.examType);
         this.introOverlay = this.mathBoard.showPanel({
-            title: 'Osvoboď lišku', subtitle: `${examLabel} · ${targetLabel}`,
+            title: 'Osvoboď lišku', subtitle: identity.title, subtitleFontSize: 24,
             body: '✓ → ⚔\n× → −♥', bodyFontSize: 40,
             stats: `✓ ${EXAM_CONFIGS[this.examType].passThreshold}/${this.creatureMaxHp}     ♥ ${this.playerMaxLives}     ⏳ ${this.chargeTime} s`, statsFontSize: 26,
             primary: 'ZAČÍT', onPrimary: () => this.startBattle(),
@@ -850,17 +850,10 @@ export class CatacombTrialScene extends Phaser.Scene {
             return;
         }
 
-        // Every successful run trains the same fox, even before it is bound at Pythia's.
+        // Rescue first at catalog strength. Only later wins train the fox.
         const fox = (this.cache.json.get('pets') as PetDefinition[]).find(pet => pet.id === bandConfig.petId)!;
         const attackBefore = getPetAttackPower(fox, player);
-        awardCatacombFoxUpgrade(player);
-
-        // First successful rescue unlocks binding; later runs still grant +1 attack.
-        let petUnlocked = false;
-        if (!player.unlockedPets.includes(bandConfig.enemyId)) {
-            player.unlockedPets.push(bandConfig.enemyId);
-            petUnlocked = true;
-        }
+        const { petUnlocked } = awardCatacombFoxVictory(player);
 
         this.gameState.save();
         this.showEndScreen({ attackBefore, attackAfter: getPetAttackPower(fox, player), petUnlocked });
@@ -887,9 +880,9 @@ export class CatacombTrialScene extends Phaser.Scene {
     private showEndScreen(reward?: { attackBefore: number; attackAfter: number; petUnlocked: boolean }): void {
         const won = this.phase === 'victory';
         this.mathBoard.showPanel({
-            title: won ? 'Liška zesílila!' : 'Zkus to znovu',
-            subtitle: reward?.petUnlocked ? 'Nový mazlíček u Pythie' : 'Runová liška',
-            body: reward ? `Útok +1\n${reward.attackBefore} → ${reward.attackAfter}` : '',
+            title: won ? reward?.petUnlocked ? 'Liška zachráněna!' : 'Liška zesílila!' : 'Zkus to znovu',
+            subtitle: reward?.petUnlocked ? 'U Pythie' : 'Runová liška',
+            body: reward ? reward.petUnlocked ? `Síla ${reward.attackAfter}` : `Útok +1\n${reward.attackBefore} → ${reward.attackAfter}` : '',
             bodyFontSize: 28, frame: won ? 30 : 0,
             stats: `✓ ${this.correctCount}     × ${this.wrongCount}`, statsFontSize: 24,
             primary: 'ZPĚT', onPrimary: () => this.scene.start(this.returnScene),

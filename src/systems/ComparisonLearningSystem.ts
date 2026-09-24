@@ -12,6 +12,7 @@ import {
     TrialTier,
 } from '../types';
 import { COMPARISON_INSTANT_HINT_COUNT, COMPARISON_INTRO_VERSION, normalizeComparisonSupport, updateComparisonSupport } from './ComparisonSupport';
+import { accumulateComparisonStatistics } from './ComparisonStatistics';
 
 export const COMPARISON_CHAPTER_ID = 'comparison_symbols' as const;
 
@@ -260,6 +261,7 @@ export function recordComparisonAttempt(
         diagnosticMode: meta.diagnosticMode === true,
         context: meta.exam ? 'exam' : meta.diagnosticMode ? 'diagnostic' : 'battle',
     };
+    accumulateComparisonStatistics(state, attempt);
     state.attempts.push(attempt);
     if (state.attempts.length > 400) state.attempts.splice(0, state.attempts.length - 400);
 

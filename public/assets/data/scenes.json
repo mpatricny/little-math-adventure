@@ -5162,9 +5162,13 @@
           "x": 232,
           "y": 282,
           "depth": 30,
-          "width": 300,
-          "height": 72
+          "width": 350,
+          "height": 124
         },
+        { "id": "nextExamTitleHost", "asset": "ui.containers.empty", "x": 232, "y": 240, "depth": 31, "width": 326, "height": 30 },
+        { "id": "nextExamBarHost", "asset": "ui.containers.empty", "x": 232, "y": 277, "depth": 31, "width": 288, "height": 14 },
+        { "id": "nextExamTargetHost", "asset": "ui.containers.empty", "x": 166, "y": 313, "depth": 32, "width": 194, "height": 42 },
+        { "id": "nextExamValueHost", "asset": "ui.containers.empty", "x": 338, "y": 313, "depth": 32, "width": 116, "height": 42 },
         {
           "id": "challengePanelHost",
           "asset": "ui.containers.empty",
@@ -5174,14 +5178,18 @@
           "width": 256,
           "height": 196
         },
+        { "id": "challengeKindHost", "asset": "ui.containers.empty", "x": 658, "y": 249, "depth": 31, "width": 236, "height": 26 },
+        { "id": "challengeTitleHost", "asset": "ui.containers.empty", "x": 658, "y": 280, "depth": 31, "width": 236, "height": 30 },
+        { "id": "challengePreviewHost", "asset": "ui.containers.empty", "x": 658, "y": 318, "depth": 31, "width": 236, "height": 44 },
+        { "id": "challengeRequirementHost", "asset": "ui.containers.empty", "x": 658, "y": 355, "depth": 31, "width": 236, "height": 26 },
         {
           "id": "challengeActionHost",
           "asset": "ui.containers.empty",
           "x": 658,
-          "y": 402,
+          "y": 398,
           "depth": 42,
           "width": 220,
-          "height": 46
+          "height": 56
         },
         {
           "id": "manaSpringHost",
@@ -5422,11 +5430,16 @@
           "height": 610,
           "visible": false
         },
+        { "id": "trialKindHost", "asset": "ui.containers.empty", "x": 640, "y": 157, "depth": 203, "width": 560, "height": 28, "visible": false },
+        { "id": "trialOverviewPreviewHost", "asset": "ui.containers.empty", "x": 640, "y": 280, "depth": 204, "width": 840, "height": 140, "visible": false },
+        { "id": "trialRangeHost", "asset": "ui.containers.empty", "x": 640, "y": 380, "depth": 204, "width": 760, "height": 42, "visible": false },
+        { "id": "trialIdentityHost", "asset": "ui.containers.empty", "x": 640, "y": 103, "depth": 203, "width": 760, "height": 42, "visible": false },
+        { "id": "trialCounterHost", "asset": "ui.containers.empty", "x": 640, "y": 141, "depth": 203, "width": 180, "height": 28, "visible": false },
         {
           "id": "trialHeaderHost",
           "asset": "ui.containers.empty",
           "x": 640,
-          "y": 103,
+          "y": 126,
           "depth": 203,
           "width": 760,
           "height": 74,
@@ -5436,7 +5449,7 @@
           "id": "trialProgressHost",
           "asset": "ui.containers.empty",
           "x": 640,
-          "y": 165,
+          "y": 185,
           "depth": 204,
           "width": 760,
           "height": 48,
@@ -7721,9 +7734,20 @@
           "x": 18,
           "y": 14,
           "depth": 1,
-          "width": 150,
-          "height": 130
-        }
+          "width": 1054,
+          "height": 446
+        },
+        { "id": "comparisonTitleHost", "asset": "ui.containers.empty", "x": 18, "y": 16, "depth": 2, "width": 720, "height": 30 },
+        { "id": "comparisonStatusHost", "asset": "ui.containers.empty", "x": 864, "y": 16, "depth": 2, "width": 170, "height": 30 },
+        { "id": "comparisonCorrectHost", "asset": "ui.containers.empty", "x": 128, "y":  60, "depth": 2, "width": 210, "height": 66 },
+        { "id": "comparisonWrongHost", "asset": "ui.containers.empty", "x": 370, "y":  60, "depth": 2, "width": 210, "height": 66 },
+        { "id": "comparisonAccuracyHost", "asset": "ui.containers.empty", "x": 628, "y":  60, "depth": 2, "width": 230, "height": 66 },
+        { "id": "comparisonTimeHost", "asset": "ui.containers.empty", "x": 896, "y":  60, "depth": 2, "width": 250, "height": 66 },
+        { "id": "comparisonStepColumn", "asset": "ui.containers.empty", "x": 18, "y": 144, "depth": 2, "width": 320, "height": 282 },
+        { "id": "comparisonCorrectColumn", "asset": "ui.containers.empty", "x": 370, "y": 144, "depth": 2, "width": 135, "height": 282 },
+        { "id": "comparisonWrongColumn", "asset": "ui.containers.empty", "x": 530, "y": 144, "depth": 2, "width": 125, "height": 282 },
+        { "id": "comparisonAccuracyColumn", "asset": "ui.containers.empty", "x": 680, "y": 144, "depth": 2, "width": 145, "height": 282 },
+        { "id": "comparisonTimeColumn", "asset": "ui.containers.empty", "x": 864, "y": 144, "depth": 2, "width": 172, "height": 282 }
       ]
     },
     "WalkingHudOverlay": {

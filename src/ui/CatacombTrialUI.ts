@@ -8,7 +8,7 @@ import { ComparisonProblemView, comparisonGlyph } from './ComparisonProblemView'
 import { comparisonChoiceWidth } from './ComparisonPresentation';
 
 type Host = {x:number; y:number; width:number; height:number; depth:number};
-type Presentation = {title:string; subtitle:string; body:string; bodyFontSize?:number; stats:string; statsFontSize?:number; frame?:number; primary:string; onPrimary:()=>void; secondary?:string; onSecondary?:()=>void};
+type Presentation = {title:string; subtitle:string; subtitleFontSize?:number; body:string; bodyFontSize?:number; stats:string; statsFontSize?:number; frame?:number; primary:string; onPrimary:()=>void; secondary?:string; onSecondary?:()=>void};
 
 /** Shared slate, bronze and rune presentation for the complete catacomb trial. */
 export class CatacombTrialUI {
@@ -123,7 +123,7 @@ export class CatacombTrialUI {
         root.add(this.panel(h));
         root.add(this.text('catacombEyebrow','CECHOVNÍ KATAKOMBY',13,'#b99a69'));
         root.add(this.text('catacombTitle',p.title,30,'#ffe5af'));
-        root.add(this.text('catacombSubtitle',p.subtitle,15,'#9dd7dd'));
+        root.add(this.text('catacombSubtitle',p.subtitle,p.subtitleFontSize??15,'#9dd7dd'));
         const portrait=this.host('catacombPortrait');
         root.add(this.scene.add.circle(portrait.x,portrait.y,portrait.width/2,0x1c3341).setStrokeStyle(2,0x557985).setDepth(portrait.depth));
         const fox=this.scene.add.sprite(portrait.x,portrait.y,'rune-fox-sheet',p.frame??0).setDepth(portrait.depth);

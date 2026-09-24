@@ -1,5 +1,5 @@
 import {describe,it,expect} from 'vitest';
-import { awardCatacombFoxUpgrade, getPetAttackPower, migrateCatacombPets, getCatacombFoxBonus, CATACOMB_FOX_PET } from '../CatacombPetProgress';
+import { awardCatacombFoxUpgrade, awardCatacombFoxVictory, getPetAttackPower, migrateCatacombPets, getCatacombFoxBonus, CATACOMB_FOX_PET, CATACOMB_FOX_ENEMY } from '../CatacombPetProgress';
 import type { PlayerState } from '../../types';
 import pets from '../../../public/assets/data/pets.json';
 import enemies from '../../../public/assets/data/enemies.json';
@@ -29,12 +29,21 @@ describe('canonical fox and forest wolf',()=>{
 describe('persistent fox training', () => {
     const fox = pets.find(pet => pet.id === CATACOMB_FOX_PET)!;
 
-    it('adds exactly one point for every win, including the first rescue and repeats beyond four', () => {
-        const player: Pick<PlayerState, 'catacombFoxBonus'> = {};
+    it('rescues at catalog strength and adds one point only for later wins, including before binding', () => {
+        let player: Pick<PlayerState, 'catacombFoxBonus' | 'unlockedPets'> = { unlockedPets: [] };
         for (let win = 1; win <= 12; win++) {
-            expect(awardCatacombFoxUpgrade(player)).toBe(win);
-            expect(getPetAttackPower(fox, player)).toBe(fox.damageMultiplier! + win);
+            expect(awardCatacombFoxVictory(player)).toEqual({ petUnlocked: win === 1 });
+            expect(getCatacombFoxBonus(player)).toBe(win - 1);
+            expect(player.unlockedPets).toEqual([CATACOMB_FOX_ENEMY]);
+            expect(getPetAttackPower(fox, player)).toBe(fox.damageMultiplier! + win - 1);
+            player = JSON.parse(JSON.stringify(player));
         }
+    });
+
+    it('does not retroactively remove an existing saved bonus', () => {
+        const player = { unlockedPets: [CATACOMB_FOX_ENEMY], catacombFoxBonus: 7 };
+        expect(awardCatacombFoxVictory(player)).toEqual({ petUnlocked: false });
+        expect(player.catacombFoxBonus).toBe(8);
     });
 
     it('keeps the earned effective bonus from legacy saves and continues above the old cap', () => {

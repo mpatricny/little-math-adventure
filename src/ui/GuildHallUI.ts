@@ -11,6 +11,8 @@ import {
     MasteryTargetId,
 } from '../types';
 import { MedievalActionButton } from './MedievalActionButton';
+import { UnderwaterHotspot } from './UnderwaterWorldFX';
+import { getExamPresentation } from './ExamPresentation';
 
 export type GuildAvailableExam = {
     type: ExamType;
@@ -92,7 +94,19 @@ export class GuildHallUI {
 
     private createZyxProgress(): void {
         const host = this.getHost('nextExamProgressHost', {
-            x: 232, y: 282, width: 300, height: 72, depth: 30,
+            x: 232, y: 282, width: 350, height: 124, depth: 30,
+        });
+        const titleHost = this.getHost('nextExamTitleHost', {
+            x: 232, y: 240, width: 326, height: 30, depth: 31,
+        });
+        const barHost = this.getHost('nextExamBarHost', {
+            x: 232, y: 277, width: 288, height: 14, depth: 31,
+        });
+        const targetHost = this.getHost('nextExamTargetHost', {
+            x: 166, y: 313, width: 194, height: 42, depth: 32,
+        });
+        const valueHost = this.getHost('nextExamValueHost', {
+            x: 338, y: 313, width: 116, height: 42, depth: 32,
         });
         const mastery = MasterySystem.getInstance();
         const comparisonProgress = mastery.getComparisonExamProgress();
@@ -103,48 +117,48 @@ export class GuildHallUI {
         const title = isReady ? 'ZKOUŠKA PŘIPRAVENA' : 'KE ZKOUŠCE';
 
         this.scene.add.rectangle(host.x, host.y, host.width, host.height, 0x0d1117, 0.9)
+            .setName('nextExamProgressPanel')
             .setDepth(host.depth)
             .setStrokeStyle(2, this.accentColor, 0.82);
-        this.scene.add.text(host.x, host.y - 19, title, {
+        this.scene.add.text(titleHost.x, titleHost.y, title, {
             resolution: 2,
             fontFamily: 'Palatino Linotype, Book Antiqua, Georgia, serif',
-            fontSize: '13px',
+            fontSize: '22px',
             fontStyle: 'bold',
             color: isReady ? '#fff0bd' : '#e8ddc7',
             stroke: '#080a0d',
             strokeThickness: 3,
-        }).setOrigin(0.5).setDepth(host.depth + 1);
+        }).setOrigin(0.5).setDepth(titleHost.depth).setName('nextExamTitle');
 
-        const barWidth = host.width - 64;
-        const barY = host.y + 12;
-        this.scene.add.rectangle(host.x, barY, barWidth, 12, 0x080b10, 0.95)
-            .setDepth(host.depth + 1)
+        const barWidth = barHost.width;
+        this.scene.add.rectangle(barHost.x, barHost.y, barWidth, barHost.height, 0x080b10, 0.95)
+            .setDepth(barHost.depth).setName('nextExamBar')
             .setStrokeStyle(1, 0x8d6a36, 0.9);
         if (progress > 0) {
             const fillWidth = barWidth * Math.min(100, progress) / 100;
             this.scene.add.rectangle(
-                host.x - barWidth / 2 + fillWidth / 2,
-                barY,
+                barHost.x - barWidth / 2 + fillWidth / 2,
+                barHost.y,
                 fillWidth,
-                8,
+                barHost.height - 4,
                 this.accentColor,
                 1,
-            ).setDepth(host.depth + 2);
+            ).setDepth(barHost.depth + 1);
         }
-        const progressDetail = targetId === 'comparison_symbols'
-            ? `<   =   >     ${progress} %`
-            : examProgress && !isReady
-            ? `${progress} %  •  ${examProgress.targetId}  •  ${examProgress.successfulSolves}/${examProgress.requiredSuccessfulSolves} správně`
-            : `${progress} %${targetId ? `  •  ${targetId}` : ''}`;
-        this.scene.add.text(host.x, host.y + 29, progressDetail, {
+        const progressDetail = targetId ? getExamPresentation(targetId).compact : '—';
+        this.scene.add.text(targetHost.x, targetHost.y, progressDetail, {
             resolution: 2,
             fontFamily: 'Arial, sans-serif',
-            fontSize: '10px',
+            fontSize: targetId === 'comparison_symbols' ? '32px' : '26px',
             fontStyle: 'bold',
             color: '#f4ead5',
             stroke: '#080a0d',
             strokeThickness: 3,
-        }).setOrigin(0.5).setDepth(host.depth + 2);
+        }).setOrigin(0.5).setDepth(targetHost.depth).setName('nextExamTarget');
+        this.scene.add.text(valueHost.x, valueHost.y, `${progress} %`, {
+            resolution: 2, fontFamily: 'Arial, sans-serif', fontSize: '34px',
+            fontStyle: 'bold', color: '#fff0bd', stroke: '#080a0d', strokeThickness: 3,
+        }).setOrigin(0.5).setDepth(valueHost.depth).setName('nextExamValue');
     }
 
     private createChallengeBoard(): void {
@@ -152,10 +166,9 @@ export class GuildHallUI {
             x: 658, y: 328, width: 256, height: 196, depth: 30,
         });
         const actionHost = this.getHost('challengeActionHost', {
-            x: 658, y: 402, width: 220, height: 46, depth: 42,
+            x: 658, y: 398, width: 220, height: 56, depth: 42,
         });
         const isCoop = CoopSessionManager.getInstance().isCoopActive();
-        const boardTop = host.y - host.height / 2;
 
         // This rectangle deliberately matches the actual black inset painted into
         // both guild backgrounds. It is also the hard content boundary for every
@@ -164,51 +177,20 @@ export class GuildHallUI {
             .setDepth(host.depth)
             .setStrokeStyle(1, this.accentColor, 0.42);
 
-        this.scene.add.text(host.x, boardTop + 9, 'AKTUÁLNÍ VÝZVA', {
-            resolution: 2,
-            fontFamily: 'Palatino Linotype, Book Antiqua, Georgia, serif',
-            fontSize: '16px',
-            fontStyle: 'bold',
-            color: '#f5d98d',
-            stroke: '#24170b',
-            strokeThickness: 3,
-        }).setOrigin(0.5, 0).setDepth(host.depth + 1);
-        this.scene.add.rectangle(
-            host.x,
-            boardTop + 39,
-            host.width - 28,
-            2,
-            this.accentColor,
-            0.75,
-        ).setDepth(host.depth + 1);
-
         const presentation = this.getChallengePresentation(isCoop);
-        const challengeTitle = this.scene.add.text(host.x, boardTop + 49, presentation.title, {
-            resolution: 2,
-            fontFamily: 'Palatino Linotype, Book Antiqua, Georgia, serif',
-            fontSize: this.standardExam ? '17px' : '18px',
-            fontStyle: 'bold',
-            color: this.standardExam ? '#ffffff' : '#c9c3b8',
-            align: 'center',
-            lineSpacing: 3,
-            wordWrap: { width: host.width - 24 },
-            stroke: '#090b0e',
-            strokeThickness: 4,
-        }).setOrigin(0.5, 0).setDepth(host.depth + 1);
-        this.fitTextToWidth(challengeTitle, host.width - 30);
-
-        const detail = this.scene.add.text(host.x, boardTop + 112, presentation.detail, {
-            resolution: 2,
-            fontFamily: 'Arial, sans-serif',
-            fontSize: '12px',
-            color: '#bfc9d4',
-            align: 'center',
-            lineSpacing: 2,
-            wordWrap: { width: host.width - 30 },
-            stroke: '#090b0e',
-            strokeThickness: 3,
-        }).setOrigin(0.5, 0).setDepth(host.depth + 1);
-        this.fitTextToWidth(detail, host.width - 34);
+        const labels = [
+            { id: 'challengeKind', y: 249, height: 26, size: 18, text: presentation.kind, color: '#f5d98d' },
+            { id: 'challengeTitle', y: 280, height: 30, size: 22, text: presentation.title, color: '#ffffff' },
+            { id: 'challengePreview', y: 318, height: 44, size: this.standardExam?.targetId === 'comparison_symbols' ? 36 : 32, text: presentation.preview, color: '#fff0bd' },
+            { id: 'challengeRequirement', y: 355, height: 26, size: 20, text: presentation.detail, color: '#c8e1d5' },
+        ];
+        for (const label of labels) {
+            const h = this.getHost(`${label.id}Host`, { x: 658, y: label.y, width: 236, height: label.height, depth: 31 });
+            this.scene.add.text(h.x, h.y, label.text, {
+                resolution: 2, fontFamily: 'Arial, sans-serif', fontSize: `${label.size}px`,
+                fontStyle: 'bold', color: label.color, align: 'center', stroke: '#090b0e', strokeThickness: 3,
+            }).setOrigin(0.5).setDepth(h.depth).setName(label.id);
+        }
 
         const challengeAction = new MedievalActionButton(this.scene, {
             x: actionHost.x,
@@ -219,28 +201,27 @@ export class GuildHallUI {
             label: presentation.actionLabel,
             layout: 'text',
             accent: this.accentColor,
-            labelFontSize: presentation.enabled ? 14 : 12,
+            labelFontSize: presentation.enabled ? 18 : 14,
             enabled: presentation.enabled,
             onClick: this.onStartExam,
         });
         if (!presentation.enabled) challengeAction.root.setAlpha(0.64);
     }
 
-    private fitTextToWidth(text: Phaser.GameObjects.Text, maxWidth: number): void {
-        if (text.width <= maxWidth) return;
-        text.setScale(maxWidth / text.width);
-    }
-
     private getChallengePresentation(isCoop: boolean): {
+        kind: string;
         title: string;
+        preview: string;
         detail: string;
         actionLabel: string;
         enabled: boolean;
     } {
         if (isCoop) {
             return {
-                title: 'SPOLEČNÝ POSTUP',
-                detail: 'Zkoušky a výzvy se v co-opu\nvyhodnocují automaticky po soubojích.',
+                kind: 'Společně',
+                title: 'Společný postup',
+                preview: '⚔ → ★',
+                detail: '',
                 actionLabel: 'AUTOMATICKÝ POSTUP',
                 enabled: false,
             };
@@ -248,20 +229,22 @@ export class GuildHallUI {
         if (this.standardExam) {
             const config = EXAM_CONFIGS[this.standardExam.type] as ExamConfig;
             const threshold = config.passThreshold ?? config.bronzeThreshold ?? config.itemCount;
-            if (this.standardExam.targetId === 'comparison_symbols') {
-                return { title: '<   =   >', detail: `✓ ${threshold} / ${config.itemCount}`, actionLabel: 'ZAČÍT', enabled: true };
-            }
+            const identity = getExamPresentation(this.standardExam.targetId, this.standardExam.type);
             return {
-                title: this.standardExam.label.toUpperCase(),
-                detail: `${config.itemCount} úloh  •  ${threshold}+ správně pro postup`,
-                actionLabel: 'ZAČÍT ZKOUŠKU',
+                kind: identity.kind,
+                title: identity.title,
+                preview: identity.boardPreview,
+                detail: `✓ ${threshold} / ${config.itemCount}`,
+                actionLabel: 'ZAČÍT',
                 enabled: true,
             };
         }
         return {
-            title: 'DALŠÍ ZKOUŠKA\nSE PŘIPRAVUJE',
-            detail: 'Pokračuj v soubojích a procvičování.',
-            actionLabel: 'ZATÍM NENÍ PŘIPRAVENA',
+            kind: 'Další zkouška',
+            title: 'Procvičujeme',
+            preview: '⚔ → ★',
+            detail: '',
+            actionLabel: 'ZATÍM ZAMČENO',
             enabled: false,
         };
     }
@@ -460,63 +443,6 @@ export class GuildHallUI {
         const isCoop = CoopSessionManager.getInstance().isCoopActive();
         const enabled = this.catacombExam !== null && !isCoop;
 
-        // Light spills out from the corridor on hover; there is no outline around
-        // the invisible hit area or the masonry arch.
-        const corridorLight = this.scene.add.graphics()
-            .setPosition(host.x, host.y)
-            .setDepth(host.depth)
-            .setBlendMode(Phaser.BlendModes.ADD)
-            .setAlpha(0);
-        corridorLight.fillStyle(this.accentColor, 0.05);
-        corridorLight.fillRoundedRect(-34, -82, 68, 178, 30);
-        corridorLight.fillStyle(this.accentColor, 0.07);
-        corridorLight.fillRoundedRect(-28, -76, 56, 166, 25);
-        corridorLight.fillStyle(0xeaffff, 0.06);
-        corridorLight.fillRoundedRect(-19, -67, 38, 148, 19);
-        corridorLight.fillStyle(this.accentColor, 0.06);
-        corridorLight.fillEllipse(0, 28, 68, 138);
-
-        const floorLight = this.scene.add.ellipse(
-            host.x,
-            host.y + host.height / 2 - 14,
-            host.width * 0.82,
-            34,
-            this.accentColor,
-            0.35,
-        ).setDepth(host.depth + 1).setBlendMode(Phaser.BlendModes.ADD).setAlpha(0);
-
-        const setCatacombHover = (active: boolean): void => {
-            this.scene.tweens.killTweensOf([corridorLight, floorLight]);
-            if (!active) {
-                this.scene.tweens.add({
-                    targets: [corridorLight, floorLight],
-                    alpha: 0,
-                    duration: 190,
-                    ease: 'Sine.easeOut',
-                });
-                return;
-            }
-
-            corridorLight.setAlpha(0.68);
-            floorLight.setAlpha(0.32);
-            this.scene.tweens.add({
-                targets: corridorLight,
-                alpha: 1,
-                duration: 820,
-                yoyo: true,
-                repeat: -1,
-                ease: 'Sine.easeInOut',
-            });
-            this.scene.tweens.add({
-                targets: floorLight,
-                alpha: 0.5,
-                duration: 820,
-                yoyo: true,
-                repeat: -1,
-                ease: 'Sine.easeInOut',
-            });
-        };
-
         const status = isCoop
             ? 'PŘEHLED V CO-OPU'
             : enabled
@@ -525,15 +451,21 @@ export class GuildHallUI {
 
         const activateCatacomb = (): void => {
             if (isCoop) {
-                this.showToast('V co-opu se postup do katakomb zapisuje automaticky po soubojích.');
+                this.showToast('Hra ve dvou');
                 return;
             }
             if (!this.catacombExam) {
-                this.showToast('Další výzva v katakombách zatím není připravená.');
+                this.showToast('Zatím zamčeno');
                 return;
             }
             this.onStartCatacomb(this.catacombExam);
         };
+
+        // Reuse Silverpond's continuously lit passage, including its touch and
+        // hover feedback. Availability must be visible without a mouse pointer.
+        const doorway = new UnderwaterHotspot(this.scene, host, {
+            id: 'catacombDoorway', kind: 'arch', enabled, onClick: activateCatacomb,
+        });
 
         const catacombCaption = this.createEnvironmentalCaption({
             host: labelHost,
@@ -542,7 +474,7 @@ export class GuildHallUI {
             color: this.accentColor === 0x57ddf2 ? '#bdefff' : '#ffe2a2',
             enabled,
             onActivate: activateCatacomb,
-            onHover: setCatacombHover,
+            onHover: active => doorway.setHovered(active),
         });
         catacombCaption.setAlpha(enabled ? 0.9 : 0.58);
 
@@ -567,12 +499,6 @@ export class GuildHallUI {
             });
         }
 
-        const zone = this.scene.add.zone(host.x, host.y, host.width, host.height)
-            .setDepth(host.depth + 2)
-            .setInteractive({ useHandCursor: true });
-        zone.on('pointerover', () => setCatacombHover(true));
-        zone.on('pointerout', () => setCatacombHover(false));
-        zone.on('pointerup', activateCatacomb);
     }
 
     private createEnvironmentalCaption(options: {

@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { applyComparisonExamResult, createInitialComparisonChapterState, generateComparisonTrainingProblems, recordComparisonAttempt } from '../ComparisonLearningSystem';
+import { getLearningBand, getLearningFrontier, requireIncompleteLearningBand } from '../LearningProgress';
 import {
     ALL_BANDS,
     ALL_SUB_ATOM_NUMBERS,
@@ -592,6 +593,122 @@ describe('CoopSessionManager casual progression', () => {
         const mana = ManaPlayerLane.buildManaPool(engine, data);
         expect(mana).toHaveLength(20);
         expect(mana.every(problem => problem.masteryKey?.startsWith('E') && isCrossingTen(problem))).toBe(true);
+    });
+
+    function pausedLaterBand(): MasteryData {
+        const data = createMasteryData();
+        setCurrentBand(data, 'D', 3);
+        data.selectedStartBand = 'D';
+        data.subAtoms.D1.state = 'fluent';
+        data.subAtoms.D2.state = 'fluent';
+        data.bands.E.state = 'training';
+        Object.assign(data.subAtoms.E1, { state: 'fluent', successfulSolves: 52, examBestMedal: 'gold' });
+        Object.assign(data.subAtoms.E2, { state: 'training', successfulSolves: 9 });
+        return data;
+    }
+
+    it('prioritizes unfinished D without resetting any earned D/E evidence', () => {
+        const data = pausedLaterBand();
+        addAttempts(data, 'E1', 'result_unknown', [{ correct: true, rt: 3456 }]);
+        const before = structuredClone(data);
+        expect(requireIncompleteLearningBand(data, 'D')).toBe(true);
+        expect(getLearningBand(data)).toBe('D');
+        expect(getLearningFrontier(data)).toBe('D3');
+        expect(data).toEqual({ ...before, requiredBand: 'D', currentPool: [], currentPoolIndex: 0, lastPoolProblems: [] });
+        expect(requireIncompleteLearningBand(data, 'D')).toBe(true);
+    });
+
+    it('pauses E queues and fight counters while D drives combat, mana and shop preparation', () => {
+        const data = pausedLaterBand(); requireIncompleteLearningBand(data, 'D');
+        const db = ProblemDatabase.getInstance();
+        const retryE = db.getProblemsForForm('E2', 'result_unknown')[1].key;
+        const slowE = db.getProblemsForForm('E1', 'result_unknown')[1].key;
+        const retryD = db.getProblemsForForm('D3', 'result_unknown')[1].key;
+        data.retryPool = [retryE, retryD]; data.slowPool = [slowE];
+        data.currentPool = [retryE];
+        const system = MasterySystem.getInstance(); system.setActiveData(data);
+        const e1 = structuredClone(data.subAtoms.E1), e2 = structuredClone(data.subAtoms.E2);
+        expect(system.drawFromPool(25).every(key => key.startsWith('D'))).toBe(true);
+        expect(data.retryPool).toEqual([retryE, retryD]); expect(data.slowPool).toEqual([slowE]);
+        expect(system.drawPreparationProblems(5)).toContain(retryD);
+        expect(system.drawPreparationProblems(5).every(key => key.startsWith('D'))).toBe(true);
+        system.recordFightEnd();
+        expect(data.subAtoms.E1).toEqual(e1); expect(data.subAtoms.E2).toEqual(e2);
+        const engine = new MathEngine(createRegistryStub({ playerLevel: 5 }) as any, {
+            fixedLevel: 5, initialStats: createMathStats(data), autoPersist: false,
+        });
+        const mana = ManaPlayerLane.buildManaPool(engine, data);
+        expect(mana).toHaveLength(20);
+        expect(mana.every(problem => problem.masteryKey?.startsWith('D'))).toBe(true);
+    });
+
+    it('completes D3, D4 and the D gate, then resumes the saved E frontier and retries', () => {
+        const data = pausedLaterBand(); requireIncompleteLearningBand(data, 'D');
+        const retryE = ProblemDatabase.getInstance().getProblemsForForm('E2', 'result_unknown')[1].key;
+        data.retryPool = [retryE];
+        const later = [structuredClone(data.bands.E), ...ALL_SUB_ATOM_NUMBERS.map(n => structuredClone(data.subAtoms[`E${n}` as SubAtomId]))];
+        const system = MasterySystem.getInstance(); system.setActiveData(data);
+        expect(system.getBandGateEligibility('D')).toBe(false);
+        system.applyExamResult('D3', 6, 'silver', true);
+        expect(system.getFrontierSubAtom()).toBe('D4');
+        system.applyExamResult('D4', 6, 'silver', true);
+        expect(system.getBandGateEligibility('D')).toBe(true);
+        system.applyBandGateResult('D', 0, 'none', true);
+        expect(data.requiredBand).toBe('D'); expect(system.getCurrentBand()).toBe('D');
+        system.applyBandGateResult('D', 8, 'bronze', true);
+        expect(data.requiredBand).toBeUndefined();
+        expect(system.getCurrentBand()).toBe('E'); expect(system.getFrontierSubAtom()).toBe('E2');
+        expect(system.drawFromPool(1)).toEqual([retryE]);
+        expect([data.bands.E, ...ALL_SUB_ATOM_NUMBERS.map(n => data.subAtoms[`E${n}` as SubAtomId])]).toEqual(later);
+    });
+
+    it('blocks paused E exams and co-op promotions without deleting their checkpoints', () => {
+        const data = pausedLaterBand(); requireIncompleteLearningBand(data, 'D');
+        for (const form of ['result_unknown', 'missing_part'] as const) {
+            addAttempts(data, 'E2', form, Array.from({ length: 12 }, () => ({ correct: true, rt: 2000 })));
+        }
+        data.coopAutoPromotionBases['sub_atom:E2'] = 0;
+        const system = MasterySystem.getInstance(); system.setActiveData(data);
+        expect(system.checkExamEligibility('E2')).toBe(false);
+        expect(system.checkMasteryChallengeEligibility('E1')).toBe(false);
+        expect(system.getAvailableExams().every(exam => !exam.targetId.startsWith('E'))).toBe(true);
+        expect(system.applyCoopAutoPromotions(true).every(exam => !exam.targetId.startsWith('E'))).toBe(true);
+        expect(data.coopAutoPromotionBases['sub_atom:E2']).toBe(0);
+        const before = structuredClone(data);
+        expect(() => system.applyExamResult('E2', 8, 'gold', true)).toThrow(/required learning band/);
+        expect(() => system.applyBandGateResult('E', 10, 'gold', true)).toThrow(/required learning band/);
+        expect(() => system.applyFluencyResult('E1', 10, true)).toThrow(/required learning band/);
+        expect(() => system.applyMasteryResult('E1', 10, true)).toThrow(/required learning band/);
+        expect(() => system.applyBandMasteryResult('E', 14, true)).toThrow(/required learning band/);
+        expect(data).toEqual(before);
+    });
+
+    it('persists the required band through reload and keeps it isolated between co-op tracks', () => {
+        const game = GameStateManager.getInstance(); game.reset('girl_knight', 'Return QA', 0);
+        const data = pausedLaterBand(); requireIncompleteLearningBand(data, 'D');
+        game.getMathStats().masteryData = data; game.getMathStats().totalAttempts = 555;
+        game.getPlayer().attack = 5; game.save(); game.loadSlot(0);
+        expect(game.getMasteryData().requiredBand).toBe('D');
+        expect(game.getMathStats().totalAttempts).toBe(555); expect(game.getPlayer().attack).toBe(5);
+        expect(game.getMasteryData().subAtoms.E1).toEqual(data.subAtoms.E1);
+        const other = createMasteryData(); setCurrentBand(other, 'E', 1);
+        const system = MasterySystem.getInstance();
+        for (const [track, band] of [[data, 'D'], [other, 'E'], [data, 'D']] as const) {
+            system.setActiveData(track); expect(system.getCurrentBand()).toBe(band);
+            expect(system.drawFromPool(10).every(key => key.startsWith(band))).toBe(true);
+        }
+        expect(other.requiredBand).toBeUndefined();
+        system.setActiveData(null); expect(system.getCurrentBand()).toBe('D');
+    });
+
+    it('does not reopen completed D or apply an invalid required band below placement', () => {
+        const data = pausedLaterBand(); data.bands.D.state = 'secure';
+        const before = structuredClone(data);
+        expect(requireIncompleteLearningBand(data, 'D')).toBe(false); expect(data).toEqual(before);
+        expect(getLearningBand(data)).toBe('E');
+        data.requiredBand = 'D'; expect(getLearningBand(data)).toBe('E');
+        data.requiredBand = 'invalid' as BandId; expect(getLearningBand(data)).toBe('E');
+        expect(() => requireIncompleteLearningBand(data, 'C')).toThrow(/placement/);
     });
 
     it('restores skipped placement bands on load without changing combat or later learning progress', () => {

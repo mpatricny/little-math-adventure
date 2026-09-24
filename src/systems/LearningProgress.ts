@@ -1,7 +1,38 @@
 import { ALL_BANDS, ALL_SUB_ATOM_NUMBERS, BandId, MasteryData, SubAtomId } from '../types';
 
+/** An explicit repair may prioritize an unfinished band without resetting later achievements. */
+export function getRequiredLearningBand(data: MasteryData): BandId | undefined {
+    const band = data.requiredBand;
+    if (!band || !ALL_BANDS.includes(band) || data.bands[band]?.state !== 'training') return undefined;
+    if (data.selectedStartBand && ALL_BANDS.indexOf(band) < ALL_BANDS.indexOf(data.selectedStartBand)) return undefined;
+    return band;
+}
+
+export function isLearningBandDeferred(data: MasteryData, band: BandId): boolean {
+    const required = getRequiredLearningBand(data);
+    return required !== undefined && ALL_BANDS.indexOf(band) > ALL_BANDS.indexOf(required);
+}
+
+/** Operates on a fresh save copy; never changes an earned state, answer, medal or counter. */
+export function requireIncompleteLearningBand(data: MasteryData, band: BandId): boolean {
+    if (!ALL_BANDS.includes(band) || !data.bands[band] || data.bands[band].state === 'locked'
+        || (data.selectedStartBand && ALL_BANDS.indexOf(band) < ALL_BANDS.indexOf(data.selectedStartBand))) {
+        throw new Error('The required band must already be open and at or above the original placement.');
+    }
+    if (data.bands[band].state !== 'training') return false;
+    if (data.requiredBand && data.requiredBand !== band) throw new Error('A different required band is already set.');
+    data.requiredBand = band;
+    // These are unanswered scheduling caches, not evidence of learning.
+    data.currentPool = [];
+    data.currentPoolIndex = 0;
+    data.lastPoolProblems = [];
+    return true;
+}
+
 /** Learning difficulty is independent of combat level and of the other co-op player. */
 export function getLearningBand(data: MasteryData): BandId {
+    const required = getRequiredLearningBand(data);
+    if (required) return required;
     // Finishing the last module must not send a player back to band A.
     return [...ALL_BANDS].reverse().find(band => {
         const state = data.bands[band]?.state;

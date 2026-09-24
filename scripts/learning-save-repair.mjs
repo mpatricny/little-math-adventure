@@ -14,7 +14,8 @@ export function prepareLearningRepair(plan, bundle) {
     return plan.entries.map(entry => {
         const matches = bundle.saves.filter(save => save.sourceSlot === entry.sourceSlot);
         const save = matches[0]?.save;
-        if (matches.length !== 1 || save?.player?.name !== entry.playerName || !save.mathStats) {
+        if (matches.length !== 1 || save?.player?.name !== entry.playerName || !save.mathStats
+            || (entry.playerProfileId && save.player.gameplayProfileId !== entry.playerProfileId)) {
             throw new Error('Na tomto zařízení nejsou očekávané profily. Nic se nezměnilo.');
         }
         const hash = learningStatsHash(save.mathStats);

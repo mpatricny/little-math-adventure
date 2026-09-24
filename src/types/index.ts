@@ -582,6 +582,7 @@ export interface MasteryData {
     lastStruggleOfferFight: number;   // fightCount when last struggle offer was shown
     coopAutoPromotionBases: Record<string, number>; // exam/challenge target key -> baseline solve sequence
     selectedStartBand?: BandId;       // band chosen at game start (optional for old saves)
+    requiredBand?: BandId;            // finish this opened band before resuming later saved progress
     comparisonChapter?: ComparisonChapterState;
 }
 
@@ -637,10 +638,19 @@ export interface ComparisonChapterState {
     currentStageIndex: number;
     stages: ComparisonStageProgress[];
     attempts: ComparisonAttempt[];
+    /** Lifetime counters retained even when the detailed 400-answer history rotates. */
+    statistics?: Partial<Record<ComparisonStageId, ComparisonStageStatistics>>;
     examBestMedal: TrialTier | null;
     examRotation: number;
     fluencyChallengeResult?: 'pass' | 'fail' | null;
     masteryChallengeResult?: 'pass' | 'fail' | null;
+}
+
+export interface ComparisonStageStatistics {
+    correct: number;
+    wrong: number;
+    timedCorrect: number;
+    totalTimeMs: number;
 }
 
 /** Definition of a single problem in the mastery database */

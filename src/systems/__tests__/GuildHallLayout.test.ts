@@ -16,7 +16,15 @@ describe('Guild Hall layout contract', () => {
         const requiredHosts = [
             'zyxGuide',
             'nextExamProgressHost',
+            'nextExamTitleHost',
+            'nextExamBarHost',
+            'nextExamTargetHost',
+            'nextExamValueHost',
             'challengePanelHost',
+            'challengeKindHost',
+            'challengeTitleHost',
+            'challengePreviewHost',
+            'challengeRequirementHost',
             'challengeActionHost',
             'manaSpringHost',
             'manaSpringLabelHost',
@@ -51,6 +59,39 @@ describe('Guild Hall layout contract', () => {
 
         const silverpondSource = readFileSync(resolve('src/scenes/SilverpondGuildMockScene.ts'), 'utf8');
         expect(silverpondSource).toContain("layoutSceneKey: 'GuildScene'");
+    });
+
+    it('keeps the enlarged exam title, bar and values in separate editor-controlled regions', () => {
+        const panel = guildElementsById.get('nextExamProgressHost')!;
+        for (const id of ['nextExamTitleHost', 'nextExamBarHost', 'nextExamTargetHost', 'nextExamValueHost']) {
+            const h = guildElementsById.get(id)!;
+            expect(h.x - h.width / 2).toBeGreaterThanOrEqual(panel.x - panel.width / 2);
+            expect(h.x + h.width / 2).toBeLessThanOrEqual(panel.x + panel.width / 2);
+            expect(h.y - h.height / 2).toBeGreaterThanOrEqual(panel.y - panel.height / 2);
+            expect(h.y + h.height / 2).toBeLessThanOrEqual(panel.y + panel.height / 2);
+        }
+        const title = guildElementsById.get('nextExamTitleHost')!, bar = guildElementsById.get('nextExamBarHost')!;
+        const target = guildElementsById.get('nextExamTargetHost')!, value = guildElementsById.get('nextExamValueHost')!;
+        expect(title.y + title.height / 2).toBeLessThan(bar.y - bar.height / 2);
+        expect(bar.y + bar.height / 2).toBeLessThan(target.y - target.height / 2);
+        expect(target.x + target.width / 2).toBeLessThan(value.x - value.width / 2);
+    });
+
+    it('reserves separate regions for exam kind, title, example, requirement and touch action', () => {
+        const panel = guildElementsById.get('challengePanelHost')!;
+        const ids = ['challengeKindHost', 'challengeTitleHost', 'challengePreviewHost', 'challengeRequirementHost', 'challengeActionHost'];
+        ids.forEach((id, i) => {
+            const h = guildElementsById.get(id)!;
+            expect(h.x - h.width / 2).toBeGreaterThanOrEqual(panel.x - panel.width / 2);
+            expect(h.x + h.width / 2).toBeLessThanOrEqual(panel.x + panel.width / 2);
+            expect(h.y - h.height / 2).toBeGreaterThanOrEqual(panel.y - panel.height / 2);
+            expect(h.y + h.height / 2).toBeLessThanOrEqual(panel.y + panel.height / 2);
+            if (i) {
+                const previous = guildElementsById.get(ids[i - 1])!;
+                expect(previous.y + previous.height / 2).toBeLessThan(h.y - h.height / 2);
+            }
+        });
+        expect(guildElementsById.get('challengeActionHost')!.height * 1024 / 1280).toBeGreaterThanOrEqual(44);
     });
 
     it('does not expose the removed per-problem mana collection UI', () => {
@@ -127,10 +168,11 @@ describe('Guild Hall layout contract', () => {
         expect(hallSource).toContain('getNextSubAtomExamProgress');
         expect(hallSource).not.toContain('getMasteryPercentage');
         expect(hallSource).not.toContain('Stříbro/zlato: správně do');
-        expect(examSource).toContain('medaile podle počtu správných odpovědí');
-        expect(examSource).toContain('BRONZ\\n${config.bronzeThreshold}+ SPRÁVNĚ');
-        expect(examSource).toContain('STŘÍBRO\\n${config.silverThreshold}+ SPRÁVNĚ');
-        expect(examSource).toContain('ZLATO\\n${config.goldThreshold}+ SPRÁVNĚ');
+        expect(examSource).toContain('✓ ${config.bronzeThreshold}/${config.itemCount}');
+        expect(examSource).toContain('✓ ${config.silverThreshold}/${config.itemCount}');
+        expect(examSource).toContain('✓ ${config.goldThreshold}/${config.itemCount}');
+        expect(examSource).not.toContain('medaile podle počtu správných odpovědí');
+        expect(hallSource).toContain('getExamPresentation');
         expect(examSource).not.toContain('+ DO ${config.timePerItem} S');
     });
 

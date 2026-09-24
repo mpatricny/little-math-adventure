@@ -6,6 +6,7 @@ import { SUB_ATOM_EXAM_REQUIREMENTS } from '../systems/ExamProgress';
 import { GameStateManager } from '../systems/GameStateManager';
 import { SceneBuilder } from '../systems/SceneBuilder';
 import { ensureComparisonChapter, COMPARISON_STAGES } from '../systems/ComparisonLearningSystem';
+import { getComparisonStatistics } from '../systems/ComparisonStatistics';
 import { ProblemDatabase } from '../systems/ProblemDatabase';
 import {
     ALL_BANDS, ALL_SUB_ATOM_NUMBERS, ALL_PROBLEM_FORMS,
@@ -334,22 +335,51 @@ export class MasteryMapOverlay extends OverlayBase {
 
     private renderComparisonDetail(content: Phaser.GameObjects.Container, data: any, y: number, width: number): number {
         const host = this.layout.get<Phaser.GameObjects.Container>('comparisonDetail');
+        const definition = this.layout.getElementDef('comparisonDetail');
         const chapter = data.comparisonChapter;
+        const stats = getComparisonStatistics(chapter);
         const root = this.scene.add.container(host?.x ?? 18, y + (host?.y ?? 14))
             .setDepth(host?.depth ?? 1).setName('comparisonMapDetail');
+        const panelWidth = definition?.width ?? width - 36;
+        const panelHeight = definition?.height ?? 446;
+        root.setSize(panelWidth, panelHeight).setData('statistics', stats);
+        root.add(this.scene.add.rectangle(0, 0, panelWidth, panelHeight, 0x0d1b2a)
+            .setOrigin(0).setStrokeStyle(1, STATE_COLORS.training, 0.45));
+        const text = (id: string, value: string, size: number, color = '#d6deea', dy = 0, centered = false) => {
+            const h = this.layout.get<Phaser.GameObjects.Container>(id)!;
+            const label = this.scene.add.text(h.x, h.y + dy, value, {
+                resolution: 2, fontFamily: 'Arial, sans-serif', fontSize: `${size}px`, color,
+                fontStyle: 'bold',
+            }).setOrigin(centered ? 0.5 : 0, 0).setDepth(h.depth).setName(`${id}:${dy}`);
+            root.add(label); return label;
+        };
+        text('comparisonTitleHost', 'POROVNÁVÁNÍ', 24, '#e8d44d');
+        text('comparisonStatusHost', chapter.status === 'locked' ? 'Po A2' : chapter.status === 'complete'
+            ? '✓ Hotovo' : chapter.status === 'exam_ready' ? '★ Zkouška' : `${chapter.currentStageIndex + 1} / 6`, 22);
+        const formatTime = (ms: number | null) => ms === null ? '—' : `${(ms / 1000).toFixed(1)} s`;
+        for (const [id, label, value, color] of [
+            ['comparisonCorrectHost', 'Správně', `✓ ${stats.correct}`, '#73dc89'],
+            ['comparisonWrongHost', 'Chyby', `✗ ${stats.wrong}`, '#f69b91'],
+            ['comparisonAccuracyHost', 'Posledních 20', stats.recentAccuracy === null ? '—' : `${Math.round(stats.recentAccuracy * 100)} %`, '#d6deea'],
+            ['comparisonTimeHost', 'Čas · medián', formatTime(stats.medianMs), '#d6deea'],
+        ]) {
+            text(id, label, 20, '#93aec8', 0, true);
+            text(id, value, 30, color, 26, true);
+        }
         const names = ['Velikost', 'Počet', 'Předměty a čísla', 'Čísla', 'Výrazy s pomocí', 'Výrazy'];
-        const lines = [
-            'POROVNÁVÁNÍ',
-            chapter.status === 'locked' ? 'Po A2' : chapter.status === 'complete' ? '✓ Hotovo' : chapter.status === 'exam_ready' ? '★ Zkouška' : '⚔ Souboje',
-            ...COMPARISON_STAGES.map((_stage, index) => `${chapter.status === 'complete' || index < chapter.currentStageIndex ? '✓' : index === chapter.currentStageIndex && chapter.status === 'training' ? '→' : '○'} ${index + 1}. ${names[index]}`),
-        ];
-        const text = this.scene.add.text(0, 0, lines.join('\n'), {
-            resolution: 2, fontFamily: 'Arial, sans-serif', fontSize: '14px', color: '#d6deea',
-            lineSpacing: 7, wordWrap: { width: width - 60 },
+        const columns = ['comparisonStepColumn', 'comparisonCorrectColumn', 'comparisonWrongColumn', 'comparisonAccuracyColumn', 'comparisonTimeColumn'];
+        ['Krok', 'Správně', 'Chyby', 'Úspěšnost', 'Čas · průměr'].forEach((label, i) => text(columns[i], label, 22, '#93aec8'));
+        COMPARISON_STAGES.forEach((_stage, index) => {
+            const row = stats.stages[index];
+            const status = chapter.status === 'complete' || index < chapter.currentStageIndex ? '✓'
+                : index === chapter.currentStageIndex && chapter.status !== 'locked' ? '→' : '○';
+            const values = [`${status} ${names[index]}`, `${row.correct}`, `${row.wrong}`,
+                row.accuracy === null ? '—' : `${Math.round(row.accuracy * 100)} %`, formatTime(row.meanMs)];
+            values.forEach((value, i) => text(columns[i], value, 24,
+                i === 1 && row.correct ? '#73dc89' : i === 2 && row.wrong ? '#f69b91' : '#d6deea', (index + 1) * 42));
         });
-        root.add(text);
         content.add(root);
-        return y + (host?.y ?? 14) + text.height + 18;
+        return y + (host?.y ?? 14) + panelHeight + 18;
     }
 
     // ── Expanded detail panel ──

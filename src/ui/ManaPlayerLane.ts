@@ -10,8 +10,9 @@ import { ProblemDatabase } from '../systems/ProblemDatabase';
 import { MasteryData, MathProblem, MathProblemDef, PlayerState, ProblemDefinition, ProblemStats, SubAtomId } from '../types';
 import { formatMathProblem } from '../utils/formatMathProblem';
 import { manaForCorrectAnswers } from '../systems/ManaCollectionRewards';
+import { MANA_ROW_COUNT, MANA_READING_PAUSE_MS, getManaRowHoldMs, getManaRowY } from '../systems/ManaStepMotion';
 
-const ROW_COUNT = 8;
+const ROW_COUNT = MANA_ROW_COUNT;
 const MAX_LIVES = 3;
 
 interface AnswerSlot {
@@ -93,7 +94,6 @@ export class ManaPlayerLane {
     // Derived constants
     private rowHeight: number;
     private problemStartY: number;
-    private problemEndY: number;
     private fontScale: number;
 
     // Game state
@@ -117,7 +117,8 @@ export class ManaPlayerLane {
     // Game objects
     private channelGraphics!: Phaser.GameObjects.Graphics;
     private problemText!: Phaser.GameObjects.Text;
-    private fallingTween: Phaser.Tweens.Tween | null = null;
+    private rowTimer: Phaser.Time.TimerEvent | null = null;
+    private currentRow = 0;
     private heartTexts: Phaser.GameObjects.Text[] = [];
     private manaDisplayText!: Phaser.GameObjects.Text;
     private resolveButton!: Phaser.GameObjects.Container;
@@ -153,7 +154,6 @@ export class ManaPlayerLane {
         // Enter inside the first answer row, below the player's name/HUD.
         // A short reading pause preserves time to choose that first row.
         this.problemStartY = config.channelTop + this.rowHeight / 2;
-        this.problemEndY = config.channelBottom + 20;
         this.fontScale = config.fontScale ?? 1.0;
 
         this.createChannel();
@@ -487,10 +487,7 @@ export class ManaPlayerLane {
         this.rewardEffect?.destroy(true);
         this.rewardEffect = null;
         this.laneFinishedText?.setVisible(false);
-        if (this.fallingTween) {
-            this.fallingTween.stop();
-            this.fallingTween = null;
-        }
+        this.stopRowTimer();
         this.resolveButton.setVisible(false);
         this.problemText.setVisible(false);
         this.nextProblemText.setVisible(false);
@@ -584,30 +581,32 @@ export class ManaPlayerLane {
         const displayText = formatMathProblem(this.currentProblem, 'question');
         this.problemText.setText(displayText);
         this.problemText.setY(this.problemStartY);
+        this.currentRow = 0;
         this.problemText.setVisible(true);
 
         this.scoreText.setText(`✓ ${this.correctCount}`);
         this.updateNextProblemPreview();
 
-        const duration = this.getFallDuration();
         this.isResolving = false;
-
-        this.fallingTween = this.scene.tweens.add({
-            targets: this.problemText,
-            y: this.problemEndY,
-            delay: 750,
-            duration,
-            ease: 'Linear',
-            onComplete: () => {
-                if (!this.isResolving) {
-                    this.onMissed();
-                }
-            },
-        });
+        this.scheduleRowStep(true);
     }
 
-    private getFallDuration(): number {
-        return Math.max(1500, 8000 - this.problemCount * 300);
+    private stopRowTimer(): void {
+        this.rowTimer?.remove(false);
+        this.rowTimer = null;
+    }
+
+    private scheduleRowStep(firstRow = false): void {
+        this.stopRowTimer();
+        this.rowTimer = this.scene.time.delayedCall(getManaRowHoldMs(this.problemCount) + (firstRow ? MANA_READING_PAUSE_MS : 0), () => {
+            this.rowTimer = null;
+            if (!this.isGameActive || this.isResolving) return;
+            if (this.currentRow === ROW_COUNT - 1) { this.onMissed(); return; }
+            this.currentRow++;
+            // Snap to a row center. No moving/ambiguous answer between two floors.
+            this.problemText.setY(getManaRowY(this.config.channelTop, this.config.channelBottom, this.currentRow));
+            this.scheduleRowStep();
+        });
     }
 
     // ============ ANSWER SLOTS ============
@@ -679,10 +678,7 @@ export class ManaPlayerLane {
         if (!this.isGameActive || this.isResolving || !this.currentProblem) return;
         this.isResolving = true;
 
-        if (this.fallingTween) {
-            this.fallingTween.stop();
-            this.fallingTween = null;
-        }
+        this.stopRowTimer();
 
         const problemY = this.problemText.y;
         let closestSlot = this.answerSlots[0];

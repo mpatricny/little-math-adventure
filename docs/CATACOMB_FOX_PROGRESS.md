@@ -1,8 +1,9 @@
 # Runová liška: trvalý útok za katakomby
 
-Každý úspěšně dokončený průchod katakombami přidává lišce **+1 k základnímu
-útoku**. Platí pro plynulost i mistrovství, první osvobození i opakování stejné
-zkoušky. Bonus se ukládá i před připoutáním lišky u Pythie. Porážka nic nepřidává
+První úspěšný průchod lišku osvobodí **s její základní katalogovou silou**, bez
+bonusu. Každý další úspěšný průchod přidává **+1 k základnímu útoku**. Platí pro
+plynulost i mistrovství a opakování stejné zkoušky. Bonus z dalších průchodů se
+ukládá i před připoutáním lišky u Pythie. Porážka nic nepřidává
 a opakované zavolání závěru stejného průchodu nesmí vyplatit další bod.
 
 `CatacombPetProgress` spravuje jediný uložený čítač `player.catacombFoxBonus`.
@@ -18,7 +19,8 @@ zůstává beze změny. Příklad mazlíčka již nese celý útok, při zásahu
 nepřičítá podruhé. Běžný bonus 2× za tři operandy se aplikuje na celý základní
 útok a obrana protivníka se odečítá jednou přes `CombatDamageSystem`.
 
-Výsledek ukazuje lišku, krátké „Útok +1“ a skutečnou změnu, například 10 → 11.
+První výsledek ukazuje „Liška zachráněna!“ a základní sílu, bez „+1“.
+Další průchody ukazují „Útok +1“ a skutečnou změnu, například 10 → 11.
 Používá existující hosty `CatacombTrialScene` v `scenes.json`; žádné nové pevně
 umístěné prvky ani obrázky s textem. Počty odpovědí jsou zobrazené pomocí ✓ a ×.
 

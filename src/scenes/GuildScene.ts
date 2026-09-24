@@ -18,6 +18,7 @@ import { GuildHallUI } from '../ui/GuildHallUI';
 import { SilverpondQuestDialog } from '../ui/SilverpondQuestDialog';
 import { MedievalActionButton } from '../ui/MedievalActionButton';
 import { createGuildExamBoard, createGuildExamRule } from '../ui/GuildExamTheme';
+import { getExamPresentation } from '../ui/ExamPresentation';
 
 type AvailableGuildExam = {
     type: ExamType;
@@ -76,6 +77,7 @@ export class GuildScene extends Phaser.Scene {
     // Trial UI elements
     private trialOverlay!: Phaser.GameObjects.Container;
     private trialQuestionCounter!: Phaser.GameObjects.Text;
+    private trialIdentityText!: Phaser.GameObjects.Text;
     private problemText!: Phaser.GameObjects.Text;
     private comparisonProblemVisual: ComparisonProblemView | null = null;
     private comparisonExpressionVisual: ComparisonExpressionView | null = null;
@@ -330,7 +332,7 @@ export class GuildScene extends Phaser.Scene {
         this.overviewOverlay.add(board);
 
         const headerHost = this.getLocalHost('trialHeaderHost', rootHost.x, rootHost.y, {
-            x: 640, y: 103, width: 760, height: 74, depth: 203,
+            x: 640, y: 126, width: 760, height: 74, depth: 203,
         });
         const title = this.add.text(headerHost.x, headerHost.y - 7, 'CECHOVNÍ ZKOUŠKA', {
             resolution: 2,
@@ -341,48 +343,54 @@ export class GuildScene extends Phaser.Scene {
             stroke: '#f5d88b',
             strokeThickness: 2,
             align: 'center',
-        }).setOrigin(0.5).setDepth(headerHost.depth);
-        const subtitle = this.add.text(headerHost.x, headerHost.y + 30, 'MISTROVA SÍŇ • PROVĚŘENÍ DOVEDNOSTI', {
+        }).setOrigin(0.5).setDepth(headerHost.depth).setName('examOverviewTitle');
+        const kindHost = this.getLocalHost('trialKindHost', rootHost.x, rootHost.y, {
+            x: 640, y: 157, width: 560, height: 28, depth: 203,
+        });
+        const subtitle = this.add.text(kindHost.x, kindHost.y, '', {
             resolution: 2,
             fontFamily: 'Georgia, serif',
-            fontSize: '14px',
+            fontSize: '22px',
             fontStyle: 'bold',
             color: '#6e4524',
             letterSpacing: 1,
-        }).setOrigin(0.5).setDepth(headerHost.depth);
+        }).setOrigin(0.5).setDepth(kindHost.depth).setName('examOverviewKind');
         this.overviewOverlay.add([title, subtitle]);
+        this.overviewOverlay.setData('identity', title).setData('kind', subtitle);
 
         const rule = createGuildExamRule(
             this,
             headerHost.x,
-            headerHost.y + 54,
+            headerHost.y + 75,
             Math.min(720, headerHost.width),
             this.accentColor,
         );
         this.overviewOverlay.add(rule);
 
-        const contentHost = this.getLocalHost('trialProblemHost', rootHost.x, rootHost.y, {
-            x: 640, y: 285, width: 820, height: 190, depth: 203,
+        const contentHost = this.getLocalHost('trialOverviewPreviewHost', rootHost.x, rootHost.y, {
+            x: 640, y: 280, width: 840, height: 140, depth: 204,
         });
-        const dialog = this.add.text(contentHost.x, contentHost.y - 45, '', {
+        const dialog = this.add.text(contentHost.x, contentHost.y, '', {
             resolution: 2,
             fontFamily: 'Palatino Linotype, Book Antiqua, Georgia, serif',
-            fontSize: '24px',
+            fontSize: '64px',
             fontStyle: 'bold',
             color: '#3b210f',
             align: 'center',
             lineSpacing: 7,
             wordWrap: { width: contentHost.width },
-        }).setOrigin(0.5).setDepth(contentHost.depth);
-        const desc = this.add.text(contentHost.x, contentHost.y + 37, '', {
+        }).setOrigin(0.5).setDepth(contentHost.depth).setName('examOverviewPreview');
+        const rangeHost = this.getLocalHost('trialRangeHost', rootHost.x, rootHost.y, {
+            x: 640, y: 380, width: 760, height: 42, depth: 204,
+        });
+        const desc = this.add.text(rangeHost.x, rangeHost.y, '', {
             resolution: 2,
             fontFamily: 'Georgia, serif',
-            fontSize: '18px',
+            fontSize: '28px',
             color: '#5f3a1c',
             align: 'center',
             lineSpacing: 6,
-            wordWrap: { width: contentHost.width },
-        }).setOrigin(0.5).setDepth(contentHost.depth);
+        }).setOrigin(0.5).setDepth(rangeHost.depth).setName('examOverviewRange');
         this.overviewOverlay.add([dialog, desc]);
         this.overviewOverlay.setData('dialog', dialog);
         this.overviewOverlay.setData('desc', desc);
@@ -411,7 +419,7 @@ export class GuildScene extends Phaser.Scene {
             const label = this.add.text(20, 0, medalNames[i], {
                 resolution: 2,
                 fontFamily: 'Georgia, serif',
-                fontSize: '15px',
+                fontSize: '24px',
                 fontStyle: 'bold',
                 color: '#f4ddb0',
                 align: 'center',
@@ -431,7 +439,7 @@ export class GuildScene extends Phaser.Scene {
             depth: actionHost.depth,
             width: actionHost.width,
             height: actionHost.height,
-            label: 'VSTOUPIT DO ZKOUŠKY',
+            label: 'ZAČÍT',
             accent: this.accentColor,
             layout: 'text',
             labelFontSize: 21,
@@ -463,27 +471,24 @@ export class GuildScene extends Phaser.Scene {
         const dialog = this.overviewOverlay.getData('dialog') as Phaser.GameObjects.Text;
         const desc = this.overviewOverlay.getData('desc') as Phaser.GameObjects.Text;
 
-        const comparison = examType === 'comparison_chapter';
-        dialog.setFontSize(comparison ? 52 : 22).setText(comparison ? '<   =   >' : 'Ukaž, co umíš');
         if (examType && examTarget) {
+            const identity = getExamPresentation(examTarget, examType);
+            (this.overviewOverlay.getData('identity') as Phaser.GameObjects.Text).setText(identity.title);
+            (this.overviewOverlay.getData('kind') as Phaser.GameObjects.Text).setText(identity.kind);
+            dialog.setText(identity.preview);
+            desc.setText(identity.range);
             const config = EXAM_CONFIGS[examType];
-            const examLabel = MasterySystem.getInstance().getAvailableExams()
-                .find(e => e.type === examType && e.targetId === examTarget)?.label || `Zkouška ${examTarget}`;
-            const rules = config.bronzeThreshold
-                ? `${config.itemCount} příkladů • medaile podle počtu správných odpovědí`
-                : `${config.itemCount} příkladů • ${config.passThreshold}+ správně pro postup`;
-            desc.setText(comparison ? `${config.itemCount} příkladů` : `${examLabel.toUpperCase()}\n${rules}`);
 
             if (config.passThreshold) {
                 this.overviewMedalCards[0].setVisible(false);
                 this.overviewMedalCards[2].setVisible(false);
                 this.overviewMedalCards[1].setVisible(true);
-                this.overviewMedalTexts[1].setText(`POSTUP\n${config.passThreshold} / ${config.itemCount}`);
+                this.overviewMedalTexts[1].setText(`✓ ${config.passThreshold}/${config.itemCount}`);
             } else {
                 this.overviewMedalCards.forEach(card => card.setVisible(true));
-                this.overviewMedalTexts[0].setText(comparison ? `✓ ${config.bronzeThreshold} / ${config.itemCount}` : `BRONZ\n${config.bronzeThreshold}+ SPRÁVNĚ`);
-                this.overviewMedalTexts[1].setText(comparison ? `✓ ${config.silverThreshold} / ${config.itemCount}` : `STŘÍBRO\n${config.silverThreshold}+ SPRÁVNĚ`);
-                this.overviewMedalTexts[2].setText(comparison ? `✓ ${config.goldThreshold} / ${config.itemCount}` : `ZLATO\n${config.goldThreshold}+ SPRÁVNĚ`);
+                this.overviewMedalTexts[0].setText(`✓ ${config.bronzeThreshold}/${config.itemCount}`);
+                this.overviewMedalTexts[1].setText(`✓ ${config.silverThreshold}/${config.itemCount}`);
+                this.overviewMedalTexts[2].setText(`✓ ${config.goldThreshold}/${config.itemCount}`);
             }
         }
 
@@ -513,10 +518,10 @@ export class GuildScene extends Phaser.Scene {
             accent: this.accentColor,
         }).setDepth(boardHost.depth));
 
-        const headerHost = this.getLocalHost('trialHeaderHost', rootHost.x, rootHost.y, {
-            x: 640, y: 101, width: 760, height: 66, depth: 203,
+        const headerHost = this.getLocalHost('trialIdentityHost', rootHost.x, rootHost.y, {
+            x: 640, y: 103, width: 760, height: 42, depth: 203,
         });
-        this.trialQuestionCounter = this.add.text(headerHost.x, headerHost.y, 'OTÁZKA 1 Z 8', {
+        this.trialIdentityText = this.add.text(headerHost.x, headerHost.y, '', {
             resolution: 2,
             fontFamily: 'Palatino Linotype, Book Antiqua, Georgia, serif',
             fontSize: '28px',
@@ -525,10 +530,16 @@ export class GuildScene extends Phaser.Scene {
             stroke: '#f5d88b',
             strokeThickness: 1,
         }).setOrigin(0.5).setDepth(headerHost.depth);
-        this.trialOverlay.add(this.trialQuestionCounter);
+        const counterHost = this.getLocalHost('trialCounterHost', rootHost.x, rootHost.y, {
+            x: 640, y: 141, width: 180, height: 28, depth: 203,
+        });
+        this.trialQuestionCounter = this.add.text(counterHost.x, counterHost.y, '', {
+            resolution: 2, fontFamily: 'Georgia, serif', fontSize: '22px', fontStyle: 'bold', color: '#68411f',
+        }).setOrigin(0.5).setDepth(counterHost.depth);
+        this.trialOverlay.add([this.trialIdentityText, this.trialQuestionCounter]);
 
         const progressHost = this.getLocalHost('trialProgressHost', rootHost.x, rootHost.y, {
-            x: 640, y: 165, width: 760, height: 48, depth: 204,
+            x: 640, y: 185, width: 760, height: 48, depth: 204,
         });
         this.progressDots = [];
         this.progressFrames = [];
@@ -836,8 +847,8 @@ export class GuildScene extends Phaser.Scene {
         this.resultsZyxText = this.add.text(messageHost.x, messageHost.y, '', {
             resolution: 2,
             fontFamily: 'Georgia, serif',
-            fontSize: '15px',
-            fontStyle: 'italic',
+            fontSize: '24px',
+            fontStyle: 'bold',
             color: '#35637a',
             align: 'center',
             wordWrap: { width: messageHost.width },
@@ -873,9 +884,7 @@ export class GuildScene extends Phaser.Scene {
         const tierConfig = this.getTierDisplay(tier);
         this.resultsTitleText.setText(tierConfig.title).setColor(tierConfig.color);
         this.resultsMedalText.setText(tierConfig.stars);
-        this.resultsScoreText.setFontSize(isComparison ? 28 : 18).setText(isComparison
-            ? `✓ ${this.trialState.correctCount} / ${this.trialState.totalProblems}`
-            : `${this.trialState.correctCount} Z ${this.trialState.totalProblems} SPRÁVNĚ`);
+        this.resultsScoreText.setFontSize(28).setText(`✓ ${this.trialState.correctCount} / ${this.trialState.totalProblems}`);
 
         this.resultEntryTexts.forEach(entry => entry.setVisible(false));
         this.comparisonResultGrid.removeAll(true).setVisible(isComparison);
@@ -915,36 +924,18 @@ export class GuildScene extends Phaser.Scene {
         this.saveState();
         this.registry.set('playerLevel', player.level);
         const gains = this.masteryExamStatGains;
-        const hasGains = gains.hpGain > 0 || gains.attackGain > 0 || gains.manaGain > 0
-            || (gains.shardGain ?? 0) > 0 || (gains.coinGain ?? 0) > 0;
-
-        let rewardText: string;
-        if (tier !== 'none' && hasGains) {
-            const parts: string[] = [`ÚROVEŇ ${player.level}`];
-            if (gains.hpGain > 0) parts.push(`HP +${gains.hpGain}`);
-            if (gains.attackGain > 0) parts.push(`ÚTOK +${gains.attackGain}`);
-            if (gains.manaGain > 0) parts.push(`MANA +${gains.manaGain}`);
-            if ((gains.shardGain ?? 0) > 0) parts.push(`KRYSTAL +${gains.shardGain}`);
-            if ((gains.coinGain ?? 0) > 0) parts.push(`MINCE +${gains.coinGain}`);
-            rewardText = `ODMĚNA  •  ${parts.join('  •  ')}`;
-        } else if (tier !== 'none') {
-            rewardText = `ODMĚNA  •  ÚROVEŇ ${player.level}  •  POSTUP POTVRZEN`;
-        } else {
-            rewardText = 'CECH DOPORUČUJE DALŠÍ TRÉNINK. NOVÝ POKUS JE PŘIPRAVEN.';
+        const rewards: string[] = [];
+        if (tier !== 'none') {
+            if (gains.hpGain > 0) rewards.push(`♥ +${gains.hpGain}`);
+            if (gains.attackGain > 0) rewards.push(`⚔ +${gains.attackGain}`);
+            if (gains.manaGain > 0) rewards.push(`✦ +${gains.manaGain}`);
+            if ((gains.shardGain ?? 0) > 0) rewards.push(`💎 +${gains.shardGain}`);
+            if ((gains.coinGain ?? 0) > 0) rewards.push(`🪙 +${gains.coinGain}`);
         }
-        if (isComparison) {
-            const rewards: string[] = [];
-            if (tier !== 'none') {
-                if (gains.hpGain > 0) rewards.push(`♥ +${gains.hpGain}`);
-                if (gains.attackGain > 0) rewards.push(`⚔ +${gains.attackGain}`);
-                if (gains.manaGain > 0) rewards.push(`✦ +${gains.manaGain}`);
-                if ((gains.shardGain ?? 0) > 0) rewards.push(`💎 +${gains.shardGain}`);
-                if ((gains.coinGain ?? 0) > 0) rewards.push(`🪙 +${gains.coinGain}`);
-            }
-            rewardText = tier === 'none' ? 'Ještě potrénujeme' : rewards.join('    ') || 'Hotovo!';
-        }
-        this.resultsRewardText.setFontSize(isComparison ? 26 : 18).setText(rewardText);
-        this.resultsZyxText.setVisible(!isComparison).setText(isComparison ? '' : this.getZyxMessage(tier));
+        const rewardText = tier === 'none' ? 'Ještě potrénujeme' : rewards.join('    ') || 'Hotovo!';
+        this.resultsRewardText.setFontSize(26).setText(rewardText);
+        const target = this.currentMasteryExamTarget;
+        this.resultsZyxText.setVisible(true).setText(target ? getExamPresentation(target).title : '');
     }
 
     private getTierDisplay(tier: TrialTier): { title: string; stars: string; color: string } {
@@ -953,15 +944,6 @@ export class GuildScene extends Phaser.Scene {
             case 'silver': return { title: 'STŘÍBRNÁ ZKOUŠKA!', stars: '★ ★ ☆', color: '#56616a' };
             case 'bronze': return { title: 'BRONZOVÁ ZKOUŠKA!', stars: '★ ☆ ☆', color: '#874918' };
             default:       return { title: 'ZKOUŠKA NEÚSPĚŠNÁ', stars: '☆ ☆ ☆', color: '#8b2f26' };
-        }
-    }
-
-    private getZyxMessage(tier: TrialTier): string {
-        switch (tier) {
-            case 'gold':   return '"Perfektní! Tvá Numera Energie září jako hvězda!"';
-            case 'silver': return '"Skvělá práce! Ještě trocha cviku a budeš mistr!"';
-            case 'bronze': return '"Dobrý začátek! Každá zkouška tě posouvá dál."';
-            default:       return '"Nevěš hlavu! Procvič si příklady a zkus to znovu."';
         }
     }
 
@@ -1095,7 +1077,9 @@ export class GuildScene extends Phaser.Scene {
         this.trialState.phase = 'problem';
         this.problemStartTime = this.time.now;
 
-        this.trialQuestionCounter.setText(this.currentTrialProblem.comparisonMeta ? `${idx + 1} / ${this.trialState.totalProblems}` : `OTÁZKA ${idx + 1} Z ${this.trialState.totalProblems}`);
+        const target = this.currentMasteryExamTarget;
+        this.trialIdentityText.setText(target ? getExamPresentation(target).title : 'Zkouška');
+        this.trialQuestionCounter.setText(`${idx + 1} / ${this.trialState.totalProblems}`);
         this.problemText
             .setText(formatMathProblem(this.currentTrialProblem, 'question'))
             .setColor('#2f1a0d')

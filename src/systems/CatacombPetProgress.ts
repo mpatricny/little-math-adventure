@@ -30,10 +30,18 @@ export function getCatacombFoxBonus(player: FoxProgress): number {
     return Math.min(4, Math.max(0, ...Object.values(player.catacombPetUpgrades ?? {}).map(nonNegativeInteger)));
 }
 
-/** Called once for every passed catacomb trial, including repeats and the first rescue. */
+/** Add training only for a later successful run, not the initial rescue. */
 export function awardCatacombFoxUpgrade(player: FoxProgress): number {
     player.catacombFoxBonus = getCatacombFoxBonus(player) + 1;
     return player.catacombFoxBonus;
+}
+
+/** First rescue unlocks the catalog-strength fox; subsequent runs train it, even before binding. */
+export function awardCatacombFoxVictory(player: FoxProgress & Pick<PlayerState, 'unlockedPets'>): { petUnlocked: boolean } {
+    const petUnlocked = !player.unlockedPets.includes(CATACOMB_FOX_ENEMY);
+    if (petUnlocked) player.unlockedPets.push(CATACOMB_FOX_ENEMY);
+    else awardCatacombFoxUpgrade(player);
+    return { petUnlocked };
 }
 
 /** Resolve a catalog pet's actual base attack for its owner, without mutating shared data. */

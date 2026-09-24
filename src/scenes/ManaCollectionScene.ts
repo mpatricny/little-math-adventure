@@ -334,7 +334,7 @@ export class ManaCollectionScene extends Phaser.Scene {
         this.introOverlay.add([back.root, play.root]);
     }
 
-    /** A silent demonstration: fall, stop alongside 2, then receive the first mana. */
+    /** A silent demonstration: wait on a floor, step to 2, stop, then receive mana. */
     private showIntroDemo(): void {
         const host = this.popupHost('manaIntroDemoHost');
         const demo = this.add.container(host.x, host.y).setDepth(host.depth).setName('manaIntroDemo');
@@ -366,18 +366,27 @@ export class ManaCollectionScene extends Phaser.Scene {
         reward.add([icon, this.add.text(0, 45, '+1', { resolution: 2, fontFamily: 'Arial',
             fontSize: '42px', fontStyle: 'bold', color: '#c4f8ff' }).setOrigin(0.5)]);
         this.introOverlay.add(reward);
+        let stepTimer: Phaser.Time.TimerEvent | undefined;
+        let stopTimer: Phaser.Time.TimerEvent | undefined;
         const play = () => {
+            stepTimer?.remove(false); stopTimer?.remove(false);
             this.tweens.killTweensOf([equation, touch, reward]);
             equation.setY(top).setColor('#fff5cf'); row.setFillStyle(0x4bb88e, 0);
             reward.setAlpha(0).setScale(1); touch.setAlpha(0).setScale(1);
-            this.tweens.add({ targets: equation, y: targetY, duration: 1800, ease: 'Linear', onComplete: () => {
-                row.setFillStyle(0x4bb88e, 0.5); equation.setColor('#adffd1'); touch.setAlpha(1); reward.setAlpha(1);
-                this.tweens.add({ targets: touch, scale: 1.25, alpha: 0, duration: 450 });
-                this.tweens.add({ targets: reward, scale: 1.1, duration: 240, yoyo: true });
-            } });
+            stepTimer = this.time.delayedCall(1400, () => {
+                equation.setY(targetY);
+                stopTimer = this.time.delayedCall(600, () => {
+                    row.setFillStyle(0x4bb88e, 0.5); equation.setColor('#adffd1'); touch.setAlpha(1); reward.setAlpha(1);
+                    this.tweens.add({ targets: touch, scale: 1.25, alpha: 0, duration: 450 });
+                    this.tweens.add({ targets: reward, scale: 1.1, duration: 240, yoyo: true });
+                });
+            });
         };
         const repeat = this.time.addEvent({ delay: 3800, loop: true, callback: play });
-        this.introOverlay.once('destroy', () => { repeat.remove(false); this.tweens.killTweensOf([equation, touch, reward]); });
+        this.introOverlay.once('destroy', () => {
+            repeat.remove(false); stepTimer?.remove(false); stopTimer?.remove(false);
+            this.tweens.killTweensOf([equation, touch, reward]);
+        });
         play();
     }
 

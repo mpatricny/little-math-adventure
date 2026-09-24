@@ -100,6 +100,7 @@ export class UnderwaterHotspot {
     }
 
     setEnabled(enabled: boolean): void { this.enabled = enabled; }
+    setHovered(active: boolean): void { this.emphasize(active ? 0.65 : 0); }
     pulse(): void {
         this.emphasize(1.2);
         this.scene.time.delayedCall(600, () => { if (this.root.active) this.emphasize(0); });

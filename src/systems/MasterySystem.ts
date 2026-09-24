@@ -4,7 +4,7 @@ import {
     TrialTier, ExamConfig, EXAM_CONFIGS, MathProblem,
     ALL_BANDS, ALL_SUB_ATOM_NUMBERS, ALL_PROBLEM_FORMS,
 } from '../types';
-import { getLearningBand, getLearningFrontier } from './LearningProgress';
+import { getLearningBand, getLearningFrontier, isLearningBandDeferred } from './LearningProgress';
 import { GameStateManager } from './GameStateManager';
 import { ProblemDatabase } from './ProblemDatabase';
 import { ManaSystem } from './ManaSystem';
@@ -176,7 +176,7 @@ export class MasterySystem {
     // State Queries
     // ========================================
 
-    /** Get the highest unlocked learning band, including a completed final band. */
+    /** Honor an explicit unfinished-band repair, otherwise use the highest unlocked band. */
     getCurrentBand(): BandId {
         return getLearningBand(this.data);
     }
@@ -399,6 +399,7 @@ export class MasterySystem {
 
     /** Check if band gate exam is available */
     getBandGateEligibility(bandId: BandId): boolean {
+        if (isLearningBandDeferred(this.data, bandId)) return false;
         if (bandId === 'A' && !this.isComparisonChapterComplete()) return false;
         for (const num of ALL_SUB_ATOM_NUMBERS) {
             const id = `${bandId}${num}` as SubAtomId;
@@ -411,6 +412,7 @@ export class MasterySystem {
 
     /** Check if band mastery challenge is available */
     checkBandMasteryEligibility(bandId: BandId): boolean {
+        if (isLearningBandDeferred(this.data, bandId)) return false;
         if (bandId === 'A' && !this.isComparisonChapterComplete()) return false;
         const band = this.data.bands[bandId];
         if (band.state !== 'fluent') return false;
@@ -479,6 +481,7 @@ export class MasterySystem {
 
     /** Apply result of a sub-atom exam */
     applyExamResult(subAtomId: SubAtomId, correctCount: number, tierOverride?: TrialTier, sessionOnly: boolean = false): { tier: TrialTier; stateChanged: boolean; hpGain: number; attackGain: number; manaGain: number } {
+        this.assertLearningBandActive(subAtomId[0] as BandId);
         const config = EXAM_CONFIGS.sub_atom;
         const tier = tierOverride ?? this.computeTier(correctCount, config);
         const sa = this.data.subAtoms[subAtomId];
@@ -517,6 +520,7 @@ export class MasterySystem {
     /** Apply result of fluency challenge */
     applyFluencyResult(subAtomId: SubAtomId | 'comparison_symbols', correctCount: number, sessionOnly: boolean = false): { passed: boolean; stateChanged: boolean; hpGain: number; attackGain: number; manaGain: number } {
         if (subAtomId === 'comparison_symbols') return this.applyComparisonChallengeResult('fluency_challenge', correctCount, sessionOnly);
+        this.assertLearningBandActive(subAtomId[0] as BandId);
         const config = EXAM_CONFIGS.fluency_challenge;
         const passed = correctCount >= (config.passThreshold ?? config.itemCount);
         const sa = this.data.subAtoms[subAtomId];
@@ -545,6 +549,7 @@ export class MasterySystem {
     /** Apply result of mastery challenge */
     applyMasteryResult(subAtomId: SubAtomId | 'comparison_symbols', correctCount: number, sessionOnly: boolean = false): { passed: boolean; stateChanged: boolean; hpGain: number; attackGain: number; manaGain: number; shardGain: number; coinGain: number } {
         if (subAtomId === 'comparison_symbols') return this.applyComparisonChallengeResult('mastery_challenge', correctCount, sessionOnly);
+        this.assertLearningBandActive(subAtomId[0] as BandId);
         const config = EXAM_CONFIGS.mastery_challenge;
         const passed = correctCount >= (config.passThreshold ?? config.itemCount);
         const sa = this.data.subAtoms[subAtomId];
@@ -589,6 +594,7 @@ export class MasterySystem {
 
     /** Apply result of band gate exam */
     applyBandGateResult(bandId: BandId, correctCount: number, tierOverride?: TrialTier, sessionOnly: boolean = false): { tier: TrialTier; stateChanged: boolean; hpGain: number; attackGain: number; manaGain: number } {
+        this.assertLearningBandActive(bandId);
         const config = EXAM_CONFIGS.band_gate;
         const tier = tierOverride ?? this.computeTier(correctCount, config);
         const band = this.data.bands[bandId];
@@ -618,6 +624,7 @@ export class MasterySystem {
 
     /** Apply result of band mastery challenge */
     applyBandMasteryResult(bandId: BandId, correctCount: number, sessionOnly: boolean = false): { passed: boolean; stateChanged: boolean; hpGain: number; attackGain: number; manaGain: number; shardGain: number; coinGain: number } {
+        this.assertLearningBandActive(bandId);
         const config = EXAM_CONFIGS.band_mastery;
         const passed = correctCount >= (config.passThreshold ?? config.itemCount);
         const band = this.data.bands[bandId];
@@ -721,14 +728,15 @@ export class MasterySystem {
      */
     generatePool(): string[] {
         const data = this.data;
-        data.retryPool = data.retryPool.filter(key => this.isProblemKeyAllowed(key));
-        data.slowPool = data.slowPool.filter(key => this.isProblemKeyAllowed(key));
+        // Paused later-band practice must survive a temporary return to an earlier band.
+        data.retryPool = data.retryPool.filter(key => this.isProblemKeyAllowed(key) || this.isDeferredProblemKey(key));
+        data.slowPool = data.slowPool.filter(key => this.isProblemKeyAllowed(key) || this.isDeferredProblemKey(key));
         data.currentPool = data.currentPool.filter(key => this.isProblemKeyAllowed(key));
         const pool: string[] = [];
         const used = new Set<string>();
 
         // [retry] up to 3 from retryPool
-        const retryProblems = data.retryPool.slice(0, 3);
+        const retryProblems = data.retryPool.filter(key => this.isProblemKeyAllowed(key)).slice(0, 3);
         for (const key of retryProblems) {
             if (pool.length >= 10) break;
             pool.push(key);
@@ -736,7 +744,7 @@ export class MasterySystem {
         }
 
         // [slow] up to 3 from slowPool
-        for (const key of data.slowPool) {
+        for (const key of data.slowPool.filter(key => this.isProblemKeyAllowed(key))) {
             if (pool.length >= 10) break;
             if (used.has(key)) continue;
             pool.push(key);
@@ -842,8 +850,8 @@ export class MasterySystem {
             }
         };
 
-        add(data.retryPool.slice(0, 2));
-        add(data.slowPool.slice(0, 2));
+        add(data.retryPool.filter(key => this.isProblemKeyAllowed(key)).slice(0, 2));
+        add(data.slowPool.filter(key => this.isProblemKeyAllowed(key)).slice(0, 2));
 
         const frontier = this.getFrontierSubAtom();
         add(this.selectCurrentProblems(frontier, targetCount - result.length, used, []));
@@ -900,6 +908,7 @@ export class MasterySystem {
         data.fightCount++;
 
         for (const band of ALL_BANDS) {
+            if (isLearningBandDeferred(data, band)) continue;
             for (const num of ALL_SUB_ATOM_NUMBERS) {
                 const id = `${band}${num}` as SubAtomId;
                 const sa = data.subAtoms[id];
@@ -1037,6 +1046,9 @@ export class MasterySystem {
         const candidates = this.getCoopAutoPromotionCandidates();
 
         for (const candidate of candidates) {
+            // Keep a paused checkpoint, but never award E while D is still required.
+            if (candidate.targetId !== 'comparison_symbols'
+                && isLearningBandDeferred(this.data, candidate.targetId[0] as BandId)) continue;
             const key = this.getCoopAutoPromotionKey(candidate.type, candidate.targetId);
             const baseline = this.data.coopAutoPromotionBases[key];
 
@@ -1355,6 +1367,12 @@ export class MasterySystem {
 
     /** Called when a band changes state — may unlock next band */
     private onBandStateChange(bandId: BandId): void {
+        if (this.data.requiredBand === bandId) {
+            delete this.data.requiredBand;
+            this.data.currentPool = [];
+            this.data.currentPoolIndex = 0;
+            this.data.lastPoolProblems = [];
+        }
         const bandIndex = ALL_BANDS.indexOf(bandId);
         if (bandIndex < ALL_BANDS.length - 1) {
             const nextBand = ALL_BANDS[bandIndex + 1];
@@ -1363,7 +1381,9 @@ export class MasterySystem {
                 nextBandState.state = 'training';
                 // Unlock first sub-atom
                 const firstSubAtom = `${nextBand}1` as SubAtomId;
-                this.data.subAtoms[firstSubAtom].state = 'training';
+                if (this.data.subAtoms[firstSubAtom].state === 'locked') {
+                    this.data.subAtoms[firstSubAtom].state = 'training';
+                }
             }
         }
     }
@@ -1537,12 +1557,22 @@ export class MasterySystem {
     private isSubAtomAvailable(subAtomId: SubAtomId): boolean {
         const state = this.data.subAtoms[subAtomId]?.state;
         return state !== undefined && state !== 'locked'
+            && !isLearningBandDeferred(this.data, subAtomId[0] as BandId)
             && !(subAtomId[0] === 'A' && Number(subAtomId[1]) > 2 && !this.isComparisonChapterComplete());
     }
 
     private isProblemKeyAllowed(key: string): boolean {
         const problem = this.problemDb.getProblemByKey(key);
         return problem !== undefined && problem.bandId === this.getCurrentBand() && this.isProblemAllowed(problem);
+    }
+
+    private isDeferredProblemKey(key: string): boolean {
+        const problem = this.problemDb.getProblemByKey(key);
+        return problem !== undefined && isLearningBandDeferred(this.data, problem.bandId);
+    }
+
+    private assertLearningBandActive(band: BandId): void {
+        if (isLearningBandDeferred(this.data, band)) throw new Error('Finish the required learning band first.');
     }
 
     /** Determine phase for form weight selection */
