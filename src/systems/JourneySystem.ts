@@ -633,6 +633,41 @@ export class JourneySystem {
         return this.currentJourney?.unlockedWaypoints ?? [];
     }
 
+    /** Leave an unlocked camp without abandoning the run or cashing out rewards. */
+    pauseRoomJourneyAtWaypoint(roomId: string): boolean {
+        if (!this.hasActiveJourney() || this.currentJourney?.currentRoom !== roomId
+            || !this.isWaypointUnlocked(roomId)) return false;
+
+        // The shared world belongs to A; B keeps their own unrelated forest run.
+        const coop = CoopSessionManager.getInstance();
+        if (coop.isCoopActive()) coop.activatePlayerA();
+        this.createRoomSavePoint();
+        this.gameState.getPlayer().suspendedForestJourney = structuredClone(this.currentJourney!);
+        this.gameState.save();
+        this.currentJourney = null;
+        this.journeyConfig = null;
+        return true;
+    }
+
+    /** A town return only resumes a reached waypoint in this hero's saved run. */
+    getTownReturnWaypoint(journeyId: string): string | null {
+        const saved = this.gameState.getPlayer().suspendedForestJourney;
+        if (!saved || saved.journeyId !== journeyId || saved.completed || saved.failed
+            || !saved.currentRoom || !saved.unlockedWaypoints?.includes(saved.currentRoom)) return null;
+        return saved.currentRoom;
+    }
+
+    /** Resume exactly that run, retaining town purchases/healing and all puzzle/object state. */
+    resumeRoomJourneyFromTown(journeyId: string): boolean {
+        if (!this.getTownReturnWaypoint(journeyId)) return false;
+        const player = this.gameState.getPlayer();
+        this.currentJourney = structuredClone(player.suspendedForestJourney!);
+        // Consume the snapshot so a later visit cannot replay old chests/rewards.
+        delete player.suspendedForestJourney;
+        this.gameState.save();
+        return true;
+    }
+
     /**
      * Check if all enemies in a room are defeated
      */

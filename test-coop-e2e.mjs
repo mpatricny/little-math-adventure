@@ -3,7 +3,7 @@
  *
  * Verifies:
  * - co-op town keeps the Guild visible and exposes the mana collection entry
- * - co-op battle uses a shared 1-problem turn size for both players at session start
+ * - co-op battle uses each hero's own attack, capped at three base problems
  * - mixed pets stay stable across Player A / Player B math turns
  * - casual co-op battle restores the original extra-enemy scaling for regular fights
  * - mana co-op uses lane-local fixed levels plus keyboard controls (X left / M right)
@@ -84,7 +84,6 @@ async function getBattleSnapshot() {
         const battle = globalThis.__LITTLE_MATH_GAME__.scene.keys.BattleScene;
         globalThis.__coopSession = battle.coopSession;
         return {
-            sharedAttackCount: battle.coopSession?.getSharedAttackCount(),
             playerAPet: battle.equippedPetDef?.id ?? null,
             playerBPet: battle.equippedPetBDef?.id ?? null,
             enemyCount: battle.enemyDefs.length,
@@ -443,7 +442,6 @@ console.log('[E2E] Jumping into a controlled co-op battle');
 await startBattleFromTown();
 
 const battleStart = await getBattleSnapshot();
-assert(battleStart.sharedAttackCount === 1, `Expected shared attack count 1 at session start, got ${battleStart.sharedAttackCount}`);
 assert(battleStart.playerAPet === 'pet_slime', `Expected Player A pet_slime, got ${battleStart.playerAPet}`);
 assert(battleStart.playerBPet === 'pet_demon', `Expected Player B pet_demon, got ${battleStart.playerBPet}`);
 assert(battleStart.enemyCount === 2, `Expected casual co-op to add one extra slime, got ${battleStart.enemyCount}`);
@@ -452,14 +450,14 @@ assert(battleStart.enemyHp === 5, `Expected regular co-op slime HP to stay at 5,
 const playerAMath = await getMathTurnSnapshot('A');
 assert(playerAMath.phase === 'player_math', `Expected Player A math phase, got ${playerAMath.phase}`);
 assert(playerAMath.activePlayer === 'A', `Expected Player A to stay active, got ${playerAMath.activePlayer}`);
-assert(playerAMath.problemCount === 1, `Expected Player A to receive 1 problem, got ${playerAMath.problemCount}`);
+assert(playerAMath.problemCount === 3, `Expected Player A to receive 3 problems, got ${playerAMath.problemCount}`);
 assert(playerAMath.playerAPet === 'pet_slime', `Player A pet changed during A turn: ${playerAMath.playerAPet}`);
 assert(playerAMath.playerBPet === 'pet_demon', `Player B pet changed during A turn: ${playerAMath.playerBPet}`);
 
 const playerBMath = await getMathTurnSnapshot('B');
 assert(playerBMath.phase === 'player_b_math', `Expected Player B math phase, got ${playerBMath.phase}`);
 assert(playerBMath.activePlayer === 'B', `Expected Player B to be active, got ${playerBMath.activePlayer}`);
-assert(playerBMath.problemCount === 1, `Expected Player B to receive 1 problem, got ${playerBMath.problemCount}`);
+assert(playerBMath.problemCount === 3, `Expected Player B to receive 3 problems, got ${playerBMath.problemCount}`);
 assert(playerBMath.playerAPet === 'pet_slime', `Player A pet changed during B turn: ${playerBMath.playerAPet}`);
 assert(playerBMath.playerBPet === 'pet_demon', `Player B pet changed during B turn: ${playerBMath.playerBPet}`);
 

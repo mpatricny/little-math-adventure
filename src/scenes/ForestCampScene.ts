@@ -86,7 +86,6 @@ export class ForestCampScene extends Phaser.Scene {
     // Modal elements (created dynamically, destroyed on close)
     private modalOverlay: Phaser.GameObjects.Rectangle | null = null;
     private modalContainer: Phaser.GameObjects.Container | null = null;
-    private modalDynamicElements: Phaser.GameObjects.GameObject[] = [];
 
     // Marker bounds (cached from SceneBuilder)
     private tentZone: { x: number; y: number; width: number; height: number } | null = null;
@@ -109,9 +108,10 @@ export class ForestCampScene extends Phaser.Scene {
         this.isWalking = false;
         this.modalOverlay = null;
         this.modalContainer = null;
-        this.modalDynamicElements = [];
         this.tentZone = null;
         this.obstacleZone = null;
+        this.playerBSprite = null;
+        this.playerBWalkTween = null;
 
         // Load room config from cache
         const forestRooms = this.cache.json.get('forestRooms') as any;
@@ -153,6 +153,13 @@ export class ForestCampScene extends Phaser.Scene {
         // Hide the rest modal template (it's visible by default from scene editor)
         const modalTemplate = this.sceneBuilder.get<Phaser.GameObjects.Container>('Black-frmae-Diamonds');
         if (modalTemplate) {
+            // Phaser's NineSlice is WebGL-only. Keep the panel opaque and usable
+            // on Canvas tablets too, without stretching the decorative bitmap.
+            if (this.game.renderer.type === Phaser.CANVAS) {
+                const bounds = modalTemplate.getBounds();
+                modalTemplate.addAt(this.add.rectangle(0, 0, bounds.width, bounds.height, 0x16241b)
+                    .setStrokeStyle(3, 0x88aa77), 0);
+            }
             modalTemplate.setVisible(false);
         }
 
@@ -437,76 +444,30 @@ export class ForestCampScene extends Phaser.Scene {
     private openRestModal(): void {
         if (this.modalOpen) return;
         this.modalOpen = true;
-        this.modalDynamicElements = [];
+        const overlay = this.sceneBuilder.get<Phaser.GameObjects.Container>('campModalOverlayHost')!;
+        const overlayLayout = this.sceneBuilder.getElementDef('campModalOverlayHost')!;
+        this.modalOverlay = this.add.rectangle(overlay.x, overlay.y, overlayLayout.width!, overlayLayout.height!, 0x000000, 0.6)
+            .setDepth(overlay.depth).setInteractive();
 
-        // Dark overlay
-        this.modalOverlay = this.add.rectangle(640, 360, 1280, 720, 0x000000, 0.6)
-            .setDepth(50)
-            .setInteractive(); // Block clicks through
-
-        // Show the template container — position it at the center of the screen
-        // so the frame is nicely visible (original editor position 1007,197 is too far right/up)
-        const templateContainer = this.sceneBuilder.get<Phaser.GameObjects.Container>('Black-frmae-Diamonds');
-        const frameX = templateContainer?.x ?? 1007;
-        const frameY = templateContainer?.y ?? 197;
-        if (templateContainer) {
-            templateContainer.setVisible(true);
-            templateContainer.setDepth(51);
-        }
-
-        // Create modal content centered on the frame
-        // The frame is 500x320px; content is positioned relative to its center
-        this.modalContainer = this.add.container(frameX, frameY).setDepth(52);
-
-        // Title
-        const title = this.add.text(0, -120, '🏕️ LESNÍ TÁBOR', {
-            fontSize: '26px',
-            fontFamily: 'Arial, sans-serif',
-            color: '#88cc88',
-            fontStyle: 'bold',
-            stroke: '#000000',
-            strokeThickness: 3
-        }).setOrigin(0.5);
-        this.modalContainer.add(title);
-
-        // Waypoint indicator
-        if (this.roomConfig.isWaypoint) {
-            const waypointText = this.add.text(0, -90, '⭐ Úložný bod', {
-                fontSize: '13px',
-                fontFamily: 'Arial, sans-serif',
-                color: '#ffdd44'
-            }).setOrigin(0.5);
-            this.modalContainer.add(waypointText);
-        }
-
-        // HP Display
+        this.sceneBuilder.get<Phaser.GameObjects.Container>('Black-frmae-Diamonds')!.setVisible(true);
+        // This host is also the frame's safe content inset. Each control has an
+        // independent editor host; none is positioned relative to another control.
+        const content = this.sceneBuilder.get<Phaser.GameObjects.Container>('campModalContentHost')!;
+        this.modalContainer = this.add.container(content.x, content.y).setDepth(content.depth);
+        const titleHost = this.sceneBuilder.get<Phaser.GameObjects.Container>('campModalTitleHost')!;
+        const title = this.add.text(titleHost.x, titleHost.y, '🏕️ Tábor', {
+            resolution: 2, fontSize: '28px', fontFamily: 'Georgia, serif', color: '#e8d8ac',
+        }).setOrigin(0.5).setDepth(titleHost.depth).setName('campModalTitle');
+        this.addToModal(title);
         this.createModalHPDisplay();
+        this.addToModal(this.createCampButton('campModalRestButtonHost', '❤️ Odpočinek', () => this.handleRest(), this.hasRested));
+        this.addToModal(this.createTownButton('campModalTownButtonHost', true));
+        this.addToModal(this.createCampButton('campModalCloseButtonHost', '✕', () => this.closeRestModal()));
+    }
 
-        // Rest button — fits inside the 500px-wide frame (button is 280px)
-        const restBtn = this.createModalButton(0, 35, '🔥 Odpočinek', '+100% ❤️', 0x446644, () => {
-            this.handleRest();
-        });
-        this.modalContainer.add(restBtn);
-        this.modalDynamicElements.push(restBtn);
-
-        // Return to town button
-        const townBtn = this.createModalButton(0, 90, '🏠 Návrat do vesnice', 'Vzdát výpravu', 0x664444, () => {
-            this.handleReturnToTown();
-        });
-        this.modalContainer.add(townBtn);
-        this.modalDynamicElements.push(townBtn);
-
-        // Close button (X) — positioned near top-right corner of the 500x320 frame
-        const closeBtn = this.add.text(220, -140, '✕', {
-            fontSize: '26px',
-            fontFamily: 'Arial, sans-serif',
-            color: '#aaaaaa',
-            fontStyle: 'bold'
-        }).setOrigin(0.5).setInteractive({ useHandCursor: true });
-        closeBtn.on('pointerover', () => closeBtn.setColor('#ffffff'));
-        closeBtn.on('pointerout', () => closeBtn.setColor('#aaaaaa'));
-        closeBtn.on('pointerdown', () => this.closeRestModal());
-        this.modalContainer.add(closeBtn);
+    private addToModal(element: Phaser.GameObjects.Container | Phaser.GameObjects.Text): void {
+        element.setPosition(element.x - this.modalContainer!.x, element.y - this.modalContainer!.y);
+        this.modalContainer!.add(element);
     }
 
     private createModalHPDisplay(): void {
@@ -515,97 +476,29 @@ export class ForestCampScene extends Phaser.Scene {
         const player = this.gameState.getPlayer();
         const hpPercent = player.hp / player.maxHp;
 
-        // HP Label
-        const hpLabel = this.add.text(-110, -55, '❤️', {
-            fontSize: '18px',
-            fontFamily: 'Arial, sans-serif',
-            color: '#ffffff',
-            fontStyle: 'bold'
-        });
-        this.modalContainer.add(hpLabel);
-
-        // HP Bar background (fits inside 500px frame with margins)
-        const barWidth = 220;
-        const hpBarBg = this.add.rectangle(30, -46, barWidth, 22, 0x333333)
-            .setStrokeStyle(2, 0x666666);
-        this.modalContainer.add(hpBarBg);
-
-        // HP Bar fill
+        const host = this.sceneBuilder.get<Phaser.GameObjects.Container>('campModalHPHost')!;
+        const layout = this.sceneBuilder.getElementDef('campModalHPHost')!;
+        const health = this.add.container(host.x, host.y).setDepth(host.depth).setName('campModalHP');
+        const hpLabel = this.add.text(-layout.width! / 2, 0, '❤️', {
+            resolution: 2, fontSize: '26px', fontFamily: 'Arial, sans-serif',
+        }).setOrigin(0, 0.5);
+        const barWidth = layout.width! - 60, barHeight = layout.height!;
+        const hpBarBg = this.add.rectangle(30, 0, barWidth, barHeight, 0x333333).setStrokeStyle(2, 0x88aa77);
         const fillWidth = (barWidth - 4) * hpPercent;
-        const hpBarFill = this.add.rectangle(30 - (barWidth - 4) / 2, -46, fillWidth, 18, this.getHPColor(hpPercent))
+        const hpBarFill = this.add.rectangle(30 - (barWidth - 4) / 2, 0, fillWidth, barHeight - 4, this.getHPColor(hpPercent))
             .setOrigin(0, 0.5);
-        this.modalContainer.add(hpBarFill);
-        this.modalDynamicElements.push(hpBarFill);
-
-        // HP Text
-        const hpText = this.add.text(30, -46, `${player.hp} / ${player.maxHp}`, {
-            fontSize: '13px',
-            fontFamily: 'Arial, sans-serif',
-            color: '#ffffff',
-            fontStyle: 'bold'
+        const hpText = this.add.text(30, 0, `${player.hp} / ${player.maxHp}`, {
+            resolution: 2, fontSize: '22px', fontFamily: 'Arial, sans-serif', color: '#ffffff', fontStyle: 'bold',
+            stroke: '#16241b', strokeThickness: 3,
         }).setOrigin(0.5);
-        this.modalContainer.add(hpText);
-        this.modalDynamicElements.push(hpText);
-
-        // Heal preview
-        const restObj = this.roomConfig.objects.find(o => o.type === 'rest');
-        const healPercent = restObj?.healPercent ?? 100;
-        const healAmount = Math.floor(player.maxHp * (healPercent / 100));
-        const potentialHP = Math.min(player.maxHp, player.hp + healAmount);
-
-        if (player.hp < player.maxHp) {
-            const healText = this.add.text(0, -18, `Odpočinek: +${healAmount} ❤️ → ${potentialHP}`, {
-                fontSize: '13px',
-                fontFamily: 'Arial, sans-serif',
-                color: '#88cc88'
-            }).setOrigin(0.5);
-            this.modalContainer.add(healText);
-            this.modalDynamicElements.push(healText);
-        }
+        health.add([hpLabel, hpBarBg, hpBarFill, hpText]);
+        this.addToModal(health);
     }
 
     private getHPColor(percent: number): number {
         if (percent > 0.6) return 0x44aa44;
         if (percent > 0.3) return 0xaaaa44;
         return 0xaa4444;
-    }
-
-    private createModalButton(x: number, y: number, label: string, sublabel: string, color: number, onClick: () => void): Phaser.GameObjects.Container {
-        const btn = this.add.container(x, y);
-
-        // Button width 280px fits inside the 500px frame with margins
-        const bg = this.add.rectangle(0, 0, 280, 44, color)
-            .setStrokeStyle(2, this.lightenColor(color));
-
-        const mainText = this.add.text(-10, -7, label, {
-            fontSize: '16px',
-            fontFamily: 'Arial, sans-serif',
-            color: '#ffffff',
-            fontStyle: 'bold'
-        }).setOrigin(0.5);
-
-        const subText = this.add.text(-10, 11, sublabel, {
-            fontSize: '11px',
-            fontFamily: 'Arial, sans-serif',
-            color: '#aaaaaa'
-        }).setOrigin(0.5);
-
-        btn.add([bg, mainText, subText]);
-        btn.setSize(280, 44);
-        btn.setInteractive({ useHandCursor: true });
-
-        btn.on('pointerover', () => bg.setFillStyle(this.lightenColor(color)));
-        btn.on('pointerout', () => bg.setFillStyle(color));
-        btn.on('pointerdown', onClick);
-
-        return btn;
-    }
-
-    private lightenColor(color: number): number {
-        const r = Math.min(255, ((color >> 16) & 0xff) + 30);
-        const g = Math.min(255, ((color >> 8) & 0xff) + 30);
-        const b = Math.min(255, (color & 0xff) + 30);
-        return (r << 16) | (g << 8) | b;
     }
 
     private closeRestModal(): void {
@@ -629,7 +522,6 @@ export class ForestCampScene extends Phaser.Scene {
             this.modalContainer.destroy();
             this.modalContainer = null;
         }
-        this.modalDynamicElements = [];
     }
 
     // ═══════════════════════════════════════════════════════════════════════
@@ -682,64 +574,10 @@ export class ForestCampScene extends Phaser.Scene {
     }
 
     private handleReturnToTown(): void {
-        // Show confirmation dialog
-        const confirmOverlay = this.add.rectangle(640, 360, 1280, 720, 0x000000, 0.5)
-            .setDepth(100)
-            .setInteractive();
-
-        const confirmPanel = this.add.container(640, 360).setDepth(101);
-
-        const bg = this.add.rectangle(0, 0, 350, 180, 0x333355)
-            .setStrokeStyle(3, 0x5566aa);
-
-        const title = this.add.text(0, -50, 'Opustit výpravu?', {
-            fontSize: '22px',
-            fontFamily: 'Arial, sans-serif',
-            color: '#ffffff',
-            fontStyle: 'bold'
-        }).setOrigin(0.5);
-
-        const warning = this.add.text(0, -15, 'Ztratíš veškerý postup.', {
-            fontSize: '14px',
-            fontFamily: 'Arial, sans-serif',
-            color: '#ffaa44'
-        }).setOrigin(0.5);
-
-        // Yes button
-        const yesBtn = this.add.rectangle(-70, 45, 100, 40, 0x884444)
-            .setStrokeStyle(2, 0xaa6666)
-            .setInteractive({ useHandCursor: true });
-        const yesText = this.add.text(-70, 45, 'Ano', {
-            fontSize: '16px',
-            fontFamily: 'Arial, sans-serif',
-            color: '#ffffff'
-        }).setOrigin(0.5);
-
-        yesBtn.on('pointerover', () => yesBtn.setFillStyle(0xaa5555));
-        yesBtn.on('pointerout', () => yesBtn.setFillStyle(0x884444));
-        yesBtn.on('pointerdown', () => {
-            this.journeySystem.abandonJourney();
-            this.scene.start('TownScene');
-        });
-
-        // No button
-        const noBtn = this.add.rectangle(70, 45, 100, 40, 0x448844)
-            .setStrokeStyle(2, 0x66aa66)
-            .setInteractive({ useHandCursor: true });
-        const noText = this.add.text(70, 45, 'Ne', {
-            fontSize: '16px',
-            fontFamily: 'Arial, sans-serif',
-            color: '#ffffff'
-        }).setOrigin(0.5);
-
-        noBtn.on('pointerover', () => noBtn.setFillStyle(0x55aa55));
-        noBtn.on('pointerout', () => noBtn.setFillStyle(0x448844));
-        noBtn.on('pointerdown', () => {
-            confirmOverlay.destroy();
-            confirmPanel.destroy();
-        });
-
-        confirmPanel.add([bg, title, warning, yesBtn, yesText, noBtn, noText]);
+        if (!this.journeySystem.pauseRoomJourneyAtWaypoint(this.roomId)) return;
+        this.input.enabled = false;
+        this.closeRestModal();
+        this.scene.start('TownScene');
     }
 
     // ═══════════════════════════════════════════════════════════════════════
@@ -876,83 +714,41 @@ export class ForestCampScene extends Phaser.Scene {
             strokeThickness: 4
         }).setOrigin(0.5).setDepth(100);
 
-        // Back to town button
-        const backBtn = this.add.container(80, 680).setDepth(100);
-        const backBg = this.add.rectangle(0, 0, 120, 40, 0x664444)
-            .setStrokeStyle(2, 0x886666);
-        const backText = this.add.text(0, 0, '← Zpět', {
-            fontSize: '16px',
-            fontFamily: 'Arial, sans-serif',
-            color: '#ffffff',
-            fontStyle: 'bold'
-        }).setOrigin(0.5);
-        backBtn.add([backBg, backText]);
-        backBtn.setSize(120, 40);
-        backBtn.setInteractive({ useHandCursor: true });
+        this.createTownButton('campTownButtonHost');
+    }
 
-        backBtn.on('pointerover', () => backBg.setFillStyle(0x885555));
-        backBtn.on('pointerout', () => backBg.setFillStyle(0x664444));
-        backBtn.on('pointerdown', () => {
-            if (!this.modalOpen) this.confirmAbandon();
+    private createTownButton(hostId: string, inModal = false): Phaser.GameObjects.Container {
+        return this.createCampButton(hostId, '🏠 Město', () => {
+            if (!this.isWalking && (inModal || !this.modalOpen)) this.handleReturnToTown();
         });
     }
 
-    private confirmAbandon(): void {
-        const overlay = this.add.rectangle(640, 360, 1280, 720, 0x000000, 0.7)
-            .setDepth(300)
-            .setInteractive();
-
-        const panel = this.add.container(640, 360).setDepth(301);
-
-        const bg = this.add.rectangle(0, 0, 400, 200, 0x333355)
-            .setStrokeStyle(3, 0x5566aa);
-
-        const title = this.add.text(0, -60, 'Opustit výpravu?', {
-            fontSize: '24px',
-            fontFamily: 'Arial, sans-serif',
-            color: '#ffffff',
-            fontStyle: 'bold'
+    private createCampButton(hostId: string, text: string, onClick: () => void, disabled = false): Phaser.GameObjects.Container {
+        const host = this.sceneBuilder.get<Phaser.GameObjects.Container>(hostId)!;
+        const layout = this.sceneBuilder.getElementDef(hostId)!;
+        const width = layout.width!, height = layout.height!;
+        host.setVisible(false);
+        const root = this.add.container(host.x, host.y).setDepth(host.depth).setName(`${hostId}-button`);
+        const surface = this.add.container(0, 0);
+        const bg = this.add.rectangle(0, 0, width, height, 0x344e3c).setStrokeStyle(2, 0x88aa77);
+        const label = this.add.text(0, 0, text, {
+            resolution: 2, fontSize: '24px', fontFamily: 'Georgia, serif', color: '#f5edce',
         }).setOrigin(0.5);
-
-        const warning = this.add.text(0, -20, 'Ztratíš veškerý postup!', {
-            fontSize: '16px',
-            fontFamily: 'Arial, sans-serif',
-            color: '#ffaa44'
-        }).setOrigin(0.5);
-
-        const yesBtn = this.add.rectangle(-80, 50, 120, 40, 0x884444)
-            .setStrokeStyle(2, 0xaa6666)
-            .setInteractive({ useHandCursor: true });
-        const yesText = this.add.text(-80, 50, 'Ano', {
-            fontSize: '18px',
-            fontFamily: 'Arial, sans-serif',
-            color: '#ffffff'
-        }).setOrigin(0.5);
-
-        yesBtn.on('pointerover', () => yesBtn.setFillStyle(0xaa5555));
-        yesBtn.on('pointerout', () => yesBtn.setFillStyle(0x884444));
-        yesBtn.on('pointerdown', () => {
-            this.journeySystem.abandonJourney();
-            this.scene.start('TownScene');
+        surface.add([bg, label]);
+        root.add(surface).setSize(width, height);
+        if (disabled) return root.setAlpha(0.5);
+        root.setInteractive({ useHandCursor: true });
+        let pressed = false;
+        root.on('pointerover', () => { surface.y = -2; bg.setFillStyle(0x42654c); });
+        root.on('pointerout', () => { pressed = false; surface.y = 0; bg.setFillStyle(0x344e3c); });
+        root.on('pointerdown', () => { pressed = true; surface.y = 1; });
+        root.on('pointerup', () => {
+            surface.y = 0;
+            if (!pressed) return;
+            pressed = false;
+            onClick();
         });
-
-        const noBtn = this.add.rectangle(80, 50, 120, 40, 0x448844)
-            .setStrokeStyle(2, 0x66aa66)
-            .setInteractive({ useHandCursor: true });
-        const noText = this.add.text(80, 50, 'Ne', {
-            fontSize: '18px',
-            fontFamily: 'Arial, sans-serif',
-            color: '#ffffff'
-        }).setOrigin(0.5);
-
-        noBtn.on('pointerover', () => noBtn.setFillStyle(0x55aa55));
-        noBtn.on('pointerout', () => noBtn.setFillStyle(0x448844));
-        noBtn.on('pointerdown', () => {
-            overlay.destroy();
-            panel.destroy();
-        });
-
-        panel.add([bg, title, warning, yesBtn, yesText, noBtn, noText]);
+        return root;
     }
 
     // ═══════════════════════════════════════════════════════════════════════

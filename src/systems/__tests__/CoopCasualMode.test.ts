@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { applyComparisonExamResult, createInitialComparisonChapterState, generateComparisonTrainingProblems, recordComparisonAttempt } from '../ComparisonLearningSystem';
 import { getLearningBand, getLearningFrontier, requireIncompleteLearningBand } from '../LearningProgress';
+import { applyAttackPowerDistribution } from '../CombatAttackSystem';
 import {
     ALL_BANDS,
     ALL_SUB_ATOM_NUMBERS,
@@ -242,7 +243,7 @@ function isCrossingTen(problem: { operand1: number; operand2: number; operator: 
         && problem.answer >= 0;
 }
 
-describe('CoopSessionManager casual progression', () => {
+describe('CoopSessionManager per-player progression', () => {
     beforeEach(async () => {
         Object.defineProperty(globalThis, 'localStorage', {
             value: new MemoryStorage(),
@@ -288,35 +289,55 @@ describe('CoopSessionManager casual progression', () => {
         for (let turn = 0; turn < 3; turn++) {
             coop.activatePlayerA();
             expect(game.getPlayer()).toMatchObject({ attack: 2, equippedWeapon: 'sword_iron', attackPowerVersion: 1 });
+            expect(MasterySystem.getInstance().getProblemsPerTurn()).toBe(2);
             coop.activatePlayerB();
             expect(game.getPlayer()).toMatchObject({ attack: 3, equippedWeapon: 'sword_reinforced', attackPowerVersion: 1 });
+            expect(MasterySystem.getInstance().getProblemsPerTurn()).toBe(3);
         }
-        expect(coop.getSharedAttackCount()).toBe(1);
     });
 
-    it('starts at one shared attack, grows every two wins, and caps at five', () => {
-        const coop = CoopSessionManager.getInstance() as any;
-        coop._isActive = true;
-        coop.resetCasualProgress();
-
-        expect(coop.getSharedAttackCount()).toBe(1);
-        expect(coop.getSharedVictories()).toBe(0);
-
-        expect(coop.recordCoopVictory()).toMatchObject({ leveledUp: false, sharedAttackCount: 1, sharedVictories: 1 });
-        expect(coop.recordCoopVictory()).toMatchObject({ leveledUp: true, sharedAttackCount: 2, sharedVictories: 2 });
-        expect(coop.recordCoopVictory()).toMatchObject({ leveledUp: false, sharedAttackCount: 2, sharedVictories: 3 });
-        expect(coop.recordCoopVictory()).toMatchObject({ leveledUp: true, sharedAttackCount: 3, sharedVictories: 4 });
-
-        for (let i = 0; i < 6; i++) {
-            coop.recordCoopVictory();
+    it('keeps each hero attack through fights, co-op restarts, reloads and reversed player order', () => {
+        const game = GameStateManager.getInstance();
+        const heroes = [
+            { attack: 4, powers: [2, 1, 1], sword: 'sword_reinforced', swordPower: 3 },
+            { attack: 2, powers: [1, 1], sword: 'sword_wooden', swordPower: 1 },
+        ];
+        for (const [slot, hero] of heroes.entries()) {
+            game.reset('girl_knight', `Player${slot}`, slot);
+            Object.assign(game.getPlayer(), {
+                attack: hero.attack, attackPowerVersion: 1, equippedWeapon: hero.sword,
+            });
+            game.save();
         }
 
-        expect(coop.getSharedAttackCount()).toBe(5);
-        expect(coop.getSharedVictories()).toBe(10);
+        const assertAttack = (slot: number) => {
+            const hero = heroes[slot];
+            const count = MasterySystem.getInstance().getProblemsPerTurn();
+            expect(count).toBe(hero.powers.length);
+            const problems = [
+                ...Array.from({ length: count }, () => ({ source: 'player' as const, damageMultiplier: 1 })),
+                { source: 'sword' as const, damageMultiplier: hero.swordPower },
+            ];
+            expect(applyAttackPowerDistribution(problems, game.getPlayer().attack)).toEqual(hero.powers);
+            expect(problems.map(problem => problem.damageMultiplier)).toEqual([...hero.powers, hero.swordPower]);
+        };
 
-        coop.resetCasualProgress();
-        expect(coop.getSharedAttackCount()).toBe(1);
-        expect(coop.getSharedVictories()).toBe(0);
+        const coop = CoopSessionManager.getInstance();
+        for (const [slotA, slotB] of [[0, 1], [0, 1], [1, 0]]) {
+            expect(coop.startSession(slotA, slotB)).toBe(true);
+            for (let fight = 0; fight < 10; fight++) {
+                coop.activatePlayerA();
+                assertAttack(slotA);
+                coop.activatePlayerB();
+                assertAttack(slotB);
+                coop.resetBattleState();
+            }
+            coop.endSession();
+            for (const slot of [0, 1]) {
+                expect(game.loadSlot(slot)).toBe(true);
+                assertAttack(slot); // The same profiles in solo after a save reload.
+            }
+        }
     });
 
     it('restores the original co-op enemy scaling: extra regular enemy, boss HP hike', () => {

@@ -5,17 +5,12 @@ export interface CombatAttackConfig {
     playerAttack: {
         maxProblemsPerTurn: number;
     };
-    coopAttack: {
-        powerBonusThreshold: number;
-    };
 }
 
 export interface AttackPowerProblem {
     source?: 'player' | 'pet' | 'sword';
     damageMultiplier?: number;
 }
-
-export type AttackPowerMode = 'solo' | 'coop';
 
 export const COMBAT_ATTACK_CONFIG = combatData as CombatAttackConfig;
 
@@ -70,42 +65,18 @@ export function getPlayerAttackDamageMultipliers(
     return distributeAttackPower(retainedPower, normalizedProblemCount);
 }
 
-/** Preserve the existing co-op damage rule until co-op progression is redesigned. */
-export function getCoopAttackDamageMultipliers(
-    attack: number,
-    problemCount: number,
-): number[] {
-    const normalizedProblemCount = normalizeNonNegativeInteger(problemCount);
-    const bonusProblems = Math.min(
-        Math.max(
-            0,
-            normalizeNonNegativeInteger(attack)
-                - COMBAT_ATTACK_CONFIG.coopAttack.powerBonusThreshold,
-        ),
-        normalizedProblemCount,
-    );
-
-    return distributeAttackPower(
-        normalizedProblemCount + bonusProblems,
-        normalizedProblemCount,
-    );
-}
-
 /**
- * Apply attack power only to base player problems. Equipment problems retain
- * their own independently configured multipliers.
+ * Apply the active hero's earned power in every combat mode and location.
+ * Equipment problems retain their own independently configured multipliers.
  */
 export function applyAttackPowerDistribution(
     problems: AttackPowerProblem[],
     attack: number,
-    mode: AttackPowerMode,
 ): number[] {
     const playerProblems = problems.filter(
         problem => problem.source !== 'sword' && problem.source !== 'pet',
     );
-    const multipliers = mode === 'coop'
-        ? getCoopAttackDamageMultipliers(attack, playerProblems.length)
-        : getPlayerAttackDamageMultipliers(attack, playerProblems.length);
+    const multipliers = getPlayerAttackDamageMultipliers(attack, playerProblems.length);
 
     playerProblems.forEach((problem, index) => {
         problem.damageMultiplier = multipliers[index] ?? 1;

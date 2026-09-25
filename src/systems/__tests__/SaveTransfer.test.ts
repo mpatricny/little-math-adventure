@@ -136,4 +136,34 @@ describe('Save transfer', () => {
         expect(SaveSystem.getUsedSlotCount()).toBe(1);
         expect(SaveSystem.load(3)?.player.name).toBe('Local hero');
     });
+
+    it('transfers a paused forest run with its owner, without copying it to another hero', () => {
+        saveSlot(0, 'Camp visitor');
+        saveSlot(1, 'Other hero');
+        const saved = SaveSystem.load(0)!;
+        saved.player.suspendedForestJourney = {
+            journeyId: 'verdant_forest', currentStage: 0, currentEncounter: 0,
+            currentRoom: 'forest_camp', unlockedWaypoints: ['forest_camp'],
+            lastSavePoint: { stage: 0, encounter: 0, hp: 7, hpB: 11, room: 'forest_camp' },
+            completed: false, failed: false, startedAt: 1234,
+            totalXp: 12, totalGold: 40, totalDiamonds: 1,
+            roomStates: {
+                forest_edge: { wolf_1: { interacted: true, defeated: true } },
+                forest_riddle: { bridge: { interacted: true, completed: true } },
+                forest_camp: { chest_simple: { interacted: true, looted: true } },
+            },
+        };
+        SaveSystem.save(0, saved.player, saved.mathStats);
+        const bundle = SaveSystem.exportBundle()!;
+        installLocalStorage();
+        saveSlot(0, 'Existing local hero');
+        const imported = SaveSystem.importBundle(bundle);
+        expect(imported.ok).toBe(true);
+        const ownerSlot = SaveSystem.getSlotsMeta().find(slot => slot.characterName === 'Camp visitor')!.slotIndex;
+        const otherSlot = SaveSystem.getSlotsMeta().find(slot => slot.characterName === 'Other hero')!.slotIndex;
+        expect(ownerSlot).toBeGreaterThan(0);
+        expect(SaveSystem.load(ownerSlot)?.player.suspendedForestJourney).toEqual(saved.player.suspendedForestJourney);
+        expect(SaveSystem.load(otherSlot)?.player.suspendedForestJourney).toBeUndefined();
+        expect(SaveSystem.load(0)?.player.suspendedForestJourney).toBeUndefined();
+    });
 });

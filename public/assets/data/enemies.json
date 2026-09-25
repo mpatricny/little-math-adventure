@@ -140,14 +140,14 @@
         "spriteKey": "spritesheet--36--sheet",
         "animPrefix": "mushroom",
         "hp": 20,
-        "attack": 3,
-        "defense": 3,
+        "attack": 4,
+        "defense": 4,
         "goldReward": [
             8,
             8
         ],
         "difficulty": 3,
-        "scale": 1
+        "scale": 0.5
     },
     {
         "id": "ancient_treant",
@@ -156,13 +156,13 @@
         "animPrefix": "treant",
         "hp": 25,
         "attack": 4,
-        "defense": 4,
+        "defense": 5,
         "goldReward": [
             25,
             40
         ],
         "difficulty": 7,
-        "scale": 2
+        "scale": 1.2
     },
     {
         "id": "verdant_guardian",

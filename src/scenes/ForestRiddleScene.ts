@@ -319,7 +319,7 @@ export class ForestRiddleScene extends Phaser.Scene {
         // Add instruction if puzzle not solved
         if (!this.puzzleSolved) {
             const host = this.sceneBuilder.get<Phaser.GameObjects.Container>('bridgeInstructionHost')!;
-            this.add.text(host.x, host.y, `Doplň oba kameny. ${this.puzzleInstance.payload.pattern}`, {
+            this.add.text(host.x, host.y, 'Doplň kameny', {
                 resolution: 2, fontSize: '20px',
                 fontFamily: 'Arial, sans-serif',
                 color: '#aaffaa',

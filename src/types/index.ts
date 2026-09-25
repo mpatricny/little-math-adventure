@@ -102,6 +102,8 @@ export interface PreparationState {
 }
 
 export interface PlayerState {
+    /** A forest run paused for a town visit; owned by the co-op host's save slot. */
+    suspendedForestJourney?: import('../systems/JourneySystem').JourneyState;
     /** Stable analytics identity; a new game gets a new ID even when reusing its slot. */
     gameplayProfileId?: string;
     puzzleProgress?: import('./puzzles').PuzzleProgress;

@@ -41,6 +41,8 @@ export class ForestAdventureStartScene extends Phaser.Scene {
 
     init(data: { debugMode?: boolean }) {
         this.debugMode = data.debugMode ?? false;
+        const coop = CoopSessionManager.getInstance();
+        if (coop.isCoopActive()) coop.activatePlayerA();
     }
 
     preload(): void {
@@ -62,6 +64,9 @@ export class ForestAdventureStartScene extends Phaser.Scene {
             this.scene.start('TownScene');
             return;
         }
+
+        // Returning from town is a continuation, not a new paid expedition.
+        if (this.resumeTownVisit()) return;
 
         // Build all scene editor elements (background, frame, scroll, arrow, banner, back button)
         this.sceneBuilder = new SceneBuilder(this);
@@ -246,6 +251,7 @@ export class ForestAdventureStartScene extends Phaser.Scene {
 
     private startJourney(): void {
         if (!this.journeyConfig) return;
+        if (this.resumeTownVisit()) return;
 
         const roomsData = this.cache.json.get('forestRooms');
 
@@ -276,6 +282,16 @@ export class ForestAdventureStartScene extends Phaser.Scene {
                 console.error('Failed to start journey');
             }
         }
+    }
+
+    private resumeTownVisit(): boolean {
+        if (!this.journeyConfig) return false;
+        const roomId = this.journeySystem.getTownReturnWaypoint(this.journeyConfig.id);
+        const roomsData = this.cache.json.get('forestRooms');
+        if (!roomId || !roomsData?.rooms?.[roomId]?.isWaypoint) return false;
+        if (!this.journeySystem.resumeRoomJourneyFromTown(this.journeyConfig.id)) return false;
+        this.scene.start(resolveForestRoomSceneKey(roomsData, roomId), { roomId });
+        return true;
     }
 
     private deductSupplyCost(): void {

@@ -18,8 +18,20 @@ export function queueTexture(scene: Phaser.Scene, key: string, catalog: Textures
     const file = sheet?.path ?? catalog.images[key];
     if (!file) return;
     const url = file.startsWith('library:') ? `/assets/library/${file.slice(8)}` : `/assets/${file}`;
-    if (sheet?.frameWidth && sheet.frameHeight) scene.load.spritesheet(key, url, { frameWidth: sheet.frameWidth, frameHeight: sheet.frameHeight });
-    else scene.load.image(key, url);
+    const textureFile = sheet?.frameWidth && sheet.frameHeight
+        ? new Phaser.Loader.FileTypes.SpriteSheetFile(scene.load, {
+            key, url, frameConfig: { frameWidth: sheet.frameWidth, frameHeight: sheet.frameHeight },
+        })
+        : new Phaser.Loader.FileTypes.ImageFile(scene.load, { key, url });
+    const addToCache = textureFile.addToCache;
+    textureFile.addToCache = function () {
+        // A background decode can finish after the next scene has queued the
+        // same key. Both loaders must complete, but the shared cache is written
+        // only once; skipping the second file at queue time would let its scene
+        // start before the first loader actually supplies the texture.
+        if (!scene.textures.exists(this.key)) addToCache.call(this);
+    };
+    scene.load.addFile(textureFile);
 }
 
 /** Byte downloads live outside scenes; only a small near-future texture set enters GPU memory. */

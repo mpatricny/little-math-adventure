@@ -42,8 +42,8 @@
       "phases": [
         {
           "hp": 28,
-          "attack": 4,
-          "defense": 1,
+          "attack": 5,
+          "defense": 4,
           "name": "Clouded guardian",
           "nameCs": "Zakalený strážce",
           "healPercent": 20,
@@ -51,8 +51,8 @@
         },
         {
           "hp": 26,
-          "attack": 4,
-          "defense": 1,
+          "attack": 6,
+          "defense": 3,
           "name": "Rising currents",
           "nameCs": "Rozbouřené proudy",
           "ability": "tidal_wave",
@@ -61,8 +61,8 @@
         },
         {
           "hp": 32,
-          "attack": 5,
-          "defense": 2,
+          "attack": 4,
+          "defense": 6,
           "name": "Breaking the bond",
           "nameCs": "Praskající pouto",
           "healPercent": 0,
@@ -80,18 +80,18 @@
     "verdant-guardian-v1": {
       "phases": [
         {
-          "hp": 15,
-          "attack": 3,
-          "defense": 2,
+          "hp": 24,
+          "attack": 5,
+          "defense": 4,
           "name": "Awakening",
           "nameCs": "Probuzení",
           "ability": null,
           "healPercent": 30
         },
         {
-          "hp": 12,
-          "attack": 5,
-          "defense": 0,
+          "hp": 21,
+          "attack": 6,
+          "defense": 3,
           "name": "Fury",
           "nameCs": "Zuřivost",
           "ability": "vengeful_strike",
@@ -100,9 +100,9 @@
           "tint": "0xffaaaa"
         },
         {
-          "hp": 18,
-          "attack": 3,
-          "defense": 4,
+          "hp": 28,
+          "attack": 4,
+          "defense": 6,
           "name": "Final Stand",
           "nameCs": "Poslední vzdor",
           "ability": "last_stand",

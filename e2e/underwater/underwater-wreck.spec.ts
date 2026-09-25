@@ -139,7 +139,6 @@ for (const viewport of [{ width: 1280, height: 720, canvas: false }, { width: 10
             s.scene.start('VictoryScene', { returnScene: 'UnderwaterRoomScene', returnData: { roomId: 'sp_wreck_hold', entryId: 'wreck' },
                 goldReward: 18, goldRewardA: 18, goldRewardB: 24, coopMode: true, playerAName: 'Alexandra Dlouhé Jméno', playerBName: 'Bartoloměj Druhý Hráč',
                 arenaCompleted: true, nextArenaLevel: 2, cityArenaLevel: 1, nextCityArenaLevel: 2,
-                sharedAttackCountLeveledUp: true, sharedAttackCount: 5,
                 crystalOverflow: true, unlockedPet: { name: pet.name, spriteKey: pet.spriteKey, animPrefix: pet.animPrefix },
                 crystalDrops: Array.from({ length: 7 }, (_, i) => ({ tier: 'shard', value: i + 1 })),
                 crystalLabels: Array.from({ length: 7 }, (_, i) => i % 2 ? 'Za bezchybný souboj!' : 'Za první dokončení vlny'),

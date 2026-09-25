@@ -186,7 +186,7 @@ export class MasterySystem {
         return getLearningFrontier(this.data);
     }
 
-    /** Number of base math problems in a solo attack. */
+    /** Base problems from the active hero's power, in solo and co-op alike. */
     getProblemsPerTurn(): number {
         const player = this.gameState.getPlayer();
         return getPlayerAttackProblemCount(player.attack);

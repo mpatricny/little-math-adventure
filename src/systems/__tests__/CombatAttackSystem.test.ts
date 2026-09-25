@@ -2,14 +2,13 @@ import { describe, expect, it } from 'vitest';
 import {
     applyAttackPowerDistribution,
     COMBAT_ATTACK_CONFIG,
-    getCoopAttackDamageMultipliers,
     getPlayerAttackDamageMultipliers,
     getPlayerAttackProblemCount,
     type AttackPowerProblem,
 } from '../CombatAttackSystem';
 import { resolveDamageAfterDefense } from '../CombatDamageSystem';
 
-describe('solo combat attack compression', () => {
+describe('shared solo/co-op combat attack compression', () => {
     it('uses the shared three-problem combat limit', () => {
         expect(COMBAT_ATTACK_CONFIG.playerAttack.maxProblemsPerTurn).toBe(3);
         expect(getPlayerAttackProblemCount(1)).toBe(1);
@@ -59,8 +58,8 @@ describe('attack power application', () => {
         ];
         const fallbackProblems: AttackPowerProblem[] = [{}, {}, {}];
 
-        expect(applyAttackPowerDistribution(bossProblems, 7, 'solo')).toEqual([3, 2, 2]);
-        expect(applyAttackPowerDistribution(fallbackProblems, 7, 'solo')).toEqual([3, 2, 2]);
+        expect(applyAttackPowerDistribution(bossProblems, 7)).toEqual([3, 2, 2]);
+        expect(applyAttackPowerDistribution(fallbackProblems, 7)).toEqual([3, 2, 2]);
         expect(bossProblems.map(problem => problem.damageMultiplier)).toEqual([3, 2, 2]);
         expect(fallbackProblems.map(problem => problem.damageMultiplier)).toEqual([3, 2, 2]);
     });
@@ -74,14 +73,14 @@ describe('attack power application', () => {
             { source: 'player' as const },
         ];
 
-        applyAttackPowerDistribution(problems, 10, 'solo');
+        applyAttackPowerDistribution(problems, 10);
 
         expect(problems.map(problem => problem.damageMultiplier)).toEqual([4, 2, 3, 3, 3]);
     });
 
     it('still subtracts enemy defense once from the compressed total', () => {
         const problems: AttackPowerProblem[] = [{}, {}, {}];
-        applyAttackPowerDistribution(problems, 10, 'solo');
+        applyAttackPowerDistribution(problems, 10);
         const rawDamage = problems.reduce<number>(
             (sum, problem) => sum + (problem.damageMultiplier ?? 1),
             0,
@@ -95,21 +94,19 @@ describe('attack power application', () => {
     });
 });
 
-describe('co-op attack compatibility', () => {
-    it('keeps the existing shared-problem multiplier curve', () => {
-        expect(getCoopAttackDamageMultipliers(4, 5)).toEqual([1, 1, 1, 1, 1]);
-        expect(getCoopAttackDamageMultipliers(7, 5)).toEqual([2, 2, 1, 1, 1]);
-        expect(getCoopAttackDamageMultipliers(13, 5)).toEqual([2, 2, 2, 2, 2]);
-    });
-
-    it('does not count the sword bonus problem as a shared co-op problem', () => {
-        const problems: AttackPowerProblem[] = [
-            { source: 'player' as const },
-            { source: 'player' as const },
-            { source: 'sword' as const, damageMultiplier: 2 },
-        ];
-
-        expect(applyAttackPowerDistribution(problems, 7, 'coop')).toEqual([2, 2]);
-        expect(problems.map(problem => problem.damageMultiplier)).toEqual([2, 2, 2]);
+describe('equipment-independent hero power', () => {
+    it.each([1, 2, 3])('retains every hero attack from 1 to 100 with sword power %i', swordPower => {
+        for (let attack = 1; attack <= 100; attack++) {
+            const count = getPlayerAttackProblemCount(attack);
+            const problems: AttackPowerProblem[] = [
+                ...Array.from({ length: count }, () => ({ source: 'player' as const })),
+                { source: 'sword', damageMultiplier: swordPower },
+            ];
+            const powers = applyAttackPowerDistribution(problems, attack);
+            expect(powers).toHaveLength(count);
+            expect(powers.reduce((sum, power) => sum + power, 0)).toBe(attack);
+            expect(problems.at(-1)?.damageMultiplier).toBe(swordPower);
+            expect(problems).toHaveLength(count + 1);
+        }
     });
 });

@@ -7,6 +7,7 @@ import { CrystalSystem } from '../systems/CrystalSystem';
 import { ManaSystem } from '../systems/ManaSystem';
 import { ProgressionSystem, createInitialTownProgress } from '../systems/ProgressionSystem';
 import { MasterySystem } from '../systems/MasterySystem';
+import { JourneySystem } from '../systems/JourneySystem';
 import { PlacementInitializer } from '../systems/PlacementInitializer';
 import { LocalizationService } from '../systems/LocalizationService';
 import { uiTemplateLoader } from '../systems/UiTemplateLoader';
@@ -1059,7 +1060,8 @@ export class TownScene extends Phaser.Scene {
     private createForestExit(): void {
         const player = GameStateManager.getInstance().getPlayer();
         const hasArena2 = player.arena?.completedArenaLevels?.includes(2) ?? false;
-        if (!hasArena2) return;
+        const hasCampReturn = JourneySystem.getInstance().getTownReturnWaypoint('verdant_forest') !== null;
+        if (!hasArena2 && !hasCampReturn) return;
 
         // Ensure it's tracked as unlocked and revealed
         if (!player.townProgress!.unlockedBuildings.includes('forest-exit')) {

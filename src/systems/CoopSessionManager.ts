@@ -13,16 +13,12 @@ import { MasterySystem } from './MasterySystem';
  */
 export class CoopSessionManager {
     private static instance: CoopSessionManager;
-    private static readonly MAX_SHARED_ATTACK_COUNT = 5;
-    private static readonly SHARED_ATTACK_GROWTH_INTERVAL = 2;
     private static readonly BOSS_HP_SCALE = 1.35;
 
     private _isActive: boolean = false;
     private playerASlotIndex: number = -1;
     private playerBSlotIndex: number = -1;
     private _activePlayer: 'A' | 'B' = 'A';
-    private _sharedAttackCount: number = 1;
-    private _sharedVictories: number = 0;
     private _playerAMasteryData: MasteryData | null = null;
     private _playerBMasteryData: MasteryData | null = null;
 
@@ -84,7 +80,6 @@ export class CoopSessionManager {
         this.playerBSlotIndex = slotB;
         this._activePlayer = 'A';
         this._isActive = true;
-        this.resetCasualProgress();
 
         console.log(`[CoopSession] Started: Player A = slot ${slotA}, Player B = slot ${slotB}`);
         return true;
@@ -106,7 +101,6 @@ export class CoopSessionManager {
         this.playerBSlotIndex = -1;
         this._playerAMasteryData = null;
         this._playerBMasteryData = null;
-        this.resetCasualProgress();
         this.resetBattleState();
 
         console.log('[CoopSession] Session ended');
@@ -169,14 +163,6 @@ export class CoopSessionManager {
         return this.playerBSlotIndex;
     }
 
-    getSharedAttackCount(): number {
-        return this._sharedAttackCount;
-    }
-
-    getSharedVictories(): number {
-        return this._sharedVictories;
-    }
-
     getPlayerAMasteryData(): MasteryData | null {
         return this._playerAMasteryData;
     }
@@ -210,35 +196,6 @@ export class CoopSessionManager {
         const gameState = GameStateManager.getInstance();
         gameState.getMathStats().masteryData = this.cloneMasteryData(data);
         gameState.save();
-    }
-
-    resetCasualProgress(): void {
-        this._sharedAttackCount = 1;
-        this._sharedVictories = 0;
-    }
-
-    recordCoopVictory(): { leveledUp: boolean; sharedAttackCount: number; sharedVictories: number } {
-        if (!this._isActive) {
-            return {
-                leveledUp: false,
-                sharedAttackCount: this._sharedAttackCount,
-                sharedVictories: this._sharedVictories,
-            };
-        }
-
-        this._sharedVictories += 1;
-        const targetAttackCount = Math.min(
-            CoopSessionManager.MAX_SHARED_ATTACK_COUNT,
-            1 + Math.floor(this._sharedVictories / CoopSessionManager.SHARED_ATTACK_GROWTH_INTERVAL),
-        );
-        const leveledUp = targetAttackCount > this._sharedAttackCount;
-        this._sharedAttackCount = targetAttackCount;
-
-        return {
-            leveledUp,
-            sharedAttackCount: this._sharedAttackCount,
-            sharedVictories: this._sharedVictories,
-        };
     }
 
     // --- Battle-scoped state ---

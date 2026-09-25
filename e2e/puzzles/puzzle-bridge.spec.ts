@@ -33,6 +33,9 @@ async function bridgeState(page: Page) {
 }
 
 for (const canvas of [false, true]) test(`all seven bridge positions, two required stones and re-entry: ${canvas ? 'ancient tablet Canvas' : 'forest desktop WebGL'}`, async ({ page }) => {
+    await page.route(url => /^\/(?:api|v1)(?:\/|$)/.test(url.pathname), route => route.fulfill({
+        status: 200, contentType: 'application/json', body: JSON.stringify({ authenticated: false }),
+    }));
     const roomId = canvas ? 'ancient_bridge' : 'forest_riddle';
     const full = canvas ? [4, 5, 6, 7, 8, 9, 10] : [1, 2, 1, 2, 1, 2, 1];
     const prefix = `artifacts/puzzles/bridge-two-${canvas ? 'tablet-canvas' : 'desktop-webgl'}`;
@@ -85,7 +88,7 @@ for (const canvas of [false, true]) test(`all seven bridge positions, two requir
     const initial = await bridgeState(page);
     expect(initial.payload.full).toEqual(full);
     expect(initial.fixed).toEqual([0, 2, 3, 4, 6].map(i => String(full[i])));
-    expect(initial.instruction!.text).toContain('Doplň oba kameny.');
+    expect(initial.instruction!.text).toBe('Doplň kameny');
     expect(initial.instruction!.bounds.x).toBeGreaterThan(0);
     expect(initial.instruction!.bounds.x + initial.instruction!.bounds.width).toBeLessThan(1280);
     expect(initial.instruction!.bounds.y).toBeGreaterThan(110);

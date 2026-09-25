@@ -89,24 +89,15 @@ export class SpinLockPuzzleScene extends Phaser.Scene {
     }
 
     create(): void {
-        // Dark overlay — interactive to block clicks from reaching the paused parent scene.
-        // Paused scenes may still process input in Phaser 3.
-        // Set at depth 0; template containers are elevated to depth 10 so their
-        // interactive layers get priority over the overlay.
-        const overlay = this.add.rectangle(640, 360, 1280, 720, 0x000000, 0.7);
-        overlay.setDepth(0);
-        overlay.setInteractive();
-        this.input.setDefaultCursor('default');
-
-        // Build templates from scenes.json
         this.sceneBuilder = new SceneBuilder(this);
         this.sceneBuilder.buildScene('SpinLockPuzzleScene');
-
-        // Elevate template containers above the overlay for input priority
-        const spinFrame = this.sceneBuilder.get<Phaser.GameObjects.Container>('Spin frame');
-        const spin4 = this.sceneBuilder.get<Phaser.GameObjects.Container>('spin-4');
-        if (spinFrame) spinFrame.setDepth(10);
-        if (spin4) spin4.setDepth(10);
+        // Dark overlay — interactive to block clicks from reaching the paused parent scene.
+        const overlayHost = this.sceneBuilder.get<Phaser.GameObjects.Container>('spinOverlayHost')!;
+        const overlayLayout = this.sceneBuilder.getElementDef('spinOverlayHost')!;
+        const overlay = this.add.rectangle(overlayHost.x, overlayHost.y, overlayLayout.width!, overlayLayout.height!, 0x000000, 0.7);
+        overlay.setDepth(overlayHost.depth);
+        overlay.setInteractive();
+        this.input.setDefaultCursor('default');
 
         this.setupFrameTexts();
         this.setupWheels();
@@ -188,8 +179,10 @@ export class SpinLockPuzzleScene extends Phaser.Scene {
             const textWorld = textObj.getWorldTransformMatrix();
             const wheelWorldX = layerWorld.tx;
             const wheelWorldY = layerWorld.ty;
-            const wheelW = layer.displayWidth;
-            const wheelH = layer.displayHeight;
+            const wheelW = layer.width * layerWorld.scaleX;
+            const wheelH = layer.height * layerWorld.scaleY;
+            const layerScaleX = layerWorld.scaleX, layerScaleY = layerWorld.scaleY;
+            const textScaleX = textWorld.scaleX, textScaleY = textWorld.scaleY;
 
             // Remove from template container and create per-wheel masked container.
             // Per SLIDE_ANIMATION.md: apply mask to the CONTAINER, not individual elements.
@@ -197,11 +190,12 @@ export class SpinLockPuzzleScene extends Phaser.Scene {
             spinContainer.remove(textObj);
 
             const wheelContainer = this.add.container(0, 0);
-            wheelContainer.setDepth(15);
+            wheelContainer.setDepth(spinContainer.depth);
 
             // Set positions to world coordinates (container is at 0,0)
-            layer.setPosition(wheelWorldX, wheelWorldY);
-            textObj.setPosition(textWorld.tx, textWorld.ty);
+            // Reparenting must retain the editor's full scale, not just position.
+            layer.setPosition(wheelWorldX, wheelWorldY).setScale(layerScaleX, layerScaleY);
+            textObj.setPosition(textWorld.tx, textWorld.ty).setScale(textScaleX, textScaleY);
             wheelContainer.add([layer, textObj]);
 
             // Geometry mask sized from marker-2-container, centered on the wheel
@@ -222,10 +216,14 @@ export class SpinLockPuzzleScene extends Phaser.Scene {
             this.wheelLayers.push(layer);
             this.isAnimating.push(false);
 
-            // Make the layer interactive for wheel clicking
-            layer.setInteractive({ useHandCursor: true });
+            // Only the visible aperture is clickable; scaled bitmap bounds overlap
+            // neighboring wheels even though their visible apertures do not.
+            layer.disableInteractive();
+            const hitZone = this.add.zone(maskCenterX, maskCenterY, clipW, clipH)
+                .setName(`spinWheel${i}Zone`).setDepth(spinContainer.depth)
+                .setInteractive({ useHandCursor: true });
             const wheelIndex = i;
-            layer.on('pointerdown', () => this.rotateWheel(wheelIndex));
+            hitZone.on('pointerdown', () => this.rotateWheel(wheelIndex));
         }
     }
 
@@ -328,13 +326,11 @@ export class SpinLockPuzzleScene extends Phaser.Scene {
         // processing can be unreliable when the container has a large background layer.
         // Instead, create a standalone Zone at the button's world position — this
         // bypasses all container input transform issues.
-        const worldMatrix = buttonLayer.getWorldTransformMatrix();
-        const worldCenterX = worldMatrix.tx + buttonLayer.displayWidth / 2;
-        const worldCenterY = worldMatrix.ty + buttonLayer.displayHeight / 2;
-
-        const buttonZone = this.add.zone(worldCenterX, worldCenterY, buttonLayer.displayWidth, buttonLayer.displayHeight);
+        const bounds = buttonLayer.getBounds();
+        const buttonZone = this.add.zone(bounds.centerX, bounds.centerY, bounds.width, Math.max(56, bounds.height))
+            .setName('spinSubmitZone');
         buttonZone.setInteractive({ useHandCursor: true });
-        buttonZone.setDepth(20);
+        buttonZone.setDepth(frameContainer.depth + 10);
 
         buttonZone.on('pointerover', () => {
             buttonLayer.setAlpha(0.85);
@@ -354,20 +350,13 @@ export class SpinLockPuzzleScene extends Phaser.Scene {
     // ─── Close button ───────────────────────────────────────
 
     private setupCloseButton(): void {
-        const closeMarker = this.sceneBuilder.getMarker('marker-1 - close');
-        const x = closeMarker?.x ?? 832;
-        const y = closeMarker?.y ?? 139;
-
-        const closeBtn = this.add.text(x, y, '✕', {
-            fontSize: '24px',
-            fontFamily: 'Arial, sans-serif',
-            color: '#aa6666',
-            fontStyle: 'bold'
-        }).setOrigin(0.5).setInteractive({ useHandCursor: true }).setDepth(100);
-
-        closeBtn.on('pointerover', () => closeBtn.setColor('#ff8888'));
-        closeBtn.on('pointerout', () => closeBtn.setColor('#aa6666'));
-        closeBtn.on('pointerdown', () => this.closeAndReturn(false));
+        const host = this.sceneBuilder.get<Phaser.GameObjects.Container>('spinCloseHost')!;
+        const layout = this.sceneBuilder.getElementDef('spinCloseHost')!;
+        // The frame already includes its close icon; align the enlarged touch
+        // target with that artwork instead of drawing a second cross above it.
+        const closeZone = this.add.zone(host.x, host.y, layout.width!, layout.height!)
+            .setName('spinCloseZone').setDepth(host.depth).setInteractive({ useHandCursor: true });
+        closeZone.on('pointerdown', () => this.closeAndReturn(false));
     }
 
     // ─── Answer checking ────────────────────────────────────
@@ -410,22 +399,24 @@ export class SpinLockPuzzleScene extends Phaser.Scene {
             textObj.setColor('#44ff44');
             this.tweens.add({
                 targets: textObj,
-                scaleX: 1.3,
-                scaleY: 1.3,
+                scaleX: textObj.scaleX * 1.3,
+                scaleY: textObj.scaleY * 1.3,
                 duration: 200,
                 yoyo: true
             });
         });
 
         // Success message
-        const successText = this.add.text(640, 360, 'SPRÁVNĚ!', {
-            fontSize: '36px',
+        const feedback = this.sceneBuilder.get<Phaser.GameObjects.Container>('spinFeedbackHost')!;
+        const successText = this.add.text(feedback.x, feedback.y, 'SPRÁVNĚ!', {
+            resolution: 2,
+            fontSize: '54px',
             fontFamily: 'Arial, sans-serif',
             color: '#44ff44',
             fontStyle: 'bold',
             stroke: '#000000',
             strokeThickness: 4
-        }).setOrigin(0.5).setAlpha(0).setDepth(200);
+        }).setOrigin(0.5).setAlpha(0).setDepth(feedback.depth);
 
         this.tweens.add({
             targets: successText,
@@ -440,22 +431,24 @@ export class SpinLockPuzzleScene extends Phaser.Scene {
         // Show reward text
         if (this.reward) {
             const rewardParts: string[] = [];
-            if (this.reward.gold) rewardParts.push(`+${this.reward.gold} gold`);
-            if (this.reward.diamonds) rewardParts.push(`+${this.reward.diamonds} diamonds`);
+            if (this.reward.gold) rewardParts.push(`+${this.reward.gold} 🪙`);
+            if (this.reward.diamonds) rewardParts.push(`+${this.reward.diamonds} 💎`);
 
             this.time.delayedCall(600, () => {
-                const rewardText = this.add.text(640, 420, rewardParts.join('  '), {
-                    fontSize: '24px',
+                const reward = this.sceneBuilder.get<Phaser.GameObjects.Container>('spinRewardHost')!;
+                const rewardText = this.add.text(reward.x, reward.y, rewardParts.join('  '), {
+                    resolution: 2,
+                    fontSize: '36px',
                     fontFamily: 'Arial, sans-serif',
                     color: '#ffdd44',
                     fontStyle: 'bold',
                     stroke: '#000000',
                     strokeThickness: 3
-                }).setOrigin(0.5).setDepth(200);
+                }).setOrigin(0.5).setDepth(reward.depth).setName('spinRewardText');
 
                 this.tweens.add({
                     targets: rewardText,
-                    y: 380,
+                    y: reward.y - 8,
                     duration: 1000
                 });
             });
@@ -491,19 +484,21 @@ export class SpinLockPuzzleScene extends Phaser.Scene {
         });
 
         // "ŠPATNĚ" text fades out
-        const wrongText = this.add.text(640, 360, 'ŠPATNĚ', {
-            fontSize: '28px',
+        const feedback = this.sceneBuilder.get<Phaser.GameObjects.Container>('spinFeedbackHost')!;
+        const wrongText = this.add.text(feedback.x, feedback.y, 'ŠPATNĚ', {
+            resolution: 2,
+            fontSize: '42px',
             fontFamily: 'Arial, sans-serif',
             color: '#ff4444',
             fontStyle: 'bold',
             stroke: '#000000',
             strokeThickness: 3
-        }).setOrigin(0.5).setDepth(200);
+        }).setOrigin(0.5).setDepth(feedback.depth);
 
         this.tweens.add({
             targets: wrongText,
             alpha: 0,
-            y: 320,
+            y: feedback.y - 8,
             duration: 1000,
             delay: 500,
             onComplete: () => wrongText.destroy()

@@ -55,8 +55,6 @@ interface VictoryData {
     playerBName?: string;
     goldRewardA?: number;
     goldRewardB?: number;
-    sharedAttackCount?: number;
-    sharedAttackCountLeveledUp?: boolean;
 }
 
 export class VictoryScene extends Phaser.Scene {
@@ -209,11 +207,8 @@ export class VictoryScene extends Phaser.Scene {
         const messages: string[] = [];
         if (data.arenaCompleted) messages.push(data.nextCityArenaLevel !== undefined
             ? `Otevřena aréna ${data.nextCityArenaLevel}.` : 'Všechny městské arény dokončeny.');
-        if (data.coopMode && data.sharedAttackCountLeveledUp)
-            messages.push(`Společný útok: ${data.sharedAttackCount} příkladů.`);
         if (data.crystalOverflow) messages.push('Plný inventář — další krystaly čekají na zemi.');
-        text('victoryStatusHost', messages.length > 2
-            ? `${messages[0]}  ·  ${messages[1]}\n${messages[2]}` : messages.join('\n'), 18, '#d8dfbf');
+        text('victoryStatusHost', messages.join('\n'), 18, '#d8dfbf');
 
         const button = new UnderwaterButton(this, {
             ...host('victoryContinueHost'), name: 'victoryContinueHost', label: 'POKRAČOVAT',

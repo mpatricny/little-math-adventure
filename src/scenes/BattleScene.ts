@@ -2401,13 +2401,6 @@ export class BattleScene extends Phaser.Scene implements BattleSceneCallbacks {
         return ms;
     }
 
-    private getAttackProblemCount(masterySystem: MasterySystem): number {
-        if (this.isCoopMode && this.coopSession) {
-            return this.coopSession.getSharedAttackCount();
-        }
-        return masterySystem.getProblemsPerTurn();
-    }
-
     private generateFallbackAttackProblems(playerLevel: number, count: number, equippedSword: ItemDefinition | null): MathProblem[] {
         const problems: MathProblem[] = [];
 
@@ -2489,7 +2482,7 @@ export class BattleScene extends Phaser.Scene implements BattleSceneCallbacks {
         // Get mastery system with co-op safety (ensures correct player context)
         const masterySystem = this.getCoopSafeMasterySystem();
 
-        const comparisonProblems = masterySystem.generateComparisonBattleProblems(this.getAttackProblemCount(masterySystem));
+        const comparisonProblems = masterySystem.generateComparisonBattleProblems(masterySystem.getProblemsPerTurn());
         if (comparisonProblems) {
             const problems = comparisonProblems;
             if (equippedSword?.mathProblemType) problems.push(this.generateSwordProblem(equippedSword));
@@ -2505,7 +2498,7 @@ export class BattleScene extends Phaser.Scene implements BattleSceneCallbacks {
             const phase = this.bossPhases[this.currentBossPhase];
             const phaseUsesComparison = phase.mathType === 'comparison';
             if (phase.mathType && (!phaseUsesComparison || masterySystem.isComparisonChapterComplete())) {
-                const problemCount = this.getAttackProblemCount(masterySystem);
+                const problemCount = masterySystem.getProblemsPerTurn();
                 const problems: MathProblem[] = [];
                 for (let i = 0; i < problemCount; i++) {
                     problems.push(this.mathEngine.generateBossPhaseProblem(
@@ -2528,7 +2521,7 @@ export class BattleScene extends Phaser.Scene implements BattleSceneCallbacks {
         }
 
         // Generate problems from mastery pool
-        const count = this.getAttackProblemCount(masterySystem);
+        const count = masterySystem.getProblemsPerTurn();
         const problemKeys = masterySystem.drawFromPool(count);
 
         // Co-op debug: verify correct player context for problem generation
@@ -2772,12 +2765,11 @@ export class BattleScene extends Phaser.Scene implements BattleSceneCallbacks {
         }
     }
 
-    /** Compress solo attack power into three problems; preserve co-op for now. */
+    /** Compress the active hero's power identically in solo and co-op. */
     private applyAttackPowerDistribution(problems: MathProblem[]): void {
         applyConfiguredAttackPower(
             problems,
             this.gameState.getPlayer().attack,
-            this.isCoopMode ? 'coop' : 'solo',
         );
         problems.forEach(applyProblemComplexityDamage);
     }
@@ -4381,6 +4373,14 @@ export class BattleScene extends Phaser.Scene implements BattleSceneCallbacks {
         );
     }
 
+    /** Shared story exit, after the solo or both co-op profiles receive rewards. */
+    private finishForestCrystalVictory(goldReward: number): boolean {
+        if (this.storyVictory !== 'forest-crystal') return false;
+        this.completeForestGuardianJourney();
+        this.scene.start('ForestCrystalRewardScene', { testMode: false, goldReward });
+        return true;
+    }
+
     private onVictory(): void {
         if (this.mockMode) {
             this.finishMockBattle('victory');
@@ -4594,17 +4594,7 @@ export class BattleScene extends Phaser.Scene implements BattleSceneCallbacks {
                 arenaLevel: this.arenaLevel,
                 arenaWave: this.arenaWave
             });
-            if (this.storyVictory === 'forest-crystal') {
-                this.completeForestGuardianJourney();
-                this.scene.start('ForestCrystalRewardScene', {
-                    testMode: false,
-                    goldReward: totalCoins,
-                    crystalDrops,
-                    crystalLabels,
-                    crystalOverflow,
-                });
-                return;
-            }
+            if (this.finishForestCrystalVictory(totalCoins)) return;
 
             if (this.fromArena) {
                 // Completion is identified by encounter metadata, not a hardcoded array index.
@@ -4746,7 +4736,6 @@ export class BattleScene extends Phaser.Scene implements BattleSceneCallbacks {
         const coop = this.coopSession!;
         const primaryEnemy = this.enemyDefs[0];
         const petsData = this.cache.json.get('pets') as PetDefinition[];
-        const casualProgress = coop.recordCoopVictory();
 
         // Calculate coins once (same for both players)
         const totalCoins = this.rollBattleCoinReward();
@@ -4922,6 +4911,10 @@ export class BattleScene extends Phaser.Scene implements BattleSceneCallbacks {
             // Switch back to A for VictoryScene display
             coop.activatePlayerA();
 
+            // A story boss must not fall through to the generic return-to-room
+            // path, which would recreate the guardian instead of its crystal.
+            if (this.finishForestCrystalVictory(totalCoins)) return;
+
             // Build combined VictoryScene data
             const arenaCompleted = this.fromArena && this.isArenaCompletionWave();
             const playerAName = (() => { coop.activatePlayerA(); return this.gameState.getPlayer().name; })();
@@ -4960,8 +4953,6 @@ export class BattleScene extends Phaser.Scene implements BattleSceneCallbacks {
                 playerBName,
                 goldRewardA: totalCoins,
                 goldRewardB: totalCoins,
-                sharedAttackCount: casualProgress.sharedAttackCount,
-                sharedAttackCountLeveledUp: casualProgress.leveledUp,
             };
 
             // Handle arena completion / next wave routing

@@ -6380,13 +6380,21 @@
         "width": 1280,
         "height": 720
       },
-      "elements": [],
+      "elements": [
+        { "id": "spinOverlayHost", "asset": "ui.containers.empty", "x": 640, "y": 360, "width": 1280, "height": 720, "depth": 0 },
+        { "id": "spinSafeContentHost", "asset": "ui.containers.empty", "x": 634, "y": 366, "width": 666, "height": 510, "depth": 10 },
+        { "id": "spinCloseHost", "asset": "ui.containers.empty", "x": 934, "y": 174, "width": 64, "height": 64, "depth": 100 },
+        { "id": "spinFeedbackHost", "asset": "ui.containers.empty", "x": 640, "y": 350, "width": 600, "height": 70, "depth": 200 },
+        { "id": "spinRewardHost", "asset": "ui.containers.empty", "x": 640, "y": 522, "width": 600, "height": 50, "depth": 200 }
+      ],
       "ui": [
         {
           "id": "Spin frame",
           "asset": "misc.spin-frame",
-          "x": 652,
-          "y": 283,
+          "x": 640,
+          "y": 360,
+          "scale": 1.5,
+          "depth": 10,
           "uiElement": {
             "templateId": "1770852041344-wqct3lyr0"
           }
@@ -6394,8 +6402,10 @@
         {
           "id": "spin-4",
           "asset": "misc.spin-4",
-          "x": 648,
-          "y": 338,
+          "x": 634,
+          "y": 442.5,
+          "scale": 1.5,
+          "depth": 15,
           "uiElement": {
             "templateId": "1770850974657-wuo61sld6"
           }
@@ -6403,20 +6413,12 @@
       ],
       "markers": [
         {
-          "id": "close-marker",
-          "name": "marker-1 - close",
-          "x": 832,
-          "y": 139,
-          "width": 31,
-          "height": 37
-        },
-        {
           "id": "clip-marker",
           "name": "marker-2-container",
-          "x": 513,
-          "y": 311,
-          "width": 48,
-          "height": 56
+          "x": 431.5,
+          "y": 400.5,
+          "width": 72,
+          "height": 84
         }
       ]
     },
@@ -7363,14 +7365,87 @@
           "y": 455,
           "flipX": true,
           "scale": 0.6
+        },
+        {
+          "id": "campTownButtonHost",
+          "asset": "ui.containers.empty",
+          "x": 126,
+          "y": 665,
+          "width": 200,
+          "height": 64,
+          "depth": 120
+        },
+        {
+          "id": "campModalTownButtonHost",
+          "asset": "ui.containers.empty",
+          "x": 640,
+          "y": 455,
+          "width": 280,
+          "height": 56,
+          "depth": 302
+        },
+        {
+          "id": "campModalOverlayHost",
+          "asset": "ui.containers.empty",
+          "x": 640,
+          "y": 360,
+          "width": 1280,
+          "height": 720,
+          "depth": 290
+        },
+        {
+          "id": "campModalContentHost",
+          "asset": "ui.containers.empty",
+          "x": 640,
+          "y": 360,
+          "width": 440,
+          "height": 260,
+          "depth": 302
+        },
+        {
+          "id": "campModalTitleHost",
+          "asset": "ui.containers.empty",
+          "x": 620,
+          "y": 253,
+          "width": 270,
+          "height": 40,
+          "depth": 302
+        },
+        {
+          "id": "campModalHPHost",
+          "asset": "ui.containers.empty",
+          "x": 640,
+          "y": 315,
+          "width": 320,
+          "height": 36,
+          "depth": 302
+        },
+        {
+          "id": "campModalRestButtonHost",
+          "asset": "ui.containers.empty",
+          "x": 640,
+          "y": 385,
+          "width": 280,
+          "height": 56,
+          "depth": 302
+        },
+        {
+          "id": "campModalCloseButtonHost",
+          "asset": "ui.containers.empty",
+          "x": 832,
+          "y": 258,
+          "width": 56,
+          "height": 56,
+          "depth": 302
         }
       ],
       "ui": [
         {
           "id": "Black-frmae-Diamonds",
           "asset": "Black-frmae-Diamonds",
-          "x": 1007,
-          "y": 197,
+          "x": 640,
+          "y": 360,
+          "depth": 300,
           "uiElement": {
             "templateId": "1770069824042-mifp8yjpu"
           }

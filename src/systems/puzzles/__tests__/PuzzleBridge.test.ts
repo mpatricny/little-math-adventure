@@ -40,8 +40,8 @@ describe('illustrated bridge gameplay contract', () => {
                     expect(cycle.every(value => c.stoneDisplayValues.includes(value))).toBe(true);
                     expect(Math.max(...c.full, ...c.floatingRockValues)).toBeLessThanOrEqual(profile.max);
                 }
-                // The visible numbers and stated rule cannot imply two different completions.
-                const visible = JSON.stringify([c.pattern, c.sequence]);
+                // The numbers alone must identify the completion; no written rule is shown.
+                const visible = JSON.stringify(c.sequence);
                 if (visibleRows.has(visible)) expect(c.full).toEqual(visibleRows.get(visible));
                 visibleRows.set(visible, c.full);
             });
@@ -51,6 +51,14 @@ describe('illustrated bridge gameplay contract', () => {
         const pool = bridgePool({ ...bandProfile('A', 1), subtraction: false });
         for (const full of [[4, 5, 6, 7, 8, 9, 10], [1, 2, 3, 1, 2, 3, 1], [1, 2, 1, 2, 1, 2, 1]]) {
             expect(pool.some(c => JSON.stringify(c.full) === JSON.stringify(full))).toBe(true);
+        }
+    });
+
+    it('offers counting, pairs and triples in every band instead of forcing one example pattern', () => {
+        for (const band of ['A', 'B', 'C', 'D', 'E'] as const) {
+            const kinds = new Set(bridgePool(bandProfile(band, 1)).map(puzzle =>
+                puzzle.rule.kind === 'step' ? 'counting' : `repeat-${puzzle.rule.cycle.length}`));
+            expect(kinds).toEqual(new Set(['counting', 'repeat-2', 'repeat-3']));
         }
     });
 });

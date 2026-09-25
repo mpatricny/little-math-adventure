@@ -5,6 +5,9 @@ const ready = (page: Page) => page.waitForFunction(() => (window as any).__LITTL
 const shot = (page: Page, name: string) => page.screenshot({ path: `artifacts/comparison-coop/${name}.png` });
 
 async function setup(page: Page, renderer: string, chapterB = false) {
+    await page.route(url => /^\/(?:api|v1)(?:\/|$)/.test(url.pathname), route => route.fulfill({
+        status: 200, contentType: 'application/json', body: JSON.stringify({ authenticated: false }),
+    }));
     await page.setViewportSize({ width: renderer === 'canvas' ? 1024 : 1280, height: 800 });
     await openSeededGame(page, true, {}, {}, { equippedShield: 'shield_reinforced' });
     if (renderer === 'canvas') { await page.goto('/?renderer=canvas'); await waitForScene(page, 'MenuScene'); }
@@ -35,7 +38,8 @@ async function setup(page: Page, renderer: string, chapterB = false) {
             }
             const choose = (num: number, form: any) => db.getProblemsForForm(`${band}${num}`, form)[0].key;
             const compare = choose(band === 'A' ? 2 : 4, band === 'A' ? 'compare_equation_vs_number' : 'compare_equation_vs_equation');
-            m.currentPool = [compare, choose(1, 'result_unknown'), choose(3, 'compare_equation_vs_number'), choose(2, 'missing_part'), ...Array(12).fill(compare)];
+            // Three hero problems, then comparison-only defenses for both owners.
+            m.currentPool = [compare, choose(1, 'result_unknown'), choose(3, 'compare_equation_vs_number'), ...Array(12).fill(compare)];
             m.currentPoolIndex = 0;
             g.save();
         }
@@ -43,10 +47,7 @@ async function setup(page: Page, renderer: string, chapterB = false) {
     }, chapterB);
     await activateCoopSession(page);
     const controllerUrl = await page.evaluate(async () => {
-        const { CoopSessionManager } = await import('/src/systems/CoopSessionManager.ts');
         const { RemoteInputService } = await import('/src/remote/RemoteInputService.ts');
-        const coop = CoopSessionManager.getInstance();
-        while (coop.getSharedAttackCount() < 4) coop.recordCoopVictory();
         const remote = RemoteInputService.getInstance();
         await remote.startHostSession('ws://127.0.0.1:8876');
         (window as any).__LITTLE_MATH_GAME__.scene.keys.TownScene.scene.start('BattleScene', { fromArena: true, arenaLevel: 1, wave: 0 });
@@ -77,7 +78,7 @@ test('co-op switches from mixed arithmetic to the other player’s chapter and s
     const phone = await setup(page, 'webgl', true);
     const chapterA = await page.evaluate(() => JSON.parse(localStorage.getItem('littleMathAdventure_slot_0')!).mathStats.masteryData.comparisonChapter);
     await phone.getByRole('button', { name: 'ÚTOK', exact: true }).click();
-    for (let i = 0; i < 4; i++) {
+    for (let i = 0; i < 3; i++) {
         await page.waitForFunction(i => (window as any).__LITTLE_MATH_GAME__.scene.keys.BattleScene.mathBoard.currentProblemIndex === i, i);
         await answer(page, phone);
     }
@@ -97,15 +98,15 @@ test('co-op switches from mixed arithmetic to the other player’s chapter and s
         return p.choices.indexOf(p.answer);
     });
     await phone.locator('[data-layout="answers"] button').nth(firstChoice).click();
-    for (let i = 1; i < 4; i++) {
+    for (let i = 1; i < 3; i++) {
         await page.waitForFunction(i => (window as any).__LITTLE_MATH_GAME__.scene.keys.BattleScene.mathBoard.currentProblemIndex === i, i);
         await answer(page, phone);
     }
     await page.waitForFunction(() => (window as any).__coopCompletions.some((c: any) => c.owner === 'B' && c.context === 'attack'));
     const saved = await page.evaluate(() => [0, 1].map(slot => JSON.parse(localStorage.getItem(`littleMathAdventure_slot_${slot}`)!).mathStats.masteryData.comparisonChapter));
     expect(saved[0]).toEqual(chapterA);
-    expect(saved[1].attempts.map((a: any) => [a.correct, a.assisted])).toEqual([[true, false], [true, false], [true, false], [true, false]]);
-    expect(saved[1].stages[3].symbolAnswers).toBe(4);
+    expect(saved[1].attempts.map((a: any) => [a.correct, a.assisted])).toEqual([[true, false], [true, false], [true, false]]);
+    expect(saved[1].stages[3].symbolAnswers).toBe(3);
     await phone.close();
     await page.evaluate(() => sessionStorage.setItem('lma-e2e-preserve-saves', 'true'));
     await page.reload(); await waitForScene(page, 'MenuScene');
@@ -144,7 +145,7 @@ for (const renderer of ['canvas', 'webgl']) {
                     slots: b.mathBoard.problemRows.filter((r: any) => r.comparison).map((r: any) => r.comparison.relation.list[0].name),
                     label: b.coopTurnLabel.text };
             });
-            expect(state.owner).toBe(owner); expect(state.sequential).toBe(false); expect(state.rows).toBe(4);
+            expect(state.owner).toBe(owner); expect(state.sequential).toBe(false); expect(state.rows).toBe(3);
             expect(state.keys.every((k: string) => k.startsWith(band))).toBe(true);
             expect(state.slots).toEqual(['emptyComparisonSlot', 'emptyComparisonSlot']);
             expect(state.label).toContain(owner === 'A' ? 'Ada' : 'Borek');
@@ -152,14 +153,16 @@ for (const renderer of ['canvas', 'webgl']) {
             await expect(phone.locator('.remote-header p')).toHaveText(owner === 'A' ? 'Ada' : 'Borek');
             await expect(phone.locator('.remote-comparison-answers button img')).toHaveCount(3);
             await shot(page, `${renderer}-${owner}-mixed`); await shot(phone, `${renderer}-${owner}-phone`);
-            for (let i = 0; i < 4; i++) {
+            for (let i = 0; i < 3; i++) {
                 await page.waitForFunction(i => (window as any).__LITTLE_MATH_GAME__.scene.keys.BattleScene.mathBoard.currentProblemIndex === i, i);
                 await answer(page, phone, !(owner === 'A' && i === 2), owner === 'A' || i === 0);
                 if (i === 0) {
                     expect(await page.evaluate(() => {
                         const b = (window as any).__LITTLE_MATH_GAME__.scene.keys.BattleScene;
                         return [b.speedChargeBar.getCharges(), b.speedChargeBarB.getCharges()];
-                    })).toEqual(owner === 'A' ? [2, 0] : [2, 2]);
+                    // A has two fast correct answers: four charges become a
+                    // bonus, with no fourth attack problem to refill the meter.
+                    })).toEqual(owner === 'A' ? [2, 0] : [0, 2]);
                 }
             }
             await page.waitForFunction(owner => (window as any).__coopCompletions.some((c: any) => c.owner === owner && c.context === 'attack'), owner);
@@ -171,9 +174,9 @@ for (const renderer of ['canvas', 'webgl']) {
                 charges: [b.speedChargeBar.getCharges(), b.speedChargeBarB.getCharges()] };
         });
         expect(attackSummary.calls.map((c: any) => [c.owner, c.args[1]])).toEqual([
-            ['A', [true, true, false, true]], ['B', [true, true, true, true]],
+            ['A', [true, true, false]], ['B', [true, true, true]],
         ]);
-        expect(attackSummary.wrong).toEqual([1, 0]); expect(attackSummary.charges).toEqual([2, 2]);
+        expect(attackSummary.wrong).toEqual([1, 0]); expect(attackSummary.charges).toEqual([0, 2]);
 
         const enemyCount = await page.evaluate(() => (window as any).__LITTLE_MATH_GAME__.scene.keys.BattleScene.battleState.enemies.length);
         let expectedBHp = 20;
@@ -200,7 +203,7 @@ for (const renderer of ['canvas', 'webgl']) {
                 expect(await page.evaluate(() => {
                     const b = (window as any).__LITTLE_MATH_GAME__.scene.keys.BattleScene;
                     return [b.battleState.playerHp, b.battleState.playerBHp, b.speedChargeBar.getCharges(), b.speedChargeBarB.getCharges()];
-                })).toEqual([20, expectedBHp, 2, 2]);
+                })).toEqual([20, expectedBHp, 0, 2]);
             }
         }
         await page.waitForFunction(() => (window as any).__LITTLE_MATH_GAME__.scene.keys.BattleScene.battleState.phase === 'player_turn');
@@ -210,9 +213,9 @@ for (const renderer of ['canvas', 'webgl']) {
                 records: Object.values(s.mathStats.masteryData.problemRecords).flatMap((r: any) => r.attempts.map((a: any) => ({ key: r.problemKey, context: a.context, correct: a.correct }))) };
         }));
         for (let i = 0; i < 2; i++) {
-            expect(saved[i].attempts).toBe(4 + enemyCount);
-            expect(saved[i].correct).toBe(3 + enemyCount);
-            expect(saved[i].records).toHaveLength(4 + enemyCount);
+            expect(saved[i].attempts).toBe(3 + enemyCount);
+            expect(saved[i].correct).toBe(2 + enemyCount);
+            expect(saved[i].records).toHaveLength(3 + enemyCount);
             expect(saved[i].records.every((r: any) => r.key.startsWith(i ? 'E' : 'A'))).toBe(true);
             expect(saved[i].records.filter((r: any) => r.context === 'battle_block')).toHaveLength(enemyCount);
         }
