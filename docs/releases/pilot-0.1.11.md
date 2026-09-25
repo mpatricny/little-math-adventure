@@ -78,12 +78,13 @@ Zvětšený zámek zachovává proporce, písmena i tlačítka se vejdou do rám
 
 Stávající slovní hádanka stále vyžaduje čtení: po skrytí zadání a vypnutí
 zvuku nelze odpověď odvodit. Nesplňuje tedy globální pre-reader podmínku.
-Nasazení čeká na výslovnou výjimku autora pro toto vydání; zvětšení zámku
-není obrázkový redesign hádanky. Fyzický tablet ani Safari nebyly ověřeny.
+Autor před nasazením výslovně schválil dočasnou výjimku pro tuto stávající
+slovní hádanku v tomto vydání. Zvětšení zámku není obrázkový redesign
+hádanky. Fyzický tablet ani Safari nebyly ověřeny.
 
 ## Nasazení a návrat
 
-Kandidát je určen pro anotovaný tag `pilot-0.1.11`. Nasazuje se čistý
+Zdroj je označen anotovaným tagem `pilot-0.1.11`. Nasazuje se čistý
 commit; Cloudflare a Doppler `cislokraj/prd` mají shodný `APP_RELEASE`.
 Serverový kód zůstává stejný; změna této jediné proměnné může přes stávající
 synchronizaci spustit Railway redeploy se zachovanou pre-deploy kontrolou
@@ -94,5 +95,25 @@ Předchozí Cloudflare verze pro návrat je
 deployment `e4133466-243f-44ae-899b-4515a7d46c8a`.
 Návrat verze nesmí mazat lokální savy ani data účtů.
 
-Doklad skutečného nasazení se doplní následným dokumentačním commitem,
-bez posouvání release tagu.
+## Nasazeno 25. 9. 2026
+
+- Zdrojový commit `4a87bf77313efa081c1bb60ea253f4e5bf94541a` a anotovaný
+  tag `pilot-0.1.11` jsou pushnuté na GitHub. Při nasazení byl pracovní
+  strom čistý a `HEAD` odpovídal tagu; release tag se dále neposouvá.
+- Cloudflare verze `f409b03e-b0f5-4e71-bb43-4097ca24b1f3`, nahráno devět
+  změněných souborů, 343 zůstalo beze změny. Obě produkční domény jsou
+  připojené ke stejnému Workeru.
+- `/` a `/hra/` vracejí HTTP 200 a `X-Cislokraj-Release: pilot-0.1.11`.
+  SHA-256 obou HTML, vstupního JavaScriptu, katalogu scén, nepřátel a
+  encounterů, offline manifestu i workeru odpovídají otestovanému buildu.
+  `www.cislokraj.cz/hra/` přesměrovává 308 na kanonickou adresu.
+  Nepřihlášený `/v1/me` správně vrací 401.
+- Doppler `cislokraj/prd`: změněn pouze `APP_RELEASE=pilot-0.1.11`.
+  Synchronizace spustila Railway deployment
+  `90d3419a-7fee-469c-ba9c-2ca2633a991c`, stav `SUCCESS`; serverový zdroj
+  je nezměněný. `/ready` vrací HTTP 200 a `pilot-0.1.11`.
+  Pre-deploy ověřil `database.migrations_complete applied=[] total=4`.
+
+Tento záznam je následný dokumentační commit, nikoli změna nasazeného kódu.
+Produkční kontrola byla pouze HTTP čtení; žádné testovací savy ani herní
+události se do produkčního API nezapisovaly.

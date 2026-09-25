@@ -1,9 +1,10 @@
 # Číslokraj — jednoduchý plán pilotu
 
-Aktualizováno 24. 9. 2026: pilot, HTTPS hosting, Google OAuth a sběr herních dat
-už běží na produkci. Vydání [pilot-0.1.10](releases/pilot-0.1.10.md) zahrnuje
-nový web, první obrázkové návody, opravu síly mečů a načítání dopředu s offline
-režimem. Přesný stav nasazení a omezení jsou u vydání; další části tohoto
+Aktualizováno 25. 9. 2026: pilot, HTTPS hosting, Google OAuth a sběr herních dat
+už běží na produkci. Vydání [pilot-0.1.11](releases/pilot-0.1.11.md) zahrnuje
+společná pravidla útoků pro solo a co-op, návrat z lesního tábora přes město,
+opravu odměny strážce, větší zámek truhly a opravu souběhu načítání textur.
+Přesný stav nasazení a omezení jsou u vydání; další části tohoto
 dokumentu zachovávají původní návrh pilotu, nikoli úplný provozní changelog.
 Cíl: rozeslat funkční hru několika kamarádům, ukládat postup a zjistit, jak se
 učí a kde hra potřebuje zlepšit. Příkazy a varianty jsou v [BUILD_VARIANTS.md](BUILD_VARIANTS.md).
