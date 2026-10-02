@@ -81,3 +81,33 @@ Rollback nikdy nemaže localStorage, IndexedDB ani účetní data hráčů.
 Nový offline worker čeká na uzavření starých herních záložek; nerozbíjí
 rozehranou hru vynuceným reloadem. Pro získání nové verze zavřít všechny
 záložky hry a otevřít `/hra/` znovu online, bez mazání uložených dat.
+
+## Nasazeno 2. 10. 2026
+
+- Zdrojový commit `64e1d66ec765d80c6d5fe88757328272007654ed` a anotovaný
+  tag `pilot-0.1.13` jsou na GitHubu. Atomický push bez force aktualizoval
+  vzdálený `main`, izolovanou hotfix větev a nový tag společně. Tag se nemění.
+- Nasazen čistý worktree odpovídající tagu s Wrangler `--strict`.
+  Cloudflare verze `840ac58f-196c-492d-8ed9-423b81608f54`; nahráno pět
+  změněných souborů, 347 bylo beze změny. Žádný souběžný release se nevrátil.
+- Ověřeno 12 veřejných produkčních souborů: obě HTML, všechny vstupní
+  JavaScript chunky, tři herní katalogy a offline manifest/worker mají
+  shodné SHA-256 s uloženým otestovaným buildem. `/` a `/hra/` vracejí 200
+  a `X-Cislokraj-Release: pilot-0.1.13`; `www` přesměrovává 308 a
+  nepřihlášený `/v1/me` správně vrací 401.
+- V Doppler `cislokraj/prd` změněn pouze `APP_RELEASE=pilot-0.1.13`.
+  Po automatickém redeploy API vrací `/ready` HTTP 200 a `pilot-0.1.13`.
+  Serverový zdroj ani čtyři SQL migrace nebyly změněné.
+- Přesný build a snímky jsou zachované v lokálním
+  `artifacts/releases/pilot-0.1.13/`. Produkční ověření bylo pouze čtení;
+  žádné syntetické savy ani herní výsledky nešly do produkčního API.
+
+Lokální rozpracovaný `main` je stále na `f9889f5`; vzdálený main už obsahuje
+hotfix. Bezpečnostní kontrola nepovolila indexovou synchronizaci v dirty
+worktree kvůli souběžné analytické práci. Příkaz nebyl proveden, index
+zůstal prázdný a původní lokální změny včetně rout `wrangler.jsonc` byly
+zachované. Do lokálního mainu se nic nestashovalo ani nepřepínalo. Oprava
+je dostupná v čistém worktree a větvi `codex/weak-network-hotfix-20261002`;
+před dalším vydáním je potřeba bezpečné sloučení se souběžnou prací.
+
+Tato sekce je následný dokumentační commit, nikoli přesunutí release tagu.
