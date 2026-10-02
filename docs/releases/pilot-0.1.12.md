@@ -78,3 +78,26 @@ Předchozí Cloudflare verze: `f409b03e-b0f5-4e71-bb43-4097ca24b1f3`.
 Předchozí Railway deployment: `90d3419a-7fee-469c-ba9c-2ca2633a991c`.
 Při návratu se obnoví `APP_RELEASE=pilot-0.1.11`; lokální savy ani data
 účtů se nemažou.
+
+## Nasazeno 2. 10. 2026
+
+- Zdrojový commit `e5671456c9c182c4f553193a7e00f4c502489631` a anotovaný
+  tag `pilot-0.1.12` jsou pushnuté na GitHub. Při nasazení byl vydávací
+  worktree čistý a odpovídal tagu.
+- Cloudflare verze `2cbbb7d4-bb22-4baa-955e-1c05d7c26ad0`; nahráno pět
+  změněných souborů, 347 již existovalo. Obě veřejné domény jsou připojené.
+- Doppler `cislokraj/prd`: změněn pouze `APP_RELEASE=pilot-0.1.12`.
+  Automatický Railway deployment `2da60904-fd78-4d5e-960f-3f024162d7e9`
+  má stav `SUCCESS`; `/ready` vrací HTTP 200 a `pilot-0.1.12`.
+- Ověřeno 12 produkčních souborů: obě HTML, všechny vstupní JS chunky,
+  tři hlavní herní katalogy a offline manifest/worker mají shodné SHA-256
+  s otestovaným buildem. `/v1/me` bez přihlášení vrací 401, `www` vrací
+  kanonické přesměrování 308. Obě HTML uvádějí `pilot-0.1.12`.
+- Menu produkční hry se načetlo v izolovaném prohlížeči bez výjimky;
+  vizuálně ověřeno `artifacts/releases/pilot-0.1.12/production-menu.png`.
+  Testovací kontext měl zablokovaný zápis do API a nepoužil skutečné savy.
+- Přesný build, kontrolní skript a výsledek ověření jsou lokálně uchované
+  v `artifacts/releases/pilot-0.1.12/`. Do produkčního API nebyly zapisovány
+  testovací savy ani herní výsledky.
+
+Tato sekce je následný dokumentační commit; release tag se neposouvá.
