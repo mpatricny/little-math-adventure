@@ -59,7 +59,10 @@ export function installOfflineWorker(scope, manifest) {
             }
             for (const mode of ['force-cache', 'reload']) {
                 const controller = new AbortController();
-                const timeout = setTimeout(() => controller.abort(), 20_000);
+                // Large spritesheets need more than 20s on a weak connection.
+                // Keep a bounded deadline, allowing about 128 KiB/s per transfer.
+                const timeoutMs = Math.min(120_000, 20_000 + Math.ceil(expected.bytes / (128 * 1024)) * 1000);
+                const timeout = setTimeout(() => controller.abort(), timeoutMs);
                 try {
                     // Cloudflare redirects a public /index.html to the marketing root; /hra/ serves the game.
                     const response = await scope.fetch(address(url === '/index.html' ? gamePath : url), { cache: mode, credentials: 'omit', priority: urgent ? 'high' : 'low', redirect: 'error', signal: controller.signal });
@@ -86,6 +89,10 @@ export function installOfflineWorker(scope, manifest) {
                     }
                     void broadcast();
                     return stored;
+                } catch (error) {
+                    // A failed fetch, abort or interrupted body must reach the
+                    // same uncached retry as an invalid/partial cached response.
+                    if (mode === 'reload') throw error;
                 } finally { clearTimeout(timeout); }
             }
             throw new Error('Asset unavailable');

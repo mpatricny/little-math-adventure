@@ -1,5 +1,5 @@
 /** Forecasts, not progression gates. Only registered scenes are considered. */
-const opening = ['MenuNewScene', 'CharacterSelectNewScene', 'BandSelectScene', 'TownScene', 'ArenaScene', 'BattleScene', 'VictoryScene'];
+const opening = ['MenuNewScene', 'CharacterSelectNewScene', 'BandSelectScene', 'ComicScene', 'CrashSiteScene', 'TownScene', 'ArenaScene', 'BattleScene', 'VictoryScene'];
 const town = ['ArenaScene', 'BattleScene', 'VictoryScene', 'ShopScene', 'GuildScene', 'ManaCollectionScene', 'CatacombTrialScene', 'CrystalForgeScene', 'PythiaWorkshopScene', 'TavernScene'];
 const forest = ['ForestAdventureStartScene', 'ForestRoomScene', 'BattleScene', 'ForestRiddleScene', 'LetterLockPuzzleScene', 'SpinLockPuzzleScene', 'ForestCampScene', 'GuardianLairScene', 'ForestCrystalRewardScene'];
 const lake = ['SilverpondTownMockScene', 'SilverpondArenaMockScene', 'BattleScene', 'UnderwaterDescentScene', 'UnderwaterRoomScene'];
@@ -7,6 +7,8 @@ const lake = ['SilverpondTownMockScene', 'SilverpondArenaMockScene', 'BattleScen
 export function upcomingScenes(current: string, available: Iterable<string>): string[] {
     const allowed = new Set(available);
     const nearest = /Menu|SaveSlot|CharacterSelect|BandSelect|CoopSetup|TvPairing/.test(current) ? opening
+        : current === 'ComicScene' ? ['CrashSiteScene', 'BattleScene', 'TownScene']
+        : current === 'CrashSiteScene' ? ['BattleScene', 'VictoryScene', 'TownScene']
         : /Silverpond|Underwater/.test(current) ? lake
         : /Forest|Guardian|LetterLock|SpinLock/.test(current) ? forest
         : current === 'ArenaScene' ? ['BattleScene', 'VictoryScene', 'TownScene', ...town]

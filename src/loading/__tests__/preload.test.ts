@@ -19,6 +19,24 @@ describe('scene forecast', () => {
     it('current/near scenes win and shared URLs are deduplicated', () => {
         expect(orderedDownloads('town', ['arena'], {town:['a','b'],arena:['b','c']}, ['d','a'])).toEqual(['a','b','c','d']);
     });
+    it('prepares the comic and crash site during selection, before town and arena', () => {
+        const intro = [...available, 'ComicScene', 'CrashSiteScene'];
+        for (const scene of ['MenuNewScene', 'CharacterSelectNewScene', 'BandSelectScene']) {
+            const forecast = upcomingScenes(scene, intro);
+            expect(forecast.indexOf('ComicScene')).toBeLessThan(forecast.indexOf('CrashSiteScene'));
+            expect(forecast.indexOf('CrashSiteScene')).toBeLessThan(forecast.indexOf('TownScene'));
+            expect(forecast.indexOf('CrashSiteScene')).toBeLessThan(forecast.indexOf('ArenaScene'));
+            expect(forecast).not.toContain(scene);
+        }
+    });
+    it('the comic prioritizes Zyx and the rocket, then the crash-site battle', () => {
+        const intro = [...available, 'ComicScene', 'CrashSiteScene'];
+        expect(upcomingScenes('ComicScene', intro).slice(0, 3)).toEqual(['CrashSiteScene', 'BattleScene', 'TownScene']);
+        expect(upcomingScenes('CrashSiteScene', intro).slice(0, 3)).toEqual(['BattleScene', 'VictoryScene', 'TownScene']);
+        expect(orderedDownloads('ComicScene', upcomingScenes('ComicScene', intro), {
+            ComicScene: ['comic'], CrashSiteScene: ['zyx', 'rocket'], TownScene: ['town'], BattleScene: ['battle'],
+        }, ['town', 'comic', 'rocket'])).toEqual(['comic', 'zyx', 'rocket', 'battle', 'town']);
+    });
 });
 
 describe('bounded fallback download queue', () => {

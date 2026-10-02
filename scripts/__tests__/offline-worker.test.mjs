@@ -77,6 +77,59 @@ test('a cached partial audio response is retried as a complete network file befo
     assert.deepEqual(h.requests.map(r=>r.init.cache),['force-cache','reload']);
     assert.equal(await (await h.api.open(cachePrefix+'test-v1')).match('https://game.test/assets/b.wav').then(r=>r.text()),'abcdefghij');
 });
+for (const failure of ['network', 'abort', 'interrupted-body', '304']) {
+    test(`${failure} on the first transfer gets one uncached retry and a verified offline copy`,async()=>{
+        const h=harness({response:(_url,init)=>{
+            if(init.cache==='reload')return new Response('123456789');
+            if(failure==='network')throw new TypeError('Failed to fetch');
+            if(failure==='abort')throw new DOMException('timed out','AbortError');
+            if(failure==='304')return new Response(null,{status:304});
+            return new Response(new ReadableStream({start(controller){controller.error(new TypeError('connection lost'));}}));
+        }});
+        const request=new Request('https://game.test/assets/a.png');
+        const response=await h.emit('fetch',{request});
+        assert.equal(await response.text(),'123456789');
+        assert.deepEqual(h.requests.map(r=>r.init.cache),['force-cache','reload']);
+        assert.notEqual(h.requests[0].init.signal,h.requests[1].init.signal);
+        h.online=false;
+        assert.equal(await (await h.emit('fetch',{request})).text(),'123456789');
+        assert.equal(h.requests.length,2);
+    });
+}
+test('two failed attempts do not store partial data or readiness; reconnect resumes the background queue',async()=>{
+    let broken=true;
+    const files={'/index.html':'<html>game</html>','/assets/a.png':'123456789'};
+    const h=harness({files,response:url=>{
+        if(broken)throw new TypeError('offline');
+        return new Response(url.endsWith('/hra/')?files['/index.html']:files['/assets/a.png']);
+    }});
+    await h.message();
+    assert.equal(h.messages.at(-1).ready,false);
+    assert.equal(h.messages.at(-1).cached.length,0);
+    for(const url of new Set(h.requests.map(r=>r.url))) {
+        assert.deepEqual(h.requests.filter(r=>r.url===url).map(r=>r.init.cache),['force-cache','reload']);
+    }
+    broken=false;await h.message([],true);
+    assert.equal(h.messages.at(-1).ready,true);
+    h.online=false;
+    assert.equal(await (await h.emit('fetch',{request:new Request('https://game.test/assets/a.png')})).text(),'123456789');
+});
+test('large-file deadlines allow slow transfers but stay bounded',async t=>{
+    const delays=[],schedule=setTimeout;
+    t.mock.method(globalThis,'setTimeout',(callback,delay,...args)=>{
+        if(delay>2)delays.push(delay);
+        return schedule(callback,delay,...args);
+    });
+    const h=harness();
+    const entry=h.manifest.resources.find(r=>r.url==='/assets/a.png');
+    // Only the declared size changes: no large allocation or wall-clock wait.
+    entry.bytes=8*1024*1024;
+    await assert.rejects(h.emit('fetch',{request:new Request('https://game.test/assets/a.png')}),/version mismatch/);
+    assert.deepEqual(delays,[84_000,84_000]);
+    delays.length=0;entry.bytes=256*1024*1024;
+    await assert.rejects(h.emit('fetch',{request:new Request('https://game.test/assets/a.png')}),/version mismatch/);
+    assert.deepEqual(delays,[120_000,120_000]);
+});
 test('quota failure degrades honestly; cached/saved player data and unrelated caches are never removed',async()=>{
     const h=harness();await h.api.open('unrelated-cache');await h.emit('install');await h.api.open(cachePrefix+'old');
     await h.api.open('cislokraj-game-%2F-another-scope');

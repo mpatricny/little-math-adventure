@@ -8,7 +8,8 @@ uložení hráčů ani databázi; migrace nevyžaduje.
 
 - První otevření načítá dosavadní základ hry a menu, nikoli celý svět.
 - První klepnutí nebo stisk klávesy spustí nízkoprioritní stahování na pozadí.
-  Menu a výběr postavy přednostně připravují Mathorii, arénu a boj;
+  Menu a výběr postavy přednostně připravují příběh a místo přistání se Zyxem,
+  poté Mathorii, arénu a boj. Během příběhu má místo přistání nejvyšší prioritu;
   město arénu/boj a místní budovy; les a Silverpond své následující lokace.
   Při změně scény se pořadí přepočítá. Potom se dotáhne zbytek vydaného buildu.
 - Běží nejvýše dva přenosy na pozadí. Skutečně vyžádaný asset má přednost;
@@ -48,6 +49,14 @@ pořadí ukládají média. `ready` znamená, že jsou v CacheStorage všechny s
 manifestu, ne pouze že byly zahájeny požadavky. Při výpadku lze pokračovat po
 obnovení připojení. Neúplné soubory, cizí verze a HTML místo obrázku se neukládají.
 Zvuk podporuje byte-range požadavky i z offline kopie.
+
+Při selhání `fetch`, přerušení těla odpovědi nebo chybné HTTP cache následuje
+jeden okamžitý pokus s `cache: reload`. I ten musí projít ověřením délky a SHA-256.
+Deadline přenosu se odvozuje od velikosti souboru: 20 sekund plus jedna sekunda
+na každých započatých 128 KiB, nejvýše 120 sekund na pokus. Velké spritesheety
+se tak na slabší lince nepřerušují po stejných 20 sekundách jako drobné soubory.
+Po dvou neúspěšných pokusech zůstává obvyklý backoff; obnovení připojení jej zruší.
+Tato oprava patří do [vydání pilot-0.1.13](releases/pilot-0.1.13.md).
 
 Nová verze se před dokončením instalace připraví celá. Nezměněné soubory může
 zkopírovat z předchozí cache podle hashe. Není zde `skipWaiting` ani vynucený
