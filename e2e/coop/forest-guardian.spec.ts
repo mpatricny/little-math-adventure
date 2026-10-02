@@ -62,6 +62,7 @@ test('co-op guardian victory completes the journey and opens the claimable fores
     for (const player of reward.players) {
         expect(player.unlockedPets).toContain('verdant_guardian_defeated');
         expect(player.crystals.crystals.length).toBeGreaterThan(0);
+        expect(player.storyProgress.hasDefeatedVerdantGuardian).toBe(true);
     }
     await page.screenshot({ path: 'artifacts/forest-guardian/coop-crystal.png' });
 
@@ -74,6 +75,52 @@ test('co-op guardian victory completes the journey and opens the claimable fores
     await page.waitForFunction(() => (window as any).__LITTLE_MATH_GAME__.scene.keys.ForestCrystalRewardScene.hasClaimed);
     expect(await page.evaluate(() => JSON.parse(localStorage.getItem('littleMathAdventure_slot_0')!).player.storyProgress))
         .toMatchObject({ hasDefeatedVerdantGuardian: true, hasClaimedForestCrystal: true });
+    expect(await page.evaluate(() => JSON.parse(localStorage.getItem('littleMathAdventure_slot_1')!).player.storyProgress))
+        .toMatchObject({ hasDefeatedVerdantGuardian: true, hasClaimedForestCrystal: true });
     await page.waitForTimeout(1_400); // Let the existing crystal-to-inventory animation finish.
     await page.screenshot({ path: 'artifacts/forest-guardian/coop-crystal-claimed.png' });
+});
+
+test('legacy co-op guardian victory resumes at the crystal and survives reload', async ({ page }) => {
+    await page.route(url => /^\/(?:api|v1)(?:\/|$)/.test(url.pathname), route => route.fulfill({
+        status: 200, contentType: 'application/json', body: JSON.stringify({ authenticated: false }),
+    }));
+    await page.setViewportSize({ width: 1024, height: 768 });
+    await openSeededGame(page, true, {}, {}, {
+        unlockedPets: ['verdant_guardian', 'verdant_guardian_defeated'],
+        storyProgress: { hasCompletedIntro: true },
+    });
+    await page.evaluate(() => sessionStorage.setItem('lma-e2e-preserve-saves', 'true'));
+    const resources = () => page.evaluate(() => [0, 1].map(slot => {
+        const save = JSON.parse(localStorage.getItem(`littleMathAdventure_slot_${slot}`)!);
+        return { coins: save.player.coins, crystals: save.player.crystals, attempts: save.mathStats.totalAttempts };
+    }));
+    const before = await resources();
+
+    await activateCoopSession(page, 'ForestCrystalRewardScene');
+    expect(await resources()).toEqual(before);
+    // Reload before claiming must return to the pending reward, not the boss.
+    await page.reload();
+    await waitForScene(page, 'MenuScene');
+    await activateCoopSession(page, 'ForestCrystalRewardScene');
+    await page.waitForFunction(() => !(window as any).__LITTLE_MATH_GAME__.scene.keys.ForestCrystalRewardScene.cameras.main.fadeEffect.isRunning);
+    const point = await page.evaluate(() => {
+        const b = (window as any).__LITTLE_MATH_GAME__.scene.keys.ForestCrystalRewardScene.claimButton.root.getBounds();
+        return { x: b.centerX, y: b.centerY };
+    });
+    const canvas = (await page.locator('canvas').boundingBox())!;
+    await page.mouse.click(canvas.x + point.x * canvas.width / 1280, canvas.y + point.y * canvas.height / 720);
+    await page.waitForFunction(() => [0, 1].every(slot =>
+        JSON.parse(localStorage.getItem(`littleMathAdventure_slot_${slot}`)!).player.storyProgress.hasClaimedForestCrystal));
+
+    await page.reload();
+    await waitForScene(page, 'MenuScene');
+    await activateCoopSession(page, 'ZyxRocketInterludeScene');
+    expect(await resources()).toEqual(before);
+    const checkpoints = await page.evaluate(() => [0, 1].map(slot =>
+        JSON.parse(localStorage.getItem(`littleMathAdventure_slot_${slot}`)!).player.storyProgress));
+    for (const checkpoint of checkpoints) {
+        expect(checkpoint).toMatchObject({ hasDefeatedVerdantGuardian: true, hasClaimedForestCrystal: true });
+        expect(checkpoint.hasInstalledForestCrystal).not.toBe(true);
+    }
 });

@@ -22,21 +22,30 @@ export interface SubAtomExamProgress {
 /**
  * Overall unlock progress is the least-complete requirement. The exam only
  * becomes available when solves, recent accuracy and form coverage are all met.
+ * Count partial practice in the two strongest forms so the first correct
+ * answers are visible before either form reaches its four-solve requirement.
  */
 export function calculateSubAtomExamProgress(
     targetId: SubAtomId,
     successfulSolves: number,
     accuracy: number,
-    qualifyingForms: number,
+    successfulSolvesByForm: readonly number[],
 ): SubAtomExamProgress {
     const requirements = SUB_ATOM_EXAM_REQUIREMENTS;
+    const qualifyingForms = successfulSolvesByForm.filter(solves => solves >= requirements.solvesPerForm).length;
+    const formCompletion = successfulSolvesByForm
+        .map(solves => Math.min(Math.max(0, solves), requirements.solvesPerForm))
+        .sort((a, b) => b - a)
+        .slice(0, requirements.qualifyingForms)
+        .reduce((sum, solves) => sum + solves, 0)
+        / (requirements.qualifyingForms * requirements.solvesPerForm);
     const ready = successfulSolves >= requirements.successfulSolves
         && accuracy >= requirements.accuracy
         && qualifyingForms >= requirements.qualifyingForms;
     const completion = Math.min(
         successfulSolves / requirements.successfulSolves,
         accuracy / requirements.accuracy,
-        qualifyingForms / requirements.qualifyingForms,
+        formCompletion,
         1,
     );
 

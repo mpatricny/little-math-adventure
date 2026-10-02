@@ -46,9 +46,11 @@ try {
     assert.ok((await audio()).voiceCount <= 1);
     await tap(1080,329);
     await page.waitForTimeout(200); assert.equal((await audio()).voiceCount,0);
-    assert.equal(await page.evaluate(async ()=>(await import('/src/systems/GameStateManager.ts')).GameStateManager.getInstance().getPlayer().seenGuides.includes('forge.createFragment.v1')),false);
+    const dismissedGuides = await page.evaluate(async ()=>(await import('/src/systems/GameStateManager.ts')).GameStateManager.getInstance().getPlayer().seenGuides);
+    assert.ok(dismissedGuides.includes('forge.createFragment.v1'), 'explicit close acknowledges the displayed guide');
+    assert.ok(!dismissedGuides.includes('forge.splitFragment.v1'), 'close must not acknowledge unseen pages');
     await scene('TownScene'); await scene('CrystalForgeScene');
-    await finish('forge.createFragment.v1'); await finish('forge.splitFragment.v1');
+    await finish('forge.splitFragment.v1');
     assert.equal(await guide(),undefined);
     await page.screenshot({path:`${output}advanced-crystal-values.png`});
     await page.evaluate(async()=>{const state=(await import('/src/systems/GameStateManager.ts')).GameStateManager.getInstance();state.getPlayer().defeatedBosses=['verdant_guardian'];state.save();});
@@ -86,6 +88,6 @@ try {
     const hero = await page.evaluate(()=>{const s=window.__LITTLE_MATH_GAME__.scene.keys.TownScene;const h=s.sceneBuilder.get('playerAHudHost');return h?{x:h.x,y:h.y}:null;});
     if(hero){await tap(hero.x,hero.y);await page.screenshot({path:`${output}advanced-character-book.png`});}
     assert.deepEqual(errors,[]);
-    writeFileSync(`${output}guidance-results.json`,JSON.stringify({passed:['incremental unlocks','replay replaces speech','dismiss cancels speech','incomplete guide stays unseen','muted visual example','no reward or currency mutation','persistence after reload','per-hero independence','purchase triggers matching preparation','no free preparation'],errors},null,2));
+    writeFileSync(`${output}guidance-results.json`,JSON.stringify({passed:['incremental unlocks','replay replaces speech','dismiss cancels speech','dismiss acknowledges only the current guide','muted visual example','no reward or currency mutation','persistence after reload','per-hero independence','purchase triggers matching preparation','no free preparation'],errors},null,2));
     console.log('Advanced guidance checks passed');
 } finally { await browser.close(); }

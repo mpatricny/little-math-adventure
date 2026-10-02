@@ -547,6 +547,77 @@ describe('CoopSessionManager per-player progression', () => {
         }
     });
 
+    it.each([6, 8])('reschedules the cached addition pool after passing with %i correct answers', async correct => {
+        const { PlacementInitializer } = await import('../PlacementInitializer');
+        const gameState = GameStateManager.getInstance();
+        gameState.reset('girl_knight', 'Lesson transition', 0);
+        PlacementInitializer.applyBandSelection('E', gameState);
+        const mastery = MasterySystem.getInstance();
+        const data = gameState.getMasteryData();
+        const addition = ProblemDatabase.getInstance().getProblemsForForm('E1', 'result_unknown');
+        mastery.recordSolve(addition[0].key, false, 3000, 'battle');
+        mastery.recordSolve(addition[1].key, true, 16000, 'battle');
+        mastery.drawFromPool(2);
+        const records = structuredClone(data.problemRecords);
+        const retry = [...data.retryPool], slow = [...data.slowPool];
+        expect(data.currentPool.every(key => key.startsWith('E1:'))).toBe(true);
+
+        mastery.applyExamResult('E1', correct);
+
+        expect(mastery.getFrontierSubAtom()).toBe('E2');
+        expect(data.currentPool).toEqual([]);
+        expect(data.currentPoolIndex).toBe(0);
+        expect(data.problemRecords).toEqual(records);
+        expect(data.retryPool).toEqual(retry);
+        expect(data.slowPool).toEqual(slow);
+        expect(mastery.drawFromPool(10).filter(key => key.startsWith('E2:')).length).toBeGreaterThanOrEqual(6);
+    });
+
+    it('keeps the scheduled problems after a failed or repeated exam', async () => {
+        const { PlacementInitializer } = await import('../PlacementInitializer');
+        const gameState = GameStateManager.getInstance();
+        gameState.reset('girl_knight', 'Lesson transition', 0);
+        PlacementInitializer.applyBandSelection('E', gameState);
+        const mastery = MasterySystem.getInstance();
+        const data = gameState.getMasteryData();
+        for (const passed of [false, true]) {
+            if (passed) mastery.applyExamResult('E1', 8);
+            mastery.drawFromPool(2);
+            const pool = [...data.currentPool], index = data.currentPoolIndex;
+            mastery.applyExamResult('E1', passed ? 8 : 4);
+            expect(data.currentPool).toEqual(pool);
+            expect(data.currentPoolIndex).toBe(index);
+        }
+    });
+
+    it('shows the first subtraction answers after an addition exam and keeps progress after reload', async () => {
+        const { PlacementInitializer } = await import('../PlacementInitializer');
+        const gameState = GameStateManager.getInstance();
+        gameState.reset('girl_knight', 'Exam progress', 0);
+        PlacementInitializer.applyBandSelection('E', gameState);
+        const mastery = MasterySystem.getInstance();
+        mastery.applyExamResult('E1', 8);
+        const previousModule = structuredClone(gameState.getMasteryData().subAtoms.E1);
+        const problems = ProblemDatabase.getInstance().getProblemsForForm('E2', 'result_unknown').slice(0, 3);
+
+        for (const [index, problem] of problems.entries()) {
+            mastery.recordSolve(problem.key, true, 3000, 'battle');
+            expect(mastery.getNextSubAtomExamProgress()).toMatchObject({
+                targetId: 'E2', percentage: (index + 1) * 5,
+                successfulSolves: index + 1, qualifyingForms: 0, ready: false,
+            });
+        }
+        expect(gameState.getMasteryData().subAtoms.E1).toEqual(previousModule);
+        expect(mastery.checkExamEligibility('E2')).toBe(false);
+
+        resetSingletons();
+        GameStateManager.getInstance().loadSlot(0);
+        await new Promise(resolve => setTimeout(resolve, 0));
+        expect(MasterySystem.getInstance().getNextSubAtomExamProgress()).toMatchObject({
+            targetId: 'E2', percentage: 15, successfulSolves: 3, ready: false,
+        });
+    });
+
     it('unlocks the saved exam from real co-op answers and preserves it after a restart', async () => {
         const { SUB_ATOM_EXAM_REQUIREMENTS } = await import('../ExamProgress');
         const gameState = GameStateManager.getInstance();

@@ -17,7 +17,6 @@ import { getPlayerAttackProblemCount } from './CombatAttackSystem';
 import {
     calculateSubAtomExamProgress,
     SubAtomExamProgress,
-    SUB_ATOM_EXAM_REQUIREMENTS,
 } from './ExamProgress';
 import {
     applyComparisonExamResult as applyChapterExamResult,
@@ -277,19 +276,22 @@ export class MasterySystem {
 
     /** Count how many forms have >= N successful solves */
     getFormsWithSolves(subAtomId: SubAtomId, minSolves: number): number {
-        let count = 0;
-        for (const form of ALL_PROBLEM_FORMS) {
+        return this.getSuccessfulSolvesByForm(subAtomId).filter(solves => solves >= minSolves).length;
+    }
+
+    private getSuccessfulSolvesByForm(subAtomId: SubAtomId): number[] {
+        const data = this.data;
+        return ALL_PROBLEM_FORMS.map(form => {
             const problems = this.problemDb.getProblemsForForm(subAtomId, form);
             let formSolves = 0;
             for (const p of problems) {
-                const record = this.data.problemRecords[p.key];
+                const record = data.problemRecords[p.key];
                 if (record) {
                     formSolves += record.attempts.filter(a => a.correct).length;
                 }
             }
-            if (formSolves >= minSolves) count++;
-        }
-        return count;
+            return formSolves;
+        });
     }
 
     // ========================================
@@ -312,7 +314,7 @@ export class MasterySystem {
             subAtomId,
             sa.successfulSolves,
             this.getLast20Accuracy(subAtomId),
-            this.getFormsWithSolves(subAtomId, SUB_ATOM_EXAM_REQUIREMENTS.solvesPerForm),
+            this.getSuccessfulSolvesByForm(subAtomId),
         );
     }
 
@@ -493,6 +495,7 @@ export class MasterySystem {
         }
 
         if (sa.state === 'training' && tier !== 'none') {
+            const previousFrontier = this.getFrontierSubAtom();
             if (tier === 'gold') {
                 sa.state = 'fluent'; // Gold directly → Fluent
             } else {
@@ -500,6 +503,13 @@ export class MasterySystem {
             }
             stateChanged = true;
             this.onSubAtomStateChange(subAtomId);
+            if (this.getFrontierSubAtom() !== previousFrontier) {
+                // The unanswered cache was scheduled for the previous lesson.
+                // Keep answer history and retry/slow evidence for mixed review.
+                this.data.currentPool = [];
+                this.data.currentPoolIndex = 0;
+                this.data.lastPoolProblems = [];
+            }
             if (!sessionOnly) {
                 DailyProgressSystem.recordMilestone(
                     this.gameState.getPlayer(),

@@ -6,6 +6,7 @@ import { StorySystem } from '../systems/StorySystem';
 import { getPlayerSpriteConfig } from '../utils/characterUtils';
 import { MedievalActionButton } from '../ui/MedievalActionButton';
 import { ForestDirectionPrompt } from '../ui/ForestDirectionPrompt';
+import { CoopSessionManager } from '../systems/CoopSessionManager';
 
 type ForestCrystalRewardData = {
     testMode?: boolean;
@@ -32,7 +33,8 @@ export class ForestCrystalRewardScene extends Phaser.Scene {
         super({ key: 'ForestCrystalRewardScene' });
     }
 
-    init(data: ForestCrystalRewardData): void {
+    init(data: ForestCrystalRewardData = {}): void {
+        CoopSessionManager.getInstance().activatePlayerA();
         this.testMode = data.testMode === true;
         this.goldReward = data.goldReward ?? 0;
         this.hasClaimed = false;
@@ -40,12 +42,16 @@ export class ForestCrystalRewardScene extends Phaser.Scene {
     }
 
     create(): void {
+        if (!this.testMode && StorySystem.getInstance().getProgress().hasClaimedForestCrystal) {
+            this.scene.start('ZyxRocketInterludeScene');
+            return;
+        }
         this.sceneBuilder = new SceneBuilder(this);
         this.sceneBuilder.buildScene('ForestCrystalRewardScene');
         this.cameras.main.fadeIn(450, 7, 18, 13);
 
         if (!this.testMode) {
-            StorySystem.getInstance().setFlag('hasDefeatedVerdantGuardian');
+            StorySystem.getInstance().completeForestMilestone('guardian');
         }
 
         this.createRewardPresentation();
@@ -281,7 +287,7 @@ export class ForestCrystalRewardScene extends Phaser.Scene {
         this.tweens.killTweensOf(this.crystal);
 
         if (!this.testMode) {
-            StorySystem.getInstance().setFlag('hasClaimedForestCrystal');
+            StorySystem.getInstance().completeForestMilestone('crystal');
         }
 
         const questHost = this.getHost('forestCrystalQuestHost', { x: 1090, y: 78, depth: 80 });

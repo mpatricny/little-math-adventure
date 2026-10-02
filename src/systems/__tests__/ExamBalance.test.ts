@@ -76,16 +76,30 @@ describe('exam difficulty balance', () => {
     });
 
     it('shows progress from the least-complete exam requirement', () => {
-        expect(calculateSubAtomExamProgress('D2', 12, 1, 2)).toMatchObject({
+        expect(calculateSubAtomExamProgress('D2', 12, 1, [8, 4, 0, 0])).toMatchObject({
             targetId: 'D2',
             percentage: 60,
             ready: false,
         });
-        expect(calculateSubAtomExamProgress('D2', 20, 0.70, 2)).toMatchObject({
+        expect(calculateSubAtomExamProgress('D2', 20, 0.70, [16, 4, 0, 0])).toMatchObject({
             percentage: 100,
             ready: true,
         });
-        expect(calculateSubAtomExamProgress('D2', 20, 0.69, 2).percentage).toBe(98);
+        expect(calculateSubAtomExamProgress('D2', 20, 0.69, [16, 4, 0, 0]).percentage).toBe(98);
+    });
+
+    it('shows partial practice without letting one form or scattered partial forms unlock the exam', () => {
+        expect(calculateSubAtomExamProgress('E2', 0, 0, [])).toMatchObject({ percentage: 0, ready: false });
+        expect(calculateSubAtomExamProgress('E2', 3, 1, [3, 0, 0, 0]))
+            .toMatchObject({ percentage: 15, qualifyingForms: 0, ready: false });
+        expect(calculateSubAtomExamProgress('E2', 6, 1, [3, 3, 0, 0]))
+            .toMatchObject({ percentage: 30, qualifyingForms: 0, ready: false });
+        expect(calculateSubAtomExamProgress('E2', 20, 1, [20, 0, 0, 0]))
+            .toMatchObject({ percentage: 50, qualifyingForms: 1, ready: false });
+        expect(calculateSubAtomExamProgress('E2', 20, 1, [14, 3, 3, 0]))
+            .toMatchObject({ percentage: 87, qualifyingForms: 1, ready: false });
+        expect(calculateSubAtomExamProgress('E2', 20, 1, [0, 4, 0, 16]))
+            .toMatchObject({ percentage: 100, qualifyingForms: 2, ready: true });
     });
 
     it('keeps the 8-item sub-atom exam balanced across learned forms', () => {

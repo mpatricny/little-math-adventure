@@ -102,7 +102,7 @@ export class VisualGuide {
         });
         const closeButton = new MedievalActionButton(this.scene, {
             ...close, width: 88, height: 52, layout: 'text', label: '×', labelFontSize: 25,
-            accent: 0xe3b286, onClick: () => this.destroy(),
+            accent: 0xe3b286, onClick: () => this.dismiss(),
         });
         this.root.add([replayButton.root, this.next.root, closeButton.root]);
         // Audio is optional: muted players can finish after seeing the same complete demonstration.
@@ -177,13 +177,26 @@ export class VisualGuide {
         });
     }
 
-    private advance(): void {
-        if (!this.completed || this.destroyed) return;
+    private rememberCurrentPage(): void {
         const id = this.pages[this.index].id;
         if (this.persist && GameStateManager.getInstance().getPlayer() === this.player) {
             if (!hasSeenGuide(this.player, id)) this.player.seenGuides = [...(Array.isArray(this.player.seenGuides) ? this.player.seenGuides : []), id];
             GameStateManager.getInstance().save();
         }
+    }
+
+    private dismiss(): void {
+        if (this.destroyed) return;
+        // An explicit × acknowledges only the visible page, even mid-animation.
+        // Scene shutdown still calls destroy() without acknowledging anything.
+        this.rememberCurrentPage();
+        this.destroy();
+    }
+
+    private advance(): void {
+        if (!this.completed || this.destroyed) return;
+        const id = this.pages[this.index].id;
+        this.rememberCurrentPage();
         this.scene.events.emit('guide-completed', id);
         if (++this.index < this.pages.length) this.show();
         else this.destroy();

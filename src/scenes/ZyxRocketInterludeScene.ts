@@ -67,7 +67,9 @@ export class ZyxRocketInterludeScene extends Phaser.Scene {
         this.depthCrystal = data.crystal === 'depth' || (!data.crystal
             && GameStateManager.getInstance().getPlayer().underwaterProgress?.depthCrystalClaimed === true);
         this.machineCompleted = this.depthCrystal
-            ? hasNextCityAccess(GameStateManager.getInstance().getPlayer()) : data.machineCompleted === true;
+            ? hasNextCityAccess(GameStateManager.getInstance().getPlayer())
+            : data.machineCompleted === true || (!this.testMode
+                && StorySystem.getInstance().getProgress().hasInstalledForestCrystal);
         this.dialoguePage = 0;
     }
 
@@ -379,7 +381,7 @@ export class ZyxRocketInterludeScene extends Phaser.Scene {
             onClick: () => {
                 prompt.setEnabled(false);
                 if (!this.testMode) {
-                    StorySystem.getInstance().setFlag('hasUnlockedSilverpond');
+                    StorySystem.getInstance().completeForestMilestone('silverpond');
                 }
                 if (this.anims.exists(walkAnimation)) player.play(walkAnimation);
                 player.setFlipX(false);

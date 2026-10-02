@@ -516,7 +516,7 @@ export class ZyxCrystalMachineScene extends Phaser.Scene {
         this.questSlotGlow.setAlpha(0.65);
 
         if (!this.testMode && !this.depthCrystal) {
-            StorySystem.getInstance().setFlag('hasInstalledForestCrystal');
+            StorySystem.getInstance().completeForestMilestone('installed');
         }
 
         const energyDots: Phaser.GameObjects.Arc[] = [];

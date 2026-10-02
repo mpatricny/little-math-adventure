@@ -1,5 +1,7 @@
 import { StoryProgress } from '../types';
 import { GameStateManager } from './GameStateManager';
+import { CoopSessionManager } from './CoopSessionManager';
+import { advanceForestStory, type ForestStoryMilestone } from './ForestCrystalProgression';
 
 /**
  * StorySystem - Manages story progress tracking for visual storytelling
@@ -103,6 +105,17 @@ export class StorySystem {
         const progress = this.getProgress();
         progress[flag] = true;
         this.save();
+    }
+
+    /** Both participants keep shared forest milestones when they later play alone. */
+    completeForestMilestone(milestone: ForestStoryMilestone): void {
+        const mark = () => advanceForestStory(this.getProgress(), milestone);
+        const coop = CoopSessionManager.getInstance();
+        if (coop.isCoopActive()) coop.forBothPlayers(mark);
+        else {
+            mark();
+            this.save();
+        }
     }
 
     /**
