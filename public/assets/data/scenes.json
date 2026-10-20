@@ -1,5 +1,24 @@
 {
   "scenes": {
+    "SceneLoadingOverlay": {
+      "viewport": { "width": 1280, "height": 720 },
+      "elements": [
+        { "id": "loadingPanelHost", "asset": "ui.containers.empty", "x": 640, "y": 360, "width": 600, "height": 350, "depth": 90000 },
+        { "id": "loadingSafeHost", "asset": "ui.containers.empty", "x": 640, "y": 360, "width": 520, "height": 270, "depth": 90001 },
+        { "id": "loadingMotionHost", "asset": "ui.containers.empty", "x": 640, "y": 315, "width": 140, "height": 140, "depth": 90002 },
+        { "id": "loadingTrackHost", "asset": "ui.containers.empty", "x": 640, "y": 420, "width": 420, "height": 32, "depth": 90002 },
+        { "id": "loadingLabelHost", "asset": "ui.containers.empty", "x": 640, "y": 471, "width": 420, "height": 42, "depth": 90002 }
+      ]
+    },
+    "RendererRecoveryOverlay": {
+      "viewport": { "width": 1280, "height": 720 },
+      "elements": [
+        { "id": "recoveryPanelHost", "asset": "ui.containers.empty", "x": 640, "y": 360, "width": 660, "height": 400, "depth": 100000 },
+        { "id": "recoverySafeHost", "asset": "ui.containers.empty", "x": 640, "y": 360, "width": 580, "height": 320, "depth": 100001 },
+        { "id": "recoveryActionHost", "asset": "ui.containers.empty", "x": 640, "y": 340, "width": 200, "height": 200, "depth": 100001 },
+        { "id": "recoveryLabelHost", "asset": "ui.containers.empty", "x": 640, "y": 485, "width": 420, "height": 50, "depth": 100001 }
+      ]
+    },
     "UnderwaterChestReward": {
       "viewport": {
         "width": 1280,
@@ -5012,6 +5031,15 @@
           "depth": 310
         },
         {
+          "id": "coinLegendHost",
+          "asset": "ui.containers.empty",
+          "x": 1140,
+          "y": 244,
+          "width": 224,
+          "height": 236,
+          "depth": 30
+        },
+        {
           "id": "buyButtonHost",
           "asset": "ui.containers.empty",
           "x": 640,
@@ -7036,6 +7064,15 @@
           "asset": "misc.lock-sign",
           "x": 395,
           "y": -164
+        },
+        {
+          "id": "forgeEquationHost",
+          "asset": "ui.containers.empty",
+          "x": 435,
+          "y": 587,
+          "width": 450,
+          "height": 120,
+          "depth": 200
         },
         {
           "id": "results_frame-cropped",

@@ -3,8 +3,9 @@ import { SceneAssetPlugin } from './systems/SceneAssetPlugin';
 import { SceneAudioPlugin } from './audio/SceneAudioPlugin';
 import { destroyGameAudio } from './audio/AudioDirector';
 import Phaser from 'phaser';
-import { setupMobile } from './utils/mobileSetup';
+import { setupMobile, setupMobilePause } from './utils/mobileSetup';
 import { setupGameViewport } from './utils/gameViewport';
+import { setupRendererRecovery } from './utils/rendererRecovery';
 import { ALL_BANDS, ALL_SUB_ATOM_NUMBERS, BandId, SaveSlotData, SubAtomId } from './types';
 import { mountRemoteControllerApp } from './remote/controllerApp';
 import { isControllerMode, isTvMode } from './remote/remoteMode';
@@ -112,6 +113,12 @@ async function startGame(): Promise<void> {
 
     if (DEV_TOOLS_ENABLED) repairBrokenT4BandPlacement();
 
+    let stopDevSaveSync = () => {};
+    if (import.meta.env.DEV && DEV_TOOLS_ENABLED) {
+        const { startDevSaveSync } = await import('./systems/DevSaveSync');
+        stopDevSaveSync = await startDevSaveSync();
+    }
+
     const stopGameplaySync = IS_PILOT ? startGameplaySync(() =>
         Array.from({ length: 8 }, (_, slot) => ({ slot, save: SaveSystem.load(slot) }))
             .filter((entry): entry is { slot: number; save: SaveSlotData } => entry.save !== null)
@@ -146,7 +153,16 @@ async function startGame(): Promise<void> {
 
     const game = new Phaser.Game(config);
     setupGameViewport(game);
+    setupMobilePause(game);
+    setupRendererRecovery(game);
     game.events.once(Phaser.Core.Events.DESTROY, destroyGameAudio);
+    game.events.once(Phaser.Core.Events.DESTROY, stopDevSaveSync);
     game.events.once(Phaser.Core.Events.DESTROY, stopGameplaySync);
     if (DEV_TOOLS_ENABLED) (globalThis as any).__LITTLE_MATH_GAME__ = game;
+    if (import.meta.env.DEV && DEV_TOOLS_ENABLED) {
+        const { startDeviceDiagnostics } = await import('./utils/deviceDiagnostics');
+        const install = () => game.events.once(Phaser.Core.Events.DESTROY, startDeviceDiagnostics(game));
+        if (game.isRunning) install();
+        else game.events.once(Phaser.Core.Events.READY, install);
+    }
 }

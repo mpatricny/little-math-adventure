@@ -27,6 +27,7 @@ import { MathEngine } from '../systems/MathEngine';
 import { MasterySystem } from '../systems/MasterySystem';
 import { PREPARATION_CONFIG, PreparationSystem } from '../systems/PreparationSystem';
 import { CoopSessionManager } from '../systems/CoopSessionManager';
+import { getShopEquipment, type ShopCity } from '../systems/ShopCatalog';
 
 // Coin type definitions
 interface CoinType {
@@ -58,6 +59,8 @@ export interface ShopSceneOptions {
     layoutSceneKey?: string;
     backgroundTexture?: string;
     persistChanges?: boolean;
+    cityId?: ShopCity;
+    showGuides?: boolean;
 }
 
 export class ShopScene extends Phaser.Scene {
@@ -65,6 +68,8 @@ export class ShopScene extends Phaser.Scene {
     private readonly layoutSceneKey: string;
     private readonly backgroundTexture?: string;
     private readonly persistChanges: boolean;
+    private readonly cityId: ShopCity;
+    private readonly showGuides: boolean;
     private gameState!: GameStateManager;
     private allItems!: ItemDefinition[];
     private localization = LocalizationService.getInstance();
@@ -112,6 +117,8 @@ export class ShopScene extends Phaser.Scene {
         this.layoutSceneKey = options.layoutSceneKey ?? sceneKey;
         this.backgroundTexture = options.backgroundTexture;
         this.persistChanges = options.persistChanges ?? true;
+        this.cityId = options.cityId ?? 'mathoria';
+        this.showGuides = options.showGuides ?? true;
     }
 
     create(): void {
@@ -172,17 +179,18 @@ export class ShopScene extends Phaser.Scene {
         this.setupItemDisplay();
 
         // Create coin value legend
-        this.createCoinLegend();
+        if (this.showGuides) this.createCoinLegend();
 
         // Setup drag handling
         this.setupDragHandling();
 
         // Setup debugger
         this.setupDebugger();
-        this.time.delayedCall(450, () => this.showShopGuides());
+        if (this.showGuides) this.time.delayedCall(450, () => this.showShopGuides());
     }
 
     private showShopGuides(purchasedKind?: PreparationKind): void {
+        if (!this.showGuides) return;
         const player = this.gameState.getPlayer();
         const pages: GuidePage[] = [];
         if (!purchasedKind && !hasSeenGuide(player, 'shop.intro.v1')) {
@@ -402,7 +410,10 @@ export class ShopScene extends Phaser.Scene {
     }
 
     private applyPreparedState(result: PreparationTrainingResult): void {
-        if (result.charges > 0) { sfx(this, 'prep.charge'); voice(this, `vo.shop.${result.kind}`); }
+        if (result.charges > 0) {
+            sfx(this, 'prep.charge');
+            if (this.showGuides) voice(this, `vo.shop.${result.kind}`);
+        }
         if (result.charges > 0) {
             PreparationSystem.prepare(this.gameState.getPlayer(), result.kind, result.charges);
             this.saveState();
@@ -513,34 +524,39 @@ export class ShopScene extends Phaser.Scene {
     }
 
     private createCoinLegend(): void {
-        const marker = this.sceneBuilder.getMarker('marker-1');
-        if (!marker) return;
+        const host = this.sceneBuilder.get<Phaser.GameObjects.Container>('coinLegendHost');
+        if (!host) return;
 
-        const centerX = marker.x + marker.width / 2;
-        const startY = marker.y + marker.height / 2;
-        const rowHeight = 50;
+        const centerX = host.x;
+        const startY = host.y;
+        const rowHeight = 54;
+        const bounds = this.sceneBuilder.getElementDef('coinLegendHost');
+        const width = bounds?.width ?? 224;
+        const height = bounds?.height ?? 236;
+        const frame = this.add.graphics().setDepth(host.depth - 1);
+        frame.fillStyle(this.cityId === 'silverpond' ? 0x102c43 : 0x201b24, 0.96);
+        frame.lineStyle(2, this.cityId === 'silverpond' ? 0xb9e4e6 : 0xa98a62, 1);
+        frame.fillRoundedRect(centerX - width / 2, startY - height / 2, width, height, 12);
+        frame.strokeRoundedRect(centerX - width / 2, startY - height / 2, width, height, 12);
         const coins: { frame: number; texture?: string; text: string; color: string }[] = [
             { frame: 1, text: '= 1', color: '#cd7f32' },    // copper
             { frame: 2, text: '= 5', color: '#c0c0c0' },    // silver
             { frame: 0, text: '= 10', color: '#ffd700' },    // gold
-            { frame: -1, texture: 'coin-pouch', text: '= 100', color: '#8b6914' },  // pouch
+            { frame: -1, texture: 'coin-pouch', text: '= 100', color: '#e8c693' },  // pouch
         ];
 
         coins.forEach((coin, i) => {
             const y = startY + (i - 1.5) * rowHeight;
-            if (coin.frame === -1 && coin.texture) {
-                this.add.image(centerX - 40, y, coin.texture)
-                    .setDisplaySize(70, 70).setDepth(30);
-            } else {
-                this.add.image(centerX - 40, y, 'shop-coins-sheet', coin.frame)
-                    .setDisplaySize(70, 70).setDepth(30);
-            }
-            this.add.text(centerX + 15, y, coin.text, {
-                fontSize: '22px',
+            const image = this.add.image(centerX - 72, y,
+                coin.texture ?? 'shop-coins-sheet', coin.frame === -1 ? 0 : coin.frame);
+            image.setScale(Math.min(52 / image.width, 52 / image.height)).setDepth(host.depth);
+            this.add.text(centerX - 30, y, coin.text, {
+                fontSize: '44px',
                 fontFamily: 'Arial, sans-serif',
                 color: coin.color,
                 fontStyle: 'bold',
-            }).setOrigin(0, 0.5).setDepth(30);
+                resolution: 2,
+            }).setOrigin(0, 0.5).setDepth(host.depth);
         });
     }
 
@@ -604,6 +620,7 @@ export class ShopScene extends Phaser.Scene {
 
         // Item name - relative position within the container
         const nameText = this.add.text(-100, -20, '', {
+            resolution: 2,
             fontSize: '18px',
             fontFamily: 'Arial, sans-serif',
             color: '#ffd700',
@@ -614,6 +631,7 @@ export class ShopScene extends Phaser.Scene {
 
         // Price - relative position within the container
         const priceText = this.add.text(-100, 10, '', {
+            resolution: 2,
             fontSize: '16px',
             fontFamily: 'Arial, sans-serif',
             color: '#ffaa00',
@@ -652,14 +670,15 @@ export class ShopScene extends Phaser.Scene {
             }).setOrigin(0.5).setDepth((labelShields.depth ?? 0) + 1);
         }
 
-        const byId = new Map(this.allItems.map(item => [item.id, item]));
+        const swords = getShopEquipment(this.allItems, this.cityId, 'weapon');
+        const shields = getShopEquipment(this.allItems, this.cityId, 'shield');
         const displayItems: { containerId: string; item: ItemDefinition | undefined; type: ItemType }[] = [
-            { containerId: 'item-container', item: byId.get('sword_wooden'), type: 'weapon' },
-            { containerId: 'item-container-1', item: byId.get('sword_iron'), type: 'weapon' },
-            { containerId: 'item-container-4', item: byId.get('sword_reinforced'), type: 'weapon' },
-            { containerId: 'item-container-2', item: byId.get('shield_wooden'), type: 'shield' },
-            { containerId: 'item-container-3', item: byId.get('shield_iron'), type: 'shield' },
-            { containerId: 'item-container-5', item: byId.get('shield_reinforced'), type: 'shield' },
+            { containerId: 'item-container', item: swords[0], type: 'weapon' },
+            { containerId: 'item-container-1', item: swords[1], type: 'weapon' },
+            { containerId: 'item-container-4', item: swords[2], type: 'weapon' },
+            { containerId: 'item-container-2', item: shields[0], type: 'shield' },
+            { containerId: 'item-container-3', item: shields[1], type: 'shield' },
+            { containerId: 'item-container-5', item: shields[2], type: 'shield' },
         ];
 
         for (const entry of displayItems) {
@@ -673,8 +692,8 @@ export class ShopScene extends Phaser.Scene {
 
             // Create item icon centered on the container image
             if (item.spriteKey) {
-                const iconW = entry.type === 'weapon' ? 45 : 55;
-                const iconH = entry.type === 'weapon' ? 60 : 55;
+                const iconW = this.cityId === 'silverpond' ? 74 : entry.type === 'weapon' ? 45 : 55;
+                const iconH = this.cityId === 'silverpond' ? 80 : entry.type === 'weapon' ? 60 : 55;
                 const icon = this.add.image(container.x, container.y, item.spriteKey, item.iconFrame);
                 const frame = icon.frame;
                 icon.setScale(Math.min(iconW / frame.realWidth, iconH / frame.realHeight));
@@ -693,7 +712,7 @@ export class ShopScene extends Phaser.Scene {
         }
 
         // Wiggle hint on wooden shield if it's visible
-        this.scheduleShieldWiggle();
+        if (this.showGuides) this.scheduleShieldWiggle();
     }
 
     private scheduleShieldWiggle(): void {
@@ -855,7 +874,7 @@ export class ShopScene extends Phaser.Scene {
         // Show/hide payment hint based on whether total meets price
         if (this.selectedItem && total >= this.selectedItem.price) {
             this.hidePaymentTrayHint();
-        } else if (this.selectedItem && !this.paymentHintRect) {
+        } else if (this.showGuides && this.selectedItem && !this.paymentHintRect) {
             this.showPaymentTrayHint();
         }
     }
@@ -882,8 +901,10 @@ export class ShopScene extends Phaser.Scene {
 
         // Visual hints
         this.destroyTooltip();
-        this.playCoinHintAnimation();
-        this.showPaymentTrayHint();
+        if (this.showGuides) {
+            this.playCoinHintAnimation();
+            this.showPaymentTrayHint();
+        }
     }
 
     private updatePurchasePanel(): void {
@@ -898,6 +919,7 @@ export class ShopScene extends Phaser.Scene {
 
         if (this.selectedItem.spriteKey) {
             itemIcon.setTexture(this.selectedItem.spriteKey, this.selectedItem.iconFrame);
+            itemIcon.setScale(Math.min(50 / itemIcon.frame.realWidth, 60 / itemIcon.frame.realHeight));
             itemIcon.setVisible(true);
         }
     }
@@ -996,7 +1018,7 @@ export class ShopScene extends Phaser.Scene {
         this.updatePaymentTotal();
         this.updateResourceDisplay();
         this.refreshPreparationUi();
-        if (purchasedItem.type === 'weapon' || purchasedItem.type === 'shield') {
+        if (this.showGuides && (purchasedItem.type === 'weapon' || purchasedItem.type === 'shield')) {
             this.time.delayedCall(350, () => this.showShopGuides(purchasedItem.type === 'weapon' ? 'sword' : 'shield'));
         }
     }
@@ -1065,8 +1087,7 @@ export class ShopScene extends Phaser.Scene {
         if (item.type === 'weapon') {
             lines.push({ text: `⚔ +${item.damageMultiplier ?? 1}`, color: '#66ff66' });
         } else if (item.type === 'shield') {
-            lines.push({ text: 'Jedna obranná úloha', color: '#aaddff' });
-            lines.push({ text: `Blok: ${item.blockPower ?? item.blockAttempts ?? 1}`, color: '#aaddff' });
+            lines.push({ text: `🛡 ${item.blockPower ?? item.blockAttempts ?? 1}`, color: '#aaddff' });
         }
 
         const contentHeight = lines.length * lineHeight;
@@ -1107,6 +1128,7 @@ export class ShopScene extends Phaser.Scene {
 
             const textX = line.icon ? -halfW + padding + 20 : -halfW + padding;
             const text = this.add.text(textX, y, line.text, {
+                resolution: 2,
                 fontSize: line.bold ? '16px' : '14px',
                 fontFamily: 'Arial, sans-serif',
                 color: line.color,

@@ -1320,7 +1320,7 @@
                 },
                 {
                   "source": "core",
-                  "enemyId": "silverpond_silverfin_scalefish"
+                  "enemyId": "silverpond_ruin_axolotl"
                 }
               ]
             },
@@ -1362,7 +1362,7 @@
                 },
                 {
                   "source": "core",
-                  "enemyId": "silverpond_silverfin_scalefish"
+                  "enemyId": "silverpond_bubble_crab"
                 }
               ]
             }
@@ -1420,11 +1420,7 @@
               "enemies": [
                 {
                   "source": "core",
-                  "enemyId": "silverpond_bubble_crab"
-                },
-                {
-                  "source": "core",
-                  "enemyId": "silverpond_silverfin_scalefish"
+                  "enemyId": "silverpond_pearl_jellyfish"
                 }
               ]
             },
@@ -1458,7 +1454,7 @@
               "enemies": [
                 {
                   "source": "core",
-                  "enemyId": "silverpond_silverfin_scalefish"
+                  "enemyId": "silverpond_pearl_jellyfish"
                 },
                 {
                   "source": "core",
@@ -1496,15 +1492,11 @@
               "enemies": [
                 {
                   "source": "core",
-                  "enemyId": "silverpond_bubble_crab"
+                  "enemyId": "silverpond_pearl_jellyfish"
                 },
                 {
                   "source": "core",
-                  "enemyId": "silverpond_silverfin_scalefish"
-                },
-                {
-                  "source": "core",
-                  "enemyId": "silverpond_silverfin_scalefish"
+                  "enemyId": "silverpond_ruin_axolotl"
                 }
               ]
             },
@@ -1538,15 +1530,11 @@
               "enemies": [
                 {
                   "source": "core",
-                  "enemyId": "silverpond_bubble_crab"
+                  "enemyId": "silverpond_pearl_jellyfish"
                 },
                 {
                   "source": "core",
                   "enemyId": "silverpond_bubble_crab"
-                },
-                {
-                  "source": "core",
-                  "enemyId": "silverpond_silverfin_scalefish"
                 }
               ]
             },
@@ -1580,15 +1568,15 @@
               "enemies": [
                 {
                   "source": "core",
-                  "enemyId": "silverpond_bubble_crab"
+                  "enemyId": "silverpond_pearl_jellyfish"
                 },
                 {
                   "source": "core",
-                  "enemyId": "silverpond_silverfin_scalefish"
+                  "enemyId": "silverpond_pearl_jellyfish"
                 },
                 {
                   "source": "core",
-                  "enemyId": "silverpond_silverfin_scalefish"
+                  "enemyId": "silverpond_pearl_jellyfish"
                 }
               ]
             }

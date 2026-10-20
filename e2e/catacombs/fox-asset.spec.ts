@@ -1,6 +1,12 @@
 import { test, expect, openSeededGame, waitForScene } from '../arena/helpers/arena-harness';
 
-for (const renderer of ['canvas', 'webgl']) test(`fox portrait and empty-animation recovery ${renderer}`, async ({ page }) => {
+test.beforeEach(async ({ page }) => {
+    await page.route('**/v1/me', route => route.fulfill({
+        status: 200, contentType: 'application/json', body: JSON.stringify({ authenticated: false }),
+    }));
+});
+
+for (const renderer of ['canvas', 'webgl']) test(`fox portrait and canonical animations ${renderer}`, async ({ page }) => {
     if (renderer === 'canvas') await page.addInitScript(() => {
         const original = HTMLCanvasElement.prototype.getContext;
         HTMLCanvasElement.prototype.getContext = function (type: string, ...args: any[]) {
@@ -9,6 +15,10 @@ for (const renderer of ['canvas', 'webgl']) test(`fox portrait and empty-animati
         } as typeof original;
     });
     await openSeededGame(page, false, {}, {}, { unlockedPets: ['catacomb_creature_A'] });
+    expect(await page.evaluate(() => (window as any).__LITTLE_MATH_GAME__.renderer.type)).toBe(renderer === 'canvas' ? 1 : 2);
+    // Textures now belong to the destination's ordinary preload, not the menu.
+    await page.evaluate(() => (window as any).__LITTLE_MATH_GAME__.scene.keys.MenuScene.scene.start('CatacombTrialScene', { examType: 'fluency_challenge', subAtomId: 'A1' }));
+    await waitForScene(page, 'CatacombTrialScene');
     const atlas = await page.evaluate(() => {
         const g = (window as any).__LITTLE_MATH_GAME__;
         const t = g.textures.get('rune-fox-sheet');
@@ -17,7 +27,7 @@ for (const renderer of ['canvas', 'webgl']) test(`fox portrait and empty-animati
     expect(atlas.key).toBe('rune-fox-sheet');
     expect(Math.max(atlas.width, atlas.height)).toBeLessThanOrEqual(4096);
     expect(atlas.frames).toBeGreaterThan(0);
-    await page.evaluate(() => (window as any).__LITTLE_MATH_GAME__.scene.keys.MenuScene.scene.start('PythiaWorkshopScene'));
+    await page.evaluate(() => (window as any).__LITTLE_MATH_GAME__.scene.keys.CatacombTrialScene.scene.start('PythiaWorkshopScene'));
     await waitForScene(page, 'PythiaWorkshopScene');
     const portrait = await page.evaluate(() => {
         const s = (window as any).__LITTLE_MATH_GAME__.scene.keys.PythiaWorkshopScene;
@@ -46,15 +56,13 @@ for (const renderer of ['canvas', 'webgl']) test(`fox portrait and empty-animati
     expect(selected.bottom).toBeLessThan(selected.nameTop);
     expect(selected.scaleX).toBe(selected.scaleY);
     await page.screenshot({ path: `artifacts/coop-difficulty/fox-${renderer}-selected.png` });
-    // Reproduce the reported failure shape: exists() is true but there is no first frame.
     await page.evaluate(() => {
         const g = (window as any).__LITTLE_MATH_GAME__;
-        g.anims.get('rune-fox-idle').frames.length = 0;
         g.scene.keys.PythiaWorkshopScene.scene.start('CatacombTrialScene', { examType: 'fluency_challenge', subAtomId: 'A1' });
     });
     await waitForScene(page, 'CatacombTrialScene');
     expect(await page.evaluate(() => {
         const s = (window as any).__LITTLE_MATH_GAME__.scene.keys.CatacombTrialScene;
         return { phase: s.phase, frames: s.creatureSprite.anims.currentAnim.frames.length };
-    })).toEqual({ phase: 'intro', frames: 1 });
+    })).toEqual({ phase: 'intro', frames: 8 });
 });

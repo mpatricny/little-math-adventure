@@ -135,6 +135,9 @@ export function collectPilotContent(rootDir) {
     }
   }
   const encounters = filterEncounters(original.encounters);
+  // Regional equipment and companions belong to the development chapter, not the pilot.
+  metadata.set('items.json', metadata.get('items.json').filter(item => item.shopCity !== 'silverpond'));
+  metadata.set('pets.json', metadata.get('pets.json').filter(pet => !pet.unlockedByEnemy?.startsWith('silverpond_')));
   const enemyIds = new Set();
   const collectEnemies = value => {
     if (!value || typeof value !== 'object') return;
@@ -225,6 +228,11 @@ export function collectPilotContent(rootDir) {
     }
   }
   while (queue.length) visit(queue.pop());
+
+  // Static actor cards use the same first frame as their retained source sheet.
+  for (const key of [...selected.textures]) {
+    if (original.textures.images[key + '-portrait']) selected.textures.add(key + '-portrait');
+  }
 
   const textures = {
     version: original.textures.version,

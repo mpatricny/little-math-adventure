@@ -75,7 +75,8 @@
         "silverpond-frog-enemy-idle-sheet": {
             "path": "sprites/silverpond/frog-enemy-idle.webp",
             "frameWidth": 512,
-            "frameHeight": 512
+            "frameHeight": 512,
+            "frameCount": 5
         },
         "silverpond-bubble-crab-idle-sheet": {
             "path": "sprites/silverpond/bubble-crab-idle.webp",
@@ -290,9 +291,10 @@
             "frameHeight": 512
         },
         "rune-fox-sheet": {
-            "path": "sprites/catacombs/rune-fox-compact.png",
+            "path": "sprites/catacombs/rune-fox-compact.webp",
             "frameWidth": 512,
-            "frameHeight": 512
+            "frameHeight": 512,
+            "frameCount": 45
         },
         "silverpond-pearl-jellyfish-idle-sheet": {
             "path": "sprites/silverpond/pearl-jellyfish-idle.webp",
@@ -636,6 +638,29 @@
         "arena-entry-crossed-swords-active-v1": "ui/mock/arena-entry/v1/arena-crossed-swords-active-v1.png",
         "arena-player-status-pod-v1": "ui/mock/arena-entry/v2/arena-player-status-pod-v1.png",
         "b2f7382e-ba99-48bb-aa19-e2e3c720ccbb": "library:originals/8d1edcf2-c7f96481.webp",
-        "catacomb-rune-chamber": "images/backgrounds/catacomb-rune-chamber.webp"
+        "catacomb-rune-chamber": "images/backgrounds/catacomb-rune-chamber.webp",
+        "silverpond-sword-tide": "items/silverpond/sword-tide.webp",
+        "silverpond-shield-tide": "items/silverpond/shield-tide.webp",
+        "silverpond-sword-pearl": "items/silverpond/sword-pearl.webp",
+        "silverpond-shield-pearl": "items/silverpond/shield-pearl.webp",
+        "silverpond-sword-depth": "items/silverpond/sword-depth.webp",
+        "silverpond-shield-depth": "items/silverpond/shield-depth.webp",
+        "silverpond-pearl-jellyfish-idle-sheet-portrait": "sprites/portraits/silverpond-pearl-jellyfish-idle-sheet.webp",
+        "silverpond-depth-guardian-idle-sheet-portrait": "sprites/portraits/silverpond-depth-guardian-idle-sheet.webp",
+        "slime-sheet-portrait": "sprites/portraits/slime-sheet.webp",
+        "purple-attack-sheet-portrait": "sprites/portraits/purple-attack-sheet.webp",
+        "pink-idle-sheet-portrait": "sprites/portraits/pink-idle-sheet.webp",
+        "leafy-idle-sheet-portrait": "sprites/portraits/leafy-idle-sheet.webp",
+        "wolves-only-transparent-sheet-portrait": "sprites/portraits/wolves-only-transparent-sheet.webp",
+        "spritesheet--36--sheet-portrait": "sprites/portraits/spritesheet--36--sheet.webp",
+        "spritesheet--37--sheet-portrait": "sprites/portraits/spritesheet--37--sheet.webp",
+        "spritesheet--38--sheet-portrait": "sprites/portraits/spritesheet--38--sheet.webp",
+        "silverpond-bubble-crab-idle-sheet-portrait": "sprites/portraits/silverpond-bubble-crab-idle-sheet.webp",
+        "silverpond-bubble-fish-idle-sheet-portrait": "sprites/portraits/silverpond-bubble-fish-idle-sheet.webp",
+        "silverpond-mill-turtle-idle-sheet-portrait": "sprites/portraits/silverpond-mill-turtle-idle-sheet.webp",
+        "silverpond-ruin-axolotl-idle-sheet-portrait": "sprites/portraits/silverpond-ruin-axolotl-idle-sheet.webp",
+        "rune-fox-sheet-portrait": "sprites/portraits/rune-fox-sheet.webp",
+        "pet-porcupine-sheet-portrait": "sprites/portraits/pet-porcupine-sheet.webp",
+        "pet-porcupine-2-portrait": "sprites/portraits/pet-porcupine-2.webp"
     }
 }

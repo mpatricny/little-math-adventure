@@ -120,12 +120,16 @@ test('both shops open with no gear, sword only, shield only and both; voice foll
 });
 
 for (const sceneKey of shops) test(`${sceneKey}: drag payment, wrong total, purchase, upgrade and saved return`, async ({ page }, info) => {
-    await openSeededGame(page, false, {}, {}, { coins: { copper: 50, silver: 0, gold: 0, pouch: 0 }, attack: 1, seenGuides: completedGuides });
+    await openSeededGame(page, false, {}, {}, { coins: { copper: 20, silver: 10, gold: 25, pouch: 0 }, attack: 1, seenGuides: completedGuides });
     await start(page, sceneKey);
     const initial = await state(page, sceneKey);
     await buyButton(page, sceneKey); // No selected item is a safe no-op.
     expect((await state(page, sceneKey)).player).toEqual(initial.player);
-    const sword = items.find(i => i.id === 'sword_wooden')!, shield = items.find(i => i.id === 'shield_wooden')!, upgrade = items.find(i => i.id === 'sword_iron')!;
+    const city = sceneKey === 'SilverpondShopMockScene' ? 'silverpond' : 'mathoria';
+    const offers = items.filter(i => (('shopCity' in i && i.shopCity) || 'mathoria') === city);
+    const swords = offers.filter(i => i.type === 'weapon').sort((a, b) => a.tier! - b.tier!);
+    const shields = offers.filter(i => i.type === 'shield').sort((a, b) => a.tier! - b.tier!);
+    const sword = swords[0], shield = shields[0], upgrade = swords[1];
     await selectItem(page, sceneKey, sword.id); await pay(page, sceneKey, 1); await buyButton(page, sceneKey);
     await expect.poll(async () => (await state(page, sceneKey)).payment).toBe(0);
     expect((await state(page, sceneKey)).player).toEqual(initial.player);

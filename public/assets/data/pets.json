@@ -126,5 +126,95 @@
         "mathProblemMax": 10,
         "damageMultiplier": 7,
         "scale": 0.5
+    },
+    {
+        "id": "pet_silverpond_bubble_crab",
+        "name": "Bublinka",
+        "spriteKey": "silverpond-bubble-crab-idle-sheet",
+        "animPrefix": "bubble-crab",
+        "unlockedByEnemy": "silverpond_bubble_crab",
+        "requiredAmulet": {
+            "tier": "prism",
+            "value": 8
+        },
+        "mathProblemType": "subtraction",
+        "mathProblemMax": 10,
+        "damageMultiplier": 12,
+        "scale": 0.4
+    },
+    {
+        "id": "pet_silverpond_silverfin_scalefish",
+        "name": "Ploutvička",
+        "spriteKey": "silverpond-bubble-fish-idle-sheet",
+        "animPrefix": "bubble-fish",
+        "unlockedByEnemy": "silverpond_silverfin_scalefish",
+        "requiredAmulet": {
+            "tier": "fragment",
+            "value": 9
+        },
+        "mathProblemType": "subtraction",
+        "mathProblemMax": 10,
+        "damageMultiplier": 9,
+        "scale": 0.4
+    },
+    {
+        "id": "pet_silverpond_mill_turtle",
+        "name": "Krunýřek",
+        "spriteKey": "silverpond-mill-turtle-idle-sheet",
+        "animPrefix": "mill-turtle",
+        "unlockedByEnemy": "silverpond_mill_turtle",
+        "requiredAmulet": {
+            "tier": "fragment",
+            "value": 15
+        },
+        "mathProblemType": "subtraction",
+        "mathProblemMax": 10,
+        "damageMultiplier": 10,
+        "scale": 0.4
+    },
+    {
+        "id": "pet_silverpond_ruin_axolotl",
+        "name": "Mloček",
+        "spriteKey": "silverpond-ruin-axolotl-idle-sheet",
+        "animPrefix": "ruin-axolotl",
+        "unlockedByEnemy": "silverpond_ruin_axolotl",
+        "requiredAmulet": {
+            "tier": "prism",
+            "value": 6
+        },
+        "mathProblemType": "subtraction",
+        "mathProblemMax": 10,
+        "damageMultiplier": 11,
+        "scale": 0.4
+    },
+    {
+        "id": "pet_silverpond_pearl_jellyfish",
+        "name": "Perlička",
+        "spriteKey": "silverpond-pearl-jellyfish-idle-sheet",
+        "animPrefix": "pearl-jellyfish",
+        "unlockedByEnemy": "silverpond_pearl_jellyfish",
+        "requiredAmulet": {
+            "tier": "prism",
+            "value": 9
+        },
+        "mathProblemType": "subtraction",
+        "mathProblemMax": 10,
+        "damageMultiplier": 12,
+        "scale": 0.4
+    },
+    {
+        "id": "pet_silverpond_depth_guardian",
+        "name": "Hloubek",
+        "spriteKey": "silverpond-depth-guardian-idle-sheet",
+        "animPrefix": "depth-guardian",
+        "unlockedByEnemy": "silverpond_depth_guardian",
+        "requiredAmulet": {
+            "tier": "prism",
+            "value": 12
+        },
+        "mathProblemType": "subtraction",
+        "mathProblemMax": 10,
+        "damageMultiplier": 13,
+        "scale": 0.4
     }
 ]

@@ -233,8 +233,10 @@ export class WalkingSceneHud {
             portraitTexture: player.characterType === 'boy_knight'
                 ? 'town-hud-hero-portrait'
                 : 'town-hud-heroine-portrait',
+            swordTexture: sword?.spriteKey,
             swordFrame: sword?.iconFrame ?? null,
             swordBonus: sword?.damageMultiplier ?? 0,
+            shieldTexture: shield?.spriteKey,
             shieldFrame: shield?.iconFrame ?? null,
             shieldBlock: shield?.blockPower ?? shield?.blockAttempts ?? shield?.defenseBonus ?? 0,
             attackCount,

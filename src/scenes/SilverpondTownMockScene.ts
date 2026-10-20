@@ -35,31 +35,31 @@ const DOOR_GLOW_COLOR = 0x92eeff;
 const DOORS: DoorConfig[] = [
     {
         hostId: 'shopDoorHost',
-        message: 'OBCHOD · vybavení a zásoby',
+        message: 'OBCHOD',
         archRatio: 0.24,
         destinationScene: 'SilverpondShopMockScene',
     },
     {
         hostId: 'guildDoorHost',
-        message: 'CECH · nové zkoušky jsou připravené',
+        message: 'CECH',
         archRatio: 0.48,
         destinationScene: 'SilverpondGuildMockScene',
     },
     {
         hostId: 'workshopDoorHost',
-        message: 'DÍLNA PYTHIE · lektvary a práce s mazlíčky',
+        message: 'DÍLNA PYTHIE',
         archRatio: 0.45,
         destinationScene: 'SilverpondPythiaWorkshopMockScene',
     },
     {
         hostId: 'forgeDoorHost',
-        message: 'KRYSTALOVÁ KOVÁRNA · opravy a krystalové operace',
+        message: 'KOVÁRNA',
         archRatio: 0.42,
         destinationScene: 'SilverpondCrystalForgeMockScene',
     },
     {
         hostId: 'arenaGateHost',
-        message: 'VODNÍ ARÉNA · osvoboď jezerní vílu',
+        message: 'VODNÍ ARÉNA',
         archRatio: 0.48,
         destinationScene: 'SilverpondArenaMockScene',
     },
@@ -85,6 +85,7 @@ export class SilverpondTownMockScene extends Phaser.Scene {
         this.input.enabled = true;
         this.sceneBuilder = new SceneBuilder(this);
         this.sceneBuilder.buildScene('SilverpondTownMockScene');
+        this.cameras.main.fadeIn(300, 8, 30, 35);
 
         const gameState = GameStateManager.getInstance();
         if (needsDepthCrystalShipReturn(gameState.getPlayer())) {
@@ -133,7 +134,7 @@ export class SilverpondTownMockScene extends Phaser.Scene {
             });
         }
         this.time.delayedCall(250, () => {
-            this.showToast('Najeď na dveře a klikni na budovu.', 1900);
+            this.showToast('SILVERPOND', 1900);
         });
     }
 

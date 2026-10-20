@@ -36,6 +36,9 @@ test('pilot retains complete Mathoria/forest gameplay and excludes later chapter
   assert.ok(arenas.every(arena => arena.metadata.nextArenaId === null || arenaIds.has(arena.metadata.nextArenaId)));
   assert.deepEqual(json('underwater-rooms.json').rooms, {});
   assert.ok(json('scenes.json').scenes.MenuScene.ui.every(element => !/^btn(Silverpond|Underwater)/.test(element.id)));
+  assert.ok(json('items.json').every(item => item.shopCity !== 'silverpond'));
+  assert.ok(json('pets.json').every(pet => !pet.unlockedByEnemy?.startsWith('silverpond_')));
+  assert.ok(json('enemies.json').every(enemy => !enemy.id.startsWith('silverpond_')));
 });
 
 test('runtime scene registration and packaged pilot scope stay in sync', () => {

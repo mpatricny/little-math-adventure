@@ -1,4 +1,5 @@
 import { VisualGuide, hasSeenGuide } from '../ui/VisualGuide';
+import { actorPortraitKey } from '../loading/actor-portraits';
 import Phaser from 'phaser';
 import { DEV_TOOLS_ENABLED } from '../config/buildVariant';
 import { EnemyDefinition, PetDefinition, PlayerState } from '../types';
@@ -48,6 +49,7 @@ export interface ArenaSceneOptions {
     titleText?: string;
     showArenaLevelInTitle?: boolean;
     persistChanges?: boolean;
+    showGuides?: boolean;
     /** Restricts progression and practice choices to this city's three arenas. */
     cityId?: string;
     arenaStory?: 'silverpond-lake-fairy';
@@ -77,6 +79,7 @@ export class ArenaScene extends Phaser.Scene {
     private readonly titleText?: string;
     private readonly showArenaLevelInTitle: boolean;
     private readonly persistChanges: boolean;
+    private readonly showGuides: boolean;
     private readonly cityId: string;
     private readonly arenaStory?: 'silverpond-lake-fairy';
 
@@ -142,6 +145,7 @@ export class ArenaScene extends Phaser.Scene {
         this.titleText = options.titleText;
         this.showArenaLevelInTitle = options.showArenaLevelInTitle ?? false;
         this.persistChanges = options.persistChanges ?? true;
+        this.showGuides = options.showGuides ?? true;
         this.cityId = options.cityId ?? 'mathoria';
         this.arenaStory = options.arenaStory;
     }
@@ -463,7 +467,7 @@ export class ArenaScene extends Phaser.Scene {
 
         // Setup debugger
         this.setupDebugger();
-        this.time.delayedCall(450, () => {
+        if (this.showGuides) this.time.delayedCall(450, () => {
             if (!isFullyPerfect && !hasSeenGuide(this.gameState.getPlayer(), 'arena.free.v1')) {
                 new VisualGuide(this, this.sceneBuilder, [{
                     id: 'arena.free.v1', title: 'OSVOBOĎ TVORY', voiceId: 'vo.arena.free',
@@ -893,9 +897,10 @@ export class ArenaScene extends Phaser.Scene {
                 const icon = this.add.image(
                     enemyIconsStartX + enemyIdx * iconSpacing,
                     0,
-                    enemyDef.spriteKey,
-                    0  // First frame
-                ).setScale(iconScale);
+                    actorPortraitKey(this, enemyDef.spriteKey)
+                );
+                // New 512px creature canvases must fit the same independent row slots.
+                icon.setScale(Math.min(iconScale, 46 / icon.frame.realWidth, 46 / icon.frame.realHeight));
 
                 rowContainer.add(icon);
             });

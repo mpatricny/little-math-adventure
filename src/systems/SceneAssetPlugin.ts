@@ -2,6 +2,17 @@ import Phaser from 'phaser';
 import sceneAssets from 'virtual:scene-assets';
 import { TexturesFile } from '../types/assets';
 import { assetPreparation, queueTexture } from '../loading/AssetPreparation';
+import { GameStateManager } from './GameStateManager';
+import { CoopSessionManager } from './CoopSessionManager';
+import { SaveSystem } from './SaveSystem';
+import { isPetUnlocked } from './PetCatalog';
+import { getShopEquipment, type ShopCity } from './ShopCatalog';
+import { createEncounterCatalog } from './EncounterCatalog';
+import { getArenaChoiceOptions } from './ArenaChoiceSystem';
+import { townBuildings } from '../loading/town-scenes';
+import { SceneLoadingScreen } from '../loading/SceneLoadingScreen';
+import { actorPortraitKey } from '../loading/actor-portraits';
+import type { ItemDefinition, PetDefinition, PlayerState } from '../types';
 
 type AnimationDefinition = {
     texture: string;
@@ -38,25 +49,94 @@ export class SceneAssetPlugin extends Phaser.Plugins.ScenePlugin {
         if (['BootScene', 'AssetLoaderScene'].includes(scene.sys.settings.key)) return;
         const originalPreload = (scene as Phaser.Scene & { preload?: () => void }).preload;
         const originalCreate = (scene as Phaser.Scene & { create?: (data: unknown) => void }).create;
+        let loading: SceneLoadingScreen | undefined;
+        let required = new Set<string>();
         Object.assign(scene, {
             preload: () => {
-                assetPreparation(scene.game).entering(scene.sys.settings.key);
-                this.queueSceneTextures();
+                const homeTown = GameStateManager.getInstance().getPlayer().storyProgress?.hasUnlockedSilverpond
+                    ? 'SilverpondTownMockScene' : 'TownScene';
+                assetPreparation(scene.game).entering(scene.sys.settings.key, homeTown);
+                required = this.queueSceneTextures();
                 originalPreload?.call(scene);
+                if (scene.load.list.size > 0) loading = new SceneLoadingScreen(scene);
             },
             create: (data: unknown) => {
-                registerLoadedAnimations(scene);
-                scene.events.once(Phaser.Scenes.Events.CREATE, () => assetPreparation(scene.game).ready(scene));
-                originalCreate?.call(scene, data);
+                const ready = () => {
+                    assetPreparation(scene.game).ready(scene);
+                    // Keep the screen through create() and the first actual
+                    // rendered frame, not merely until the last download.
+                    scene.game.events.once(Phaser.Core.Events.POST_RENDER, dismiss);
+                };
+                const dismiss = () => { loading?.destroy(); loading = undefined; };
+                scene.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+                    scene.game.events.off(Phaser.Core.Events.POST_RENDER, dismiss);
+                    dismiss();
+                });
+                const create = (retry: boolean) => {
+                    const missing = [...required].filter(key => !scene.textures.exists(key));
+                    if (missing.length) {
+                        // Phaser normally creates a scene even after a failed
+                        // image request. Keep uninitialized gameplay paused and
+                        // let the DOM retry control reload only missing files.
+                        if (!retry) scene.events.once(Phaser.Scenes.Events.CREATE, () => scene.sys.pause());
+                        loading ??= new SceneLoadingScreen(scene);
+                        loading.failed(() => {
+                            loading?.progress(0);
+                            const catalog = scene.cache.json.get('textures') as TexturesFile;
+                            missing.forEach(key => queueTexture(scene, key, catalog));
+                            scene.load.once(Phaser.Loader.Events.COMPLETE, () => create(true));
+                            scene.load.start();
+                        });
+                        return;
+                    }
+                    registerLoadedAnimations(scene);
+                    if (!retry) scene.events.once(Phaser.Scenes.Events.CREATE, ready);
+                    originalCreate?.call(scene, data);
+                    if (retry) {
+                        scene.events.once(Phaser.Scenes.Events.RESUME, ready);
+                        scene.sys.resume();
+                    }
+                };
+                create(false);
             },
         });
     }
 
-    private queueSceneTextures(): void {
+    /** Queue dependencies during Phaser's ordinary preload, before create runs. */
+    queueSceneTextures(sceneKey = this.scene!.sys.settings.key): Set<string> {
+        const buildings = (townBuildings[sceneKey] ?? []).filter(key => this.game.scene.keys[key]);
+        const required = new Set(Object.values(this.getScenesTextureKeys([sceneKey, ...buildings])).flat());
         const scene = this.scene!;
         const catalog = scene.cache.json.get('textures') as TexturesFile | undefined;
-        if (!catalog) return;
-        const required = new Set(sceneAssets[scene.sys.settings.key] ?? []);
+        if (catalog) for (const key of required) queueTexture(scene, key, catalog);
+        return required;
+    }
+
+    getScenesTextureKeys(sceneKeys: string[]): Record<string, string[]> {
+        const profiles = this.playerProfiles();
+        return Object.fromEntries(sceneKeys.map(key => [key, [...this.getSceneTextureKeys(key, profiles)]]));
+    }
+
+    private playerProfiles(): PlayerState[] {
+        const gameState = GameStateManager.getInstance();
+        const profiles = [gameState.getPlayer()];
+        const coop = CoopSessionManager.getInstance();
+        if (coop.isCoopActive()) {
+            for (const slot of [coop.getPlayerASlotIndex(), coop.getPlayerBSlotIndex()]) {
+                if (slot === gameState.getActiveSlotIndex()) continue;
+                const other = SaveSystem.load(slot)?.player;
+                if (other) profiles.push(other);
+            }
+        }
+        return profiles;
+    }
+
+    /** Shared by native preload and the gradual background preparation. No scene init/save side effects. */
+    getSceneTextureKeys(sceneKey = this.scene!.sys.settings.key, profiles = this.playerProfiles()): Set<string> {
+        const scene = this.scene!;
+        const catalog = scene.cache.json.get('textures') as TexturesFile | undefined;
+        if (!catalog) return new Set();
+        const required = new Set(sceneAssets[sceneKey] ?? []);
         const definitions = scene.registry.get('animationDefs') as Record<string, AnimationDefinition> ?? {};
         const addDynamic = (value: unknown): void => {
             if (typeof value === 'string') {
@@ -69,24 +149,73 @@ export class SceneAssetPlugin extends Phaser.Plugins.ScenePlugin {
         };
         // init() has already resolved combat data from EncounterCatalog.
         const state = scene as any;
-        addDynamic(state.enemyDefs);
-        addDynamic(state.bossPhases);
-        addDynamic(state.backgroundKey);
-        addDynamic(state.backgroundTexture);
-        addDynamic(state.arenaDefinition);
-        addDynamic(state.battleBackgroundTextures);
-        // Preview rosters reference stable enemy IDs rather than their sprite keys.
-        const serialized = JSON.stringify(state.arenaDefinition ?? {});
-        for (const enemy of scene.cache.json.get('enemies') ?? []) {
-            if (serialized.includes(`"${enemy.id}"`)) addDynamic(enemy);
+        const addIdle = (actor: { spriteKey: string; animPrefix?: string }) => {
+            addDynamic(actor.spriteKey);
+            if (actor.animPrefix) addDynamic(`${actor.animPrefix}-idle`);
+        };
+        if (sceneKey === scene.sys.settings.key) {
+            if (/Arena/.test(sceneKey)) (state.enemyDefs ?? []).forEach(addIdle);
+            else addDynamic(state.enemyDefs);
+            addDynamic(state.bossPhases);
+            addDynamic(state.backgroundKey);
+            addDynamic(state.backgroundTexture);
+            addDynamic(state.battleBackgroundTextures);
         }
-        // Pets can be equipped on either co-op player. The small pet catalog is
-        // needed in walking/combat scenes, never in menu-only boot.
-        if (/Battle|Arena|Town|Forest|Workshop|Witch|Catacomb|Underwater|Silverpond/.test(scene.sys.settings.key)) {
-            addDynamic(scene.cache.json.get('pets'));
+        // Resolved combat actors and arena previews below are authoritative.
+        // Walking all arena metadata also decoded unrelated reward characters.
+        // Prepare every wave in the arena choices the players can actually open.
+        // Locked future arenas and combat motions do not belong in this preview.
+        if (/Arena/.test(sceneKey)) {
+            const enemies = scene.cache.json.get('enemies') ?? [];
+            const catalog = createEncounterCatalog(scene.cache.json.get('encounters'), { core: enemies });
+            const city = sceneKey.startsWith('Silverpond') ? 'silverpond' : 'mathoria';
+            const choices = sceneKey === scene.sys.settings.key && state.arenaChoices?.length
+                ? state.arenaChoices : getArenaChoiceOptions(catalog, profiles, city);
+            const levels = new Set<number>(choices.map((choice: { arenaLevel: number }) => choice.arenaLevel));
+            // The large actors in the selected wave still play their real idle.
+            // The other rows only display a static first-frame portrait.
+            for (const choice of choices) {
+                const wave = catalog.resolveArenaWave({
+                    arenaLevel: choice.arenaLevel, waveIndex: choice.waveIndex,
+                    mode: profiles.length > 1 ? 'coop' : 'solo',
+                });
+                wave.enemies.forEach(addIdle);
+            }
+            // Explicit encounter/debug targets still need their complete wave table.
+            if (sceneKey === scene.sys.settings.key && state.arenaDefinition) levels.add(state.arenaDefinition.level);
+            for (const level of levels) {
+                const arena = catalog.getArena(level);
+                for (const wave of arena.waves) {
+                    for (const ref of wave.enemies) addDynamic(actorPortraitKey(scene, catalog.resolveEnemy(ref).spriteKey));
+                }
+            }
         }
-        for (const key of required) {
-            queueTexture(scene, key, catalog);
+        const items = (scene.cache.json.get('items') ?? []) as ItemDefinition[];
+        if (/Shop/.test(sceneKey)) {
+            const city: ShopCity = sceneKey === scene.sys.settings.key
+                ? state.cityId ?? 'mathoria'
+                : sceneKey.startsWith('Silverpond') ? 'silverpond' : 'mathoria';
+            // Only the item's artwork is a dependency. Its shopCity value
+            // "silverpond" also happens to prefix unrelated fairy animations.
+            addDynamic(getShopEquipment(items, city, 'weapon').map(item => item.spriteKey));
+            addDynamic(getShopEquipment(items, city, 'shield').map(item => item.spriteKey));
         }
+        if (/Battle|Arena|Town|Forest|Workshop|Witch|Catacomb|Underwater|Silverpond/.test(sceneKey)) {
+            // Load the equipment shown in the character book for both players.
+            addDynamic(items.filter(item => profiles.some(player =>
+                player.equippedWeapon === item.id || player.equippedShield === item.id)).map(item => item.spriteKey));
+            // Walking scenes need equipped idle art; the workshop shows every unlocked pet.
+            // Avoid decoding the entire later-region animation catalog in the first town.
+            for (const pet of (scene.cache.json.get('pets') ?? []) as PetDefinition[]) {
+                const equipped = profiles.some(player => player.activePet === pet.id);
+                const available = /Workshop|Witch/.test(sceneKey)
+                    && profiles.some(player => isPetUnlocked(pet, player));
+                if (available) addDynamic(actorPortraitKey(scene, pet.spriteKey));
+                if (!equipped) continue;
+                if (equipped && /Battle|Catacomb/.test(sceneKey)) addDynamic(pet);
+                else { addDynamic(pet.spriteKey); addDynamic(`${pet.animPrefix}-idle`); }
+            }
+        }
+        return required;
     }
 }

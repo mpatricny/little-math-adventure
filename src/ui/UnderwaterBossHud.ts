@@ -2,7 +2,7 @@ import Phaser from 'phaser';
 import { SceneBuilder } from '../systems/SceneBuilder';
 import type { BossPhaseDefinition } from '../types/encounters';
 import { fitWaterText, waterArtwork } from './UnderwaterTheme';
-import { waterHost } from './UnderwaterUI';
+import { waterHost } from './SceneLayoutHost';
 
 /** Silverpond phase feedback shares the chapter's enamel art and editor layout. */
 export class UnderwaterBossHud {

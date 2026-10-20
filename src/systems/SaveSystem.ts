@@ -29,6 +29,31 @@ export type SaveBundleImportResult =
     | { ok: false; error: string };
 
 export class SaveSystem {
+    private static changeListeners = new Set<() => void>();
+    private static writeGuards = new Set<() => boolean>();
+
+    static guardWrites(guard: () => boolean): () => void {
+        this.writeGuards.add(guard);
+        return () => { this.writeGuards.delete(guard); };
+    }
+
+    private static mayWrite(): boolean {
+        return [...this.writeGuards].every(guard => guard());
+    }
+
+    static observeChanges(listener: () => void): () => void {
+        this.changeListeners.add(listener);
+        return () => { this.changeListeners.delete(listener); };
+    }
+
+    private static notifyChanges(): void {
+        for (const listener of this.changeListeners) {
+            try { listener(); } catch (error) { console.warn('[SaveSystem] Save observer failed', error); }
+        }
+    }
+
+    static isValidSaveData(value: unknown): value is SaveSlotData { return this.isSaveSlotData(value); }
+
     /**
      * Get metadata for all 8 save slots
      * Returns lightweight data for carousel preview
@@ -102,6 +127,7 @@ export class SaveSystem {
      * Save game state to a specific slot
      */
     static save(slotIndex: number, player: PlayerState, mathStats: MathStats): void {
+        if (!this.mayWrite()) return;
         if (slotIndex < 0 || slotIndex >= MAX_SLOTS) {
             console.error(`[SaveSystem] Invalid slot index: ${slotIndex}`);
             return;
@@ -118,6 +144,7 @@ export class SaveSystem {
             const key = `${SAVE_DATA_PREFIX}${slotIndex}`;
             localStorage.setItem(key, JSON.stringify(saveData));
             notifyGameplaySave(slotIndex, saveData);
+            this.notifyChanges();
             console.log(`[SaveSystem] Game saved to slot ${slotIndex}`);
         } catch (error) {
             console.error('[SaveSystem] Failed to save:', error);
@@ -159,6 +186,7 @@ export class SaveSystem {
      * not enough space for the complete bundle.
      */
     static importBundle(serializedBundle: string): SaveBundleImportResult {
+        if (!this.mayWrite()) return { ok: false, error: 'Nejdřív obnov hru.' };
         let parsed: unknown;
         try {
             parsed = JSON.parse(serializedBundle);
@@ -222,6 +250,7 @@ export class SaveSystem {
         }
 
         console.log(`[SaveSystem] Imported ${writtenSlots.length} save slot(s)`);
+        this.notifyChanges();
         return { ok: true, importedSlots: writtenSlots, activeSlot };
     }
 
@@ -261,6 +290,7 @@ export class SaveSystem {
      * Delete a specific save slot
      */
     static deleteSlot(slotIndex: number): void {
+        if (!this.mayWrite()) return;
         if (slotIndex < 0 || slotIndex >= MAX_SLOTS) {
             console.error(`[SaveSystem] Invalid slot index: ${slotIndex}`);
             return;
@@ -276,6 +306,7 @@ export class SaveSystem {
             if (activeSlot === slotIndex) {
                 this.clearActiveSlot();
             }
+            this.notifyChanges();
         } catch (error) {
             console.error('[SaveSystem] Failed to delete slot:', error);
         }
@@ -377,6 +408,7 @@ export class SaveSystem {
             localStorage.removeItem(OLD_SAVE_KEY);
 
             console.log('[SaveSystem] Migrated old save to slot 0');
+            this.notifyChanges();
             return true;
         } catch (error) {
             console.error('[SaveSystem] Migration failed:', error);
@@ -388,6 +420,7 @@ export class SaveSystem {
      * Clear all save data (for testing/debug)
      */
     static clearAll(): void {
+        if (!this.mayWrite()) return;
         for (let i = 0; i < MAX_SLOTS; i++) {
             const key = `${SAVE_DATA_PREFIX}${i}`;
             localStorage.removeItem(key);
@@ -395,6 +428,7 @@ export class SaveSystem {
         localStorage.removeItem(ACTIVE_SLOT_KEY);
         localStorage.removeItem(OLD_SAVE_KEY);
         console.log('[SaveSystem] All save data cleared');
+        this.notifyChanges();
     }
 
     /**

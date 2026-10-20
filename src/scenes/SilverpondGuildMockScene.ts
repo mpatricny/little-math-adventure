@@ -14,6 +14,7 @@ export class SilverpondGuildMockScene extends GuildScene {
             persistChanges: true,
             accentColor: 0x57ddf2,
             silverpondStory: true,
+            showGuides: false,
         });
     }
 }

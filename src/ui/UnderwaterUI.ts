@@ -7,20 +7,8 @@ import { GameStateManager } from '../systems/GameStateManager';
 import { CoopSessionManager } from '../systems/CoopSessionManager';
 import { ProgressionSystem } from '../systems/ProgressionSystem';
 import { buyUnderwaterHint, UNDERWATER_HINT } from '../systems/UnderwaterHintPolicy';
-
-export type WaterHost = { x: number; y: number; width: number; height: number; depth: number };
-
-/** Every static coordinate belongs to the editor, including modal children. */
-export function waterHost(builder: SceneBuilder, id: string): WaterHost {
-    const host = builder.get<Phaser.GameObjects.Container>(id);
-    const def = builder.getElementDef(id);
-    if (!host || !def) throw new Error(`Missing underwater layout host: ${id}`);
-    return {
-        x: host.x, y: host.y, depth: host.depth,
-        width: def.width ?? 200,
-        height: def.height ?? 60,
-    };
-}
+import { waterHost } from './SceneLayoutHost';
+export { waterHost, type WaterHost } from './SceneLayoutHost';
 
 export class UnderwaterUI {
     readonly builder: SceneBuilder;

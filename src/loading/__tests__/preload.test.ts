@@ -19,6 +19,27 @@ describe('scene forecast', () => {
     it('current/near scenes win and shared URLs are deduplicated', () => {
         expect(orderedDownloads('town', ['arena'], {town:['a','b'],arena:['b','c']}, ['d','a'])).toEqual(['a','b','c','d']);
     });
+    it('prepares every Silverpond door before combat or underwater assets, including from the saved menu', () => {
+        const buildings = ['SilverpondShopMockScene', 'SilverpondPythiaWorkshopMockScene',
+            'SilverpondCrystalForgeMockScene', 'SilverpondGuildMockScene', 'SilverpondArenaMockScene'];
+        const registered = ['MenuScene', 'TownScene', 'SilverpondTownMockScene', ...buildings, 'BattleScene', 'UnderwaterRoomScene'];
+        expect(upcomingScenes('SilverpondTownMockScene', registered).slice(0, 5)).toEqual(buildings);
+        expect(upcomingScenes('MenuScene', registered, 'SilverpondTownMockScene').slice(0, 6))
+            .toEqual(['SilverpondTownMockScene', ...buildings]);
+    });
+    it('prepares Mathoria interiors before the battle download batch', () => {
+        const order = upcomingScenes('MenuScene', ['TownScene', 'ShopScene', 'GuildScene', 'PythiaWorkshopScene',
+            'CrystalForgeScene', 'ArenaScene', 'BattleScene']);
+        expect(order.slice(0, 6)).toEqual(['TownScene', 'ShopScene', 'PythiaWorkshopScene', 'CrystalForgeScene', 'GuildScene', 'ArenaScene']);
+    });
+    it('keeps Silverpond buildings nearest during and after a Silverpond battle', () => {
+        const available = ['BattleScene', 'VictoryScene', 'TownScene', 'ArenaScene',
+            'SilverpondTownMockScene', 'SilverpondShopMockScene', 'SilverpondArenaMockScene'];
+        for (const scene of ['BattleScene', 'VictoryScene']) {
+            const order = upcomingScenes(scene, available, 'SilverpondTownMockScene');
+            expect(order.indexOf('SilverpondShopMockScene')).toBeLessThan(order.indexOf('ArenaScene'));
+        }
+    });
     it('prepares the comic and crash site during selection, before town and arena', () => {
         const intro = [...available, 'ComicScene', 'CrashSiteScene'];
         for (const scene of ['MenuNewScene', 'CharacterSelectNewScene', 'BandSelectScene']) {

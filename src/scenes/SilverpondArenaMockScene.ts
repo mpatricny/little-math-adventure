@@ -19,6 +19,7 @@ export class SilverpondArenaMockScene extends ArenaScene {
             titleText: 'VODNÍ ARÉNA',
             showArenaLevelInTitle: true,
             persistChanges: true,
+            showGuides: false,
             cityId: 'silverpond',
             arenaStory: 'silverpond-lake-fairy',
         });

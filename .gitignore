@@ -23,6 +23,7 @@ server/.env.*
 .claude/settings.local.json
 .mcp.json
 .local-credentials/
+/.local-saves/
 
 # Local automation/debug artifacts
 .playwright-mcp/

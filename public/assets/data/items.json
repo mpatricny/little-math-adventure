@@ -108,7 +108,10 @@
         "spriteKey": "shop-shields-sheet",
         "tier": 2,
         "blockPower": 2,
-        "mathProblemTypes": ["addition", "subtraction"],
+        "mathProblemTypes": [
+            "addition",
+            "subtraction"
+        ],
         "mathProblemMax": 6,
         "mathProblemMin": 1
     },
@@ -122,7 +125,10 @@
         "spriteKey": "shop-shields-sheet",
         "tier": 3,
         "blockPower": 3,
-        "mathProblemTypes": ["addition", "subtraction"],
+        "mathProblemTypes": [
+            "addition",
+            "subtraction"
+        ],
         "mathProblemMax": 6,
         "mathProblemMin": 1
     },
@@ -147,5 +153,104 @@
         "spriteKey": "shop-shields-sheet",
         "tier": 5,
         "blockPower": 3
+    },
+    {
+        "id": "sword_silverpond_tide",
+        "name": "Přílivový meč",
+        "type": "weapon",
+        "description": "⚔ 4",
+        "price": 105,
+        "iconFrame": 0,
+        "spriteKey": "silverpond-sword-tide",
+        "shopCity": "silverpond",
+        "tier": 4,
+        "attackBonus": 4,
+        "mathProblemType": "subtraction",
+        "mathProblemMax": 10,
+        "damageMultiplier": 4
+    },
+    {
+        "id": "shield_silverpond_tide",
+        "name": "Přílivový štít",
+        "type": "shield",
+        "description": "🛡 4",
+        "price": 96,
+        "iconFrame": 0,
+        "spriteKey": "silverpond-shield-tide",
+        "shopCity": "silverpond",
+        "tier": 4,
+        "blockPower": 4,
+        "mathProblemTypes": [
+            "addition",
+            "subtraction"
+        ],
+        "mathProblemMax": 10,
+        "mathProblemMin": 1
+    },
+    {
+        "id": "sword_silverpond_pearl",
+        "name": "Perlový meč",
+        "type": "weapon",
+        "description": "⚔ 5",
+        "price": 212,
+        "iconFrame": 0,
+        "spriteKey": "silverpond-sword-pearl",
+        "shopCity": "silverpond",
+        "tier": 5,
+        "attackBonus": 5,
+        "mathProblemType": "subtraction",
+        "mathProblemMax": 10,
+        "damageMultiplier": 5
+    },
+    {
+        "id": "shield_silverpond_pearl",
+        "name": "Perlový štít",
+        "type": "shield",
+        "description": "🛡 5",
+        "price": 189,
+        "iconFrame": 0,
+        "spriteKey": "silverpond-shield-pearl",
+        "shopCity": "silverpond",
+        "tier": 5,
+        "blockPower": 5,
+        "mathProblemTypes": [
+            "addition",
+            "subtraction"
+        ],
+        "mathProblemMax": 10,
+        "mathProblemMin": 1
+    },
+    {
+        "id": "sword_silverpond_depth",
+        "name": "Hlubinný meč",
+        "type": "weapon",
+        "description": "⚔ 6",
+        "price": 357,
+        "iconFrame": 0,
+        "spriteKey": "silverpond-sword-depth",
+        "shopCity": "silverpond",
+        "tier": 6,
+        "attackBonus": 6,
+        "mathProblemType": "subtraction",
+        "mathProblemMax": 10,
+        "damageMultiplier": 6
+    },
+    {
+        "id": "shield_silverpond_depth",
+        "name": "Hlubinný štít",
+        "type": "shield",
+        "description": "🛡 6",
+        "price": 324,
+        "iconFrame": 0,
+        "spriteKey": "silverpond-shield-depth",
+        "shopCity": "silverpond",
+        "tier": 6,
+        "blockPower": 6,
+        "mathProblemTypes": [
+            "addition",
+            "subtraction"
+        ],
+        "mathProblemMax": 10,
+        "mathProblemMin": 1
     }
 ]

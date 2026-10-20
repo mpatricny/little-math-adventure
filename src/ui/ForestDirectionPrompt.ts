@@ -24,13 +24,15 @@ export class ForestDirectionPrompt {
         this.root = scene.add.container(options.x, options.y)
             .setDepth(options.depth)
             .setAlpha(options.alpha ?? 1);
-        this.root.setSize(192, 122);
+        this.root.setSize(192, 160);
 
         this.glow = scene.add.ellipse(2, 8, 166, 78, 0xb8f29e, 0.12)
             .setAlpha(0);
         this.surface = scene.add.container(0, 0);
-        const sign = scene.add.image(0, 0, 'Arrow-forest').setDisplaySize(192, 122);
+        const sign = scene.add.image(0, 0, 'Arrow-forest');
+        sign.setScale(Math.min(192 / sign.width, 160 / sign.height));
         const label = scene.add.text(-6, 4, options.label, {
+            resolution: 2,
             fontFamily: 'Palatino Linotype, Book Antiqua, Georgia, serif',
             fontSize: '16px',
             fontStyle: 'bold',
@@ -38,7 +40,7 @@ export class ForestDirectionPrompt {
             stroke: '#1b2a17',
             strokeThickness: 4,
             align: 'center',
-        }).setOrigin(0.5).setResolution(2);
+        }).setOrigin(0.5);
         this.surface.add([sign, label]);
         this.root.add([this.glow, this.surface]);
 
@@ -64,6 +66,8 @@ export class ForestDirectionPrompt {
 
     setEnabled(enabled: boolean): this {
         this.enabled = enabled;
+        this.surface.setY(0);
+        this.glow.setAlpha(0);
         this.root.setAlpha(enabled ? 1 : 0.45);
         if (enabled) this.root.setInteractive({ useHandCursor: true });
         else this.root.disableInteractive();

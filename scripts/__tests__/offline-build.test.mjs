@@ -33,3 +33,10 @@ test('spaces in historical sprite filenames have exactly the browser URL used by
     const sprites=manifest.resources.filter(r=>r.url.includes('spritesheet'));
     assert.equal(sprites.length,1);assert.equal(sprites[0].url,'/assets/spritesheet%20(23).webp');
 }));
+test('a production public SDK script is pinned for an actual offline document reload',()=>fixture(root=>{
+    mkdirSync(path.join(root,'sdk'));writeFileSync(path.join(root,'sdk/mesa-sdk.js'),'/* SDK */');
+    writeFileSync(path.join(root,'index.html'),'<script type="module" src="/assets/index-abc.js"></script><script src="/sdk/mesa-sdk.js"></script>');
+    const manifest=createOfflineManifest(root,{all:[]},['assets/index-abc.js']);
+    assert.ok(manifest.shell.includes('/sdk/mesa-sdk.js'));assert.ok(manifest.resources.some(r=>r.url==='/sdk/mesa-sdk.js'));
+    assert.throws(()=>createOfflineManifest(root,{all:['/sdk/private.js']},['assets/index-abc.js']));
+}));

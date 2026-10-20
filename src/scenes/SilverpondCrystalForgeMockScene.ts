@@ -12,6 +12,7 @@ export class SilverpondCrystalForgeMockScene extends CrystalForgeScene {
             backSceneKey: 'SilverpondTownMockScene',
             backgroundTexture: 'silverpond-crystal-forge-mock-bg',
             persistChanges: true,
+            guideOperations: ['createPrism'],
         });
     }
 }

@@ -83,7 +83,8 @@ export class ForestCrystalRewardScene extends Phaser.Scene {
             titleHost.x,
             titleHost.y,
             'zyx-dialog-action-frame-story'
-        ).setDisplaySize(700, 98).setDepth(titleHost.depth);
+        ).setDepth(titleHost.depth);
+        titleFrame.setScale(Math.min(500 / titleFrame.width, 167 / titleFrame.height));
         const title = this.add.text(titleHost.x, titleHost.y - 1, 'KRYSTAL LESA', {
             fontFamily: 'Palatino Linotype, Book Antiqua, Georgia, serif',
             fontSize: '38px',
@@ -93,19 +94,7 @@ export class ForestCrystalRewardScene extends Phaser.Scene {
             strokeThickness: 5,
             align: 'center',
         }).setOrigin(0.5).setDepth(titleHost.depth + 1);
-        const bossDefeated = this.add.text(
-            titleHost.x,
-            titleHost.y + 31,
-            'VERDANT GUARDIAN PORAŽEN',
-            {
-                fontFamily: 'Arial, sans-serif',
-                fontSize: '13px',
-                fontStyle: 'bold',
-                color: '#9de8a7',
-                letterSpacing: 2,
-            }
-        ).setOrigin(0.5).setDepth(titleHost.depth + 1);
-        this.rewardUi.push(titleFrame, title, bossDefeated);
+        this.rewardUi.push(titleFrame, title);
 
         const crystalHost = this.getHost('forestCrystalHost', { x: 640, y: 274, depth: 104 });
         this.aura = this.createCrystalAura(crystalHost);
@@ -335,7 +324,7 @@ export class ForestCrystalRewardScene extends Phaser.Scene {
             color: '#91e99a',
             letterSpacing: 1,
         }).setOrigin(0, 0.5);
-        const description = this.add.text(-95, 12, 'Vrať Krystal lesa Zyxovi', {
+        const description = this.add.text(-95, 12, 'K ZYXOVI', {
             fontFamily: 'Georgia, serif',
             fontSize: '16px',
             color: '#f4ebcf',

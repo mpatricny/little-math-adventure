@@ -145,7 +145,7 @@ export interface PlayerState {
     trialHistory?: TrialHistory;
     // === STORY PROGRESS ===
     storyProgress?: StoryProgress;     // Track story milestones for visual storytelling
-    /** Completed visual demonstrations, independently persisted for each hero. */
+    /** Visual guides confirmed or explicitly dismissed, independently persisted for each hero. */
     seenGuides?: string[];
     underwaterProgress?: import('./underwater').UnderwaterProgress;
     // === TOWN PROGRESS ===
@@ -419,6 +419,8 @@ export interface ItemDefinition {
     price: number;
     iconFrame: number;
     spriteKey?: string;  // Which spritesheet (e.g., 'shop-swords')
+    /** Local shop assortment; older equipment defaults to Mathoria. */
+    shopCity?: 'mathoria' | 'silverpond';
     // Consumable effects
     healAmount?: number;
     // Equipment stats

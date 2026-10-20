@@ -42,6 +42,7 @@ export interface GuildSceneOptions {
     persistChanges?: boolean;
     accentColor?: number;
     silverpondStory?: boolean;
+    showGuides?: boolean;
 }
 
 export class GuildScene extends Phaser.Scene {
@@ -51,6 +52,7 @@ export class GuildScene extends Phaser.Scene {
     private readonly persistChanges: boolean;
     private readonly accentColor: number;
     private readonly silverpondStory: boolean;
+    private readonly showGuides: boolean;
     private gameState!: GameStateManager;
     private mathEngine!: MathEngine;
     private catacombExam: AvailableGuildExam | null = null;
@@ -123,6 +125,7 @@ export class GuildScene extends Phaser.Scene {
         this.persistChanges = options.persistChanges ?? true;
         this.accentColor = options.accentColor ?? 0xd5943c;
         this.silverpondStory = options.silverpondStory ?? false;
+        this.showGuides = options.showGuides ?? true;
     }
 
     create(): void {
@@ -615,6 +618,7 @@ export class GuildScene extends Phaser.Scene {
             this.answerButtons.push(button);
         });
 
+        if (!this.showGuides) return;
         const hintHost = this.getLocalHost('trialHintHost', rootHost.x, rootHost.y, {
             x: 640, y: 575, width: 760, height: 42, depth: 204,
         });

@@ -204,9 +204,6 @@ export class CatacombTrialScene extends Phaser.Scene {
         const spriteKey = def?.spriteKey || 'rune-fox-sheet';
         const scale = def?.scale ?? 1.0;
 
-        // Ensure animations exist
-        this.ensureAnimations(spriteKey, this.enemyAnimPrefix);
-
         this.creatureContainer = this.add.container(this.creatureSpawnX, this.creatureSpawnY).setDepth(2);
         this.creatureSprite = this.add.sprite(0, 0, spriteKey).setScale(scale);
         this.creatureContainer.add(this.creatureSprite);
@@ -215,30 +212,6 @@ export class CatacombTrialScene extends Phaser.Scene {
         const idleKey = `${this.enemyAnimPrefix}-idle`;
         if (this.anims.exists(idleKey)) {
             this.creatureSprite.play(idleKey);
-        }
-    }
-
-    private ensureAnimations(spriteKey: string, animPrefix: string): void {
-        const keys = [
-            `${animPrefix}-idle`, `${animPrefix}-hurt`,
-            `${animPrefix}-death`, `${animPrefix}-attack-anim`
-        ];
-        for (const animKey of keys) {
-            // A registered animation can still have zero frames after a texture
-            // load failure. Phaser's play() then crashes reading frame.duration.
-            const existing = this.anims.get(animKey);
-            if (existing && existing.frames.length === 0) {
-                this.anims.remove(animKey);
-            }
-            if (!this.textures.exists(spriteKey) || !this.textures.get(spriteKey).has(0)) continue;
-            if (!this.anims.exists(animKey)) {
-                this.anims.create({
-                    key: animKey,
-                    frames: [{ key: spriteKey, frame: 0 }],
-                    frameRate: 1,
-                    repeat: 0,
-                });
-            }
         }
     }
 
@@ -580,7 +553,59 @@ export class CatacombTrialScene extends Phaser.Scene {
         const jumpEase = movement?.ease || 'Power1';
         const returnEase = movement?.returnEase || 'Power2';
 
+        let impactReached = false;
+        let attackComplete = false;
+        const returnAfterAttack = (): void => {
+            if (!impactReached || !attackComplete) return;
+            this.heroSprite.play(this.playerSpriteConfig.idleAnim);
+
+            // Return only after both the impact and the actual attack animation.
+            if (movement?.type === 'jump' && jumpOffsetY !== 0) {
+                this.tweens.add({
+                    targets: this.heroContainer,
+                    y: targetY + jumpOffsetY,
+                    duration: 200,
+                    ease: jumpEase,
+                    onComplete: () => {
+                        this.tweens.add({
+                            targets: this.heroContainer,
+                            y: startY,
+                            duration: 200,
+                            ease: returnEase,
+                        });
+                    },
+                });
+                this.tweens.add({
+                    targets: this.heroContainer,
+                    x: startX,
+                    duration: 400,
+                    ease: returnEase,
+                    onComplete: () => {
+                        this.heroContainer.setDepth(2);
+                        onComplete();
+                    },
+                });
+            } else {
+                this.tweens.add({
+                    targets: this.heroContainer,
+                    x: startX, y: startY,
+                    duration: 400,
+                    ease: returnEase,
+                    onComplete: () => {
+                        this.heroContainer.setDepth(2);
+                        onComplete();
+                    },
+                });
+            }
+        };
+
         this.heroContainer.setDepth(10);
+        // Subscribe before play(), and to this attack only. It can finish
+        // before the travel timer when a frame is delayed or an attack is short.
+        this.heroSprite.once(Phaser.Animations.Events.ANIMATION_COMPLETE_KEY + this.playerSpriteConfig.attackAnim, () => {
+            attackComplete = true;
+            returnAfterAttack();
+        });
         this.heroSprite.play(this.playerSpriteConfig.attackAnim);
 
         // X movement to creature
@@ -638,49 +663,8 @@ export class CatacombTrialScene extends Phaser.Scene {
                 onComplete: () => dmgText.destroy(),
             });
 
-            // Wait for hero attack animation to finish, then return
-            this.heroSprite.once('animationcomplete', () => {
-                this.heroSprite.play(this.playerSpriteConfig.idleAnim);
-
-                // Return with jump arc (same as BattleScene lines 2458-2491)
-                if (movement?.type === 'jump' && jumpOffsetY !== 0) {
-                    this.tweens.add({
-                        targets: this.heroContainer,
-                        y: targetY + jumpOffsetY,
-                        duration: 200,
-                        ease: jumpEase,
-                        onComplete: () => {
-                            this.tweens.add({
-                                targets: this.heroContainer,
-                                y: startY,
-                                duration: 200,
-                                ease: returnEase,
-                            });
-                        },
-                    });
-                    this.tweens.add({
-                        targets: this.heroContainer,
-                        x: startX,
-                        duration: 400,
-                        ease: returnEase,
-                        onComplete: () => {
-                            this.heroContainer.setDepth(2);
-                            onComplete();
-                        },
-                    });
-                } else {
-                    this.tweens.add({
-                        targets: this.heroContainer,
-                        x: startX, y: startY,
-                        duration: 400,
-                        ease: returnEase,
-                        onComplete: () => {
-                            this.heroContainer.setDepth(2);
-                            onComplete();
-                        },
-                    });
-                }
-            });
+            impactReached = true;
+            returnAfterAttack();
         });
     }
 
@@ -688,20 +672,18 @@ export class CatacombTrialScene extends Phaser.Scene {
         this.stopCreatureCharge();
 
         const hurtKey = `${this.enemyAnimPrefix}-hurt`;
-        if (this.anims.exists(hurtKey)) {
-            this.creatureSprite.play(hurtKey);
-        }
-
-        this.creatureSprite.setTint(0xff0000);
-        this.time.delayedCall(100, () => {
-            this.creatureSprite.clearTint();
-        });
-        this.creatureSprite.once('animationcomplete', () => {
+        this.creatureSprite.once(Phaser.Animations.Events.ANIMATION_COMPLETE_KEY + hurtKey, () => {
             const idleKey = `${this.enemyAnimPrefix}-idle`;
             if (this.anims.exists(idleKey)) {
                 this.creatureSprite.play(idleKey);
             }
             onComplete();
+        });
+        this.creatureSprite.play(hurtKey);
+
+        this.creatureSprite.setTint(0xff0000);
+        this.time.delayedCall(100, () => {
+            this.creatureSprite.clearTint();
         });
     }
 

@@ -12,6 +12,8 @@ export class SilverpondShopMockScene extends ShopScene {
             backSceneKey: 'SilverpondTownMockScene',
             backgroundTexture: 'silverpond-shop-interior-mock-bg',
             persistChanges: true,
+            cityId: 'silverpond',
+            showGuides: false,
         });
     }
 }

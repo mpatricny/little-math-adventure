@@ -1,19 +1,24 @@
+import { townBuildings, townForScene } from './town-scenes';
+
 /** Forecasts, not progression gates. Only registered scenes are considered. */
 const opening = ['MenuNewScene', 'CharacterSelectNewScene', 'BandSelectScene', 'ComicScene', 'CrashSiteScene', 'TownScene', 'ArenaScene', 'BattleScene', 'VictoryScene'];
 const town = ['ArenaScene', 'BattleScene', 'VictoryScene', 'ShopScene', 'GuildScene', 'ManaCollectionScene', 'CatacombTrialScene', 'CrystalForgeScene', 'PythiaWorkshopScene', 'TavernScene'];
 const forest = ['ForestAdventureStartScene', 'ForestRoomScene', 'BattleScene', 'ForestRiddleScene', 'LetterLockPuzzleScene', 'SpinLockPuzzleScene', 'ForestCampScene', 'GuardianLairScene', 'ForestCrystalRewardScene'];
-const lake = ['SilverpondTownMockScene', 'SilverpondArenaMockScene', 'BattleScene', 'UnderwaterDescentScene', 'UnderwaterRoomScene'];
+const lake = ['SilverpondTownMockScene', ...townBuildings.SilverpondTownMockScene, 'BattleScene', 'UnderwaterDescentScene', 'UnderwaterRoomScene'];
 
-export function upcomingScenes(current: string, available: Iterable<string>): string[] {
+export function upcomingScenes(current: string, available: Iterable<string>, homeTown = 'TownScene'): string[] {
     const allowed = new Set(available);
-    const nearest = /Menu|SaveSlot|CharacterSelect|BandSelect|CoopSetup|TvPairing/.test(current) ? opening
+    const localTown = townForScene(current, homeTown);
+    const local = [localTown, ...townBuildings[localTown]];
+    const nearest = /Menu|SaveSlot|CharacterSelect|BandSelect|CoopSetup|TvPairing/.test(current)
+        ? homeTown === 'SilverpondTownMockScene' ? [...local, ...opening] : [...opening.slice(0, 5), ...local, ...opening.slice(5)]
         : current === 'ComicScene' ? ['CrashSiteScene', 'BattleScene', 'TownScene']
         : current === 'CrashSiteScene' ? ['BattleScene', 'VictoryScene', 'TownScene']
         : /Silverpond|Underwater/.test(current) ? lake
         : /Forest|Guardian|LetterLock|SpinLock/.test(current) ? forest
         : current === 'ArenaScene' ? ['BattleScene', 'VictoryScene', 'TownScene', ...town]
-        : current === 'BattleScene' ? ['VictoryScene', 'ArenaScene', 'TownScene', ...forest]
-        : town;
+        : /Battle|Victory/.test(current) ? ['VictoryScene', ...local]
+        : current === 'TownScene' ? [...local, ...town] : town;
     return [...new Set([...nearest, ...town, ...forest, 'ZyxRocketInterludeScene', 'ZyxCrystalMachineScene', ...lake])]
         .filter(key => key !== current && allowed.has(key));
 }

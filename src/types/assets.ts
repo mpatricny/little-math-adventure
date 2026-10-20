@@ -48,6 +48,7 @@ export interface TextureDef {
     path: string;
     frameWidth?: number;
     frameHeight?: number;
+    frameCount?: number;
 }
 
 // Animation definition

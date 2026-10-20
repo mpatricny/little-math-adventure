@@ -1,7 +1,9 @@
 import { VisualGuide, hasSeenGuide } from '../ui/VisualGuide';
+import { actorPortraitKey } from '../loading/actor-portraits';
 import { sfx, voice } from '../audio/AudioDirector';
 import Phaser from 'phaser';
 import { GameStateManager } from '../systems/GameStateManager';
+import { isPetUnlocked } from '../systems/PetCatalog';
 import { ProgressionSystem } from '../systems/ProgressionSystem';
 import { CrystalSystem } from '../systems/CrystalSystem';
 import { ManaSystem } from '../systems/ManaSystem';
@@ -17,6 +19,7 @@ export interface PythiaWorkshopSceneOptions {
     layoutSceneKey?: string;
     backgroundTexture?: string;
     persistChanges?: boolean;
+    showGuides?: boolean;
 }
 
 /**
@@ -35,6 +38,7 @@ export class PythiaWorkshopScene extends Phaser.Scene {
     private readonly layoutSceneKey: string;
     private readonly backgroundTexture?: string;
     private readonly persistChanges: boolean;
+    private readonly showGuides: boolean;
 
     // Selection state
     private selectedPet: PetDefinition | null = null;
@@ -79,6 +83,7 @@ export class PythiaWorkshopScene extends Phaser.Scene {
         this.layoutSceneKey = options.layoutSceneKey ?? sceneKey;
         this.backgroundTexture = options.backgroundTexture;
         this.persistChanges = options.persistChanges ?? true;
+        this.showGuides = options.showGuides ?? true;
     }
 
     create(): void {
@@ -114,7 +119,7 @@ export class PythiaWorkshopScene extends Phaser.Scene {
 
         // Create dynamic UI components
         const justBefriendedPet = this.registry.get('audioPetBound') === true;
-        this.time.delayedCall(450, () => {
+        if (this.showGuides) this.time.delayedCall(450, () => {
             if (!justBefriendedPet && !hasSeenGuide(this.gameState.getPlayer(), 'pythia.intro.v1')) new VisualGuide(this, this.sceneBuilder, [{
                 id: 'pythia.intro.v1', title: 'NOVÝ MAZLÍČEK', voiceId: 'vo.pythia.welcome',
                 before: [{ texture: 'gemstone-icons', frame: 1, value: 5 }],
@@ -511,8 +516,9 @@ export class PythiaWorkshopScene extends Phaser.Scene {
 
         // Show selected pet
         if (this.selectedPet) {
-            if (this.textures.exists(this.selectedPet.spriteKey)) {
-                const sprite = this.add.sprite(0, -5, this.selectedPet.spriteKey, 0);
+            const portrait = actorPortraitKey(this, this.selectedPet.spriteKey);
+            if (this.textures.exists(portrait)) {
+                const sprite = this.add.image(0, -5, portrait);
                 // Keep the complete creature above its name inside the binding frame.
                 sprite.setScale(Math.min(0.5, 90 / sprite.width, 60 / sprite.height));
                 this.bindingPetDisplay.add(sprite);
@@ -653,9 +659,15 @@ export class PythiaWorkshopScene extends Phaser.Scene {
 
         const player = this.gameState.getPlayer();
 
+        // Binding spends one live, unlocked crystal once, including rapid taps
+        // while the celebration is still playing before the scene restarts.
+        if (player.ownedPets.includes(this.selectedPet.id)) return false;
+        const crystal = player.crystals?.crystals.find(c => c.id === this.selectedCrystal!.id);
+        if (!crystal || crystal.locked) return false;
+
         // Check crystal matches requirement
-        const crystalMatches = this.selectedCrystal.tier === this.selectedPet.requiredAmulet.tier &&
-                               this.selectedCrystal.value === this.selectedPet.requiredAmulet.value;
+        const crystalMatches = crystal.tier === this.selectedPet.requiredAmulet.tier &&
+                               crystal.value === this.selectedPet.requiredAmulet.value;
 
         // Check mana cost
         const hasMana = ManaSystem.canAfford(player, this.MANA_COST);
@@ -885,8 +897,9 @@ export class PythiaWorkshopScene extends Phaser.Scene {
             // Template 180x150, origin [0.5, 0.5] → local (0,0) at (90, 75)
             // Pet layer bounds: x:-9, y:2, w:130, h:130 → center at (56, 67) in template coords
             // Local position: (56-90, 67-75) = (-34, -8)
-            if (this.textures.exists(pet.spriteKey)) {
-                const sprite = this.add.sprite(-34, -8, pet.spriteKey, 0);
+            const portrait = actorPortraitKey(this, pet.spriteKey);
+            if (this.textures.exists(portrait)) {
+                const sprite = this.add.image(-34, -8, portrait);
                 // The template's 130px portrait has a 10px safe inset. Large
                 // 512px creature frames must fit it just like the older sprites.
                 sprite.setScale(Math.min(0.5, 110 / sprite.width, 110 / sprite.height));
@@ -981,7 +994,7 @@ export class PythiaWorkshopScene extends Phaser.Scene {
             // Unowned pets: select for binding
             this.selectedPet = (this.selectedPet?.id === pet.id) ? null : pet;
             this.refreshUI();
-            if (this.selectedPet) {
+            if (this.selectedPet && this.showGuides) {
                 const available = player.crystals?.crystals ?? [];
                 const required = pet.requiredAmulet;
                 const matching = available.some(crystal => !crystal.locked && crystal.tier === required.tier && crystal.value === required.value);
@@ -1018,17 +1031,7 @@ export class PythiaWorkshopScene extends Phaser.Scene {
     }
 
     private isPetUnlocked(pet: PetDefinition, player: PlayerState): boolean {
-        if (pet.unlockedByEnemy) {
-            return player.unlockedPets.includes(pet.unlockedByEnemy);
-        }
-        if (pet.unlockedByArenaLevel !== undefined) {
-            return player.unlockedPets.includes(`arena_level_${pet.unlockedByArenaLevel}`);
-        }
-        if (pet.unlockedByArenaLevels) {
-            const levels = pet.unlockedByArenaLevels;
-            return levels.every(level => player.unlockedPets.includes(`arena_level_${level}`));
-        }
-        return false;
+        return isPetUnlocked(pet, player);
     }
 
     // ========== ARROW VISIBILITY & NAVIGATION ==========

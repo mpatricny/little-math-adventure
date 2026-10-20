@@ -1,0 +1,42 @@
+{
+  "tool": "built-in imagegen",
+  "date": "2026-10-03",
+  "assets": [
+    {
+      "asset": "sword_tide",
+      "prompt": "Use case: stylized-concept. Asset type: isolated equipment icon for Little Math Adventure, a fantasy game for small children. Primary request: ONE short broad silver sword with a blue enamel wave-shaped crossguard, dark navy wrapped grip, a small round pale-blue pearl inset. Point toward the upper right at a 40-degree diagonal, handle toward lower left. This is the first, modest tidal sword. Style: polished hand-painted cartoon game icon, bold readable silhouette, rounded friendly ornament, soft cel-like shading, crisp darker outline, matching Silverpond's blue enamel, pearl and silver game artwork. Shared visual system across the set. Center the complete object on a square transparent canvas, with generous padding at least 12 percent on every edge. Large simple shapes must stay readable at 55 pixels. No scenery, ground, cast shadow, lettering, labels, numerals, border, button, frame, characters, particles or glow. Children cannot rely on reading: communicate entirely through the object silhouette. The reusable frame, runtime text, stable hit area, disabled and hover states belong to game code. Generate exactly one item. True transparent background.",
+      "sourceFile": "exec-22e1c8db-a801-472a-aa15-eedee2db485b.png",
+      "output": "public/assets/items/silverpond/sword-tide.webp"
+    },
+    {
+      "asset": "sword_pearl",
+      "prompt": "Use case: stylized-concept. Asset type: isolated equipment icon for Little Math Adventure, a fantasy game for small children. Primary request: ONE elegant silver sword with a slightly longer faceted blade, shell-shaped blue enamel crossguard, a large creamy pearl inset, small subtle gold trim, dark navy wrapped grip. Point toward the upper right at a 40-degree diagonal, handle toward lower left. This is the second, pearl sword. Style: polished hand-painted cartoon game icon, bold readable silhouette, rounded friendly ornament, soft cel-like shading, crisp darker outline, matching Silverpond's blue enamel, pearl and silver game artwork. Shared visual system across the set. Center the complete object on a square transparent canvas, with generous padding at least 12 percent on every edge. Large simple shapes must stay readable at 55 pixels. No scenery, ground, cast shadow, lettering, labels, numerals, border, button, frame, characters, particles or glow. Children cannot rely on reading: communicate entirely through the object silhouette. The reusable frame, runtime text, stable hit area, disabled and hover states belong to game code. Generate exactly one item. True transparent background.",
+      "sourceFile": "exec-ed66e02b-6742-44fe-a42b-1113577a3d2b.png",
+      "output": "public/assets/items/silverpond/sword-pearl.webp"
+    },
+    {
+      "asset": "sword_depth",
+      "prompt": "Use case: stylized-concept. Asset type: isolated equipment icon for Little Math Adventure, a fantasy game for small children. Primary request: ONE powerful broad faceted silver sword, deep cyan crystalline blade center, compact fin-shaped crossguard in dark blue enamel and silver, a bright turquoise gem with two small pearl studs, dark navy grip. Point toward the upper right at a 40-degree diagonal, handle toward lower left. This is the third, depth sword. Style: polished hand-painted cartoon game icon, bold readable silhouette, rounded friendly ornament, soft cel-like shading, crisp darker outline, matching Silverpond's blue enamel, pearl and silver game artwork. Shared visual system across the set. Center the complete object on a square transparent canvas, with generous padding at least 12 percent on every edge. Large simple shapes must stay readable at 55 pixels. No scenery, ground, cast shadow, lettering, labels, numerals, border, button, frame, characters, particles or glow. Children cannot rely on reading: communicate entirely through the object silhouette. The reusable frame, runtime text, stable hit area, disabled and hover states belong to game code. Generate exactly one item. True transparent background.",
+      "sourceFile": "exec-a82f9afa-f044-4006-813c-f9827c9c14ae.png",
+      "output": "public/assets/items/silverpond/sword-depth.webp"
+    },
+    {
+      "asset": "shield_tide",
+      "prompt": "Use case: stylized-concept. Asset type: isolated equipment icon for Little Math Adventure, a fantasy game for small children. Primary request: ONE front-facing compact round-topped silver shield with a pointed lower edge, a navy-blue enamel face, a large simple turquoise wave relief in its center, silver rim and a few small rounded rivets. This is the first, modest tidal shield. Style: polished hand-painted cartoon game icon, bold readable silhouette, rounded friendly ornament, soft cel-like shading, crisp darker outline, matching Silverpond's blue enamel, pearl and silver game artwork. Shared visual system across the set. Center the complete object on a square transparent canvas, with generous padding at least 12 percent on every edge. Large simple shapes must stay readable at 55 pixels. No scenery, ground, cast shadow, lettering, labels, numerals, border, button, frame, characters, particles or glow. Children cannot rely on reading: communicate entirely through the object silhouette. The reusable frame, runtime text, stable hit area, disabled and hover states belong to game code. Generate exactly one item. True transparent background.",
+      "sourceFile": "exec-cc477a35-5426-4606-a487-a567010e8352.png",
+      "output": "public/assets/items/silverpond/shield-tide.webp"
+    },
+    {
+      "asset": "shield_pearl",
+      "prompt": "Use case: stylized-concept. Asset type: isolated equipment icon for Little Math Adventure, a fantasy game for small children. Primary request: ONE front-facing compact round-topped silver shield with a pointed lower edge, a rich blue enamel face, a large creamy round pearl in a scallop-shell silver socket at its center, silver rim and subtle warm gold accents. This is the second, pearl shield. Style: polished hand-painted cartoon game icon, bold readable silhouette, rounded friendly ornament, soft cel-like shading, crisp darker outline, matching Silverpond's blue enamel, pearl and silver game artwork. Shared visual system across the set. Center the complete object on a square transparent canvas, with generous padding at least 12 percent on every edge. Large simple shapes must stay readable at 55 pixels. No scenery, ground, cast shadow, lettering, labels, numerals, border, button, frame, characters, particles or glow. Children cannot rely on reading: communicate entirely through the object silhouette. The reusable frame, runtime text, stable hit area, disabled and hover states belong to game code. Generate exactly one item. True transparent background.",
+      "sourceFile": "exec-349f0991-57b7-479f-ab9e-393237a886b2.png",
+      "output": "public/assets/items/silverpond/shield-pearl.webp"
+    },
+    {
+      "asset": "shield_depth",
+      "prompt": "Use case: stylized-concept. Asset type: isolated equipment icon for Little Math Adventure, a fantasy game for small children. Primary request: ONE front-facing compact silver shield with a slightly angular round top and a pointed lower edge, deep midnight blue enamel, one large turquoise faceted crystal inset with silver fin-shaped supports, compact pearl studs on the thick silver rim. This is the third, depth shield. Style: polished hand-painted cartoon game icon, bold readable silhouette, rounded friendly ornament, soft cel-like shading, crisp darker outline, matching Silverpond's blue enamel, pearl and silver game artwork. Shared visual system across the set. Center the complete object on a square transparent canvas, with generous padding at least 12 percent on every edge. Large simple shapes must stay readable at 55 pixels. No scenery, ground, cast shadow, lettering, labels, numerals, border, button, frame, characters, particles or glow. Children cannot rely on reading: communicate entirely through the object silhouette. The reusable frame, runtime text, stable hit area, disabled and hover states belong to game code. Generate exactly one item. True transparent background.",
+      "sourceFile": "exec-7af1f3ab-ef6f-4e51-85f8-741f9b31a2d7.png",
+      "output": "public/assets/items/silverpond/shield-depth.webp"
+    }
+  ]
+}

@@ -6,6 +6,8 @@ import { sceneAssetsPlugin } from './scripts/scene-assets.mjs';
 import { assetDownloadsPlugin } from './scripts/asset-downloads.mjs';
 import { offlineBuildPlugin } from './scripts/offline-build.mjs';
 import { preparePilotPublic } from './scripts/pilot-content.mjs';
+import { devSavesPlugin } from './scripts/dev-saves.mjs';
+import { deviceDiagnosticsPlugin } from './scripts/device-diagnostics.mjs';
 
 /**
  * Vite plugin that saves debug layout values to a JSON file.
@@ -74,7 +76,6 @@ function cleanBuildPlugin(): Plugin {
         }
     };
 }
-
 /** Static JSON imports and browser fetches must see the same pilot catalog. */
 function pilotDataPlugin(rootDir: string, publicDir: string): Plugin {
     const originalDataDir = path.join(rootDir, 'public', 'assets', 'data') + path.sep;
@@ -104,7 +105,7 @@ export default defineConfig(({ mode }) => {
     },
     publicDir: pilot?.publicDir ?? 'public',
     plugins: [
-        ...(pilot ? [pilotDataPlugin(rootDir, pilot.publicDir)] : [debugSavePlugin(), learningSaveDiagnosticsPlugin(rootDir)]),
+        ...(pilot ? [pilotDataPlugin(rootDir, pilot.publicDir)] : [debugSavePlugin(), learningSaveDiagnosticsPlugin(rootDir), devSavesPlugin(rootDir), deviceDiagnosticsPlugin(rootDir)]),
         cleanBuildPlugin(),
         sceneAssetsPlugin(rootDir, path.join(pilot?.publicDir ?? path.join(rootDir, 'public'), 'assets/data')),
         assetDownloadsPlugin(rootDir, path.join(pilot?.publicDir ?? path.join(rootDir, 'public'), 'assets/data')),

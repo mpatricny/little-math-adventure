@@ -252,7 +252,8 @@ export class CrystalSystem {
      * Check if Arena 2 is completed - unlocks fragment operations
      */
     static hasFragmentOperationsUnlocked(player: PlayerState): boolean {
-        return player.arena?.completedArenaLevels?.includes(2) ?? false;
+        return player.storyProgress?.hasUnlockedSilverpond === true
+            || (player.arena?.completedArenaLevels?.includes(2) ?? false);
     }
 
     /**
@@ -364,14 +365,16 @@ export class CrystalSystem {
      * Check if Boss II (Verdant Guardian) is defeated - unlocks refine operation
      */
     static hasRefineUnlocked(player: PlayerState): boolean {
-        return this.hasBossDefeated(player, 'verdant_guardian');
+        return player.storyProgress?.hasUnlockedSilverpond === true
+            || this.hasBossDefeated(player, 'verdant_guardian');
     }
 
     /**
-     * Check if Boss III (Crystal Serpent) is defeated - unlocks create prism operation
+     * Silverpond unlocks the highest forge tier. Keep the legacy boss checkpoint valid.
      */
     static hasPrismOperationsUnlocked(player: PlayerState): boolean {
-        return this.hasBossDefeated(player, 'crystal_serpent');
+        return player.storyProgress?.hasUnlockedSilverpond === true
+            || this.hasBossDefeated(player, 'crystal_serpent');
     }
 
     /**

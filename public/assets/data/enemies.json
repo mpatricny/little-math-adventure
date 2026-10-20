@@ -4,9 +4,9 @@
         "name": "Perlová medúzka",
         "spriteKey": "silverpond-pearl-jellyfish-idle-sheet",
         "animPrefix": "pearl-jellyfish",
-        "hp": 24,
-        "attack": 4,
-        "defense": 1,
+        "hp": 32,
+        "attack": 8,
+        "defense": 4,
         "goldReward": [
             10,
             14
@@ -19,7 +19,7 @@
         "name": "Strážce hlubin",
         "spriteKey": "silverpond-depth-guardian-idle-sheet",
         "animPrefix": "depth-guardian",
-        "hp": 28,
+        "hp": 100,
         "attack": 4,
         "defense": 1,
         "goldReward": [
@@ -202,8 +202,8 @@
         "name": "Bublinový rak",
         "spriteKey": "silverpond-bubble-crab-idle-sheet",
         "animPrefix": "bubble-crab",
-        "hp": 22,
-        "attack": 4,
+        "hp": 30,
+        "attack": 6,
         "defense": 3,
         "goldReward": [
             10,
@@ -247,9 +247,9 @@
         "name": "Ruinový mlok",
         "spriteKey": "silverpond-ruin-axolotl-idle-sheet",
         "animPrefix": "ruin-axolotl",
-        "hp": 21,
-        "attack": 5,
-        "defense": 2,
+        "hp": 28,
+        "attack": 6,
+        "defense": 3,
         "goldReward": [
             10,
             14

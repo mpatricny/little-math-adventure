@@ -1675,6 +1675,39 @@
                     "default": 0.3
                 },
                 "depth": 10
+            },
+            "sword_silverpond_tide": {
+                "type": "image",
+                "category": "item.weapon",
+                "texture": "silverpond-sword-tide",
+                "origin": [
+                    0.5,
+                    0.5
+                ],
+                "scale": 0.25,
+                "depth": 10
+            },
+            "sword_silverpond_pearl": {
+                "type": "image",
+                "category": "item.weapon",
+                "texture": "silverpond-sword-pearl",
+                "origin": [
+                    0.5,
+                    0.5
+                ],
+                "scale": 0.25,
+                "depth": 10
+            },
+            "sword_silverpond_depth": {
+                "type": "image",
+                "category": "item.weapon",
+                "texture": "silverpond-sword-depth",
+                "origin": [
+                    0.5,
+                    0.5
+                ],
+                "scale": 0.25,
+                "depth": 10
             }
         },
         "armor": {
@@ -1703,6 +1736,39 @@
                 "scale": {
                     "default": 0.3
                 },
+                "depth": 10
+            },
+            "shield_silverpond_tide": {
+                "type": "image",
+                "category": "item.armor",
+                "texture": "silverpond-shield-tide",
+                "origin": [
+                    0.5,
+                    0.5
+                ],
+                "scale": 0.25,
+                "depth": 10
+            },
+            "shield_silverpond_pearl": {
+                "type": "image",
+                "category": "item.armor",
+                "texture": "silverpond-shield-pearl",
+                "origin": [
+                    0.5,
+                    0.5
+                ],
+                "scale": 0.25,
+                "depth": 10
+            },
+            "shield_silverpond_depth": {
+                "type": "image",
+                "category": "item.armor",
+                "texture": "silverpond-shield-depth",
+                "origin": [
+                    0.5,
+                    0.5
+                ],
+                "scale": 0.25,
                 "depth": 10
             }
         },

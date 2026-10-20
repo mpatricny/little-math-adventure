@@ -44,8 +44,8 @@ export class ArenaPlayerStatusPod {
             .setName(options.name ?? `arena-player-${options.playerLabel.toLowerCase()}-status`);
 
         const frame = scene.add.image(0, 0, 'arena-player-status-pod-v1')
-            .setDisplaySize(width, height)
             .setFlipX(options.pointerSide === 'right');
+        frame.setScale(Math.min(width / frame.width, height / frame.height));
 
         this.trackLeft = -width * 0.165;
         this.trackWidth = width * 0.47;
@@ -53,19 +53,21 @@ export class ArenaPlayerStatusPod {
         this.hpFill = scene.add.graphics().setScale(this.mirror, 1);
 
         this.hpText = scene.add.text(this.mirror * width * 0.075, this.topY, '', {
+            resolution: 2,
             fontFamily: 'Palatino Linotype, Book Antiqua, Georgia, serif',
             fontSize: `${Math.max(11, Math.round(height * 0.17))}px`,
             fontStyle: 'bold',
             color: '#fff5cf',
             stroke: '#241309',
             strokeThickness: 3,
-        }).setOrigin(0.5).setResolution(2);
+        }).setOrigin(0.5);
 
         const playerLabel = scene.add.text(
             this.mirror * width * 0.385,
             this.topY,
             options.playerLabel,
             {
+                resolution: 2,
                 fontFamily: 'Palatino Linotype, Book Antiqua, Georgia, serif',
                 fontSize: `${Math.max(12, Math.round(height * 0.2))}px`,
                 fontStyle: 'bold',
@@ -73,7 +75,7 @@ export class ArenaPlayerStatusPod {
                 stroke: '#22140c',
                 strokeThickness: 3,
             },
-        ).setOrigin(0.5).setResolution(2);
+        ).setOrigin(0.5);
 
         const potionX = this.mirror * -width * 0.265;
         const prepX = this.mirror * -width * 0.06;
@@ -96,6 +98,7 @@ export class ArenaPlayerStatusPod {
             potionBadgeY,
             String(Math.max(0, Math.round(options.potionCount))),
             {
+                resolution: 2,
                 fontFamily: 'Palatino Linotype, Book Antiqua, Georgia, serif',
                 fontSize: `${Math.max(9, Math.round(height * 0.13))}px`,
                 fontStyle: 'bold',
@@ -103,7 +106,7 @@ export class ArenaPlayerStatusPod {
                 stroke: '#251309',
                 strokeThickness: 2,
             },
-        ).setOrigin(0.5).setResolution(2);
+        ).setOrigin(0.5);
 
         const sword = options.preparationKind === 'sword';
         const preparation = scene.add.image(

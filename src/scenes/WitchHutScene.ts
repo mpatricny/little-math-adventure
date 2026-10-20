@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import { actorPortraitKey } from '../loading/actor-portraits';
 import { GameStateManager } from '../systems/GameStateManager';
 import { ProgressionSystem } from '../systems/ProgressionSystem';
 import { CrystalSystem } from '../systems/CrystalSystem';
@@ -147,8 +148,9 @@ export class WitchHutScene extends Phaser.Scene {
         cell.add(bg);
 
         // Pet sprite
-        if (this.textures.exists(pet.spriteKey)) {
-            const sprite = this.add.sprite(0, -8, pet.spriteKey, 0).setScale(0.5);
+        const portrait = actorPortraitKey(this, pet.spriteKey);
+        if (this.textures.exists(portrait)) {
+            const sprite = this.add.image(0, -8, portrait).setScale(0.5);
             cell.add(sprite);
         }
 

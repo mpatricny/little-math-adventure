@@ -4,6 +4,13 @@ import type { TexturesFile } from '../types/assets';
 import { DownloadQueue } from './DownloadQueue';
 import { OfflineClient } from './OfflineClient';
 import { upcomingScenes, orderedDownloads, canPrepareTextures, SPECULATIVE_TEXTURE_BYTES } from './preload-policy';
+import { townBuildings, townForScene } from './town-scenes';
+
+type PreparedScene = Phaser.Scene & { sceneAssets?: {
+    getSceneTextureKeys(key: string): Set<string>;
+    getScenesTextureKeys(keys: string[]): Record<string, string[]>;
+} };
+const REGIONAL_TEXTURE_BYTES = 192 * 1024 * 1024;
 
 const instances = new WeakMap<Phaser.Game, AssetPreparation>();
 export function assetPreparation(game: Phaser.Game): AssetPreparation {
@@ -20,7 +27,10 @@ export function queueTexture(scene: Phaser.Scene, key: string, catalog: Textures
     const url = file.startsWith('library:') ? `/assets/library/${file.slice(8)}` : `/assets/${file}`;
     const textureFile = sheet?.frameWidth && sheet.frameHeight
         ? new Phaser.Loader.FileTypes.SpriteSheetFile(scene.load, {
-            key, url, frameConfig: { frameWidth: sheet.frameWidth, frameHeight: sheet.frameHeight },
+            key, url, frameConfig: {
+                frameWidth: sheet.frameWidth, frameHeight: sheet.frameHeight,
+                ...(sheet.frameCount ? { endFrame: sheet.frameCount - 1 } : {}),
+            },
         })
         : new Phaser.Loader.FileTypes.ImageFile(scene.load, { key, url });
     const addToCache = textureFile.addToCache;
@@ -34,15 +44,19 @@ export function queueTexture(scene: Phaser.Scene, key: string, catalog: Textures
     scene.load.addFile(textureFile);
 }
 
-/** Byte downloads live outside scenes; only a small near-future texture set enters GPU memory. */
+/** Byte downloads live outside scenes; nearby textures are decoded within explicit memory budgets. */
 class AssetPreparation {
     private scene?: Phaser.Scene;
     private currentKey = 'MenuScene';
+    private homeTown = 'TownScene';
     private started = false;
+    private interacted = false;
     private disposed = false;
     private decoding = false;
     private controlled = false;
     private nextScenes: string[] = [];
+    private nextKeys: string[] = [];
+    private localKeys = new Set<string>();
     private downloaded = new Set<string>();
     private speculative = new Map<string, number>();
     private failed = new Set<string>();
@@ -50,7 +64,8 @@ class AssetPreparation {
     private readonly downloads: DownloadQueue;
     private readonly offline: OfflineClient;
     private readonly gesture = () => {
-        if (this.started || !this.scene || this.disposed) return;
+        if (this.interacted || !this.scene || this.disposed) return;
+        this.interacted = true;
         this.started = true;
         document.removeEventListener('pointerdown', this.gesture, true);
         document.removeEventListener('keydown', this.gesture, true);
@@ -67,6 +82,8 @@ class AssetPreparation {
         }
     };
     private readonly online = () => { this.downloads.wake(); };
+    private readonly contextLost = () => { clearTimeout(this.decodeTimer); this.decodeTimer = undefined; };
+    private readonly contextRestored = () => { this.scheduleDecode(); };
 
     constructor(private readonly game: Phaser.Game) {
         this.downloads = new DownloadQueue(fetch, url => { this.downloaded.add(url); this.scheduleDecode(); });
@@ -80,13 +97,20 @@ class AssetPreparation {
         document.addEventListener('keydown', this.gesture, true);
         document.addEventListener('visibilitychange', this.visibility);
         window.addEventListener('online', this.online);
+        game.renderer?.on(Phaser.Renderer.Events.LOSE_WEBGL, this.contextLost);
+        game.renderer?.on(Phaser.Renderer.Events.RESTORE_WEBGL, this.contextRestored);
         game.events.once(Phaser.Core.Events.DESTROY, this.destroy, this);
     }
 
-    entering(key: string): void {
+    entering(key: string, homeTown = this.homeTown): void {
         this.currentKey = key;
+        this.homeTown = homeTown;
         this.scene = undefined;
         clearTimeout(this.decodeTimer);
+        this.decodeTimer = undefined;
+        // Foreground preload gets the connection while changing scenes. Resume
+        // gradual preparation once its required textures have finished.
+        this.downloads.stop();
         this.forecast();
     }
     ready(scene: Phaser.Scene): void {
@@ -94,30 +118,70 @@ class AssetPreparation {
         this.scene = scene;
         this.currentKey = scene.sys.settings.key;
         this.game.canvas.dataset.scene = this.currentKey;
+        // Image downloads/decodes do not require a gesture. Use time spent in
+        // the menu; worker installation still waits for the first interaction.
+        this.started = true;
         // Textures used by the entered scene are no longer speculative allocation.
-        for (const key of plan.sceneKeys[this.currentKey] ?? []) this.speculative.delete(key);
+        for (const name of [this.currentKey, ...(townBuildings[this.currentKey] ?? [])]) {
+            for (const key of this.sceneKeys(name)) this.speculative.delete(key);
+        }
+        for (const key of this.game.textures.getTextureKeys()) {
+            const url = plan.images[key]?.url;
+            if (url) { this.downloaded.add(url); this.downloads.completed.add(url); }
+        }
         this.forecast(); this.scheduleDecode();
+        if (this.started && !this.controlled && !document.hidden) this.downloads.start();
+    }
+    private sceneKeys(key: string): string[] {
+        const scene = (this.scene ?? this.game.scene.keys[this.currentKey]) as PreparedScene | undefined;
+        return scene?.sceneAssets ? [...scene.sceneAssets.getSceneTextureKeys(key)] : plan.sceneKeys[key] ?? [];
     }
     private forecast(): void {
-        this.nextScenes = upcomingScenes(this.currentKey, Object.keys(this.game.scene.keys));
-        const order = orderedDownloads(this.currentKey, this.nextScenes, plan.scenes, plan.all);
+        this.nextScenes = upcomingScenes(this.currentKey, Object.keys(this.game.scene.keys), this.homeTown);
+        const names = [this.currentKey, ...this.nextScenes];
+        const localTown = townForScene(this.currentKey, this.homeTown);
+        const nearNames = [...new Set([...this.nextScenes.slice(0, 8), localTown, ...townBuildings[localTown]])]
+            .filter(key => key !== this.currentKey && this.game.scene.keys[key]);
+        const scene = (this.scene ?? this.game.scene.keys[this.currentKey]) as PreparedScene | undefined;
+        const nearKeys = scene?.sceneAssets?.getScenesTextureKeys([this.currentKey, ...nearNames]) ?? {};
+        const keys = Object.fromEntries(names.map(name => [name, nearKeys[name] ?? plan.sceneKeys[name] ?? []]));
+        this.nextKeys = [...new Set(nearNames.flatMap(name => keys[name]))];
+        this.localKeys = new Set([localTown, ...townBuildings[localTown]].flatMap(name => keys[name] ?? []));
+        // Fill the local UI and room artwork before large animation sheets can
+        // exhaust the speculative budget. Equal sizes retain destination order.
+        this.nextKeys.sort((a, b) => Number(this.localKeys.has(b)) - Number(this.localKeys.has(a))
+            || (plan.images[a]?.decodedBytes ?? 0) - (plan.images[b]?.decodedBytes ?? 0));
+        const files = Object.fromEntries(Object.entries(keys).map(([name, textures]) => [name,
+            [...textures.map(key => plan.images[key]?.url).filter((url): url is string => !!url), ...(plan.scenes[name] ?? [])]]));
+        const order = orderedDownloads(this.currentKey, this.nextScenes, files, plan.all);
         this.downloads.prioritize(order);
         if (this.started) this.offline.prioritize(order);
     }
     private scheduleDecode(): void {
-        clearTimeout(this.decodeTimer);
-        if (this.started && !this.disposed && !this.decoding) this.decodeTimer = setTimeout(() => this.decodeOne(), 80);
+        // Coalesce notifications without moving the deadline: a steady stream
+        // of small downloads must not postpone image preparation indefinitely.
+        if (this.decodeTimer !== undefined || !this.started || this.disposed || this.decoding) return;
+        this.decodeTimer = setTimeout(() => {
+            this.decodeTimer = undefined;
+            this.decodeOne();
+        }, 80);
     }
     private decodeOne(): void {
         const scene = this.scene;
-        if (!scene || this.disposed || document.hidden || !scene.sys.isActive() || scene.load.isLoading() || !canPrepareTextures(this.currentKey)) return;
+        const contextLost = (this.game.renderer as Phaser.Renderer.WebGL.WebGLRenderer | undefined)?.contextLost;
+        if (!scene || this.disposed || document.hidden || contextLost || !scene.sys.isActive() || !canPrepareTextures(this.currentKey)) return;
+        if (scene.load.isLoading()) { this.scheduleDecode(); return; }
         const catalog = scene.cache.json.get('textures') as TexturesFile | undefined;
         if (!catalog) return;
         const used = [...this.speculative.values()].reduce((sum, bytes) => sum + bytes, 0);
-        const key = this.nextScenes.slice(0, 5).flatMap(name => plan.sceneKeys[name] ?? []).find(key => {
+        const key = this.nextKeys.find(key => {
             const image = plan.images[key];
+            const budget = this.localKeys.has(key) ? REGIONAL_TEXTURE_BYTES : SPECULATIVE_TEXTURE_BYTES;
+            // Bytes may be cached for the whole game, but future chapters'
+            // animation sheets must not occupy GPU memory in the current town.
+            if (catalog.spritesheets[key] && !this.localKeys.has(key)) return false;
             return image && !this.failed.has(key) && !scene.textures.exists(key) && this.downloaded.has(image.url)
-                && image.decodedBytes > 0 && used + image.decodedBytes <= SPECULATIVE_TEXTURE_BYTES;
+                && image.decodedBytes > 0 && used + image.decodedBytes <= budget;
         });
         if (!key) return;
         this.decoding = true;
@@ -141,6 +205,8 @@ class AssetPreparation {
         document.removeEventListener('keydown', this.gesture, true);
         document.removeEventListener('visibilitychange', this.visibility);
         window.removeEventListener('online', this.online);
+        this.game.renderer?.off(Phaser.Renderer.Events.LOSE_WEBGL, this.contextLost);
+        this.game.renderer?.off(Phaser.Renderer.Events.RESTORE_WEBGL, this.contextRestored);
         instances.delete(this.game);
     }
 }

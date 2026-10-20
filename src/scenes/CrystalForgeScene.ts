@@ -37,6 +37,7 @@ export interface CrystalForgeSceneOptions {
     layoutSceneKey?: string;
     backgroundTexture?: string;
     persistChanges?: boolean;
+    guideOperations?: readonly ForgeOperation[];
 }
 
 export class CrystalForgeScene extends Phaser.Scene {
@@ -46,6 +47,7 @@ export class CrystalForgeScene extends Phaser.Scene {
     private readonly layoutSceneKey: string;
     private readonly backgroundTexture?: string;
     private readonly persistChanges: boolean;
+    private readonly guideOperations: readonly ForgeOperation[];
 
     // Forge state
     private selectedCrystals: (Crystal | null)[] = [null, null, null]; // Three slots (3rd for createFragment)
@@ -69,6 +71,8 @@ export class CrystalForgeScene extends Phaser.Scene {
     private slotCircles: Phaser.GameObjects.Image[] = []; // Controllable circle sprites for state swapping
     private pedestalPosition: { x: number; y: number } = { x: 435, y: 529 }; // Position from SceneBuilder
     private equationText!: Phaser.GameObjects.Text;
+    private equationRoot!: Phaser.GameObjects.Container;
+    private equationParts!: Phaser.GameObjects.Text[];
     private answerButtons: Phaser.GameObjects.Container[] = [];
     private answerFrame: Phaser.GameObjects.Image | null = null;
     private manaText!: Phaser.GameObjects.Text;
@@ -101,6 +105,7 @@ export class CrystalForgeScene extends Phaser.Scene {
         this.layoutSceneKey = options.layoutSceneKey ?? sceneKey;
         this.backgroundTexture = options.backgroundTexture;
         this.persistChanges = options.persistChanges ?? true;
+        this.guideOperations = options.guideOperations ?? Object.keys(FORGE_GUIDES) as ForgeOperation[];
     }
 
     create(): void {
@@ -177,7 +182,7 @@ export class CrystalForgeScene extends Phaser.Scene {
         this.operationPanelButtons.forEach(({ btn, locked }, operation) => {
             const op = operation as ForgeOperation;
             const guide = FORGE_GUIDES[op];
-            if (!locked && !hasSeenGuide(player, guide.id)) {
+            if (this.guideOperations.includes(op) && !locked && !hasSeenGuide(player, guide.id)) {
                 pages.push({ ...guide, target: btn, onShow: () => this.setOperation(op) });
             }
         });
@@ -720,6 +725,18 @@ export class CrystalForgeScene extends Phaser.Scene {
             }).setOrigin(0.5).setDepth(200);
         }
 
+        // Keep the editor template as the source of the recorded equation, while
+        // drawing the relation at twice its former visible size in its own host.
+        this.equationText.setVisible(false);
+        const equationHost = this.sceneBuilder.get<Phaser.GameObjects.Container>('forgeEquationHost');
+        this.equationRoot = this.add.container(equationHost?.x ?? 435, equationHost?.y ?? 587)
+            .setDepth(equationHost?.depth ?? 200).setVisible(false);
+        this.equationParts = [46, 90, 46].map(fontSize => this.add.text(0, 0, '', {
+            resolution: 2, fontFamily: 'Arial, sans-serif', fontSize, fontStyle: 'bold',
+            color: '#f0df70', stroke: '#17212c', strokeThickness: 2,
+        }).setOrigin(0, 0.5));
+        this.equationRoot.add(this.equationParts);
+
         // Answer buttons area (hidden initially)
         this.createAnswerButtons();
 
@@ -1016,6 +1033,21 @@ export class CrystalForgeScene extends Phaser.Scene {
 
         // Re-apply circle states after rebuilding
         this.updateSlotCircleStates();
+    }
+
+    private setEquation(value: string): void {
+        this.equationText.setText(value);
+        this.equationRoot.setVisible(value.length > 0);
+        const [left = '', right = ''] = value.split('=');
+        const labels = [left.trim(), value ? '=' : '', right.trim()];
+        this.equationParts.forEach((part, index) => part.setText(labels[index]));
+        const gap = 12;
+        const total = this.equationParts.reduce((sum, part) => sum + part.width, 0) + gap * 2;
+        let x = -total / 2;
+        for (const part of this.equationParts) {
+            part.setX(x);
+            x += part.width + gap;
+        }
     }
 
     private createAnswerButtons(): void {
@@ -1432,7 +1464,7 @@ export class CrystalForgeScene extends Phaser.Scene {
 
         // Hide equation and answers
         this.hideAnswerButtons();
-        this.equationText.setText('');  // Clear equation (template text, always visible)
+        this.setEquation('');  // Clear equation (template text, always visible)
         this.splitSlider.setVisible(false);
         this.splitFragmentSlider.setVisible(false);
         this.operationButton.setVisible(false);
@@ -1541,7 +1573,7 @@ export class CrystalForgeScene extends Phaser.Scene {
         sfx(this, 'math.retry');
         // Hide equation and answers
         this.hideAnswerButtons();
-        this.equationText.setText('');  // Clear equation (template text, always visible)
+        this.setEquation('');  // Clear equation (template text, always visible)
         this.splitSlider.setVisible(false);
         this.splitFragmentSlider.setVisible(false);
         this.operationButton.setVisible(false);
@@ -1640,7 +1672,7 @@ export class CrystalForgeScene extends Phaser.Scene {
         this.updateOperationButtonVisibility();
         this.splitSlider.setVisible(false);
         this.splitFragmentSlider.setVisible(false);
-        this.equationText.setText('');  // Clear equation (template text, always visible)
+        this.setEquation('');  // Clear equation (template text, always visible)
         this.hideAnswerButtons();
     }
 
@@ -1788,7 +1820,7 @@ export class CrystalForgeScene extends Phaser.Scene {
 
             const a = this.selectedCrystals[0].value;
             const b = this.selectedCrystals[1].value;
-            this.equationText.setText(`${a} + ${b} = ?`);
+            this.setEquation(`${a} + ${b} = ?`);
             this.showAnswerChoices(a + b);
 
         } else if (this.currentOperation === 'split') {
@@ -1812,7 +1844,7 @@ export class CrystalForgeScene extends Phaser.Scene {
             }
 
             const answer = crystal.value - this.splitValue;
-            this.equationText.setText(`${crystal.value} − ${this.splitValue} = ?`);
+            this.setEquation(`${crystal.value} − ${this.splitValue} = ?`);
             this.showAnswerChoices(answer);
 
         } else if (this.currentOperation === 'createFragment') {
@@ -1825,7 +1857,7 @@ export class CrystalForgeScene extends Phaser.Scene {
             const a = this.selectedCrystals[0].value;
             const b = this.selectedCrystals[1].value;
             const c = this.selectedCrystals[2].value;
-            this.equationText.setText(`${a} + ${b} + ${c} = ?`);
+            this.setEquation(`${a} + ${b} + ${c} = ?`);
             this.showAnswerChoices(a + b + c);
 
         } else if (this.currentOperation === 'splitFragment') {
@@ -1850,7 +1882,7 @@ export class CrystalForgeScene extends Phaser.Scene {
             }
 
             const answer = fragment.value - this.splitValue - this.splitValue2;
-            this.equationText.setText(`${fragment.value} − ${this.splitValue} − ${this.splitValue2} = ?`);
+            this.setEquation(`${fragment.value} − ${this.splitValue} − ${this.splitValue2} = ?`);
             this.showAnswerChoices(answer);
 
         } else if (this.currentOperation === 'refine') {
@@ -1874,7 +1906,7 @@ export class CrystalForgeScene extends Phaser.Scene {
             }
 
             const answer = crystal.value - this.splitValue;
-            this.equationText.setText(`${crystal.value} − ${this.splitValue} = ?`);
+            this.setEquation(`${crystal.value} − ${this.splitValue} = ?`);
             this.showAnswerChoices(answer);
 
         } else if (this.currentOperation === 'createPrism') {
@@ -1891,7 +1923,7 @@ export class CrystalForgeScene extends Phaser.Scene {
             }
 
             const answer = shard.value + fragment.value - 20;
-            this.equationText.setText(`${shard.value} + ${fragment.value} − 20 = ?`);
+            this.setEquation(`${shard.value} + ${fragment.value} − 20 = ?`);
             this.showAnswerChoices(answer);
         }
 

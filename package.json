@@ -5,9 +5,12 @@
     "dev": "vite",
     "dev:pilot": "vite --mode pilot --port 8002 --strictPort",
     "dev:tv": "vite --host 0.0.0.0 --port 8001",
+    "dev:recover": "node scripts/dev-save-recovery-proxy.mjs",
+    "test:dev-saves": "node --test scripts/__tests__/dev-save-store.test.mjs && vitest run scripts/__tests__/dev-save-sync.test.ts src/systems/__tests__/SaveTransfer.test.ts",
+    "test:dev-saves:browser": "node scripts/check-dev-saves.mjs",
     "remote:relay": "node scripts/remote-relay.mjs",
     "build": "npm run build:pilot",
-    "build:pilot": "vite build --mode pilot",
+    "build:pilot": "NODE_ENV=production vite build --mode pilot",
     "build:dev": "vite build --mode development",
     "preview": "npm run preview:pilot",
     "preview:pilot": "vite preview --mode pilot --port 8012 --strictPort",
@@ -36,7 +39,9 @@
     "test:e2e:preparation": "playwright test --config e2e/preparation/playwright.config.ts",
     "test:e2e:underwater": "playwright test --config e2e/underwater/playwright.config.ts",
     "test:e2e:audio": "playwright test --config e2e/audio/playwright.config.ts",
-    "test:e2e:shop": "playwright test --config e2e/shop/playwright.config.ts"
+    "test:e2e:shop": "playwright test --config e2e/shop/playwright.config.ts",
+    "test:e2e:silverpond": "playwright test --config e2e/silverpond/playwright.config.ts",
+    "test:e2e:recovery": "playwright test --config e2e/recovery/playwright.config.ts"
   },
   "dependencies": {
     "phaser": "^3.87.0"

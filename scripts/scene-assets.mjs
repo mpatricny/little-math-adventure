@@ -29,6 +29,7 @@ export function collectSceneAssets(root, dataDir = path.join(root, 'public/asset
     const slices = new Map(Object.entries(load('nine-slices.json').configs));
     const actors = new Map(['enemies.json', 'pets.json', 'characters.json', 'npcs.json']
         .flatMap(name => load(name)).map(actor => [actor.id, actor]));
+    const actorAnimationPrefixes = new Set([...actors.values()].map(actor => actor.animPrefix).filter(Boolean));
     const encounters = new Map();
     const indexEncounters = value => {
         if (!value || typeof value !== 'object') return;
@@ -40,8 +41,8 @@ export function collectSceneAssets(root, dataDir = path.join(root, 'public/asset
     function sourceGraph(filename, visited = new Set()) {
         if (visited.has(filename) || !existsSync(filename)) return [];
         visited.add(filename);
-        // Debugger string inventories do not describe a scene's runtime dependencies.
-        if (filename.startsWith(path.join(root, 'src/types')) || filename.startsWith(path.join(root, 'src/loading')) || /SceneDebugger|DebugOverlay|SceneAssetPlugin|GameStateManager|MasterySystem|ProgressionSystem|SilverpondProgressSystem|JourneySystem|PlacementInitializer/.test(filename)) return [];
+        // Debug inventories and progress-only actor IDs do not describe visual dependencies.
+        if (filename.startsWith(path.join(root, 'src/types')) || filename.startsWith(path.join(root, 'src/loading')) || /SceneDebugger|DebugOverlay|SceneAssetPlugin|GameStateManager|MasterySystem|ProgressionSystem|SilverpondProgressSystem|DepthCrystalProgressSystem|UnderwaterProgressSystem|JourneySystem|PlacementInitializer|CatacombPetProgress|ForestCrystalProgression|CrystalSystem/.test(filename)) return [];
         if (filename.endsWith('.json')) {
             const dataName = path.basename(filename);
             if (existsSync(path.join(dataDir, dataName))) return [load(dataName)];
@@ -65,7 +66,15 @@ export function collectSceneAssets(root, dataDir = path.join(root, 'public/asset
                         if (dependency) imports.push(dependency);
                     }
                 }
-                if (ts.isStringLiteral(node) || ts.isNoSubstitutionTemplateLiteral(node)) values.push(node.text);
+                if (ts.isStringLiteral(node) || ts.isNoSubstitutionTemplateLiteral(node)) {
+                    // A return/back/destination scene name is navigation, not its
+                    // artwork. Only explicit layout use pulls in another scene.
+                    if (!scenes[node.text]) values.push(node.text);
+                    if (ts.isPropertyAssignment(node.parent)
+                        && ['layoutSceneKey', 'layout'].includes(node.parent.name.getText(ast))) {
+                        layouts.push(node.text);
+                    }
+                }
                 if (ts.isTemplateExpression(node) && node.head.text.length >= 4) {
                     const parts = [node.head.text, ...node.templateSpans.map(span => span.literal.text)];
                     const pattern = new RegExp(`^${parts.map(part => part.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('.+')}$`);
@@ -90,13 +99,20 @@ export function collectSceneAssets(root, dataDir = path.join(root, 'public/asset
         const classNames = [...source.matchAll(/export class (\w+)/g)].map(match => match[1]);
         for (const sceneKey of classNames) {
             const selected = new Set(), visited = new Set(), queue = [scenes[sceneKey], ...sourceGraph(file)];
+            // This scene selects editor room layouts at runtime. Progress-only callers
+            // of UnderwaterProgressSystem must not preload the entire underwater world.
+            if (sceneKey === 'UnderwaterRoomScene' && existsSync(path.join(dataDir, 'underwater-rooms.json'))) {
+                queue.push(load('underwater-rooms.json'));
+            }
             const visit = value => {
                 if (visited.has(value)) return;
                 visited.add(value);
                 if (textureKeys.has(value)) selected.add(value);
                 for (const map of [assets, animations, templates, slices, actors, encounters, layouts]) if (map.has(value)) queue.push(map.get(value));
                 // An actor's animPrefix also closes all motion aliases and phase animations.
-                for (const [name, animation] of animations) if (name.startsWith(`${value}-`)) queue.push(animation);
+                if (actorAnimationPrefixes.has(value)) {
+                    for (const [name, animation] of animations) if (name.startsWith(`${value}-`)) queue.push(animation);
+                }
                 if (value.startsWith('assets/data/') && value.endsWith('.json')) {
                     const name = value.slice('assets/data/'.length);
                     if (existsSync(path.join(dataDir, name))) queue.push(load(name));

@@ -10,8 +10,10 @@ export type CharacterBookPlayerView = {
     hp: number;
     maxHp: number;
     portraitTexture: string;
+    swordTexture?: string;
     swordFrame: number | null;
     swordBonus: number;
+    shieldTexture?: string;
     shieldFrame: number | null;
     shieldBlock: number;
     attackCount: number;
@@ -546,10 +548,18 @@ export class CharacterBookOverlay {
         this.petImage.setTexture(this.petCanvas.key);
         this.swordImage
             .setVisible(view.swordFrame !== null)
-            .setFrame(view.swordFrame ?? 0);
+            .setTexture(view.swordTexture ?? 'shop-swords-sheet', view.swordFrame ?? 0);
+        this.swordImage.setScale(Math.min(
+            64 / this.swordImage.frame.realWidth,
+            80 / this.swordImage.frame.realHeight
+        ));
         this.shieldImage
             .setVisible(view.shieldFrame !== null)
-            .setFrame(view.shieldFrame ?? 0);
+            .setTexture(view.shieldTexture ?? 'shop-shields-sheet', view.shieldFrame ?? 0);
+        this.shieldImage.setScale(Math.min(
+            73 / this.shieldImage.frame.realWidth,
+            65 / this.shieldImage.frame.realHeight
+        ));
 
         this.nameText.setText(view.name);
         this.levelText.setText(`LEVEL ${view.level}`);

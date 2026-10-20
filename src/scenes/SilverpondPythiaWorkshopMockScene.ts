@@ -12,6 +12,7 @@ export class SilverpondPythiaWorkshopMockScene extends PythiaWorkshopScene {
             backSceneKey: 'SilverpondTownMockScene',
             backgroundTexture: 'silverpond-pythia-workshop-mock-bg',
             persistChanges: true,
+            showGuides: false,
         });
     }
 }

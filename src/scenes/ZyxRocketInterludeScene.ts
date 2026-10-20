@@ -12,6 +12,7 @@ import { getUnderwaterProgress } from '../systems/UnderwaterProgressSystem';
 import { hasNextCityAccess } from '../systems/DepthCrystalProgressSystem';
 import { UnderwaterUI, waterHost } from '../ui/UnderwaterUI';
 import { fitWaterText, UnderwaterButton, waterArtwork } from '../ui/UnderwaterTheme';
+import type { SceneAssetPlugin } from '../systems/SceneAssetPlugin';
 
 type ZyxRocketInterludeData = {
     testMode?: boolean;
@@ -27,19 +28,19 @@ type SceneHost = {
 
 const DIALOGUE_PAGES = [
     {
-        text: 'Můj krystal!\nSpadl z lodi.',
+        text: 'MŮJ KRYSTAL',
         iconTexture: 'story-icon-crystal-fell',
         iconSize: 150,
         button: 'DÁLE',
     },
     {
-        text: 'Loď potřebuje 3 krystaly.\nMáme první!',
+        text: 'PRVNÍ KRYSTAL',
         iconTexture: 'story-icon-machine',
         iconSize: 150,
         button: 'DÁLE',
     },
     {
-        text: 'Pojď ke stroji.\nVložíme krystal.',
+        text: 'KE STROJI',
         iconTexture: 'forest-crystal-story',
         iconSize: 126,
         button: 'JDEME',
@@ -47,6 +48,7 @@ const DIALOGUE_PAGES = [
 ];
 
 export class ZyxRocketInterludeScene extends Phaser.Scene {
+    declare sceneAssets: SceneAssetPlugin;
     private sceneBuilder!: SceneBuilder;
     private testMode = false;
     private machineCompleted = false;
@@ -74,6 +76,9 @@ export class ZyxRocketInterludeScene extends Phaser.Scene {
     }
 
     preload(): void {
+        if (SILVERPOND_ENABLED && !this.depthCrystal && this.machineCompleted) {
+            this.sceneAssets.queueSceneTextures('SilverpondTownMockScene');
+        }
         if (SILVERPOND_ENABLED && this.depthCrystal && !this.textures.exists('underwater-depth-crystal')) {
             this.load.image('underwater-depth-crystal', `assets/${this.cache.json.get('textures').images['underwater-depth-crystal']}`);
         }
@@ -253,8 +258,8 @@ export class ZyxRocketInterludeScene extends Phaser.Scene {
     private createDialogue(): void {
         const host = this.getHost('zyxDialogueHost', { x: 640, y: 570, depth: 100 });
         this.dialoguePanel = this.add.container(host.x, host.y).setDepth(host.depth);
-        const frame = this.add.image(0, 0, 'zyx-dialog-frame-story')
-            .setDisplaySize(1180, 315);
+        const frame = this.add.image(0, 0, 'zyx-dialog-frame-story');
+        frame.setScale(Math.min(1180 / frame.width, 315 / frame.height));
         const portrait = this.add.sprite(-423, 0, 'spritesheet-zyx-transparent2-sheet')
             .setScale(0.35)
             .setOrigin(0.5, 0.5);
@@ -366,7 +371,7 @@ export class ZyxRocketInterludeScene extends Phaser.Scene {
     ): void {
         if (!SILVERPOND_ENABLED) {
             this.createDialogue();
-            this.dialogueText.setText('Díky za hraní ukázky!\nV Mathorii můžeš hrát dál.');
+            this.dialogueText.setText('MATHORIA ČEKÁ');
             this.dialogueIcon.setTexture('forest-crystal-story').setDisplaySize(126, 126);
             this.actionButton.setLabel('ZPĚT DO MATHORIE');
             return;

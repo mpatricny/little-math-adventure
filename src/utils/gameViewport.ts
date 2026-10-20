@@ -62,25 +62,35 @@ export function setupGameViewport(game: Phaser.Game): void {
         editingSize = null;
         schedule();
     };
+    const onVisible = () => { if (!document.hidden) schedule(); };
+    const onReady = () => {
+        game.renderer?.on(Phaser.Renderer.Events.RESTORE_WEBGL, schedule);
+        update();
+    };
 
     window.addEventListener('resize', schedule);
     window.addEventListener('orientationchange', schedule);
+    window.addEventListener('pageshow', schedule);
+    document.addEventListener('visibilitychange', onVisible);
     document.addEventListener('fullscreenchange', schedule);
     viewport?.addEventListener('resize', schedule);
     viewport?.addEventListener('scroll', schedule);
     container.addEventListener('focusin', onFocus);
     container.addEventListener('focusout', onBlur);
-    game.events.once(Phaser.Core.Events.READY, update);
+    game.events.once(Phaser.Core.Events.READY, onReady);
     game.events.once(Phaser.Core.Events.DESTROY, () => {
         window.cancelAnimationFrame(frame);
         window.removeEventListener('resize', schedule);
         window.removeEventListener('orientationchange', schedule);
+        window.removeEventListener('pageshow', schedule);
+        document.removeEventListener('visibilitychange', onVisible);
         document.removeEventListener('fullscreenchange', schedule);
         viewport?.removeEventListener('resize', schedule);
         viewport?.removeEventListener('scroll', schedule);
         container.removeEventListener('focusin', onFocus);
         container.removeEventListener('focusout', onBlur);
-        game.events.off(Phaser.Core.Events.READY, update);
+        game.events.off(Phaser.Core.Events.READY, onReady);
+        game.renderer?.off(Phaser.Renderer.Events.RESTORE_WEBGL, schedule);
     });
     update();
 }
