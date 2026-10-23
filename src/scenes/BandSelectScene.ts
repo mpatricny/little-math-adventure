@@ -7,6 +7,7 @@ import { MasterySystem } from '../systems/MasterySystem';
 import { SceneBuilder } from '../systems/SceneBuilder';
 import { MedievalActionButton } from '../ui/MedievalActionButton';
 import { voice } from '../audio/AudioDirector';
+import { analytics } from '../telemetry/AnalyticsClient';
 
 interface BandSelectData {
     slotIndex?: number;
@@ -140,6 +141,8 @@ export class BandSelectScene extends Phaser.Scene {
         }
         PlacementInitializer.applyBandSelection(this.selectedBand, gameState);
         MasterySystem.getInstance().updatePlayerLevel();
+        if(this.selectionData.characterDraft){const id=gameState.getPlayer().gameplayProfileId;
+            if(id)analytics()?.emit('profile_created',{role:'A',origin:'new'},id);}
         this.scene.start(this.selectionData.isReturningPlayer ? 'TownScene' : 'ComicScene');
     }
 }

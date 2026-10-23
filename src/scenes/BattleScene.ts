@@ -2,6 +2,7 @@ import { sfx, voice, gameAudio } from '../audio/AudioDirector';
 import { getPetAttackPower } from '../systems/CatacombPetProgress';
 import Phaser from 'phaser';
 import { DEV_TOOLS_ENABLED } from '../config/buildVariant';
+import { finishEncounter } from '../telemetry/SceneTelemetry';
 import { BattleState, BattlePhase, BattleEnemy, EnemyDefinition, ItemDefinition, PetDefinition, MathProblem, Crystal, PlayerState, PreparationKind } from '../types';
 import { MathEngine } from '../systems/MathEngine';
 import { MathBoard, MathBoardRemoteSnapshot } from '../ui/MathBoard';
@@ -4382,6 +4383,7 @@ export class BattleScene extends Phaser.Scene implements BattleSceneCallbacks {
     }
 
     private onVictory(): void {
+        if(!this.mockMode)finishEncounter(this,'victory');
         if (this.mockMode) {
             this.finishMockBattle('victory');
             return;
@@ -5020,6 +5022,7 @@ export class BattleScene extends Phaser.Scene implements BattleSceneCallbacks {
     }
 
     private onDefeat(): void {
+        if(!this.mockMode)finishEncounter(this,'defeat');
         if (this.mockMode) {
             this.finishMockBattle('defeat');
             return;

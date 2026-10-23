@@ -10,6 +10,7 @@ import { ProblemDatabase } from './ProblemDatabase';
 import { ManaSystem } from './ManaSystem';
 import { CrystalSystem } from './CrystalSystem';
 import { ProgressionSystem } from './ProgressionSystem';
+import { consumeObservation, observationKey } from '../telemetry/ProblemObservation';
 import { DailyProgressSystem } from './DailyProgressSystem';
 
 import { getThresholdsForSubAtom } from './MasteryThresholds';
@@ -154,6 +155,9 @@ export class MasterySystem {
             assisted,
             data.globalSolveSequence,
         );
+        const attempt=this.getComparisonChapterState().attempts.at(-1);
+        if(attempt){const key=observationKey(problem);attempt.observation=consumeObservation(key,
+            `comparison:${attempt.sequenceIndex}:${attempt.timestamp}:${key}`);}
         // Co-op checkpoints use their explicit player tracks in CoopSessionManager.
         if (!this.activeData) this.gameState.save();
     }
@@ -694,6 +698,7 @@ export class MasterySystem {
             context,
             sequenceIndex: data.globalSolveSequence,
         };
+        attempt.observation=consumeObservation(problemKey,`mastery:${attempt.sequenceIndex}:${attempt.timestamp}:${problemKey}`,context);
         data.problemRecords[problemKey].attempts.push(attempt);
 
         // Update sub-atom stats

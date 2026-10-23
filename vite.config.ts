@@ -76,6 +76,15 @@ function cleanBuildPlugin(): Plugin {
         }
     };
 }
+function adminRoutesPlugin():Plugin {
+    const middleware=(req:any,res:any,next:()=>void)=>{const pathname=(req.url??'').split('?')[0];
+        if(pathname==='/admin'){res.writeHead(308,{Location:'/admin/','Cache-Control':'no-store'});res.end();return;}
+        if(/^\/admin\/(?:traffic|players(?:\/[^/]+)?|sessions(?:\/[^/]+)?|visits(?:\/[^/]+)?|accounts(?:\/[^/]+)?|data-quality)?\/?$/.test(pathname)){
+            res.setHeader('Cache-Control','private, no-store');req.url='/admin.html'+(req.url.includes('?')?req.url.slice(req.url.indexOf('?')):'');}
+        next();};
+    return {name:'admin-routes',configureServer(server){server.middlewares.use(middleware);},configurePreviewServer(server){server.middlewares.use(middleware);}};
+}
+
 /** Static JSON imports and browser fetches must see the same pilot catalog. */
 function pilotDataPlugin(rootDir: string, publicDir: string): Plugin {
     const originalDataDir = path.join(rootDir, 'public', 'assets', 'data') + path.sep;
@@ -103,8 +112,12 @@ export default defineConfig(({ mode }) => {
             ? JSON.parse(fs.readFileSync(path.join(rootDir, 'wrangler.jsonc'), 'utf8')).vars.APP_RELEASE
             : 'development'),
     },
+    // Pure validators are shared with the API sources, but the frontend build
+    // must work after a root-only npm ci, without server/node_modules installed.
+    resolve: { dedupe: ['zod'] },
     publicDir: pilot?.publicDir ?? 'public',
     plugins: [
+        adminRoutesPlugin(),
         ...(pilot ? [pilotDataPlugin(rootDir, pilot.publicDir)] : [debugSavePlugin(), learningSaveDiagnosticsPlugin(rootDir), devSavesPlugin(rootDir), deviceDiagnosticsPlugin(rootDir)]),
         cleanBuildPlugin(),
         sceneAssetsPlugin(rootDir, path.join(pilot?.publicDir ?? path.join(rootDir, 'public'), 'assets/data')),
@@ -121,6 +134,7 @@ export default defineConfig(({ mode }) => {
             input: [
                 path.resolve(rootDir, 'index.html'),
                 path.resolve(rootDir, 'landing.html'),
+                path.resolve(rootDir, 'admin.html'),
             ],
         },
     },

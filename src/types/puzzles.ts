@@ -6,6 +6,7 @@ export interface PuzzleInstance<T = unknown> {
     version: 1; family: PuzzleFamily; payload: T; profile: PuzzleProfile;
     startedAt: number; firstCorrect?: boolean; assisted: boolean; completed: boolean;
     state: Record<string, unknown>;
+    analyticsId?:string;
 }
 export interface PuzzleProgress {
     version: 1;

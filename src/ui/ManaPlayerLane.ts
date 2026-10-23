@@ -11,6 +11,8 @@ import { MasteryData, MathProblem, MathProblemDef, PlayerState, ProblemDefinitio
 import { formatMathProblem } from '../utils/formatMathProblem';
 import { manaForCorrectAnswers } from '../systems/ManaCollectionRewards';
 import { MANA_ROW_COUNT, MANA_READING_PAUSE_MS, getManaRowHoldMs, getManaRowY } from '../systems/ManaStepMotion';
+import { observeMathProblem, type ProblemObservation } from '../telemetry/ProblemObservation';
+import { gameContext } from '../telemetry/SceneTelemetry';
 
 const ROW_COUNT = MANA_ROW_COUNT;
 const MAX_LIVES = 3;
@@ -104,6 +106,7 @@ export class ManaPlayerLane {
     private isGameActive: boolean = false;
     private isResolving: boolean = false;
     private problemStartedAt: number = 0;
+    private observation:ProblemObservation|null=null;
 
     // Pool
     private manaPool: PoolProblem[];
@@ -533,6 +536,7 @@ export class ManaPlayerLane {
     }
 
     destroy(): void {
+        this.observation?.abandon();
         this.stopGame();
         if (this.resolveKey) {
             this.resolveKey.off('down', this.onResolve, this);
@@ -562,6 +566,7 @@ export class ManaPlayerLane {
 
     private nextProblem(): void {
         if (!this.isGameActive) return;
+        this.observation?.abandon();
 
         this.clearAnswerSlots();
 
@@ -575,6 +580,7 @@ export class ManaPlayerLane {
             return;
         }
         this.problemStartedAt = Date.now();
+        this.observation=observeMathProblem(this.currentProblem,'mana_collection',gameContext(this.scene.sys.settings.key,this.config.playerIdentifier)??undefined);
 
         this.createAnswerSlots(this.currentProblem.answer, this.currentProblem.choices);
 
@@ -712,6 +718,7 @@ export class ManaPlayerLane {
     // ============ CORRECT / WRONG / MISSED ============
 
     private onCorrectAnswer(highlightBar: Phaser.GameObjects.Rectangle): void {
+        if(this.currentProblem)this.observation?.answer(this.currentProblem.answer,true,Math.max(0,Date.now()-this.problemStartedAt));
         sfx(this.scene, 'math.correct');
         highlightBar.setFillStyle(0x228822, 0.4);
 
@@ -740,6 +747,8 @@ export class ManaPlayerLane {
     }
 
     private onWrongAnswer(selectedSlot?: AnswerSlot, highlightBar?: Phaser.GameObjects.Rectangle): void {
+        if(selectedSlot)this.observation?.answer(selectedSlot.value,false,Math.max(0,Date.now()-this.problemStartedAt));
+        else this.observation?.abandon('timeout');
         if (highlightBar) {
             highlightBar.setFillStyle(0x882222, 0.4);
         }

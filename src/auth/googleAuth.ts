@@ -37,7 +37,7 @@ export async function startGoogleSignIn(
     fetcher: Fetcher = fetch,
 ): Promise<string> {
     // Only return to a document on this origin. Never carry arbitrary URL/query input into OAuth.
-    const callbackURL = returnPath === '/hra/' ? '/hra/' : '/';
+    const callbackURL = returnPath === '/hra/' ? '/hra/' : /^\/admin\/(?:players\/[^/?#]+|sessions\/[^/?#]+|visits\/[^/?#]+|accounts\/[^/?#]+|traffic|players|sessions|accounts|data-quality)?$/.test(returnPath) ? returnPath : '/';
     const response = await request('/api/auth/sign-in/social', {
         method: 'POST',
         signal,

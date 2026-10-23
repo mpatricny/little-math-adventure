@@ -21,6 +21,14 @@
     "test:game-account": "node scripts/check-game-account.mjs",
     "test:auth-contract": "server/node_modules/.bin/tsx --test scripts/__tests__/google-auth-contract.test.ts",
     "test:gameplay-sync": "server/node_modules/.bin/tsx scripts/check-gameplay-sync.mts",
+    "test:analytics:fast": "server/node_modules/.bin/tsx --test scripts/__tests__/analytics-core.test.ts scripts/__tests__/google-auth-contract.test.ts && node --test infra/cloudflare/worker.test.mjs scripts/__tests__/offline-build.test.mjs scripts/__tests__/offline-worker.test.mjs",
+    "test:analytics:db": "server/node_modules/.bin/tsx --test server/src/domain/analytics/analytics.integration.test.ts",
+    "test:analytics:browser": "server/node_modules/.bin/tsx scripts/check-analytics-browser.mts",
+    "test:analytics:smoke": "npm run test:analytics:browser",
+    "test:analytics:performance": "server/node_modules/.bin/tsx scripts/check-analytics-performance.mts",
+    "typecheck:analytics": "node scripts/check-analytics-types.mjs && npm run api:typecheck",
+    "check:analytics": "npm run typecheck:analytics && npm run test:analytics:fast && npm run test:analytics:db && npm run build:pilot && npm run test:analytics:browser",
+    "api:analytics:backfill": "npm --prefix server run analytics:backfill --",
     "api:gameplay:report": "npm --prefix server run gameplay:report --",
     "test:mobile-layout": "node scripts/check-mobile-layout.mjs",
     "test:infra": "node --test infra/cloudflare/worker.test.mjs && npm run api:test",
@@ -44,7 +52,8 @@
     "test:e2e:recovery": "playwright test --config e2e/recovery/playwright.config.ts"
   },
   "dependencies": {
-    "phaser": "^3.87.0"
+    "phaser": "^3.87.0",
+    "zod": "4.6.1"
   },
   "devDependencies": {
     "playwright": "^1.58.2",

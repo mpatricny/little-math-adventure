@@ -2,6 +2,8 @@ import Phaser from 'phaser';
 import sceneAssets from 'virtual:scene-assets';
 import { TexturesFile } from '../types/assets';
 import { assetPreparation, queueTexture } from '../loading/AssetPreparation';
+import { analytics } from '../telemetry/AnalyticsClient';
+import { prepareSceneTelemetry, readySceneTelemetry } from '../telemetry/SceneTelemetry';
 import { GameStateManager } from './GameStateManager';
 import { CoopSessionManager } from './CoopSessionManager';
 import { SaveSystem } from './SaveSystem';
@@ -51,8 +53,15 @@ export class SceneAssetPlugin extends Phaser.Plugins.ScenePlugin {
         const originalCreate = (scene as Phaser.Scene & { create?: (data: unknown) => void }).create;
         let loading: SceneLoadingScreen | undefined;
         let required = new Set<string>();
+        const loadError = () => analytics()?.emit('asset_error', {
+            code: 'asset_load', scene: scene.sys.settings.key,
+            fingerprint: scene.sys.settings.key, count: 1,
+        });
         Object.assign(scene, {
             preload: () => {
+                scene.load.off('loaderror', loadError).on('loaderror', loadError);
+                scene.events.once('shutdown', () => scene.load.off('loaderror', loadError));
+                analytics()?.setLoading(true);
                 const homeTown = GameStateManager.getInstance().getPlayer().storyProgress?.hasUnlockedSilverpond
                     ? 'SilverpondTownMockScene' : 'TownScene';
                 assetPreparation(scene.game).entering(scene.sys.settings.key, homeTown);
@@ -63,6 +72,7 @@ export class SceneAssetPlugin extends Phaser.Plugins.ScenePlugin {
             create: (data: unknown) => {
                 const ready = () => {
                     assetPreparation(scene.game).ready(scene);
+                    readySceneTelemetry(scene);
                     // Keep the screen through create() and the first actual
                     // rendered frame, not merely until the last download.
                     scene.game.events.once(Phaser.Core.Events.POST_RENDER, dismiss);
@@ -90,6 +100,7 @@ export class SceneAssetPlugin extends Phaser.Plugins.ScenePlugin {
                         return;
                     }
                     registerLoadedAnimations(scene);
+                    prepareSceneTelemetry(scene);
                     if (!retry) scene.events.once(Phaser.Scenes.Events.CREATE, ready);
                     originalCreate?.call(scene, data);
                     if (retry) {

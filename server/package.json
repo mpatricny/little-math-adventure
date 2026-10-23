@@ -13,6 +13,7 @@
     "test": "tsx --test src/*.test.ts src/**/*.test.ts",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "gameplay:report": "tsx src/gameplayReport.ts",
+    "analytics:backfill": "tsx src/analyticsBackfill.ts",
     "db:migrate": "tsx src/db/migrate.ts",
     "db:migrate:prod": "node dist/db/migrate.js"
   },

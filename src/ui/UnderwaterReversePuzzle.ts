@@ -6,6 +6,7 @@ import { UnderwaterUI } from './UnderwaterUI';
 import { fitWaterText, waterArtwork } from './UnderwaterTheme';
 import { waterPearl } from './UnderwaterPearls';
 import { UnderwaterPuzzleSurface, signedWaterValue } from './UnderwaterPuzzleSurface';
+import { observeFlow } from '../telemetry/PuzzleObservation';
 
 /** Find a missing source, then transfer the relationship to two branches. No speed score. */
 export class UnderwaterReversePuzzle {
@@ -19,10 +20,12 @@ export class UnderwaterReversePuzzle {
         onAnswer: (correct: boolean, assisted: boolean) => void; onNext: () => void; onClose: () => void;
     }) {
         bindPuzzleViewState(this, options.state, ['selected', 'hintLevel']);
+        const observed=observeFlow(scene,'reverse',`? → ${challenge.changes.join(', ')} → ${challenge.targets.join(', ')}`,challenge.cards,challenge.cards[challenge.answerIndex]);
         const surface = new UnderwaterPuzzleSurface(scene, ui, challenge.split ? 'UnderwaterReverseSplit' : 'UnderwaterReverse');
         this.builder = surface.builder;
         voice(scene, 'vo.water.reverse', true);
         const { modal } = surface;
+        modal.once('destroy',observed.abandon);
         surface.label('reverseTitleHost', challenge.split ? 'Jeden začátek pro oba proudy.' : 'Najdi začátek proudu.', 25);
         surface.label('reverseProgressHost', `${challenge.stage + 1} / 3`, 20, '#c6d7bf');
         const feedback = surface.label('reverseFeedbackHost', '', 24);
@@ -86,6 +89,7 @@ export class UnderwaterReversePuzzle {
         ui.button(this.builder, 'iconCloseHost', '×', options.onClose, true, 30);
         ui.hint(this.builder, 'iconReverseHintHost', () => {
             if (this.phase !== 'building') return;
+            observed.assist();
             this.hintLevel++; this.phase = 'feedback';
             // The learner can watch inverse OPERATIONS, without automatically placing an answer.
             const points = challenge.split ? [targets[0], steps[0], source] : [targets[0], steps[1], steps[0], source];
@@ -103,6 +107,7 @@ export class UnderwaterReversePuzzle {
             if (this.selected === null) { feedback.setText('Vyber počáteční perlu.'); return; }
             this.phase = 'feedback';
             const result = evaluateReverse(challenge, this.selected);
+            if(this.selected!==null)observed.answer(challenge.cards[this.selected],result.correct,this.hintLevel>0);
             sfx(scene, result.correct ? 'puzzle.solved' : 'math.retry');
             options.onAnswer(result.correct, this.hintLevel > 0);
             const values = challenge.split ? result.values : [result.values[1]];

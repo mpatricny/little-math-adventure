@@ -6,6 +6,7 @@ import { evaluatePump, type underwaterPumpChallenge } from '../systems/Underwate
 import { UnderwaterUI, waterHost } from './UnderwaterUI';
 import { fitWaterText, waterArtwork } from './UnderwaterTheme';
 import { waterRipple } from './UnderwaterWorldFX';
+import { observeFlow } from '../telemetry/PuzzleObservation';
 
 /** Set three physical valves to match pressure readings along one continuous pipe. */
 export class UnderwaterPumpPuzzle {
@@ -19,7 +20,10 @@ export class UnderwaterPumpPuzzle {
         options: {
         state?: Record<string, unknown>; onAnswer: (correct: boolean, assisted: boolean) => void; onClose: () => void }) {
         ui.open('');
+        const observed=observeFlow(scene,'pump',challenge.readings.join(' → '),challenge.options.flat(),
+            challenge.solution.map((n,i)=>challenge.options[i][n]).join(', '));
         voice(scene, 'vo.water.pump', true); const modal = ui.modal!;
+        modal.once('destroy',observed.abandon);
         this.builder = new SceneBuilder(scene); this.builder.buildScene('UnderwaterPump');
         this.selected = [...challenge.initial];
         bindPuzzleViewState(this, options.state, ['selected', 'hintLevel']);
@@ -80,6 +84,7 @@ export class UnderwaterPumpPuzzle {
         });
         ui.hint(this.builder, 'iconPumpHintHost', () => {
             if (this.phase !== 'building') return;
+            observed.assist();
             this.hintLevel++;
             const i = Math.min(this.hintLevel - 1, 2);
             feedback.setText(`${challenge.readings[i]}  ${signed(challenge.readings[i + 1] - challenge.readings[i])}  =  ${challenge.readings[i + 1]}`);
@@ -89,6 +94,7 @@ export class UnderwaterPumpPuzzle {
             if (this.phase !== 'building' || this.moving.some(Boolean)) return;
             this.phase = 'feedback';
             const result = evaluatePump(challenge, this.selected); sfx(scene, result.correct ? 'puzzle.solved' : 'math.retry');
+            observed.answer(this.selected.map((n,i)=>challenge.options[i][n]).join(', '),result.correct,this.hintLevel>0);
             options.onAnswer(result.correct, this.hintLevel > 0);
             feedback.setText(result.values.join('  →  ')).setColor(result.correct ? '#baffd3' : '#eddaad');
             if (result.correct) readings.forEach(host => waterRipple(scene, host.x, host.y, host.depth + 1, 0xb8ffdf, 0.2));

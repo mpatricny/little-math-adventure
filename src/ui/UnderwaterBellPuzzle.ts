@@ -7,6 +7,7 @@ import { UnderwaterUI, waterHost } from './UnderwaterUI';
 import { fitWaterText, waterArtwork } from './UnderwaterTheme';
 import { waterPearl } from './UnderwaterPearls';
 import { waterRipple } from './UnderwaterWorldFX';
+import { observeFlow } from '../telemetry/PuzzleObservation';
 
 export class UnderwaterBellPuzzle {
     readonly builder: SceneBuilder;
@@ -31,6 +32,8 @@ export class UnderwaterBellPuzzle {
         solver?: { texture: string; id: 'A' | 'B' };
     }) {
         this.challenge = options.challenge;
+        const observed=observeFlow(scene,'bell',`${options.challenge.start} → ? → ${options.challenge.target}`,options.challenge.cards,
+            options.challenge.solutions.map(plan=>plan.map(i=>options.challenge.cards[i]).join(', ')).join(' / '));
         bindPuzzleViewState(this, options.state, ['selected', 'hintLevel', 'submitted']);
         ui.open('');
         voice(scene, 'vo.water.bell', true);
@@ -49,7 +52,7 @@ export class UnderwaterBellPuzzle {
         text('flowHintHost', 'Dva kroky. Pak rozezvoň zvon.', 23);
         this.feedback = text('flowFeedbackHost', '', 25);
         ui.button(this.builder, 'iconCloseHost', '×', options.onClose, true, 30);
-        ui.hint(this.builder, 'iconFlowHintHost', () => this.showHint(), () => this.phase === 'building' && this.hintLevel < 2);
+        ui.hint(this.builder, 'iconFlowHintHost', () => { this.showHint(); observed.assist(); }, () => this.phase === 'building' && this.hintLevel < 2);
         if (options.solver) {
             const host = waterHost(this.builder, 'puzzleSolverHost');
             const hero = scene.add.sprite(host.x, host.y, options.solver.texture, 0).setDepth(host.depth).setName('activePuzzleSolver');
@@ -135,6 +138,7 @@ export class UnderwaterBellPuzzle {
             if (this.selected.includes(null)) { this.feedback.setText('Vyber dvě perly.'); return; }
             this.phase = 'feedback';
             const result = evaluatePearlFlow(this.challenge, this.selected);
+            observed.answer(this.selected.map(i=>i===null?'?':this.challenge.cards[i]).join(', '),result.correct,this.hintLevel>0);
             sfx(scene, result.correct ? 'puzzle.solved' : 'math.retry');
             options.onAnswer(result.correct, { assisted: this.hintLevel > 0, firstSubmission: !this.submitted });
             this.submitted = true;
@@ -158,6 +162,7 @@ export class UnderwaterBellPuzzle {
             }));
         });
         this.root.add(ring);
+        this.root.once('destroy',observed.abandon);
         this.refresh();
         this.root.sort('depth');
         this.root.once('destroy', () => {

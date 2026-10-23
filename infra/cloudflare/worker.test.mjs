@@ -19,6 +19,7 @@ function fakeAssets() {
           headers: { 'Content-Type': 'text/html', 'Cache-Control': 'public, max-age=3600' },
         });
       }
+      if(pathname==='/admin.html')return new Response('<!doctype html><title>Statistiky</title>',{headers:{'Content-Type':'text/html'}});
       if (pathname === '/assets/game.js') return new Response('game');
       return new Response('missing', { status: 404 });
     },
@@ -26,6 +27,13 @@ function fakeAssets() {
 }
 
 describe('Cloudflare pilot routing', () => {
+  it('serves only recognized admin documents with no-store; missing JS stays 404',async()=>{
+    const env={ASSETS:fakeAssets(),APP_RELEASE:'test'};
+    for(const path of ['/admin/','/admin/players/profile-id','/admin/sessions/scope:session','/admin/traffic']){
+      const r=await handleRequest(new Request('https://cislokraj.cz'+path),env);assert.equal(r.status,200);assert.match(r.headers.get('cache-control'),/no-store/);assert.match(await r.text(),/Statistiky/);}
+    assert.equal((await handleRequest(new Request('https://cislokraj.cz/admin/missing.js'),env)).status,404);
+    assert.equal((await handleRequest(new Request('https://cislokraj.cz/admin'),env)).status,308);
+  });
   it('accepts the production execution context when forwarding an API request', async context => {
     const requests = [];
     context.mock.method(globalThis, 'fetch', async request => {

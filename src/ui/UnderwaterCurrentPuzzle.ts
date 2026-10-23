@@ -7,6 +7,7 @@ import { UnderwaterUI, waterHost, type WaterHost } from './UnderwaterUI';
 import { fitWaterText } from './UnderwaterTheme';
 import { waterPearl } from './UnderwaterPearls';
 import { waterRipple } from './UnderwaterWorldFX';
+import { observeFlow } from '../telemetry/PuzzleObservation';
 
 /** Reuses the pearl/flow language, but one decision now affects two routes. */
 export class UnderwaterCurrentPuzzle {
@@ -27,9 +28,12 @@ export class UnderwaterCurrentPuzzle {
         onClose: () => void;
     }) {
         bindPuzzleViewState(this, options.state, ['selected', 'hintLevel']);
+        const observed=observeFlow(scene,'current',`${challenge.starts.join(', ')} → ? → ${challenge.targets.join(', ')}`,challenge.cards,
+            challenge.solutions.map(plan=>plan.map(i=>challenge.cards[i]).join(', ')).join(' / '));
         ui.open('');
         voice(scene, 'vo.water.current', true);
         const modal = ui.modal!;
+        modal.once('destroy',observed.abandon);
         this.builder = new SceneBuilder(scene);
         this.builder.buildScene('UnderwaterCurrents');
         const label = (host: WaterHost, value: string, size: number, name: string) => {
@@ -112,6 +116,7 @@ export class UnderwaterCurrentPuzzle {
         });
         ui.hint(this.builder, 'iconCurrentHintHost', () => {
             if (this.phase !== 'building') return;
+            observed.assist();
             this.hintLevel++;
             if (this.hintLevel > 1) this.place(challenge.solutions[0][0], 0);
             const deltas = challenge.targets.map((v, i) => this.signed(v - challenge.starts[i]));
@@ -122,6 +127,7 @@ export class UnderwaterCurrentPuzzle {
             if (this.selected.includes(null)) { this.feedback.setText('Vyber tři perly.'); return; }
             this.phase = 'feedback';
             const result = evaluateCurrents(challenge, this.selected);
+            observed.answer(this.selected.map(i=>i===null?'?':challenge.cards[i]).join(', '),result.correct,this.hintLevel>0);
             sfx(scene, result.correct ? 'puzzle.solved' : 'math.retry');
             options.onAnswer(result.correct, this.hintLevel > 0);
             this.feedback.setText(result.targets.map((v, i) => `${v} ${result.matches[i] ? '=' : '≠'} ${challenge.targets[i]}`).join('     ·     '))
