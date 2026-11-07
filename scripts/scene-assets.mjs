@@ -42,7 +42,7 @@ export function collectSceneAssets(root, dataDir = path.join(root, 'public/asset
         if (visited.has(filename) || !existsSync(filename)) return [];
         visited.add(filename);
         // Debug inventories and progress-only actor IDs do not describe visual dependencies.
-        if (filename.startsWith(path.join(root, 'src/types')) || filename.startsWith(path.join(root, 'src/loading')) || /SceneDebugger|DebugOverlay|SceneAssetPlugin|GameStateManager|MasterySystem|ProgressionSystem|SilverpondProgressSystem|DepthCrystalProgressSystem|UnderwaterProgressSystem|JourneySystem|PlacementInitializer|CatacombPetProgress|ForestCrystalProgression|CrystalSystem/.test(filename)) return [];
+        if (filename.startsWith(path.join(root, 'src/types')) || filename.startsWith(path.join(root, 'src/loading')) || /SceneDebugger|DebugOverlay|SceneAssetPlugin|GameStateManager|MasterySystem|ProgressionSystem|SilverpondProgressSystem|DepthCrystalProgressSystem|UnderwaterProgressSystem|JourneySystem|PlacementInitializer|CatacombPetProgress|PetCatalog|ForestCrystalProgression|CrystalSystem/.test(filename)) return [];
         if (filename.endsWith('.json')) {
             const dataName = path.basename(filename);
             if (existsSync(path.join(dataDir, dataName))) return [load(dataName)];

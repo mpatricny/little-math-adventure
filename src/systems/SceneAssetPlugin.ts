@@ -12,7 +12,8 @@ import { getArenaChoiceOptions } from './ArenaChoiceSystem';
 import { townBuildings } from '../loading/town-scenes';
 import { SceneLoadingScreen } from '../loading/SceneLoadingScreen';
 import { actorPortraitKey } from '../loading/actor-portraits';
-import type { ItemDefinition, PetDefinition, PlayerState } from '../types';
+import { UNDERWATER_ROOMS } from './UnderwaterProgressSystem';
+import type { EnemyDefinition, ItemDefinition, PetDefinition, PlayerState } from '../types';
 
 type AnimationDefinition = {
     texture: string;
@@ -153,6 +154,25 @@ export class SceneAssetPlugin extends Phaser.Plugins.ScenePlugin {
             addDynamic(actor.spriteKey);
             if (actor.animPrefix) addDynamic(`${actor.animPrefix}-idle`);
         };
+        if (sceneKey === 'UnderwaterRoomScene') {
+            const enemies = (scene.cache.json.get('enemies') ?? []) as EnemyDefinition[];
+            // The static room graph contains future encounters. Walking previews
+            // only decode the current roster's idle; combat motions wait for battle.
+            for (const enemy of enemies) {
+                required.delete(enemy.spriteKey);
+                required.delete(`${enemy.spriteKey}-portrait`);
+                // Family membership is exact: the friendly guardian NPC shares
+                // a name prefix with the boss, but is a distinct required actor.
+                const family = scene.cache.json.get('animations')?.enemies?.[enemy.animPrefix ?? ''];
+                for (const animation of Object.values(family ?? {}) as AnimationDefinition[]) required.delete(animation.texture);
+            }
+            const room = sceneKey === scene.sys.settings.key && state.room
+                ? state.room : UNDERWATER_ROOMS[profiles[0]?.underwaterProgress?.roomId ?? 'sp_shallows'];
+            if (room?.encounter) {
+                const catalog = createEncounterCatalog(scene.cache.json.get('encounters'), { core: enemies });
+                catalog.resolveJourneyEncounter(room.encounter.id, 'solo').enemies.forEach(addIdle);
+            }
+        }
         if (sceneKey === scene.sys.settings.key) {
             if (/Arena/.test(sceneKey)) (state.enemyDefs ?? []).forEach(addIdle);
             else addDynamic(state.enemyDefs);

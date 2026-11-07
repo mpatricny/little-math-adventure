@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { fileURLToPath } from 'node:url';
+import { readFileSync } from 'node:fs';
 import { collectSceneAssets } from '../scene-assets.mjs';
 
 const root = fileURLToPath(new URL('../../', import.meta.url));
@@ -42,6 +43,28 @@ test('the first Silverpond transition prepares town art without decoding every u
     assert.ok(manifest.ZyxRocketInterludeScene.includes('forest-crystal-story'));
     for (const scene of ['SilverpondTownMockScene', 'ZyxRocketInterludeScene']) {
         assert.ok(!manifest[scene].some(key => /silverpond-(bubble-crab|bubble-fish|mill-turtle|ruin-axolotl|pearl-jellyfish|depth-guardian).*-sheet/.test(key)));
+    }
+});
+
+test('pet availability checks do not preload underwater combat sheets in either workshop', () => {
+    const readData = filename => JSON.parse(readFileSync(new URL(`../../public/assets/data/${filename}`, import.meta.url), 'utf8'));
+    const prefixes = new Set(readData('enemies.json').filter(enemy => enemy.id.startsWith('silverpond_')).map(enemy => enemy.animPrefix));
+    const sheets = new Set(Object.entries(readData('animations.json').enemies)
+        .filter(([prefix]) => prefixes.has(prefix))
+        .flatMap(([, motions]) => Object.values(motions).map(motion => motion.texture)));
+    assert.ok(sheets.size > 0);
+    for (const scene of ['PythiaWorkshopScene', 'SilverpondPythiaWorkshopMockScene']) {
+        assert.deepEqual(manifest[scene].filter(key => sheets.has(key)), [], scene);
+    }
+});
+
+test('Zyx quest illustrations use portraits without importing the alternate hero animation bundle', () => {
+    for (const scene of ['GuildScene', 'SilverpondGuildMockScene']) {
+        // The original guild already uses the default heroine. Quest diagrams need
+        // only static portraits, including when the chosen hero is the boy knight.
+        assert.deepEqual(manifest[scene].filter(key => /^boy-knight-(?:idle|attack|walk)-sheet$/.test(key)), [], scene);
+        assert.ok(manifest[scene].includes('town-hud-hero-portrait'), scene);
+        assert.ok(manifest[scene].includes('town-hud-heroine-portrait'), scene);
     }
 });
 

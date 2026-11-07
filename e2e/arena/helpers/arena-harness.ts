@@ -1,4 +1,5 @@
 import { expect, test as base, type Page } from 'playwright/test';
+import { isolateDevProfile } from '../../helpers/isolated-dev-profile';
 
 type RuntimeErrorFixtures = {
     runtimeErrors: string[];
@@ -143,6 +144,7 @@ export async function openSeededGame(
     playerOverrides: Record<string, unknown> = {},
     playerBOverrides: Record<string, unknown> = playerOverrides,
 ): Promise<void> {
+    await isolateDevProfile(page);
     const slots = [makeSaveSlot('Ada', 'girl_knight', arenaOverrides, playerOverrides)];
     if (coop) slots.push(makeSaveSlot('Borek', 'boy_knight', playerBArenaOverrides, playerBOverrides));
 

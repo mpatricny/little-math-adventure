@@ -1434,6 +1434,212 @@
                 "frameRate": 6,
                 "repeat": 0
             }
+        },
+        "armored-seahorse": {
+            "armored-seahorse-idle": {
+                "texture": "silverpond-armored-seahorse-idle-sheet",
+                "frames": {
+                    "sequence": [
+                        0,
+                        1,
+                        2,
+                        3,
+                        4,
+                        5,
+                        6,
+                        7,
+                        8,
+                        9,
+                        10,
+                        11,
+                        12,
+                        11,
+                        10,
+                        9,
+                        8,
+                        7,
+                        6,
+                        5,
+                        4,
+                        3,
+                        2,
+                        1
+                    ]
+                },
+                "frameRate": 6,
+                "repeat": -1
+            },
+            "armored-seahorse-attack": {
+                "texture": "silverpond-armored-seahorse-attack-sheet",
+                "frames": {
+                    "start": 0,
+                    "end": 8
+                },
+                "frameRate": 6,
+                "repeat": 0,
+                "movement": {
+                    "type": "dash",
+                    "offsetX": -35,
+                    "duration": 400,
+                    "ease": "Power2"
+                },
+                "holdUntilComplete": true
+            },
+            "armored-seahorse-attack-anim": {
+                "texture": "silverpond-armored-seahorse-attack-sheet",
+                "frames": {
+                    "start": 0,
+                    "end": 8
+                },
+                "frameRate": 6,
+                "repeat": 0,
+                "movement": {
+                    "type": "dash",
+                    "offsetX": -35,
+                    "duration": 400,
+                    "ease": "Power2"
+                },
+                "holdUntilComplete": true
+            },
+            "armored-seahorse-defend": {
+                "texture": "silverpond-armored-seahorse-defend-sheet",
+                "frames": {
+                    "start": 0,
+                    "end": 6
+                },
+                "frameRate": 6,
+                "repeat": 0
+            },
+            "armored-seahorse-hurt": {
+                "texture": "silverpond-armored-seahorse-defend-sheet",
+                "frames": {
+                    "start": 0,
+                    "end": 6
+                },
+                "frameRate": 6,
+                "repeat": 0
+            },
+            "armored-seahorse-defeat": {
+                "texture": "silverpond-armored-seahorse-defeat-sheet",
+                "frames": {
+                    "start": 0,
+                    "end": 8
+                },
+                "frameRate": 6,
+                "repeat": 0
+            },
+            "armored-seahorse-death": {
+                "texture": "silverpond-armored-seahorse-defeat-sheet",
+                "frames": {
+                    "start": 0,
+                    "end": 8
+                },
+                "frameRate": 6,
+                "repeat": 0
+            }
+        },
+        "rune-nautilus": {
+            "rune-nautilus-idle": {
+                "texture": "silverpond-rune-nautilus-idle-sheet",
+                "frames": {
+                    "sequence": [
+                        0,
+                        1,
+                        2,
+                        3,
+                        4,
+                        5,
+                        6,
+                        7,
+                        8,
+                        9,
+                        10,
+                        11,
+                        12,
+                        11,
+                        10,
+                        9,
+                        8,
+                        7,
+                        6,
+                        5,
+                        4,
+                        3,
+                        2,
+                        1
+                    ]
+                },
+                "frameRate": 6,
+                "repeat": -1
+            },
+            "rune-nautilus-attack": {
+                "texture": "silverpond-rune-nautilus-attack-sheet",
+                "frames": {
+                    "start": 0,
+                    "end": 10
+                },
+                "frameRate": 6,
+                "repeat": 0,
+                "movement": {
+                    "type": "dash",
+                    "offsetX": -35,
+                    "duration": 400,
+                    "ease": "Power2"
+                },
+                "holdUntilComplete": true
+            },
+            "rune-nautilus-attack-anim": {
+                "texture": "silverpond-rune-nautilus-attack-sheet",
+                "frames": {
+                    "start": 0,
+                    "end": 10
+                },
+                "frameRate": 6,
+                "repeat": 0,
+                "movement": {
+                    "type": "dash",
+                    "offsetX": -35,
+                    "duration": 400,
+                    "ease": "Power2"
+                },
+                "holdUntilComplete": true
+            },
+            "rune-nautilus-defend": {
+                "texture": "silverpond-rune-nautilus-defend-sheet",
+                "frames": {
+                    "start": 0,
+                    "end": 6
+                },
+                "frameRate": 6,
+                "repeat": 0
+            },
+            "rune-nautilus-hurt": {
+                "texture": "silverpond-rune-nautilus-defend-sheet",
+                "frames": {
+                    "start": 0,
+                    "end": 6
+                },
+                "frameRate": 6,
+                "repeat": 0
+            },
+            "rune-nautilus-defeat": {
+                "texture": "silverpond-rune-nautilus-defeat-sheet",
+                "frames": {
+                    "start": 0,
+                    "end": 8
+                },
+                "frameRate": 6,
+                "repeat": 0
+            },
+            "rune-nautilus-death": {
+                "texture": "silverpond-rune-nautilus-defeat-sheet",
+                "frames": {
+                    "start": 0,
+                    "end": 8
+                },
+                "frameRate": 6,
+                "repeat": 0
+            }
         }
     },
     "pets": {

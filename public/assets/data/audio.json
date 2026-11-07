@@ -748,6 +748,70 @@
       "duration": 11.888616780045352,
       "text": "Spoj malý krystal a fragment. Oba musí mít alespoň deset. Sečti jejich čísla a odečti dvacet. Z dvanácti a třinácti vznikne prizma o síle pět.",
       "voice": "Pythia"
+    },
+    "vo.silverpond.quest.crystal": {
+      "url": "/assets/audio/voice/cs/vo.silverpond.quest.crystal.wav",
+      "kind": "voice",
+      "gain": 0.85,
+      "duration": 2.6006349206349206,
+      "text": "Na dně jezera čeká další velký krystal.",
+      "voice": "Zyx"
+    },
+    "vo.silverpond.quest.fairy": {
+      "url": "/assets/audio/voice/cs/vo.silverpond.quest.fairy.wav",
+      "kind": "voice",
+      "gain": 0.85,
+      "duration": 3.8080725623582765,
+      "text": "Cestu zná jezerní víla. Osvoboď ji ve vodní aréně.",
+      "voice": "Zyx"
+    },
+    "vo.silverpond.quest.scale": {
+      "url": "/assets/audio/voice/cs/vo.silverpond.quest.scale.wav",
+      "kind": "voice",
+      "gain": 0.85,
+      "duration": 4.08671201814059,
+      "text": "Za odměnu dá kouzelnou šupinu. S ní se dá dýchat pod vodou.",
+      "voice": "Zyx"
+    },
+    "vo.silverpond.quest.dive": {
+      "url": "/assets/audio/voice/cs/vo.silverpond.quest.dive.wav",
+      "kind": "voice",
+      "gain": 0.85,
+      "duration": 4.690430839002268,
+      "text": "Kouzelná šupina už je připravená. Cesta ke krystalu vede pod hladinu.",
+      "voice": "Zyx"
+    },
+    "vo.silverpond.quest.complete": {
+      "url": "/assets/audio/voice/cs/vo.silverpond.quest.complete.wav",
+      "kind": "voice",
+      "gain": 0.85,
+      "duration": 3.297233560090703,
+      "text": "Strážce hlubin je svobodný a krystal je zachráněný!",
+      "voice": "Zyx"
+    },
+    "vo.fairy.thanks": {
+      "url": "/assets/audio/voice/cs/vo.fairy.thanks.wav",
+      "kind": "voice",
+      "gain": 0.85,
+      "duration": 2.461315192743764,
+      "text": "Děkuji za záchranu! Jsem zase volná.",
+      "voice": "Jezerní víla"
+    },
+    "vo.fairy.scale": {
+      "url": "/assets/audio/voice/cs/vo.fairy.scale.wav",
+      "kind": "voice",
+      "gain": 0.85,
+      "duration": 2.972154195011338,
+      "text": "Tahle kouzelná šupina umožňuje dýchat pod vodou.",
+      "voice": "Jezerní víla"
+    },
+    "vo.fairy.dive": {
+      "url": "/assets/audio/voice/cs/vo.fairy.dive.wav",
+      "kind": "voice",
+      "gain": 0.85,
+      "duration": 1.811156462585034,
+      "text": "Cesta do hlubin je otevřená!",
+      "voice": "Jezerní víla"
     }
   },
   "music": {

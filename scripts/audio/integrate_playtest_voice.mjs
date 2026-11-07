@@ -3,7 +3,10 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { chromium } from 'playwright';
+import { createHash } from 'node:crypto';
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
+const phase = process.argv[2] ?? 'playtest';
+if (!['playtest', 'story'].includes(phase)) throw new Error('Supported voice phase: playtest or story');
 const reportPath = path.join(root, 'docs/audio/elevenlabs-generated.json');
 const report = JSON.parse(await fs.readFile(reportPath, 'utf8'));
 const manifestPath = path.join(root, 'public/assets/data/audio.json');
@@ -12,7 +15,7 @@ const browser = await chromium.launch({ headless: true });
 const checks = [];
 try {
     const page = await browser.newPage();
-    for (const asset of report.assets.filter(asset => asset.phase === 'playtest')) {
+    for (const asset of report.assets.filter(asset => asset.phase === phase)) {
         const base64 = (await fs.readFile(path.join(root, asset.file))).toString('base64');
         const check = await page.evaluate(async base64 => {
             const context = new OfflineAudioContext(1, 1, 44100);
@@ -42,13 +45,16 @@ try {
         delete check.wav;
         manifest.assets[asset.id] = { url, kind: 'voice', gain: 0.85, duration: check.duration, text: asset.text, voice: asset.role };
         asset.integrated = true;
+        asset.sha256 = createHash('sha256').update(await fs.readFile(path.join(root, asset.file))).digest('hex');
         checks.push({ id: asset.id, ...check, pronunciationReview: 'pending' });
     }
 } finally { await browser.close(); }
 // Keep old triggers compatible while removing the inaccurate legacy lines.
-manifest.assets['vo.battle.intro'] = { ...manifest.assets['vo.battle.sword'] };
-manifest.assets['vo.arena.intro'] = { ...manifest.assets['vo.arena.free'] };
+if (phase === 'playtest') {
+    manifest.assets['vo.battle.intro'] = { ...manifest.assets['vo.battle.sword'] };
+    manifest.assets['vo.arena.intro'] = { ...manifest.assets['vo.arena.free'] };
+}
 await fs.writeFile(manifestPath, JSON.stringify(manifest, null, 2) + '\n');
 await fs.writeFile(reportPath, JSON.stringify(report, null, 2) + '\n');
-await fs.writeFile(path.join(root, 'docs/audio/playtest-voice-checks.json'), JSON.stringify({ method: 'Offline Web Audio decode; peak normalized to at most 0.7', assets: checks }, null, 2) + '\n');
-console.log(JSON.stringify({ voices: checks.length, duration: checks.reduce((sum, item) => sum + item.duration, 0), credits: report.assets.filter(a => a.phase === 'playtest').reduce((sum, a) => sum + Number(a.reported_credit_cost ?? 0), 0) }));
+await fs.writeFile(path.join(root, `docs/audio/${phase}-voice-checks.json`), JSON.stringify({ method: 'Offline Web Audio decode; peak normalized to at most 0.7', assets: checks }, null, 2) + '\n');
+console.log(JSON.stringify({ voices: checks.length, duration: checks.reduce((sum, item) => sum + item.duration, 0), credits: report.assets.filter(a => a.phase === phase).reduce((sum, a) => sum + Number(a.reported_credit_cost ?? 0), 0) }));

@@ -5492,20 +5492,20 @@
         {
           "id": "silverpondQuestSymbolHost",
           "asset": "ui.containers.empty",
-          "x": 440,
-          "y": 535,
+          "x": 770,
+          "y": 551,
           "depth": 1012,
-          "width": 160,
-          "height": 137
+          "width": 350,
+          "height": 100
         },
         {
           "id": "silverpondQuestTextHost",
           "asset": "ui.containers.empty",
-          "x": 552,
-          "y": 472,
+          "x": 770,
+          "y": 480,
           "depth": 1012,
-          "width": 520,
-          "height": 140
+          "width": 720,
+          "height": 40
         },
         {
           "id": "silverpondQuestButtonHost",
@@ -5513,7 +5513,7 @@
           "x": 1035,
           "y": 655,
           "depth": 1020,
-          "width": 320,
+          "width": 222,
           "height": 74
         },
         {
@@ -5545,6 +5545,96 @@
           "height": 140,
           "depth": 204,
           "visible": false
+        },
+        {
+          "id": "silverpondQuestPortraitHost",
+          "asset": "ui.containers.empty",
+          "x": 217,
+          "y": 505,
+          "width": 145,
+          "height": 190,
+          "depth": 1012
+        },
+        {
+          "id": "silverpondQuestSpeakerHost",
+          "asset": "ui.containers.empty",
+          "x": 217,
+          "y": 625,
+          "width": 145,
+          "height": 40,
+          "depth": 1012
+        },
+        {
+          "id": "silverpondQuestCenterHost",
+          "asset": "ui.containers.empty",
+          "x": 770,
+          "y": 551,
+          "width": 95,
+          "height": 95,
+          "depth": 1012
+        },
+        {
+          "id": "silverpondQuestLeftHost",
+          "asset": "ui.containers.empty",
+          "x": 650,
+          "y": 551,
+          "width": 80,
+          "height": 95,
+          "depth": 1012
+        },
+        {
+          "id": "silverpondQuestRightHost",
+          "asset": "ui.containers.empty",
+          "x": 900,
+          "y": 551,
+          "width": 90,
+          "height": 100,
+          "depth": 1012
+        },
+        {
+          "id": "silverpondQuestArrowHost",
+          "asset": "ui.containers.empty",
+          "x": 775,
+          "y": 551,
+          "width": 50,
+          "height": 50,
+          "depth": 1012
+        },
+        {
+          "id": "silverpondQuestBubble1Host",
+          "asset": "ui.containers.empty",
+          "x": 945,
+          "y": 545,
+          "width": 13,
+          "height": 13,
+          "depth": 1012
+        },
+        {
+          "id": "silverpondQuestBubble2Host",
+          "asset": "ui.containers.empty",
+          "x": 955,
+          "y": 525,
+          "width": 9,
+          "height": 9,
+          "depth": 1012
+        },
+        {
+          "id": "silverpondQuestBubble3Host",
+          "asset": "ui.containers.empty",
+          "x": 950,
+          "y": 505,
+          "width": 7,
+          "height": 7,
+          "depth": 1012
+        },
+        {
+          "id": "silverpondQuestContentSafeHost",
+          "asset": "ui.containers.empty",
+          "x": 775,
+          "y": 532,
+          "width": 850,
+          "height": 150,
+          "depth": 1012
         }
       ],
       "ui": [
@@ -9036,73 +9126,73 @@
         {
           "id": "fairyRewardFairy",
           "asset": "characters.npcs.silverpond_lake_fairy",
-          "x": 770,
-          "y": 335,
+          "x": 810,
+          "y": 350,
           "depth": 24,
-          "scale": 1
+          "scale": 0.6640625
         },
         {
           "id": "fairyRewardPlayerHost",
           "asset": "ui.containers.empty",
-          "x": 270,
-          "y": 655,
+          "x": 370,
+          "y": 505,
           "depth": 24,
           "width": 200,
-          "height": 220
+          "height": 210
         },
         {
           "id": "fairyRewardOverlayHost",
           "asset": "ui.containers.empty",
           "x": 640,
-          "y": 425,
+          "y": 330,
           "depth": 100,
-          "width": 1040,
-          "height": 500
+          "width": 940,
+          "height": 502.41379310344826
         },
         {
           "id": "fairyRewardDialogHost",
           "asset": "ui.containers.empty",
-          "x": 640,
-          "y": 602,
+          "x": 480,
+          "y": 598,
           "depth": 100,
-          "width": 1030,
-          "height": 178
+          "width": 560,
+          "height": 132.36363636363637
         },
         {
           "id": "fairyRewardPortraitHost",
           "asset": "ui.containers.empty",
-          "x": 770,
-          "y": 335,
-          "depth": 102,
-          "width": 512,
-          "height": 512
+          "x": 810,
+          "y": 350,
+          "depth": 24,
+          "width": 340,
+          "height": 340
         },
         {
           "id": "fairyRewardSymbolHost",
           "asset": "ui.containers.empty",
-          "x": 395,
-          "y": 500,
-          "depth": 102,
-          "width": 230,
-          "height": 230
+          "x": 420,
+          "y": 368,
+          "depth": 103,
+          "width": 210,
+          "height": 210
         },
         {
           "id": "fairyRewardTextHost",
           "asset": "ui.containers.empty",
-          "x": 545,
-          "y": 405,
-          "depth": 102,
-          "width": 500,
-          "height": 165
+          "x": 640,
+          "y": 190,
+          "depth": 103,
+          "width": 650,
+          "height": 56
         },
         {
           "id": "fairyRewardButtonHost",
           "asset": "ui.containers.empty",
-          "x": 900,
-          "y": 620,
+          "x": 970,
+          "y": 598,
           "depth": 110,
-          "width": 405,
-          "height": 92
+          "width": 320,
+          "height": 120
         },
         {
           "id": "fairyRewardTitleHost",
@@ -9110,17 +9200,143 @@
           "x": 640,
           "y": 82,
           "depth": 100,
-          "width": 790,
-          "height": 138
+          "width": 720,
+          "height": 170.1818181818182
         },
         {
           "id": "fairyRewardQuestHost",
           "asset": "ui.containers.empty",
-          "x": 1090,
-          "y": 76,
-          "depth": 84,
-          "width": 340,
-          "height": 72
+          "x": 970,
+          "y": 385,
+          "depth": 104,
+          "width": 76,
+          "height": 76
+        },
+        {
+          "id": "fairyRewardTitleSafeHost",
+          "asset": "ui.containers.empty",
+          "x": 640,
+          "y": 82,
+          "width": 500,
+          "height": 60,
+          "depth": 101
+        },
+        {
+          "id": "fairyRewardDialogSafeHost",
+          "asset": "ui.containers.empty",
+          "x": 480,
+          "y": 598,
+          "width": 360,
+          "height": 56,
+          "depth": 101
+        },
+        {
+          "id": "fairyRewardCardSafeHost",
+          "asset": "ui.containers.empty",
+          "x": 640,
+          "y": 331,
+          "width": 750,
+          "height": 370,
+          "depth": 101
+        },
+        {
+          "id": "fairyRewardClaimButtonHost",
+          "asset": "ui.containers.empty",
+          "x": 640,
+          "y": 642,
+          "width": 320,
+          "height": 120,
+          "depth": 110
+        },
+        {
+          "id": "fairyRewardDemoHost",
+          "asset": "ui.containers.empty",
+          "x": 0,
+          "y": 0,
+          "width": 1280,
+          "height": 720,
+          "depth": 103
+        },
+        {
+          "id": "fairyRewardWaterHost",
+          "asset": "ui.containers.empty",
+          "x": 810,
+          "y": 374,
+          "width": 320,
+          "height": 180,
+          "depth": 103
+        },
+        {
+          "id": "fairyRewardSwimmerHost",
+          "asset": "ui.containers.empty",
+          "x": 810,
+          "y": 460,
+          "width": 150,
+          "height": 150,
+          "depth": 104
+        },
+        {
+          "id": "fairyRewardArrowHost",
+          "asset": "ui.containers.empty",
+          "x": 590,
+          "y": 369,
+          "width": 76,
+          "height": 76,
+          "depth": 103
+        },
+        {
+          "id": "fairyRewardWaterLabelHost",
+          "asset": "ui.containers.empty",
+          "x": 810,
+          "y": 492,
+          "width": 260,
+          "height": 44,
+          "depth": 104
+        },
+        {
+          "id": "fairyRewardGiftMotionHost",
+          "asset": "ui.containers.empty",
+          "x": 420,
+          "y": 368,
+          "width": 50,
+          "height": 50,
+          "depth": 105
+        },
+        {
+          "id": "fairyRewardGiftTargetHost",
+          "asset": "ui.containers.empty",
+          "x": 810,
+          "y": 414,
+          "width": 50,
+          "height": 50,
+          "depth": 105
+        },
+        {
+          "id": "fairyRewardBubble1Host",
+          "asset": "ui.containers.empty",
+          "x": 846,
+          "y": 373,
+          "width": 12,
+          "height": 12,
+          "depth": 105
+        },
+        {
+          "id": "fairyRewardBubble2Host",
+          "asset": "ui.containers.empty",
+          "x": 855,
+          "y": 350,
+          "width": 17,
+          "height": 17,
+          "depth": 105
+        },
+        {
+          "id": "fairyRewardBubble3Host",
+          "asset": "ui.containers.empty",
+          "x": 850,
+          "y": 323,
+          "width": 23,
+          "height": 23,
+          "depth": 105
         }
       ],
       "ui": []

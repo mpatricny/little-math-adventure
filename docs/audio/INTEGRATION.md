@@ -1,6 +1,22 @@
 # Audio ve hře
 
-Stav 8. 9. 2026: uživatel schválil ElevenLabs nahrávky a dodal všech deset MP3 ze Suno. V produkci je **10 skladeb, 45 efektů, 5 ambientů a 37 českých replik**. Zyx používá hlas Will, Pythia hlas Lily. Jezerní víla zůstává beze slov; její hudební a efektová kulisa je zapojená.
+Historický stav 8. 9. 2026: uživatel schválil ElevenLabs nahrávky a dodal všech deset MP3 ze Suno. Tehdy bylo zapojeno 10 skladeb, 45 efektů, 5 ambientů a 37 českých replik. Zyx používá hlas Will, Pythia hlas Lily. Aktuální doplnění příběhu a víly je popsané níže.
+
+## Zyx a jezerní víla — doplnění 7. 11. 2026
+
+Na výslovnou žádost uživatele vzniklo osm nových českých nahrávek: pět stránek Zyxova silverpondského úkolu (Will) a tři stránky daru jezerní víly (Lily, zvolený stávající ženský hlas). Repliky používají formulace společné pro sólo i kooperaci. Schválení hlasového obsazení víly a výslovnosti nových replik ještě vyžaduje lidský poslech; automatické dekódování jej nenahrazuje.
+
+Použitá dávka `story` má konzervativní rezervu 760 kreditů a pevný strop 1200. API vykázalo **152 kreditů** a 25,73 s řeči. Bez automatických opakování, navýšení tarifu nebo overage. Původ, model, text, čas, cena a SHA-256 jsou v `elevenlabs-generated.json`; `in_flight` je prázdné. Klíč zavedené cesty Doppler `remoteexam/prd` zůstal pouze v paměti generátoru.
+
+Reprodukce: `python3 scripts/audio/generate_elevenlabs.py --phase story --max-credits 1200` pouze zkontroluje dávku; generování vyžaduje `--generate` a oprávněný zdroj klíče. `node scripts/audio/integrate_playtest_voice.mjs story` převede originály na místní WAV se špičkou nejvýše 0,7. Výsledek je v `story-voice-checks.json`. Hra čte `/assets/audio/voice/cs/vo.silverpond.quest.*.wav` a `/assets/audio/voice/cs/vo.fairy.*.wav` přes společný AudioDirector; žádné API při hraní.
+
+Zyxův dialog nyní ukazuje pouze krátké titulky a obrázky. Tři etapy jsou osvobození víly, získaná šupina a zachráněný krystal. Značka `!` se skryje po potvrzení poslední stránky právě zobrazené etapy; nepřevádí se na trvalý otazník nebo hvězdu. Nové pokyny mají samostatné volitelné booleovské příznaky v uložené pozici. Staré `hasSeenSilverpondQuest` zůstává platné pro úvod. Zavření staršího dialogu nepotvrdí novější postup. Společné zobrazení se ukládá pro oba hráče. Není potřeba databázová migrace.
+
+Víla zachovává schválené obrázky, rozložení a celý názorný darovací postup. Řeč patří ke stránce poděkování, ukázce šupiny a potvrzenému přijetí. Přeskočení stránky a opuštění scény ruší aktuální i čekající řeč. Chybějící nahrávka ani vypnutý hlas nezdržují ovládání.
+
+Ověření této změny: 22 jednotkových kontrol příběhu, ukládání, silverpondského postupu, sdíleného obrazového helperu a nastavení zvuku prošlo. Čtyři scénáře `e2e/silverpond/story-audio.spec.ts` prošly na desktopu WebGL 1280 × 720 a tabletu Canvas 1024 × 768. Po konečné opravě poměru stran tlačítka byly oba Zyxovy scénáře znovu úspěšně spuštěny. Testy mají vlastní lokální pozice a mockované API, nepracují se skutečnou databází a nezávisí na jejích migracích. Pokrývají skutečné přehrání souborů, nahrazení aktuální řeči, zrušení pozdě načtené repliky, pauzu/návrat, vypnutí hlasu, odchod, chybějící soubor a uložení etap včetně nového pokynu po záchraně krystalu.
+
+Vizuálně prohlédnuto v `artifacts/silverpond/`: `story-desktop-webgl-{crystal,fairy,scale,hover,pressed,pointer-out,disabled}.png` a `story-tablet-canvas-{scale,dive-muted-no-words,fairy-gift,hover,pressed,pointer-out,disabled,complete}.png`. Titulky a obrázky sedí ve skutečném vnitřním prostoru rámu; původní kompletní rám ani ilustrace nejsou protažené. Tlačítko má host 222 × 74, přesný původní poměr 3:1, a stabilní klikací prostor. Názorná šupina → portrét s bublinami zůstává srozumitelným obrazem dýchání i bez slov a zvuku. Nejde o dětský playtest, poslechový mastering ani kontrolu fyzického iPadu. Nový dialog přidává k manifestu cechu osm malých statických obrázků; nepřidává útočné ani chodící animace hrdinů.
 
 ## Hudba
 

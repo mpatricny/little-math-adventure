@@ -3,7 +3,7 @@ import items from '../../../public/assets/data/items.json';
 import pets from '../../../public/assets/data/pets.json';
 import enemies from '../../../public/assets/data/enemies.json';
 import textures from '../../../public/assets/data/textures.json';
-import type { ItemDefinition, PetDefinition, PlayerState } from '../../types';
+import type { EnemyDefinition, ItemDefinition, PetDefinition, PlayerState } from '../../types';
 import { getShopEquipment } from '../ShopCatalog';
 import { isPetUnlocked } from '../PetCatalog';
 import { CrystalSystem } from '../CrystalSystem';
@@ -33,9 +33,11 @@ describe('Silverpond progression content', () => {
     });
 
     it('offers each defeated Silverpond creature from existing stable defeat markers for tier 2 or 3 crystals', () => {
-        for (const enemy of enemies.filter(enemy => enemy.id.startsWith('silverpond_'))) {
-            const pet = companions.find(pet => pet.unlockedByEnemy === enemy.id)!;
-            expect(pet, enemy.id).toBeDefined();
+        for (const enemy of (enemies as EnemyDefinition[]).filter(enemy => enemy.id.startsWith('silverpond_'))) {
+            const species = enemy.baseEnemyId ?? enemy.id;
+            const matches = companions.filter(pet => pet.unlockedByEnemy === species);
+            expect(matches, enemy.id).toHaveLength(1);
+            const pet = matches[0];
             expect(['fragment', 'prism']).toContain(pet.requiredAmulet.tier);
             expect(pet.requiredAmulet.value).toBeGreaterThan(0);
             expect(isPetUnlocked(pet, player())).toBe(false);

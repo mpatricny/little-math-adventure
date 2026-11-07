@@ -2769,6 +2769,238 @@
       "bytes": 191469,
       "status": "generated_not_listened",
       "integrated": true
+    },
+    {
+      "id": "vo.silverpond.quest.crystal",
+      "kind": "voice",
+      "phase": "story",
+      "voice_id": "bIHbv24MWmeRgasZH58o",
+      "role": "Zyx",
+      "text": "Na dně jezera čeká další velký krystal.",
+      "model_id": "eleven_multilingual_v2",
+      "trigger": "Zyx, úvodní stránka s krystalem pod hladinou",
+      "script_status": "prepared_for_recording",
+      "source_note": "User requested Czech story narration; fairy uses Lily as existing warm female voice.",
+      "subtitle_sync_required": false,
+      "file": "public/assets/audio/incoming/elevenlabs/voice/vo.silverpond.quest.crystal.mp3",
+      "request": {
+        "text": "Na dně jezera čeká další velký krystal.",
+        "model_id": "eleven_multilingual_v2",
+        "language_code": "cs",
+        "voice_settings": {
+          "stability": 0.5,
+          "similarity_boost": 0.75
+        }
+      },
+      "created_at": "2026-11-07T08:27:57.005648+00:00",
+      "reported_credit_cost": "16",
+      "bytes": 42674,
+      "status": "generated_not_listened",
+      "integrated": true,
+      "sha256": "4061e1eb7ddf7d900dc28a9df8ac956cb69c996fc40ed20ed62dd82a7eee1bd5"
+    },
+    {
+      "id": "vo.silverpond.quest.fairy",
+      "kind": "voice",
+      "phase": "story",
+      "voice_id": "bIHbv24MWmeRgasZH58o",
+      "role": "Zyx",
+      "text": "Cestu zná jezerní víla. Osvoboď ji ve vodní aréně.",
+      "model_id": "eleven_multilingual_v2",
+      "trigger": "Zyx, víla ve vodní aréně",
+      "script_status": "prepared_for_recording",
+      "source_note": "User requested Czech story narration; fairy uses Lily as existing warm female voice.",
+      "subtitle_sync_required": false,
+      "file": "public/assets/audio/incoming/elevenlabs/voice/vo.silverpond.quest.fairy.mp3",
+      "request": {
+        "text": "Cestu zná jezerní víla. Osvoboď ji ve vodní aréně.",
+        "model_id": "eleven_multilingual_v2",
+        "language_code": "cs",
+        "voice_settings": {
+          "stability": 0.5,
+          "similarity_boost": 0.75
+        }
+      },
+      "created_at": "2026-11-07T08:28:49.321319+00:00",
+      "reported_credit_cost": "20",
+      "bytes": 61901,
+      "status": "generated_not_listened",
+      "integrated": true,
+      "sha256": "2239cf9e2fb1e923766cab878355946c1c1aab0602b8cfad5becd837d0065a9f"
+    },
+    {
+      "id": "vo.silverpond.quest.scale",
+      "kind": "voice",
+      "phase": "story",
+      "voice_id": "bIHbv24MWmeRgasZH58o",
+      "role": "Zyx",
+      "text": "Za odměnu dá kouzelnou šupinu. S ní se dá dýchat pod vodou.",
+      "model_id": "eleven_multilingual_v2",
+      "trigger": "Zyx, ukázka šupiny a dýchání",
+      "script_status": "prepared_for_recording",
+      "source_note": "User requested Czech story narration; fairy uses Lily as existing warm female voice.",
+      "subtitle_sync_required": false,
+      "file": "public/assets/audio/incoming/elevenlabs/voice/vo.silverpond.quest.scale.mp3",
+      "request": {
+        "text": "Za odměnu dá kouzelnou šupinu. S ní se dá dýchat pod vodou.",
+        "model_id": "eleven_multilingual_v2",
+        "language_code": "cs",
+        "voice_settings": {
+          "stability": 0.5,
+          "similarity_boost": 0.75
+        }
+      },
+      "created_at": "2026-11-07T08:29:06.226767+00:00",
+      "reported_credit_cost": "24",
+      "bytes": 66498,
+      "status": "generated_not_listened",
+      "integrated": true,
+      "sha256": "f9ca41a68f3e7b68692dc331142af3eef3be9de5e404a4011dcc371ac12dc310"
+    },
+    {
+      "id": "vo.silverpond.quest.dive",
+      "kind": "voice",
+      "phase": "story",
+      "voice_id": "bIHbv24MWmeRgasZH58o",
+      "role": "Zyx",
+      "text": "Kouzelná šupina už je připravená. Cesta ke krystalu vede pod hladinu.",
+      "model_id": "eleven_multilingual_v2",
+      "trigger": "Zyx, získaná šupina; připomínka sestupu",
+      "script_status": "prepared_for_recording",
+      "source_note": "User requested Czech story narration; fairy uses Lily as existing warm female voice.",
+      "subtitle_sync_required": false,
+      "file": "public/assets/audio/incoming/elevenlabs/voice/vo.silverpond.quest.dive.mp3",
+      "request": {
+        "text": "Kouzelná šupina už je připravená. Cesta ke krystalu vede pod hladinu.",
+        "model_id": "eleven_multilingual_v2",
+        "language_code": "cs",
+        "voice_settings": {
+          "stability": 0.5,
+          "similarity_boost": 0.75
+        }
+      },
+      "created_at": "2026-11-07T08:29:17.133064+00:00",
+      "reported_credit_cost": "28",
+      "bytes": 76111,
+      "status": "generated_not_listened",
+      "integrated": true,
+      "sha256": "e20c424740c85b801344182994986f23084df388aef82816c595df3611fdc01e"
+    },
+    {
+      "id": "vo.silverpond.quest.complete",
+      "kind": "voice",
+      "phase": "story",
+      "voice_id": "bIHbv24MWmeRgasZH58o",
+      "role": "Zyx",
+      "text": "Strážce hlubin je svobodný a krystal je zachráněný!",
+      "model_id": "eleven_multilingual_v2",
+      "trigger": "Zyx, zachráněný krystal",
+      "script_status": "prepared_for_recording",
+      "source_note": "User requested Czech story narration; fairy uses Lily as existing warm female voice.",
+      "subtitle_sync_required": false,
+      "file": "public/assets/audio/incoming/elevenlabs/voice/vo.silverpond.quest.complete.mp3",
+      "request": {
+        "text": "Strážce hlubin je svobodný a krystal je zachráněný!",
+        "model_id": "eleven_multilingual_v2",
+        "language_code": "cs",
+        "voice_settings": {
+          "stability": 0.5,
+          "similarity_boost": 0.75
+        }
+      },
+      "created_at": "2026-11-07T08:29:27.697817+00:00",
+      "reported_credit_cost": "20",
+      "bytes": 53959,
+      "status": "generated_not_listened",
+      "integrated": true,
+      "sha256": "cf620f17eb074ef56c20d3db2a25561c2e9fb9d9b828adecbd7a5df5057d1ddf"
+    },
+    {
+      "id": "vo.fairy.thanks",
+      "kind": "voice",
+      "phase": "story",
+      "voice_id": "pFZP5JQG7iQjIQuC4Bku",
+      "role": "Jezerní víla",
+      "text": "Děkuji za záchranu! Jsem zase volná.",
+      "model_id": "eleven_multilingual_v2",
+      "trigger": "Víla, příchod a poděkování",
+      "script_status": "prepared_for_recording",
+      "source_note": "User requested Czech story narration; fairy uses Lily as existing warm female voice.",
+      "subtitle_sync_required": false,
+      "file": "public/assets/audio/incoming/elevenlabs/voice/vo.fairy.thanks.mp3",
+      "request": {
+        "text": "Děkuji za záchranu! Jsem zase volná.",
+        "model_id": "eleven_multilingual_v2",
+        "language_code": "cs",
+        "voice_settings": {
+          "stability": 0.5,
+          "similarity_boost": 0.75
+        }
+      },
+      "created_at": "2026-11-07T08:29:32.019740+00:00",
+      "reported_credit_cost": "14",
+      "bytes": 40585,
+      "status": "generated_not_listened",
+      "integrated": true,
+      "sha256": "da6b9859f3bd546351e7214f0c13d276d82f521725d7fad3bb37e9eab2c6cf67"
+    },
+    {
+      "id": "vo.fairy.scale",
+      "kind": "voice",
+      "phase": "story",
+      "voice_id": "pFZP5JQG7iQjIQuC4Bku",
+      "role": "Jezerní víla",
+      "text": "Tahle kouzelná šupina umožňuje dýchat pod vodou.",
+      "model_id": "eleven_multilingual_v2",
+      "trigger": "Víla, předání šupiny a obrázková ukázka",
+      "script_status": "prepared_for_recording",
+      "source_note": "User requested Czech story narration; fairy uses Lily as existing warm female voice.",
+      "subtitle_sync_required": false,
+      "file": "public/assets/audio/incoming/elevenlabs/voice/vo.fairy.scale.mp3",
+      "request": {
+        "text": "Tahle kouzelná šupina umožňuje dýchat pod vodou.",
+        "model_id": "eleven_multilingual_v2",
+        "language_code": "cs",
+        "voice_settings": {
+          "stability": 0.5,
+          "similarity_boost": 0.75
+        }
+      },
+      "created_at": "2026-11-07T08:29:43.113580+00:00",
+      "reported_credit_cost": "19",
+      "bytes": 48526,
+      "status": "generated_not_listened",
+      "integrated": true,
+      "sha256": "a4d50d89d56e9e36876b5217b70742530323ed90e167e3ba99db770f7782e5ae"
+    },
+    {
+      "id": "vo.fairy.dive",
+      "kind": "voice",
+      "phase": "story",
+      "voice_id": "pFZP5JQG7iQjIQuC4Bku",
+      "role": "Jezerní víla",
+      "text": "Cesta do hlubin je otevřená!",
+      "model_id": "eleven_multilingual_v2",
+      "trigger": "Víla, potvrzené přijetí daru",
+      "script_status": "prepared_for_recording",
+      "source_note": "User requested Czech story narration; fairy uses Lily as existing warm female voice.",
+      "subtitle_sync_required": false,
+      "file": "public/assets/audio/incoming/elevenlabs/voice/vo.fairy.dive.mp3",
+      "request": {
+        "text": "Cesta do hlubin je otevřená!",
+        "model_id": "eleven_multilingual_v2",
+        "language_code": "cs",
+        "voice_settings": {
+          "stability": 0.5,
+          "similarity_boost": 0.75
+        }
+      },
+      "created_at": "2026-11-07T08:29:45.609945+00:00",
+      "reported_credit_cost": "11",
+      "bytes": 30136,
+      "status": "generated_not_listened",
+      "integrated": true,
+      "sha256": "365d8a0191897212db54c706603f67ae85dd211e5eb39a98b9f97b6f9f8c47ca"
     }
   ],
   "in_flight": null

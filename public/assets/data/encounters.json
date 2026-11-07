@@ -147,7 +147,7 @@
                 },
                 {
                   "source": "core",
-                  "enemyId": "silverpond_ruin_axolotl"
+                  "enemyId": "silverpond_rune_nautilus"
                 }
               ]
             }
@@ -187,7 +187,7 @@
                 },
                 {
                   "source": "core",
-                  "enemyId": "silverpond_silverfin_scalefish"
+                  "enemyId": "silverpond_armored_seahorse"
                 }
               ]
             }
@@ -255,11 +255,11 @@
               "enemies": [
                 {
                   "source": "core",
-                  "enemyId": "silverpond_mill_turtle"
+                  "enemyId": "silverpond_armored_seahorse_deep"
                 },
                 {
                   "source": "core",
-                  "enemyId": "silverpond_silverfin_scalefish"
+                  "enemyId": "silverpond_rune_nautilus_deep"
                 }
               ]
             }

@@ -373,6 +373,52 @@
                     "death": "depth-guardian-death"
                 },
                 "defaultAnimation": "idle"
+            },
+            "armored_seahorse": {
+                "type": "animatedSprite",
+                "category": "enemy",
+                "nameKey": "$characters.enemies.ENM_011",
+                "origin": [
+                    0.5,
+                    0.5
+                ],
+                "scale": {
+                    "default": 0.45,
+                    "battle": 0.45,
+                    "arena": 0.45
+                },
+                "depth": 5,
+                "defaultTexture": "silverpond-armored-seahorse-idle-sheet",
+                "animations": {
+                    "idle": "armored-seahorse-idle",
+                    "attack": "armored-seahorse-attack",
+                    "hurt": "armored-seahorse-hurt",
+                    "death": "armored-seahorse-death"
+                },
+                "defaultAnimation": "idle"
+            },
+            "rune_nautilus": {
+                "type": "animatedSprite",
+                "category": "enemy",
+                "nameKey": "$characters.enemies.ENM_012",
+                "origin": [
+                    0.5,
+                    0.5
+                ],
+                "scale": {
+                    "default": 0.45,
+                    "battle": 0.45,
+                    "arena": 0.45
+                },
+                "depth": 5,
+                "defaultTexture": "silverpond-rune-nautilus-idle-sheet",
+                "animations": {
+                    "idle": "rune-nautilus-idle",
+                    "attack": "rune-nautilus-attack",
+                    "hurt": "rune-nautilus-hurt",
+                    "death": "rune-nautilus-death"
+                },
+                "defaultAnimation": "idle"
             }
         },
         "npcs": {

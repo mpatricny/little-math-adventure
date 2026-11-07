@@ -292,7 +292,7 @@ test('Silverpond skips familiar explanations with an empty guide history and ret
         const s = (window as any)[key].scene.keys.SilverpondShopMockScene;
         return { price: s.selectedItem.price, hint: s.paymentHintRect !== null,
             legend: s.children.list.some((object: any) => object.type === 'Text' && object.text === '= 100') };
-    }, KEY)).toEqual({ price: 357, hint: false, legend: false });
+    }, KEY)).toEqual({ price: 357, hint: false, legend: true });
     await shot(page, info.project.name, 'shop-price-357-no-guides');
     await withoutWords(page, info.project.name, 'shop-price-357-no-guides');
 

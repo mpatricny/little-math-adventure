@@ -739,3 +739,71 @@ Dílny
 Délka: 15.00 s. [Originál MP3](/Users/datamole/little-math-adventure/public/assets/audio/incoming/elevenlabs/ambience/amb.workshop.mp3).
 
 ![amb.workshop](/Users/datamole/little-math-adventure/public/assets/audio/previews/ambience/amb.workshop.wav)
+
+## Zyx a jezerní víla — doplnění 7. 11. 2026
+
+Osm nových replik, 152 kreditů. Zyx: Will. Víla: Lily (zvolený stávající ženský hlas). Technicky dekódováno; lidský poslech obsazení a výslovnosti zatím neproběhl.
+
+### vo.silverpond.quest.crystal
+
+Na dně jezera čeká další velký krystal.
+
+2.60 s, 16 kreditů.
+
+![vo.silverpond.quest.crystal](/Users/datamole/.codex/worktrees/tablet-followups/little-math-adventure/public/assets/audio/voice/cs/vo.silverpond.quest.crystal.wav)
+
+### vo.silverpond.quest.fairy
+
+Cestu zná jezerní víla. Osvoboď ji ve vodní aréně.
+
+3.81 s, 20 kreditů.
+
+![vo.silverpond.quest.fairy](/Users/datamole/.codex/worktrees/tablet-followups/little-math-adventure/public/assets/audio/voice/cs/vo.silverpond.quest.fairy.wav)
+
+### vo.silverpond.quest.scale
+
+Za odměnu dá kouzelnou šupinu. S ní se dá dýchat pod vodou.
+
+4.09 s, 24 kreditů.
+
+![vo.silverpond.quest.scale](/Users/datamole/.codex/worktrees/tablet-followups/little-math-adventure/public/assets/audio/voice/cs/vo.silverpond.quest.scale.wav)
+
+### vo.silverpond.quest.dive
+
+Kouzelná šupina už je připravená. Cesta ke krystalu vede pod hladinu.
+
+4.69 s, 28 kreditů.
+
+![vo.silverpond.quest.dive](/Users/datamole/.codex/worktrees/tablet-followups/little-math-adventure/public/assets/audio/voice/cs/vo.silverpond.quest.dive.wav)
+
+### vo.silverpond.quest.complete
+
+Strážce hlubin je svobodný a krystal je zachráněný!
+
+3.30 s, 20 kreditů.
+
+![vo.silverpond.quest.complete](/Users/datamole/.codex/worktrees/tablet-followups/little-math-adventure/public/assets/audio/voice/cs/vo.silverpond.quest.complete.wav)
+
+### vo.fairy.thanks
+
+Děkuji za záchranu! Jsem zase volná.
+
+2.46 s, 14 kreditů.
+
+![vo.fairy.thanks](/Users/datamole/.codex/worktrees/tablet-followups/little-math-adventure/public/assets/audio/voice/cs/vo.fairy.thanks.wav)
+
+### vo.fairy.scale
+
+Tahle kouzelná šupina umožňuje dýchat pod vodou.
+
+2.97 s, 19 kreditů.
+
+![vo.fairy.scale](/Users/datamole/.codex/worktrees/tablet-followups/little-math-adventure/public/assets/audio/voice/cs/vo.fairy.scale.wav)
+
+### vo.fairy.dive
+
+Cesta do hlubin je otevřená!
+
+1.81 s, 11 kreditů.
+
+![vo.fairy.dive](/Users/datamole/.codex/worktrees/tablet-followups/little-math-adventure/public/assets/audio/voice/cs/vo.fairy.dive.wav)

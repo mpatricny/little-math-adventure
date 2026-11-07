@@ -271,5 +271,73 @@
         ],
         "difficulty": 0,
         "scale": 0.55
+    },
+    {
+        "id": "silverpond_armored_seahorse",
+        "name": "Pancéřový koník",
+        "spriteKey": "silverpond-armored-seahorse-idle-sheet",
+        "animPrefix": "armored-seahorse",
+        "hp": 48,
+        "attack": 9,
+        "defense": 3,
+        "goldReward": [
+            12,
+            16
+        ],
+        "difficulty": 7,
+        "scale": 0.45,
+        "frameTopInset": 21
+    },
+    {
+        "id": "silverpond_armored_seahorse_deep",
+        "name": "Hlubinný koník",
+        "spriteKey": "silverpond-armored-seahorse-idle-sheet",
+        "animPrefix": "armored-seahorse",
+        "hp": 60,
+        "attack": 9,
+        "defense": 5,
+        "goldReward": [
+            14,
+            18
+        ],
+        "difficulty": 8,
+        "scale": 0.45,
+        "rank": "elite",
+        "baseEnemyId": "silverpond_armored_seahorse",
+        "frameTopInset": 21
+    },
+    {
+        "id": "silverpond_rune_nautilus",
+        "name": "Runová loděnka",
+        "spriteKey": "silverpond-rune-nautilus-idle-sheet",
+        "animPrefix": "rune-nautilus",
+        "hp": 56,
+        "attack": 9,
+        "defense": 4,
+        "goldReward": [
+            12,
+            16
+        ],
+        "difficulty": 7,
+        "scale": 0.45,
+        "frameTopInset": 45
+    },
+    {
+        "id": "silverpond_rune_nautilus_deep",
+        "name": "Hlubinná loděnka",
+        "spriteKey": "silverpond-rune-nautilus-idle-sheet",
+        "animPrefix": "rune-nautilus",
+        "hp": 60,
+        "attack": 9,
+        "defense": 5,
+        "goldReward": [
+            14,
+            18
+        ],
+        "difficulty": 8,
+        "scale": 0.45,
+        "rank": "elite",
+        "baseEnemyId": "silverpond_rune_nautilus",
+        "frameTopInset": 45
     }
 ]

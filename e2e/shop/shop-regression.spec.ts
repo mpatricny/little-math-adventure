@@ -74,6 +74,71 @@ test.beforeEach(async ({ page }, info) => {
     });
 });
 
+async function legend(page: Page, sceneKey: string) {
+    return page.evaluate(({ key, sceneKey }) => {
+        const s = (window as any)[key].scene.keys[sceneKey], h = s.sceneBuilder.get('coinLegendHost');
+        const def = s.sceneBuilder.getElementDef('coinLegendHost');
+        const values = s.children.list.filter((c: any) => c.type === 'Text' && /^= (1|5|10|100)$/.test(c.text))
+            .map((c: any) => {
+                const b = c.getBounds();
+                const image = s.children.list.find((i: any) => i.type === 'Image' && i.y === c.y && i.x === h.x - 72);
+                return { text: c.text, visible: c.visible && c.alpha === 1, depth: c.depth,
+                    inHost: b.left >= h.x - def.width / 2 && b.right <= h.x + def.width / 2
+                        && b.top >= h.y - def.height / 2 && b.bottom <= h.y + def.height / 2,
+                    resolution: [c.style.resolution, c.frame.source.resolution],
+                    image: image && { texture: image.texture.key, frame: String(image.frame.name), visible: image.visible,
+                        uniform: image.scaleX === image.scaleY },
+                };
+            });
+        return { values, depth: h.depth, guides: s.children.list.filter((c: any) => c.active && c.getData?.('guideId')).length };
+    }, { key: KEY, sceneKey });
+}
+async function expectLegend(page: Page, sceneKey: string) {
+    const key = await legend(page, sceneKey);
+    expect(key.values).toEqual([
+        { text: '= 1', visible: true, depth: key.depth, inHost: true, resolution: [2, 2],
+            image: { texture: 'shop-coins-sheet', frame: '1', visible: true, uniform: true } },
+        { text: '= 5', visible: true, depth: key.depth, inHost: true, resolution: [2, 2],
+            image: { texture: 'shop-coins-sheet', frame: '2', visible: true, uniform: true } },
+        { text: '= 10', visible: true, depth: key.depth, inHost: true, resolution: [2, 2],
+            image: { texture: 'shop-coins-sheet', frame: '0', visible: true, uniform: true } },
+        { text: '= 100', visible: true, depth: key.depth, inHost: true, resolution: [2, 2],
+            image: { texture: 'coin-pouch', frame: '__BASE', visible: true, uniform: true } },
+    ]);
+}
+async function expectWalletDisplay(page: Page, sceneKey: string) {
+    const displayed = await page.evaluate(({ key, sceneKey }) => {
+        const s = (window as any)[key].scene.keys[sceneKey];
+        const text = s.sceneBuilder.get('money mana').getData('textObjects').get('1770241864666-yyygo6t26').text;
+        return { text: text.text, visible: text.visible };
+    }, { key: KEY, sceneKey });
+    expect(displayed).toEqual({ text: String(wallet((await state(page, sceneKey)).player.coins)), visible: true });
+}
+
+for (const sceneKey of shops) test(`${sceneKey}: permanent coin values survive completed guides and scene re-entry`, async ({ page }, info) => {
+    await openSeededGame(page, false, {}, {}, { coins: { copper: 4, silver: 1, gold: 10, pouch: 2 }, seenGuides: completedGuides });
+    await page.evaluate(key => (window as any)[key].sound.mute = true, KEY);
+    await start(page, sceneKey); await expectLegend(page, sceneKey); await expectWalletDisplay(page, sceneKey);
+    await page.screenshot({ path: `artifacts/shop/${info.project.name}-${sceneKey}-coin-values.png` });
+    // The key must stay understandable with spoken guidance muted and words hidden.
+    await page.evaluate(({ key, sceneKey }) => {
+        const visit = (c: any) => { if (c.type === 'Text' && /[a-zA-ZÀ-ž]/.test(c.text)) c.setVisible(false); for (const child of c.list ?? []) visit(child); };
+        for (const c of (window as any)[key].scene.keys[sceneKey].children.list) visit(c);
+    }, { key: KEY, sceneKey });
+    await expectLegend(page, sceneKey);
+    await page.screenshot({ path: `artifacts/shop/${info.project.name}-${sceneKey}-coin-values-without-words.png` });
+    await start(page, 'MenuScene'); await start(page, sceneKey); await expectLegend(page, sceneKey);
+    if (sceneKey === 'SilverpondShopMockScene') {
+        await page.evaluate(async () => {
+            (await import('/src/systems/GameStateManager.ts')).GameStateManager.getInstance().getPlayer().seenGuides = [];
+        });
+        await start(page, 'MenuScene'); await start(page, sceneKey);
+        await page.evaluate(({ key, sceneKey }) => new Promise<void>(resolve => (window as any)[key].scene.keys[sceneKey].time.delayedCall(650, () => resolve())), { key: KEY, sceneKey });
+        await expectLegend(page, sceneKey); expect((await legend(page, sceneKey)).guides).toBe(0);
+        expect((await state(page, sceneKey)).player.seenGuides).toEqual([]);
+    }
+});
+
 test('both shops open with no gear, sword only, shield only and both; voice follows real equipment', async ({ page }, info) => {
     // Eight scene transitions plus screenshots are slower with software WebGL.
     test.setTimeout(180_000);
@@ -99,7 +164,8 @@ test('both shops open with no gear, sword only, shield only and both; voice foll
             await page.evaluate(({ key, sceneKey }) => new Promise<void>(resolve => (window as any)[key].scene.keys[sceneKey].time.delayedCall(650, () => resolve())), { key: KEY, sceneKey });
             // Equipment guidance replaced the old generic vo.shop.prep greeting.
             // Compare fresh events so a previous shop cannot satisfy this assertion.
-            const expectedKind = combinations[i].equippedWeapon ? 'sword' : combinations[i].equippedShield ? 'shield' : null;
+            const expectedKind = sceneKey === 'SilverpondShopMockScene' ? null
+                : combinations[i].equippedWeapon ? 'sword' : combinations[i].equippedShield ? 'shield' : null;
             const guideVoices = () => page.evaluate(async since =>
                 (await import('/src/audio/AudioDirector.ts')).gameAudio().snapshot().events
                     .filter(e => e.time >= since && e.type === 'voice' && /^vo\.guide\.shop\.(sword|shield)$/.test(e.id))
@@ -120,19 +186,25 @@ test('both shops open with no gear, sword only, shield only and both; voice foll
 });
 
 for (const sceneKey of shops) test(`${sceneKey}: drag payment, wrong total, purchase, upgrade and saved return`, async ({ page }, info) => {
-    await openSeededGame(page, false, {}, {}, { coins: { copper: 20, silver: 10, gold: 25, pouch: 0 }, attack: 1, seenGuides: completedGuides });
-    await start(page, sceneKey);
-    const initial = await state(page, sceneKey);
-    await buyButton(page, sceneKey); // No selected item is a safe no-op.
-    expect((await state(page, sceneKey)).player).toEqual(initial.player);
     const city = sceneKey === 'SilverpondShopMockScene' ? 'silverpond' : 'mathoria';
     const offers = items.filter(i => (('shopCity' in i && i.shopCity) || 'mathoria') === city);
     const swords = offers.filter(i => i.type === 'weapon').sort((a, b) => a.tier! - b.tier!);
     const shields = offers.filter(i => i.type === 'shield').sort((a, b) => a.tier! - b.tier!);
     const sword = swords[0], shield = shields[0], upgrade = swords[1];
-    await selectItem(page, sceneKey, sword.id); await pay(page, sceneKey, 1); await buyButton(page, sceneKey);
+    // Current catalog prices fund the complete purchase sequence plus a remaining wallet.
+    const budget = sword.price + shield.price + upgrade.price + 109;
+    await openSeededGame(page, false, {}, {}, { coins: { copper: budget, silver: 0, gold: 0, pouch: 0 }, attack: 1, seenGuides: completedGuides });
+    await start(page, sceneKey);
+    const initial = await state(page, sceneKey);
+    await expectLegend(page, sceneKey); await expectWalletDisplay(page, sceneKey);
+    await buyButton(page, sceneKey); // No selected item is a safe no-op.
+    expect((await state(page, sceneKey)).player).toEqual(initial.player);
+    await selectItem(page, sceneKey, sword.id); await pay(page, sceneKey, 1);
+    await expectLegend(page, sceneKey); await expectWalletDisplay(page, sceneKey);
+    await buyButton(page, sceneKey);
     await expect.poll(async () => (await state(page, sceneKey)).payment).toBe(0);
     expect((await state(page, sceneKey)).player).toEqual(initial.player);
+    await expectLegend(page, sceneKey); await expectWalletDisplay(page, sceneKey);
     await page.waitForTimeout(500); // Coin return tween.
     await page.screenshot({ path: `artifacts/shop/${info.project.name}-${sceneKey}-wrong-payment.png` });
     for (const item of [sword, shield, upgrade]) {
@@ -141,6 +213,7 @@ for (const sceneKey of shops) test(`${sceneKey}: drag payment, wrong total, purc
         await pay(page, sceneKey, item.price); await buyButton(page, sceneKey);
         await expect.poll(async () => (await state(page, sceneKey)).selected).toBe(null);
         const after = await state(page, sceneKey);
+        await expectLegend(page, sceneKey); await expectWalletDisplay(page, sceneKey);
         expect(wallet(after.player.coins)).toBe(wallet(before.player.coins) - item.price);
         expect(after.player[item.type === 'weapon' ? 'equippedWeapon' : 'equippedShield']).toBe(item.id);
         expect(after.payment).toBe(0);
@@ -160,19 +233,30 @@ for (const sceneKey of shops) test(`${sceneKey}: drag payment, wrong total, purc
     await page.screenshot({ path: `artifacts/shop/${info.project.name}-${sceneKey}-purchased.png` });
 });
 
-test('co-op shop restart uses the active player equipment', async ({ page }) => {
+for (const sceneKey of shops) test(`${sceneKey}: co-op restart uses the active player equipment and wallet`, async ({ page }, info) => {
     // This checks the switch itself; first-visit guide overlays are covered separately.
+    const coinsA = { copper: 4, silver: 1, gold: 10, pouch: 2 };
+    const coinsB = { copper: 2, silver: 1, gold: 3, pouch: 0 };
     await openSeededGame(page, true, {}, {},
-        { equippedWeapon: 'sword_wooden', seenGuides: completedGuides },
-        { equippedShield: 'shield_wooden', seenGuides: completedGuides });
-    await activateCoopSession(page); await start(page, 'ShopScene');
-    expect((await state(page, 'ShopScene')).enabled).toEqual({ sword: true, shield: false });
+        { equippedWeapon: 'sword_wooden', coins: coinsA, seenGuides: completedGuides },
+        { equippedShield: 'shield_wooden', coins: coinsB, seenGuides: completedGuides });
+    await activateCoopSession(page); await start(page, sceneKey);
+    expect((await state(page, sceneKey)).enabled).toEqual({ sword: true, shield: false });
+    await expectLegend(page, sceneKey); await expectWalletDisplay(page, sceneKey);
+    await pay(page, sceneKey, 100); // A pending pouch is refunded when the shop restarts for B.
     await tap(page, { x: 380, y: 640 });
-    await expect.poll(async () => (await state(page, 'ShopScene')).player.name).toBe('Borek');
-    expect((await state(page, 'ShopScene')).enabled).toEqual({ sword: false, shield: true });
+    await expect.poll(async () => (await state(page, sceneKey)).player.name).toBe('Borek');
+    expect((await state(page, sceneKey)).enabled).toEqual({ sword: false, shield: true });
+    expect(wallet((await state(page, sceneKey)).player.coins)).toBe(wallet(coinsB));
+    expect((await state(page, sceneKey)).payment).toBe(0);
+    await expectLegend(page, sceneKey); await expectWalletDisplay(page, sceneKey);
     await tap(page, { x: 380, y: 640 });
-    await expect.poll(async () => (await state(page, 'ShopScene')).player.name).toBe('Ada');
-    expect((await state(page, 'ShopScene')).enabled).toEqual({ sword: true, shield: false });
+    await expect.poll(async () => (await state(page, sceneKey)).player.name).toBe('Ada');
+    expect((await state(page, sceneKey)).enabled).toEqual({ sword: true, shield: false });
+    expect(wallet((await state(page, sceneKey)).player.coins)).toBe(wallet(coinsA));
+    expect((await state(page, sceneKey)).payment).toBe(0);
+    await expectLegend(page, sceneKey); await expectWalletDisplay(page, sceneKey);
+    await page.screenshot({ path: `artifacts/shop/${info.project.name}-${sceneKey}-coop-wallet.png` });
 });
 
 const swordIds = ['sword_wooden', 'sword_iron', 'sword_reinforced'];

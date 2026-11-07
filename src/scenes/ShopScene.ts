@@ -178,8 +178,8 @@ export class ShopScene extends Phaser.Scene {
         // Fixed item display - labels and containers
         this.setupItemDisplay();
 
-        // Create coin value legend
-        if (this.showGuides) this.createCoinLegend();
+        // Keep the permanent coin values visible even when repeat walkthroughs are disabled.
+        this.createCoinLegend();
 
         // Setup drag handling
         this.setupDragHandling();

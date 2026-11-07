@@ -1,4 +1,5 @@
 import { sfx, voice, gameAudio } from '../audio/AudioDirector';
+import { recordDefeatedEnemy } from '../systems/EnemyUnlockSystem';
 import { getPetAttackPower } from '../systems/CatacombPetProgress';
 import Phaser from 'phaser';
 import { DEV_TOOLS_ENABLED } from '../config/buildVariant';
@@ -4543,19 +4544,15 @@ export class BattleScene extends Phaser.Scene implements BattleSceneCallbacks {
         let unlockedPetData: { name: string; spriteKey: string; animPrefix: string } | null = null;
 
         this.enemyDefs.forEach(def => {
-            if (!player.unlockedPets.includes(def.id)) {
-                player.unlockedPets.push(def.id);
-                // Find corresponding pet
-                const pet = petsData.find(p => p.unlockedByEnemy === def.id);
-                if (pet) {
-                    newPetUnlocks.push(pet.name);
-                    if (!unlockedPetData) {
-                        unlockedPetData = {
-                            name: pet.name,
-                            spriteKey: pet.spriteKey,
-                            animPrefix: pet.animPrefix
-                        };
-                    }
+            const pet = recordDefeatedEnemy(player, def, petsData);
+            if (pet) {
+                newPetUnlocks.push(pet.name);
+                if (!unlockedPetData) {
+                    unlockedPetData = {
+                        name: pet.name,
+                        spriteKey: pet.spriteKey,
+                        animPrefix: pet.animPrefix
+                    };
                 }
             }
         });
@@ -4836,12 +4833,9 @@ export class BattleScene extends Phaser.Scene implements BattleSceneCallbacks {
 
             // Pet unlocks — both players get the unlock
             this.enemyDefs.forEach(def => {
-                if (!player.unlockedPets.includes(def.id)) {
-                    player.unlockedPets.push(def.id);
-                    const pet = petsData.find(p => p.unlockedByEnemy === def.id);
-                    if (pet && !unlockedPetData) {
-                        unlockedPetData = { name: pet.name, spriteKey: pet.spriteKey, animPrefix: pet.animPrefix };
-                    }
+                const pet = recordDefeatedEnemy(player, def, petsData);
+                if (pet && !unlockedPetData) {
+                    unlockedPetData = { name: pet.name, spriteKey: pet.spriteKey, animPrefix: pet.animPrefix };
                 }
             });
 

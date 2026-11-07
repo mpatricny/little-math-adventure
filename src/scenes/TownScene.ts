@@ -20,6 +20,7 @@ import {
 } from '../systems/ArenaProgressSystem';
 import { getArenaChoiceOptions } from '../systems/ArenaChoiceSystem';
 import { WalkingSceneHud } from '../ui/WalkingSceneHud';
+import { recoverTownPlayers } from '../systems/TownRecoverySystem';
 
 /** Building unlock order — condition checked against player state */
 const BUILDING_UNLOCK_CONFIG: {
@@ -61,27 +62,7 @@ export class TownScene extends Phaser.Scene {
         const gameState = GameStateManager.getInstance();
         const coop = CoopSessionManager.getInstance();
 
-        if (coop.isCoopActive()) {
-            // Co-op: heal both players
-            coop.forBothPlayers(() => {
-                const p = gameState.getPlayer();
-                p.hp = p.maxHp;
-                p.status = 'healthy';
-                if (p.hasPotionSubscription && p.potions === 0) p.potions = 1;
-            });
-            coop.activatePlayerA(); // A is lead for town
-        } else {
-            const p = gameState.getPlayer();
-            if (p.hp < p.maxHp || p.status !== 'healthy') {
-                p.hp = p.maxHp;
-                p.status = 'healthy';
-                gameState.save();
-            }
-            if (p.hasPotionSubscription && p.potions === 0) {
-                p.potions = 1;
-                gameState.save();
-            }
-        }
+        recoverTownPlayers();
 
         const player = gameState.getPlayer();
 

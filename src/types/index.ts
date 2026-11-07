@@ -387,6 +387,10 @@ export interface BattleState {
 export interface EnemyDefinition {
     id: string;
     name: string;
+    /** Stronger encounter variant, identified by the shared crystal crest. */
+    rank?: 'elite';
+    /** Canonical species unlocked when this stronger encounter variant is defeated. */
+    baseEnemyId?: string;
     spriteKey: string;
     animPrefix?: string;           // Animation prefix (e.g., 'slime', 'pink', 'purple')
     hp: number;
@@ -516,6 +520,8 @@ export interface StoryProgress {
     hasInstalledForestCrystal: boolean;
     hasUnlockedSilverpond: boolean;
     hasSeenSilverpondQuest: boolean;
+    hasSeenSilverpondDiveHint?: boolean;
+    hasSeenSilverpondCrystalHint?: boolean;
     hasFreedLakeFairy: boolean;
     hasWaterBreathingScale: boolean;
     hasSeenLakeFairyReward: boolean;

@@ -1,16 +1,9 @@
 import Phaser from 'phaser';
+import { waterArtwork, type WaterBox } from './WaterArtwork';
+export { waterArtwork, type WaterBox } from './WaterArtwork';
 
-export type WaterBox = { x: number; y: number; width: number; height: number; depth?: number };
 export type WaterButtonState = 'normal' | 'hover' | 'pressed' | 'disabled' | 'selected';
 export type EnamelIcon = 'check' | 'close' | 'hint' | 'continue';
-
-/** Artwork is contained, never stretched. These are the existing fairy-reward assets. */
-export function waterArtwork(scene: Phaser.Scene, texture: string, box: WaterBox): Phaser.GameObjects.Image {
-    const image = scene.add.image(box.x, box.y, texture).setDepth(box.depth ?? 0);
-    image.setScale(Math.min(box.width / image.width, box.height / image.height));
-    image.setData('waterArtwork', true);
-    return image;
-}
 
 export function fitWaterText(text: Phaser.GameObjects.Text, box: WaterBox, size: number, minimum = 18): void {
     text.setScale(1).setFontSize(size).setWordWrapWidth(box.width, true);

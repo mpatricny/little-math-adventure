@@ -2,6 +2,7 @@ import { StoryProgress } from '../types';
 import { GameStateManager } from './GameStateManager';
 import { CoopSessionManager } from './CoopSessionManager';
 import { advanceForestStory, type ForestStoryMilestone } from './ForestCrystalProgression';
+import { silverpondQuestSeenFlag, type SilverpondQuestStage } from './SilverpondQuestProgress';
 
 /**
  * StorySystem - Manages story progress tracking for visual storytelling
@@ -94,7 +95,7 @@ export class StorySystem {
      * Check if a specific story flag is set
      */
     hasSeenFlag(flag: keyof StoryProgress): boolean {
-        return this.getProgress()[flag];
+        return this.getProgress()[flag] === true;
     }
 
     /**
@@ -185,6 +186,14 @@ export class StorySystem {
 
     markLakeFairyRewardSeen(): void {
         this.setFlag('hasSeenLakeFairyReward');
+    }
+
+    /** A shared dialogue acknowledges only its displayed stage for both heroes. */
+    markSilverpondQuestSeen(stage: SilverpondQuestStage): void {
+        const mark = () => { this.getProgress()[silverpondQuestSeenFlag(stage)] = true; };
+        const coop = CoopSessionManager.getInstance();
+        if (coop.isCoopActive()) coop.forBothPlayers(mark);
+        else { mark(); this.save(); }
     }
 
     /**

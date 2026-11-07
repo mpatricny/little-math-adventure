@@ -98,7 +98,9 @@
           "ENM_007": "Mill Turtle",
           "ENM_008": "Ruin Axolotl",
           "ENM_009": "Pearl Jellyfish",
-          "ENM_010": "Guardian of the Depths"
+          "ENM_010": "Guardian of the Depths",
+          "ENM_011": "Armored Seahorse",
+          "ENM_012": "Rune Nautilus"
         },
         "npcs": {
             "NPC_001": "Blacksmith",

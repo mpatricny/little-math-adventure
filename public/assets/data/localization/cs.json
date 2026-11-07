@@ -98,7 +98,9 @@
             "ENM_007": "Mlýnský krunýřník",
             "ENM_008": "Ruinový mlok",
             "ENM_009": "Perlová medúzka",
-            "ENM_010": "Strážce hlubin"
+            "ENM_010": "Strážce hlubin",
+            "ENM_011": "Pancéřový koník",
+            "ENM_012": "Runová loděnka"
         },
         "npcs": {
             "NPC_001": "Kovář",

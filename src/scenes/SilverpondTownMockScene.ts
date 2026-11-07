@@ -6,11 +6,13 @@ import { GameStateManager } from '../systems/GameStateManager';
 import { StorySystem } from '../systems/StorySystem';
 import { MasterySystem } from '../systems/MasterySystem';
 import { shouldBackfillLakeFairyReward } from '../systems/SilverpondProgressSystem';
+import { hasUnseenSilverpondQuest } from '../systems/SilverpondQuestProgress';
 import { needsDepthCrystalShipReturn, hasNextCityAccess } from '../systems/DepthCrystalProgressSystem';
 import { UnderwaterButton } from '../ui/UnderwaterTheme';
 import { getPlayerSpriteConfig } from '../utils/characterUtils';
 import { canEnterUnderwater } from '../systems/UnderwaterProgressSystem';
 import { MedievalActionButton } from '../ui/MedievalActionButton';
+import { recoverTownPlayers } from '../systems/TownRecoverySystem';
 
 type DoorConfig = {
     hostId: string;
@@ -83,6 +85,7 @@ export class SilverpondTownMockScene extends Phaser.Scene {
 
     create(): void {
         this.input.enabled = true;
+        recoverTownPlayers();
         this.sceneBuilder = new SceneBuilder(this);
         this.sceneBuilder.buildScene('SilverpondTownMockScene');
         this.cameras.main.fadeIn(300, 8, 30, 35);
@@ -301,9 +304,8 @@ export class SilverpondTownMockScene extends Phaser.Scene {
     private createGuildNotification(): void {
         const host = this.requireHost('guildNotificationHost');
         const root = this.add.container(host.x, host.y).setDepth(host.depth);
-        const progress = StorySystem.getInstance().getProgress();
         const hasExam = MasterySystem.getInstance().getAvailableExams().length > 0;
-        const shouldShow = !progress.hasSeenSilverpondQuest || hasExam;
+        const shouldShow = hasUnseenSilverpondQuest(GameStateManager.getInstance().getPlayer()) || hasExam;
         const normal = this.add.image(0, 0, 'silverpond-guild-notification-normal')
             .setScale(host.scale);
         const active = this.add.image(0, 0, 'silverpond-guild-notification-active')

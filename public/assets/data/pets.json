@@ -203,6 +203,36 @@
         "scale": 0.4
     },
     {
+        "id": "pet_silverpond_armored_seahorse",
+        "name": "Pancéřový koník",
+        "spriteKey": "silverpond-armored-seahorse-idle-sheet",
+        "animPrefix": "armored-seahorse",
+        "unlockedByEnemy": "silverpond_armored_seahorse",
+        "requiredAmulet": {
+            "tier": "prism",
+            "value": 9
+        },
+        "mathProblemType": "subtraction",
+        "mathProblemMax": 10,
+        "damageMultiplier": 12,
+        "scale": 0.4
+    },
+    {
+        "id": "pet_silverpond_rune_nautilus",
+        "name": "Runová loděnka",
+        "spriteKey": "silverpond-rune-nautilus-idle-sheet",
+        "animPrefix": "rune-nautilus",
+        "unlockedByEnemy": "silverpond_rune_nautilus",
+        "requiredAmulet": {
+            "tier": "prism",
+            "value": 9
+        },
+        "mathProblemType": "subtraction",
+        "mathProblemMax": 10,
+        "damageMultiplier": 12,
+        "scale": 0.4
+    },
+    {
         "id": "pet_silverpond_depth_guardian",
         "name": "Hloubek",
         "spriteKey": "silverpond-depth-guardian-idle-sheet",

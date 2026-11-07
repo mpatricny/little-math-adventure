@@ -1,0 +1,69 @@
+{
+  "method": "Offline Web Audio decode; peak normalized to at most 0.7",
+  "assets": [
+    {
+      "id": "vo.silverpond.quest.crystal",
+      "duration": 2.6006349206349206,
+      "peak": 0.71759033203125,
+      "gain": 0.9754869439482861,
+      "rms": 0.0608341525692036,
+      "pronunciationReview": "pending"
+    },
+    {
+      "id": "vo.silverpond.quest.fairy",
+      "duration": 3.8080725623582765,
+      "peak": 0.567169189453125,
+      "gain": 1,
+      "rms": 0.06855534237802992,
+      "pronunciationReview": "pending"
+    },
+    {
+      "id": "vo.silverpond.quest.scale",
+      "duration": 4.08671201814059,
+      "peak": 0.857940673828125,
+      "gain": 0.8159072315298972,
+      "rms": 0.07379226529276661,
+      "pronunciationReview": "pending"
+    },
+    {
+      "id": "vo.silverpond.quest.dive",
+      "duration": 4.690430839002268,
+      "peak": 0.57733154296875,
+      "gain": 1,
+      "rms": 0.06621172514831866,
+      "pronunciationReview": "pending"
+    },
+    {
+      "id": "vo.silverpond.quest.complete",
+      "duration": 3.297233560090703,
+      "peak": 0.769683837890625,
+      "gain": 0.9094643352761587,
+      "rms": 0.08107996040065975,
+      "pronunciationReview": "pending"
+    },
+    {
+      "id": "vo.fairy.thanks",
+      "duration": 2.461315192743764,
+      "peak": 0.7141636610031128,
+      "gain": 0.9801674857227843,
+      "rms": 0.09220191403012636,
+      "pronunciationReview": "pending"
+    },
+    {
+      "id": "vo.fairy.scale",
+      "duration": 2.972154195011338,
+      "peak": 0.6279793977737427,
+      "gain": 1,
+      "rms": 0.07998232100193077,
+      "pronunciationReview": "pending"
+    },
+    {
+      "id": "vo.fairy.dive",
+      "duration": 1.811156462585034,
+      "peak": 0.766624927520752,
+      "gain": 0.9130931892128585,
+      "rms": 0.0912966591988889,
+      "pronunciationReview": "pending"
+    }
+  ]
+}
