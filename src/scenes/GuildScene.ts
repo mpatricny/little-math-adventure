@@ -2,6 +2,7 @@ import { ComparisonProblemView, comparisonGlyph } from '../ui/ComparisonProblemV
 import { ComparisonExpressionView } from '../ui/ComparisonExpressionView';
 import { comparisonChoiceWidth } from '../ui/ComparisonPresentation';
 import Phaser from 'phaser';
+import { observeMathProblem, observedChoice, type ProblemObservation } from '../telemetry/ProblemObservation';
 import { GameStateManager } from '../systems/GameStateManager';
 import { MathEngine } from '../systems/MathEngine';
 import { MathProblem, TrialState, TrialProblemResult, TrialTier, ExamType, SubAtomId, BandId, MasteryTargetId, EXAM_CONFIGS, MathStats, PlayerState } from '../types';
@@ -73,6 +74,7 @@ export class GuildScene extends Phaser.Scene {
     };
     private trialProblems: MathProblem[] = [];
     private currentTrialProblem: MathProblem | null = null;
+    private observation:ProblemObservation|null=null;
     private trialTimer: Phaser.Time.TimerEvent | null = null;
     private problemStartTime: number = 0;
 
@@ -1077,6 +1079,8 @@ export class GuildScene extends Phaser.Scene {
         }
 
         this.currentTrialProblem = this.trialProblems[idx];
+        this.observation?.abandon();this.observation=observeMathProblem(this.currentTrialProblem,this.getMasteryExamContext());
+        this.events.once('shutdown',()=>this.observation?.abandon());
         this.trialState.timeRemainingForProblem = this.trialState.timePerProblem;
         this.trialState.phase = 'problem';
         this.problemStartTime = this.time.now;
@@ -1172,6 +1176,8 @@ export class GuildScene extends Phaser.Scene {
             problem.comparisonMeta.selectedRelation = (['less', 'equal', 'greater'] as const)[playerAnswer];
         }
         const timeSpent = Math.max(0, this.time.now - this.problemStartTime) / 1000;
+        if(playerAnswer!==null)this.observation?.answer(observedChoice(problem,playerAnswer),isCorrect,timeSpent*1000);
+        else this.observation?.abandon('timeout');
         const idx = this.trialState.currentProblemIndex;
         this.revealComparisonExamVisual(problem);
 

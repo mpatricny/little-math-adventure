@@ -79,7 +79,14 @@ Ponechat dvě malé pojistky: server kontroluje vlastníka a očekávanou revizi
 
 ## Data, přehled a reporty
 
-Podrobný sběr může zůstat v jedné tabulce `learning_events` v PostgreSQL. Odesílat v dávkách, lokálně uchovat do potvrzení; ID události brání duplicitám. Uchovávat původní pokusy, ne pouze hotová procenta. Současná mapa a denní přehled zůstávají hráčským rozhraním; interní analýza může začít SQL dotazy/exportem a jednoduchými grafy.
+**Upřesnění 29. 9. 2026:** cílem je klikací administrace na `/admin/`, nikoli
+ruční SQL reporty. [Podrobný plán administrace](ANALYTICS_ADMIN_PLAN.md) definuje
+Přehled, Návštěvnost, Hráče, Hraní, Účty a Stav dat, jejich detaily, metriky,
+deduplikaci a postup implementace. Jde zatím o plán, ne nasazenou funkci.
+Navazující [technický plán](ANALYTICS_IMPLEMENTATION_PLAN.md) určuje migrace,
+API, instrumentaci, kompatibilitu a krátké kritické testy.
+
+Podrobný sběr může zůstat v PostgreSQL. Odesílat v dávkách, lokálně uchovat do potvrzení; ID události brání duplicitám. Uchovávat původní pokusy, ne pouze hotová procenta. Současná mapa a denní přehled zůstávají hráčským rozhraním; interní analýza bude mít samostatné chráněné webové UI podle navazujícího plánu. Existující tabulky a dostupnost historických dat popisuje [GAMEPLAY_DATA.md](GAMEPLAY_DATA.md).
 
 | Události | Potřebná data |
 |---|---|

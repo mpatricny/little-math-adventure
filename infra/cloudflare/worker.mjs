@@ -67,6 +67,12 @@ export async function handleRequest(request, env, fetcher = fetch) {
   if (url.pathname.startsWith('/api/') || url.pathname.startsWith('/v1/')) {
     return proxyApi(request, env, fetcher);
   }
+  if (url.pathname === '/admin') return Response.redirect(new URL('/admin/', url), 308);
+  if (url.pathname === '/admin.html' || /^\/admin\/(?:traffic|players(?:\/[^/]+)?|sessions(?:\/[^/]+)?|visits(?:\/[^/]+)?|accounts(?:\/[^/]+)?|data-quality)?\/?$/.test(url.pathname)) {
+    const response=withDocumentHeaders(await env.ASSETS.fetch(remapRequest(request,'/admin.html')),env.APP_RELEASE);
+    response.headers.set('Cache-Control','private, no-store');return response;
+  }
+  if (url.pathname.startsWith('/admin/')) return new Response('Not found',{status:404,headers:{'Cache-Control':'no-store'}});
   if (url.pathname === '/') {
     return landingDocument(request, env);
   }

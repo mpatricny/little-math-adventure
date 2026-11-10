@@ -1,3 +1,4 @@
+import type { Observation } from '../../server/src/contracts/analytics';
 // ===== GAME STATE =====
 export interface GameState {
     player: PlayerState;
@@ -544,6 +545,7 @@ export const ALL_PROBLEM_FORMS: ProblemForm[] = ['result_unknown', 'missing_part
 
 /** A single attempt at solving a mastery problem */
 export interface MasteryAttempt {
+    observation?: Observation;
     /** Legacy totals converted into synthetic history must not enter analytics as real answers. */
     synthetic?: boolean;
     timestamp: number;
@@ -625,6 +627,7 @@ export interface ComparisonStageProgress {
 }
 
 export interface ComparisonAttempt {
+    observation?: Observation;
     timestamp: number;
     sequenceIndex: number;
     stage: ComparisonStageId;

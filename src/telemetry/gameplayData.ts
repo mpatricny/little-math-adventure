@@ -1,7 +1,7 @@
 import type { SaveSlotData } from '../types';
 
 export type GameplayAttempt = {
-    eventKey: string; source: 'mastery' | 'comparison'; sequenceIndex: number;
+    eventKey: string; source: 'mastery' | 'comparison' | 'activity'; sequenceIndex: number | null;
     timestamp: number; problemKey: string; context: string; correct: boolean;
     responseTimeMs: number; assisted: boolean; details: Record<string, unknown>;
 };
@@ -17,11 +17,11 @@ export function captureGameplay(slot: number, save: SaveSlotData): CapturedGamep
         for (const attempt of record.attempts) {
             if (attempt.synthetic) continue;
             attempts.push({
-                eventKey: `mastery:${attempt.sequenceIndex}:${attempt.timestamp}:${record.problemKey}`,
-                source: 'mastery', sequenceIndex: attempt.sequenceIndex, timestamp: attempt.timestamp,
+                eventKey: attempt.observation ? `attempt:${attempt.observation.presentationId}` : `mastery:${attempt.sequenceIndex}:${attempt.timestamp}:${record.problemKey}`,
+                source: 'mastery', sequenceIndex: attempt.sequenceIndex, timestamp: attempt.observation?.answeredAt ?? attempt.timestamp,
                 problemKey: record.problemKey, context: attempt.context, correct: attempt.correct,
-                responseTimeMs: attempt.responseTimeMs, assisted: false,
-                details: { form: record.form, subAtomId: record.subAtomId },
+                responseTimeMs: attempt.observation?.responseTimeMs ?? attempt.responseTimeMs, assisted: attempt.observation?.assisted ?? false,
+                details: { form: record.form, subAtomId: record.subAtomId, ...(attempt.observation?{observation:attempt.observation}:{}) },
             });
         }
     }
@@ -29,11 +29,11 @@ export function captureGameplay(slot: number, save: SaveSlotData): CapturedGamep
         if (attempt.diagnosticMode) continue;
         const problemKey = `comparison:${attempt.stage}:${attempt.leftValue}:${attempt.rightValue}`;
         attempts.push({
-            eventKey: `comparison:${attempt.sequenceIndex}:${attempt.timestamp}:${problemKey}`,
-            source: 'comparison', sequenceIndex: attempt.sequenceIndex, timestamp: attempt.timestamp,
+            eventKey: attempt.observation ? `attempt:${attempt.observation.presentationId}` : `comparison:${attempt.sequenceIndex}:${attempt.timestamp}:${problemKey}`,
+            source: 'comparison', sequenceIndex: attempt.sequenceIndex, timestamp: attempt.observation?.answeredAt ?? attempt.timestamp,
             problemKey, context: attempt.context, correct: attempt.correct,
-            responseTimeMs: attempt.responseTimeMs, assisted: attempt.assisted,
-            details: { ...attempt },
+            responseTimeMs: attempt.observation?.responseTimeMs ?? attempt.responseTimeMs, assisted: attempt.observation?.assisted ?? attempt.assisted,
+            details: attempt.observation?{observation:attempt.observation}:{ ...attempt },
         });
     }
     // Answers have their own append-only table; snapshots stay small throughout a long game.
@@ -45,7 +45,7 @@ export function captureGameplay(slot: number, save: SaveSlotData): CapturedGamep
         progress: { player: save.player, mathStats: { ...stats,
             masteryData: { ...masteryProgress, comparisonChapter: comparisonProgress } } },
         attempts: attempts.filter(a => Number.isFinite(a.responseTimeMs) && a.responseTimeMs >= 0
-            && a.responseTimeMs <= 86_400_000 && Number.isSafeInteger(a.sequenceIndex)),
+            && a.responseTimeMs <= 86_400_000 && (a.sequenceIndex===null||Number.isSafeInteger(a.sequenceIndex))),
     }));
 }
 

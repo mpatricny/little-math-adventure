@@ -4,6 +4,7 @@ import googleMark from './assets/google-g.png';
 import signOutMark from './assets/sign-out.svg';
 import fontLicense from './assets/GoogleSans-OFL.txt?url';
 import './GameAccountControl.css';
+import { analytics } from '../telemetry/AnalyticsClient';
 
 /** Optional account access; local play and saves never depend on the identity server. */
 export class GameAccountControl {
@@ -97,6 +98,7 @@ export class GameAccountControl {
                 this.render();
                 return;
             }
+                void analytics()?.authContext();
             const url = await startGoogleSignIn('/hra/', this.requestController.signal);
             if (!this.disposed) window.location.assign(url);
         } catch {

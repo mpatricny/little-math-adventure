@@ -1,9 +1,6 @@
-import { signOutGoogle } from './auth/googleAuth';
-
-interface SignInResponse {
-  redirect?: boolean;
-  url?: string;
-}
+import { signOutGoogle, startGoogleSignIn } from './auth/googleAuth';
+import { analytics } from './telemetry/AnalyticsClient';
+import './telemetry/landingMeasurement';
 
 const root = document.querySelector<HTMLElement>('[data-auth-root]');
 const signInButton = root?.querySelector<HTMLButtonElement>('[data-auth-sign-in]');
@@ -48,6 +45,7 @@ async function refreshSession(): Promise<void> {
       headers: { Accept: 'application/json' },
     });
     if (response.ok) {
+      const data=await response.json();const admin=document.querySelector<HTMLAnchorElement>('[data-admin-link]');if(admin)admin.hidden=!data.capabilities?.analyticsAdmin;
       setAuthenticated();
       return;
     }
@@ -67,22 +65,8 @@ signInButton?.addEventListener('click', async () => {
   if (signInLabel) signInLabel.textContent = 'Otevírám Google…';
 
   try {
-    const response = await fetch('/api/auth/sign-in/social', {
-      method: 'POST',
-      credentials: 'include',
-      headers: {
-        Accept: 'application/json',
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        provider: 'google',
-        callbackURL: '/',
-        errorCallbackURL: '/?auth_error=google',
-      }),
-    });
-    const data = await response.json() as SignInResponse;
-    if (!response.ok || !data.url) throw new Error('Google authorization URL is missing');
-    window.location.assign(data.url);
+    void analytics()?.authContext();
+    window.location.assign(await startGoogleSignIn('/'));
   } catch {
     setAnonymous('Google přihlášení se nepodařilo otevřít. Zkus to prosím znovu.');
   }
@@ -92,6 +76,7 @@ signOutButton?.addEventListener('click', async () => {
   signOutButton.disabled = true;
   try {
     await signOutGoogle();
+    const admin=document.querySelector<HTMLAnchorElement>('[data-admin-link]');if(admin)admin.hidden=true;
     setAnonymous();
   } catch {
     if (message) {

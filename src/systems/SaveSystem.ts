@@ -1,6 +1,7 @@
 import { PlayerState, MathStats, SaveSlotMeta, SaveSlotData } from '../types';
 import { gameplayId } from '../telemetry/gameplayData';
 import { notifyGameplaySave } from '../telemetry/gameplayBridge';
+import { analytics } from '../telemetry/AnalyticsClient';
 
 // Storage keys
 const SAVE_DATA_PREFIX = 'littleMathAdventure_slot_';       // Per-slot: slot_0, slot_1...
@@ -148,6 +149,7 @@ export class SaveSystem {
             console.log(`[SaveSystem] Game saved to slot ${slotIndex}`);
         } catch (error) {
             console.error('[SaveSystem] Failed to save:', error);
+            analytics()?.emit('save_error',{code:'local_save',scene:analytics()?.contextSnapshot()?.scene??'SaveSystem',fingerprint:'save',count:1});
         }
     }
 
@@ -246,7 +248,8 @@ export class SaveSystem {
         if (activeSlot !== null) this.setActiveSlot(activeSlot);
         for (const slot of writtenSlots) {
             const save = this.load(slot);
-            if (save) notifyGameplaySave(slot, save);
+            if (save) {notifyGameplaySave(slot, save);if(save.player.gameplayProfileId)
+                analytics()?.emit('profile_imported',{role:'A',origin:'import'},save.player.gameplayProfileId);}
         }
 
         console.log(`[SaveSystem] Imported ${writtenSlots.length} save slot(s)`);

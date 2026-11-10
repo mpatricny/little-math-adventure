@@ -1,42 +1,8 @@
-import { z } from 'zod';
 import { createHash, randomUUID } from 'node:crypto';
 import type { Database } from '../db/database.js';
-
-const timestamp = z.number().int().min(0).max(8_640_000_000_000_000);
-const shortText = z.string().max(200);
-const contexts = ['battle', 'battle_block', 'battle_sword', 'battle_pet', 'shop_prep_sword',
-  'shop_prep_shield', 'mana_collection', 'underwater_bell', 'exam', 'fluency',
-  'mastery_challenge', 'band_gate'] as const;
-
-export const gameplayBatchSchema = z.object({
-  version: z.literal(1),
-  // Checked against the current session, never used to choose another user's account.
-  accountId: z.uuid(),
-  profileId: z.uuid(),
-  deviceId: z.uuid(),
-  slotNumber: z.int().min(1).max(8),
-  revision: z.number().int().min(1).max(Number.MAX_SAFE_INTEGER),
-  savedAt: timestamp,
-  release: z.string().min(1).max(100),
-  progress: z.object({
-    player: z.object({ name: shortText }).catchall(z.json()),
-    mathStats: z.record(z.string(), z.json()),
-  }).strict(),
-  attempts: z.array(z.object({
-    eventKey: z.string().min(1).max(600),
-    source: z.enum(['mastery', 'comparison']),
-    sequenceIndex: z.number().int().min(0).max(Number.MAX_SAFE_INTEGER),
-    timestamp,
-    problemKey: z.string().min(1).max(200),
-    context: z.enum(contexts),
-    correct: z.boolean(),
-    responseTimeMs: z.number().min(0).max(86_400_000),
-    assisted: z.boolean(),
-    details: z.record(z.string(), z.json()),
-  }).strict()).max(100),
-}).strict();
-
-export type GameplayBatch = z.infer<typeof gameplayBatchSchema>;
+import { issue, reconcileProfiles, stableHash } from './analytics/ingest.js';
+import type { GameplayBatch } from '../contracts/gameplaySchema.js';
+export { gameplayBatchSchema, type GameplayBatch } from '../contracts/gameplaySchema.js';
 
 export async function resolveGameplayBrowser(database: Database, token: string, deviceId?: string): Promise<{ id: string } | null> {
   const hash = createHash('sha256').update(token).digest('hex');
@@ -53,13 +19,16 @@ export async function resolveGameplayBrowser(database: Database, token: string, 
   });
 }
 
-export async function collectGameplay(database: Database, accountId: string, batch: GameplayBatch, parentAccountId: string | null = null): Promise<void> {
-  await database.begin(async tx => {
+export async function collectGameplay(database: Database, accountId: string, batch: GameplayBatch, parentAccountId: string | null = null) {
+  const confirmedLinks=await database.begin(async tx => {
+    const links:Array<{presentationId:string;legacyEventKey:string}>=[];
     await tx`INSERT INTO gameplay_profiles (account_id, profile_id, parent_account_id)
       VALUES (${accountId}, ${batch.profileId}, ${parentAccountId})
       ON CONFLICT (account_id, profile_id) DO UPDATE SET
         parent_account_id = coalesce(gameplay_profiles.parent_account_id, EXCLUDED.parent_account_id)`;
-    await tx`INSERT INTO gameplay_progress
+    await tx`INSERT INTO analytics_profile_links(account_id,profile_id,canonical_profile_id)
+      VALUES(${accountId},${batch.profileId},${createHash('md5').update(`${accountId}:${batch.profileId}`).digest('hex')}) ON CONFLICT DO NOTHING`;
+    if (batch.progress) await tx`INSERT INTO gameplay_progress
       (account_id, profile_id, device_id, slot_number, revision, client_saved_at, release, payload)
       VALUES (${accountId}, ${batch.profileId}, ${batch.deviceId}, ${batch.slotNumber}, ${batch.revision},
         ${new Date(batch.savedAt)}, ${batch.release}, ${tx.json(batch.progress)})
@@ -70,17 +39,46 @@ export async function collectGameplay(database: Database, accountId: string, bat
       WHERE gameplay_progress.revision < EXCLUDED.revision`;
 
     if (batch.attempts.length) {
-      const rows = batch.attempts.map(attempt => ({
+      for (const attempt of batch.attempts) {
+        const observation=batch.version===2?(attempt.details as any).observation:undefined;
+        const hash=stableHash({eventKey:attempt.eventKey,source:attempt.source,timestamp:attempt.timestamp,
+          problemKey:attempt.problemKey,context:attempt.context,correct:attempt.correct,responseTimeMs:attempt.responseTimeMs,
+          details:observation?{...observation,legacyEventKey:undefined}:attempt.details});
+        const row={
         account_id: accountId, profile_id: batch.profileId, event_key: attempt.eventKey,
         device_id: batch.deviceId, source: attempt.source, sequence_index: attempt.sequenceIndex,
         occurred_at: new Date(attempt.timestamp), problem_key: attempt.problemKey,
         context: attempt.context, correct: attempt.correct, response_time_ms: attempt.responseTimeMs,
         assisted: attempt.assisted, release: batch.release, details: tx.json(attempt.details),
-      }));
-      // An acknowledgement can be lost after commit. Replays must not duplicate answers.
-      await tx`INSERT INTO gameplay_attempts ${tx(rows)} ON CONFLICT DO NOTHING`;
+        presentation_id:observation?.presentationId??null,play_session_id:observation?.playSessionId??null,
+        run_id:observation?.runId??null,source_release:observation?.sourceRelease??null,
+        capture_origin:observation?'live':'historical',observation_version:observation?1:null,payload_hash:hash,
+        };
+        const inserted=await tx`INSERT INTO gameplay_attempts ${tx(row)} ON CONFLICT DO NOTHING RETURNING event_key`;
+        if(!inserted.length){
+          const [old]=await tx`SELECT * FROM gameplay_attempts WHERE account_id=${accountId} AND profile_id=${batch.profileId}
+            AND (event_key=${attempt.eventKey} OR presentation_id=${observation?.presentationId??null})`;
+          if(old && old.payload_hash!==hash && !(old.payload_hash===null && old.correct===attempt.correct&&old.problem_key===attempt.problemKey&&old.response_time_ms===attempt.responseTimeMs))
+            await issue(tx,`answer:${accountId}:${batch.profileId}:${attempt.eventKey}`,'answer_collision',accountId,{hash,attempt},batch.profileId,attempt.eventKey);
+        }
+      }
     }
+    if(batch.version===2)for(const link of batch.observationLinks??[]){
+      const [target]=await tx`SELECT * FROM gameplay_attempts WHERE account_id=${accountId} AND profile_id=${batch.profileId} AND presentation_id=${link.presentationId}`;
+      if(!target)continue;
+      const [legacy]=await tx`SELECT * FROM gameplay_attempts WHERE account_id=${accountId} AND profile_id=${batch.profileId} AND event_key=${link.legacyEventKey}`;
+      const existing=target.details.observation?.legacyEventKey;
+      if((existing&&existing!==link.legacyEventKey)||(legacy&&(legacy.correct!==target.correct||legacy.problem_key!==target.problem_key||legacy.response_time_ms!==target.response_time_ms))){
+        await issue(tx,`link:${accountId}:${link.presentationId}`,'answer_collision',accountId,{link},batch.profileId,link.legacyEventKey);links.push(link);continue;
+      }
+      await tx`UPDATE gameplay_attempts SET details=jsonb_set(details,'{observation,legacyEventKey}',to_jsonb(${link.legacyEventKey}::text))
+        WHERE account_id=${accountId} AND profile_id=${batch.profileId} AND presentation_id=${link.presentationId}`;
+      links.push(link);
+    }
+    return links;
   });
+  await reconcileProfiles(database,batch.profileId);
+  return {observationLinks:confirmedLinks};
 }
 
 export async function gameplaySummary(database: Database, accountId: string, parentView = false) {

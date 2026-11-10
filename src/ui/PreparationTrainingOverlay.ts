@@ -306,7 +306,7 @@ export class PreparationTrainingOverlay {
         this.root.setData('activeAnswer', this.sampleProblems[index].answer);
         this.mathBoard.showSingle(this.sampleProblems[index], (isCorrect, responseTimeMs) => {
             this.handleAnswer(isCorrect, responseTimeMs);
-        });
+        },{telemetryContext:this.kind==='sword'?'shop_prep_sword':'shop_prep_shield'});
     }
 
     private handleAnswer(isCorrect: boolean, responseTimeMs: number): void {

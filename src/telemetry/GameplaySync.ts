@@ -2,6 +2,8 @@ import type { SaveSlotData } from '../types';
 import { captureGameplay, type CapturedGameplay } from './gameplayData';
 import { observeGameplaySaves } from './gameplayBridge';
 import { openGameplayStore, type GameplayStore } from './GameplayStore';
+import { analytics, measurementAllowed, measurementSince } from './AnalyticsClient';
+import { observeProgress } from './SceneTelemetry';
 
 export class GameplaySync {
     private busy = false;
@@ -10,7 +12,7 @@ export class GameplaySync {
     constructor(private store: GameplayStore, private release: string, private fetcher: typeof fetch = fetch) {}
 
     async capture(data: CapturedGameplay): Promise<void> { await this.store.capture(data); }
-    wake(): void { this.retryAt = 0; }
+    wake(): void { this.retryAt = 0; this.failures = 0; }
 
     private async request(path: string, init: RequestInit = {}): Promise<Response> {
         const controller = new AbortController();
@@ -47,7 +49,7 @@ export class GameplaySync {
                 matched = true;
                 const response = await this.request('/v1/gameplay/batch', {
                     method: 'POST', headers,
-                    body: JSON.stringify({ version: 1, accountId: identity.accountId,
+                    body: JSON.stringify({ version: attempts.some(a=>a.details.observation)?2:1, accountId: identity.accountId,
                         profileId: profile.id, deviceId, slotNumber: profile.slotNumber,
                         revision: profile.revision, savedAt: profile.savedAt, release: this.release,
                         progress: profile.progress, attempts }),
@@ -74,21 +76,25 @@ export function startGameplaySync(readSaves: () => Array<{ slot: number; save: S
     let disposed = false;
     let sync: GameplaySync | undefined;
     let store: GameplayStore | undefined;
-    const ready = openGameplayStore().then(value => {
+    const ready = openGameplayStore().then(async value => {
         store = value;
+        await value.discardUnpermitted?.(measurementSince());
         sync = new GameplaySync(value, import.meta.env.VITE_APP_RELEASE ?? 'development');
         return sync;
     });
     const capture = (slot: number, save: SaveSlotData) => {
+        if(!measurementAllowed()||!analytics()?.isEnabled())return;
+        observeProgress(save);
         const snapshot = captureGameplay(slot, save); // Copy before gameplay mutates its objects.
+        snapshot.attempts=snapshot.attempts.filter(a=>!!a.details.observation&&a.timestamp>=measurementSince());
         void ready.then(client => client.capture(snapshot)).catch(() => {
             console.warn('[GameplaySync] Local queue unavailable; saved progress will be retried on restart');
         });
     };
     observeGameplaySaves(capture);
     for (const entry of readSaves()) capture(entry.slot, entry.save);
-    void ready.then(client => disposed ? undefined : client.flush()).catch(() => {});
-    const flush = () => { if (!disposed) void sync?.flush(); };
+    void ready.then(client => disposed || !measurementAllowed() || !analytics()?.isEnabled() ? undefined : client.flush()).catch(() => {});
+    const flush = () => { if (!disposed&&measurementAllowed()&&analytics()?.isEnabled()) void sync?.flush(); };
     const wake = () => { sync?.wake(); flush(); };
     const timer = window.setInterval(flush, 5000);
     window.addEventListener('online', wake);

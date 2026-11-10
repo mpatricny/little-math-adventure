@@ -5,6 +5,8 @@ import { CoopSessionManager } from '../CoopSessionManager';
 import { SaveSystem } from '../SaveSystem';
 import { masteryPuzzleProfile, sharedPuzzleProfile } from './PuzzleDifficulty';
 import tuning from '../../../public/assets/data/puzzles/tuning.json';
+import { analytics } from '../../telemetry/AnalyticsClient';
+import { gameplayId } from '../../telemetry/gameplayData';
 
 export function puzzleProgress(player: PlayerState): PuzzleProgress {
     return player.puzzleProgress ??= { version: 1, active: {}, results: {} };
@@ -30,12 +32,16 @@ export function acquirePuzzle<T>(store: Record<string, PuzzleInstance>, key: str
         && acceptPayload(existing.payload as T)) return existing as PuzzleInstance<T>;
     const instance: PuzzleInstance<T> = { version: 1, family, profile, payload: generate(profile), startedAt: Date.now(),
         assisted: false, completed: false, state: {} };
-    store[key] = instance; return instance;
+    store[key] = instance;
+    if(analytics()?.isEnabled()){instance.analyticsId=gameplayId();analytics()?.emit('puzzle_started',{instanceId:instance.analyticsId,family});}
+    return instance;
 }
 /** Record one first answer per instance; corrections never turn a mistake into independent mastery. */
 export function recordPuzzleAnswer(instance: PuzzleInstance, correct: boolean, assisted = false, player: PlayerState | null = GameStateManager.getInstance().getPlayer()): void {
     if (instance.completed) return;
     const firstAnswer = instance.firstCorrect === undefined;
+    if(instance.analyticsId){analytics()?.emit('puzzle_submitted',{instanceId:instance.analyticsId,family:instance.family,correct,assisted,first:firstAnswer});
+        if(correct)analytics()?.emit('puzzle_completed',{instanceId:instance.analyticsId,family:instance.family});}
     instance.firstCorrect ??= correct;
     instance.assisted ||= assisted;
     instance.completed = correct;

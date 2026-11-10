@@ -11,6 +11,7 @@ import { mountRemoteControllerApp } from './remote/controllerApp';
 import { isControllerMode, isTvMode } from './remote/remoteMode';
 import { startGameplaySync } from './telemetry/GameplaySync';
 import { SaveSystem } from './systems/SaveSystem';
+import { analytics, startAnalytics, measurementAllowed } from './telemetry/AnalyticsClient';
 
 if (isControllerMode()) {
     mountRemoteControllerApp();
@@ -19,6 +20,9 @@ if (isControllerMode()) {
 }
 
 async function startGame(): Promise<void> {
+    const stopAnalytics=startAnalytics('game');
+    const reportError=()=>analytics()?.emit('client_error',{code:'runtime_error',scene:analytics()?.contextSnapshot()?.scene??'BootScene',fingerprint:'window',count:1});
+    window.addEventListener('error',reportError);window.addEventListener('unhandledrejection',reportError);
     const { GAME_SCENES } = IS_PILOT
         ? await import('./config/pilotScenes')
         : await import('./config/developmentScenes');
@@ -119,10 +123,12 @@ async function startGame(): Promise<void> {
         stopDevSaveSync = await startDevSaveSync();
     }
 
-    const stopGameplaySync = IS_PILOT ? startGameplaySync(() =>
+    const readSaves=() =>
         Array.from({ length: 8 }, (_, slot) => ({ slot, save: SaveSystem.load(slot) }))
-            .filter((entry): entry is { slot: number; save: SaveSlotData } => entry.save !== null)
-    ) : () => {};
+            .filter((entry): entry is { slot: number; save: SaveSlotData } => entry.save !== null);
+    let stopGameplaySync=()=>{};
+    const updateSync=()=>{stopGameplaySync();stopGameplaySync=measurementAllowed()&&analytics()?.isEnabled()?startGameplaySync(readSaves):()=>{};};
+    updateSync();window.addEventListener('cislokraj-measurement-changed',updateSync);window.addEventListener('cislokraj-analytics-config-changed',updateSync);
 
     const forceCanvasRenderer = new URLSearchParams(window.location.search).get('renderer') === 'canvas';
     const config: Phaser.Types.Core.GameConfig = {
@@ -156,8 +162,9 @@ async function startGame(): Promise<void> {
     setupMobilePause(game);
     setupRendererRecovery(game);
     game.events.once(Phaser.Core.Events.DESTROY, destroyGameAudio);
-    game.events.once(Phaser.Core.Events.DESTROY, stopDevSaveSync);
-    game.events.once(Phaser.Core.Events.DESTROY, stopGameplaySync);
+    game.events.once(Phaser.Core.Events.DESTROY,()=>{stopDevSaveSync();stopGameplaySync();stopAnalytics();window.removeEventListener('cislokraj-measurement-changed',updateSync);
+        window.removeEventListener('cislokraj-analytics-config-changed',updateSync);
+        window.removeEventListener('error',reportError);window.removeEventListener('unhandledrejection',reportError);});
     if (DEV_TOOLS_ENABLED) (globalThis as any).__LITTLE_MATH_GAME__ = game;
     if (import.meta.env.DEV && DEV_TOOLS_ENABLED) {
         const { startDeviceDiagnostics } = await import('./utils/deviceDiagnostics');

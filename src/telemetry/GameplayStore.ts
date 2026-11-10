@@ -12,6 +12,10 @@ export interface GameplayStore {
     bind(profileId: string, accountId: string): Promise<boolean>;
     pending(profileId: string): Promise<GameplayAttempt[]>;
     acknowledge(profileId: string, revision: number, keys: string[]): Promise<void>;
+    enqueueAttempt?(profile: CapturedGameplay, attempt: GameplayAttempt): Promise<void>;
+    clearPending?(): Promise<void>;
+    discardUnpermitted?(since: number): Promise<void>;
+    quarantine?(profileId:string,keys:string[],reason:string):Promise<void>;
     close(): void;
 }
 
@@ -37,6 +41,28 @@ export async function openGameplayStore(): Promise<GameplayStore> {
     const db = await result(request);
     db.onversionchange = () => db.close();
     return {
+        async discardUnpermitted(since) {
+            const tx=db.transaction('events','readwrite'),done=finished(tx),events=tx.objectStore('events');
+            const records=await result(events.getAll()) as StoredAttempt[];
+            for(const record of records)if(record.sent===0&&(!record.details.observation||record.timestamp<since))events.delete(record.id);
+            await done;
+        },
+        async enqueueAttempt(snapshot,attempt) {
+            const tx=db.transaction(['profiles','events'],'readwrite'),done=finished(tx),profiles=tx.objectStore('profiles'),events=tx.objectStore('events');
+            const prior=await result(profiles.get(snapshot.id)) as PendingProfile|undefined;
+            if(!prior){const {attempts:_attempts,...p}=snapshot;profiles.put({...p,owner:null,revision:1,acknowledgedRevision:0});}
+            const id=`${snapshot.id}|${attempt.eventKey}`;
+            if(await result(events.getKey(id))===undefined)events.put({...attempt,id,profileId:snapshot.id,sent:0});
+            await done;
+        },
+        async clearPending() {
+            const tx=db.transaction(['profiles','events'],'readwrite'),done=finished(tx);
+            tx.objectStore('profiles').clear();tx.objectStore('events').clear();await done;
+        },
+        async quarantine(profileId,keys,reason){const tx=db.transaction('events','readwrite'),done=finished(tx),events=tx.objectStore('events');
+            for(const key of keys){const old=await result(events.get(`${profileId}|${key}`)) as StoredAttempt|undefined;
+                if(old?.sent===0)events.put({...old,sent:2,quarantinedAt:Date.now(),quarantineReason:reason});}
+            await done;},
         async browserToken() {
             const tx = db.transaction('meta', 'readwrite'); const done = finished(tx);
             const meta = tx.objectStore('meta');

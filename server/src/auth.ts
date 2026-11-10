@@ -6,6 +6,8 @@ export interface AuthPrincipal {
   provider: 'google';
   providerSubject: string;
   email: string;
+  emailVerified?: boolean;
+  sessionId?: string;
 }
 
 export interface AuthService {
@@ -14,7 +16,8 @@ export interface AuthService {
   close(): Promise<void>;
 }
 
-export function createAuthService(config: AppConfig, authConfig: AuthConfig): AuthService {
+export function createAuthService(config: AppConfig, authConfig: AuthConfig,
+  recordLogin?: (data: { sessionId: string; userId: string; occurredAt: Date; headers: Headers | null }) => Promise<void>): AuthService {
   const pool = new Pool({
     connectionString: config.databaseUrl,
     max: 5,
@@ -32,6 +35,15 @@ export function createAuthService(config: AppConfig, authConfig: AuthConfig): Au
         clientId: authConfig.googleClientId,
         clientSecret: authConfig.googleClientSecret,
       },
+    },
+    databaseHooks: {
+      session: { create: { after: async (session, context) => {
+        if (context?.path !== '/callback/:id' && !context?.path?.includes('/callback/')) return;
+        try {
+          await recordLogin?.({ sessionId: session.id, userId: session.userId,
+            occurredAt: session.createdAt, headers: context?.headers ?? null });
+        } catch { /* A report failure must never cancel a successful sign-in. */ }
+      } } },
     },
     user: {
       fields: {
@@ -93,6 +105,8 @@ export function createAuthService(config: AppConfig, authConfig: AuthConfig): Au
         provider: 'google',
         providerSubject: googleAccount.accountId,
         email: session.user.email,
+        emailVerified: session.user.emailVerified,
+        sessionId: session.session.id,
       };
     },
     close: () => pool.end(),

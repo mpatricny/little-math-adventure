@@ -38,6 +38,8 @@ export interface AppConfig {
   auth: AuthConfig | null;
   appRelease: string;
   logLevel: 'debug' | 'info' | 'warn' | 'error';
+  analytics?: { adminEnabled: boolean; collectionEnabled: boolean; adminSubjects: ReadonlySet<string>;
+    bootstrapEmail: string | null };
 }
 
 function parseOriginList(value: string): ReadonlySet<string> {
@@ -88,5 +90,11 @@ export function loadConfig(environment: NodeJS.ProcessEnv = process.env): AppCon
     auth: loadAuthConfig(environment),
     appRelease: parsed.APP_RELEASE ?? parsed.RAILWAY_GIT_COMMIT_SHA ?? 'dev',
     logLevel: parsed.LOG_LEVEL,
+    analytics: {
+      adminEnabled: environment.ANALYTICS_ADMIN_ENABLED === 'true',
+      collectionEnabled: environment.ANALYTICS_COLLECTION_ENABLED === 'true',
+      adminSubjects: new Set((environment.ADMIN_GOOGLE_SUBJECTS ?? '').split(',').map(s => s.trim()).filter(Boolean)),
+      bootstrapEmail: environment.ADMIN_BOOTSTRAP_EMAIL?.trim().toLowerCase() || null,
+    },
   };
 }

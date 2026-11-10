@@ -1,5 +1,6 @@
 import { sfx } from '../audio/AudioDirector';
 import Phaser from 'phaser';
+import { ProblemObservation } from '../telemetry/ProblemObservation';
 import { GameStateManager } from '../systems/GameStateManager';
 import { CrystalSystem } from '../systems/CrystalSystem';
 import { ManaSystem } from '../systems/ManaSystem';
@@ -73,6 +74,8 @@ export class CrystalForgeScene extends Phaser.Scene {
     private equationText!: Phaser.GameObjects.Text;
     private equationRoot!: Phaser.GameObjects.Container;
     private equationParts!: Phaser.GameObjects.Text[];
+    private observation:ProblemObservation|null=null;
+    private observationStarted=0;
     private answerButtons: Phaser.GameObjects.Container[] = [];
     private answerFrame: Phaser.GameObjects.Image | null = null;
     private manaText!: Phaser.GameObjects.Text;
@@ -1306,6 +1309,10 @@ export class CrystalForgeScene extends Phaser.Scene {
         if (this.answerFrame) this.answerFrame.setVisible(true);
 
         const choices = this.generateChoices(correctAnswer);
+        this.observation?.abandon();this.observationStarted=performance.now();
+        this.observation=new ProblemObservation({key:`forge:${this.currentOperation}:${this.equationText.text}`,
+            question:this.equationText.text,choices,correctAnswer,source:'activity',context:'crystal_forge',taskKind:'arithmetic'});
+        this.events.once('shutdown',()=>this.observation?.abandon());
 
         choices.forEach((choice, index) => {
             const btn = this.answerButtons[index];
@@ -1324,6 +1331,7 @@ export class CrystalForgeScene extends Phaser.Scene {
     }
 
     private hideAnswerButtons(): void {
+        this.observation?.abandon();
         this.answerButtons.forEach(btn => btn.setVisible(false));
         if (this.answerFrame) this.answerFrame.setVisible(false);
     }
@@ -1346,6 +1354,7 @@ export class CrystalForgeScene extends Phaser.Scene {
         const btn = this.answerButtons[buttonIndex];
         const isCorrect = btn.getData('correct');
         const value = btn.getData('value') as number;
+        this.observation?.answer(value,isCorrect,Math.max(0,performance.now()-this.observationStarted));
         const player = this.gameState.getPlayer();
 
         // Determine mana cost: basic ops = 1, advanced ops = 2, master ops = 2 or 3

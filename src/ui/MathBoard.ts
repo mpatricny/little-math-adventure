@@ -11,6 +11,7 @@ import { comparisonChoiceWidth } from './ComparisonPresentation';
 import { calculateShieldAnswerBlock } from '../systems/ShieldBlockSystem';
 import { COMPARISON_LATER_HINT_DELAY_MS, ComparisonSupportProgress, comparisonHintDelay, normalizeComparisonSupport, updateComparisonSupport } from '../systems/ComparisonSupport';
 import type { RemoteComparisonPrompt } from '../remote/types';
+import { observeMathProblem, observedChoice, type ProblemObservation } from '../telemetry/ProblemObservation';
 
 export interface MathBoardShowOptions {
     presentation?: 'rows' | 'sequential';
@@ -18,6 +19,7 @@ export interface MathBoardShowOptions {
     support?: Partial<ComparisonSupportProgress>;
     onIntroComplete?: () => void;
     defense?: MathBoardDefense;
+    telemetryContext?: string;
 }
 
 // Visual hint configuration
@@ -107,6 +109,8 @@ export class MathBoard {
     private support = normalizeComparisonSupport();
     private defense: MathBoardDefense | null = null;
     private rowsPosition: { x: number; y: number } | null = null;
+    private observation:ProblemObservation|null=null;
+    private telemetryContext:string|undefined;
 
     // Multi-problem state
     private problems: MathProblem[] = [];
@@ -566,6 +570,7 @@ export class MathBoard {
         this.scene.tweens.killTweensOf(this.container);
         this.support = normalizeComparisonSupport(options.support);
         this.defense = options.defense ?? null;
+        this.telemetryContext=options.telemetryContext;
         this.sequential = Boolean(this.defense) || options.presentation === 'sequential' || problems.some(problem => Boolean(problem.comparisonMeta));
         this.problems = problems;
         this.currentProblemIndex = 0;
@@ -641,6 +646,9 @@ export class MathBoard {
 
     private activateQuestion(resetTime = true): void {
         if (resetTime) this.activeTimeMs = 0;
+        if(resetTime){const p=this.problems[this.currentProblemIndex];
+            this.observation=observeMathProblem(p,this.telemetryContext??(this.defense?'battle_block':p.comparisonMeta?.exam||/Guild|Catacomb/.test(this.scene.sys.settings.key)?'exam':
+                p.source==='pet'?'battle_pet':p.source==='sword'?'battle_sword':'battle'));}
         this.acceptingAnswer = true;
         if (this.sequential) this.sequentialView!.setEnabled(true);
         else {
@@ -670,6 +678,7 @@ export class MathBoard {
         if (meta.autoArithmeticHintMs && this.activeTimeMs >= meta.autoArithmeticHintMs) {
             this.sequentialView!.showArithmeticHint();
             meta.assisted = true;
+            this.observation?.assist('arithmetic_hint');
             this.notifyActiveProblemChanged();
         }
     }
@@ -691,6 +700,7 @@ export class MathBoard {
         const problem = this.problems[this.currentProblemIndex];
         if (!this.acceptingAnswer || !problem?.comparisonMeta || problem.comparisonMeta.exam) return;
         problem.comparisonMeta.assisted = true;
+        this.observation?.assist('replayed_demo');
         this.acceptingAnswer = false;
         this.notifyActiveProblemChanged();
         const generation = this.generation;
@@ -724,6 +734,7 @@ export class MathBoard {
         if (delayedArithmeticHint && problem.comparisonMeta?.arithmeticHintText) {
             this.hintTimer = this.scene.time.delayedCall(delayedArithmeticHint, () => {
                 if (problem.comparisonMeta) problem.comparisonMeta.assisted = true;
+                this.observation?.assist('arithmetic_hint');
                 this.displayComparisonArithmeticHint(problem);
             });
             return;
@@ -754,6 +765,7 @@ export class MathBoard {
         // Delay hint appearance by 5 seconds
         this.hintTimer = this.scene.time.delayedCall(HINT_APPEAR_DELAY, () => {
             this.displayHintItems(problem);
+            this.observation?.assist('objects');
         });
     }
 
@@ -842,6 +854,7 @@ export class MathBoard {
         const isCorrect = problem.choices[buttonIndex] === problem.answer;
         const responseTimeMs = this.activeTimeMs;
         const usedAssistance = problem.comparisonMeta?.assisted === true;
+        this.observation?.answer(observedChoice(problem,problem.choices[buttonIndex]),isCorrect,responseTimeMs,usedAssistance);
         if (problem.comparisonMeta) {
             problem.comparisonMeta.selectedRelation = (['less', 'equal', 'greater'] as const)[problem.choices[buttonIndex]];
         }
@@ -956,6 +969,7 @@ export class MathBoard {
     }
 
     private cancelPending(): void {
+        this.observation?.abandon();this.observation=null;
         this.generation++;
         this.acceptingAnswer = false;
         this.sequentialView?.cancel();
