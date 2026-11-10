@@ -5,11 +5,11 @@
         "spriteKey": "silverpond-pearl-jellyfish-idle-sheet",
         "animPrefix": "pearl-jellyfish",
         "hp": 32,
-        "attack": 8,
-        "defense": 4,
+        "attack": 9,
+        "defense": 5,
         "goldReward": [
-            10,
-            14
+            5,
+            25
         ],
         "difficulty": 6,
         "scale": 0.8
@@ -27,7 +27,8 @@
             28
         ],
         "difficulty": 7,
-        "scale": 1.03
+        "scale": 1.03,
+        "frameTopInset": 58
     },
     {
         "id": "slime_tutorial",
@@ -271,6 +272,96 @@
         ],
         "difficulty": 0,
         "scale": 0.55
+    },
+    {
+        "id": "silverpond_silverfin_scalefish_deep",
+        "name": "Hlubinný šupináč",
+        "spriteKey": "silverpond-bubble-fish-idle-sheet",
+        "animPrefix": "bubble-fish",
+        "hp": 52,
+        "attack": 10,
+        "defense": 4,
+        "goldReward": [
+            12,
+            16
+        ],
+        "difficulty": 7,
+        "scale": 0.45,
+        "rank": "elite",
+        "baseEnemyId": "silverpond_silverfin_scalefish",
+        "frameTopInset": 77
+    },
+    {
+        "id": "silverpond_ruin_axolotl_deep",
+        "name": "Hlubinný mlok",
+        "spriteKey": "silverpond-ruin-axolotl-idle-sheet",
+        "animPrefix": "ruin-axolotl",
+        "hp": 54,
+        "attack": 10,
+        "defense": 4,
+        "goldReward": [
+            12,
+            16
+        ],
+        "difficulty": 7,
+        "scale": 0.45,
+        "rank": "elite",
+        "baseEnemyId": "silverpond_ruin_axolotl",
+        "frameTopInset": 80
+    },
+    {
+        "id": "silverpond_bubble_crab_deep",
+        "name": "Hlubinný rak",
+        "spriteKey": "silverpond-bubble-crab-idle-sheet",
+        "animPrefix": "bubble-crab",
+        "hp": 60,
+        "attack": 10,
+        "defense": 5,
+        "goldReward": [
+            12,
+            16
+        ],
+        "difficulty": 7,
+        "scale": 0.45,
+        "rank": "elite",
+        "baseEnemyId": "silverpond_bubble_crab",
+        "frameTopInset": 99
+    },
+    {
+        "id": "silverpond_mill_turtle_deep",
+        "name": "Hlubinný krunýřník",
+        "spriteKey": "silverpond-mill-turtle-idle-sheet",
+        "animPrefix": "mill-turtle",
+        "hp": 58,
+        "attack": 10,
+        "defense": 5,
+        "goldReward": [
+            12,
+            16
+        ],
+        "difficulty": 7,
+        "scale": 0.45,
+        "rank": "elite",
+        "baseEnemyId": "silverpond_mill_turtle",
+        "frameTopInset": 116
+    },
+    {
+        "id": "silverpond_pearl_jellyfish_deep",
+        "name": "Hlubinná medúzka",
+        "spriteKey": "silverpond-pearl-jellyfish-idle-sheet",
+        "animPrefix": "pearl-jellyfish",
+        "hp": 54,
+        "attack": 10,
+        "defense": 4,
+        "goldReward": [
+            12,
+            16
+        ],
+        "difficulty": 7,
+        "scale": 0.8,
+        "rank": "elite",
+        "baseEnemyId": "silverpond_pearl_jellyfish",
+        "frameTopInset": 80
     },
     {
         "id": "silverpond_armored_seahorse",

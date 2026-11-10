@@ -88,6 +88,19 @@
         "wreck-hold": {
             "type": "image",
             "texture": "underwater-wreck-hold-bg"
+        },
+        "elite-rank-badge": {
+            "type": "staticImage",
+            "category": "decoration",
+            "texture": "underwater-elite-rank-badge",
+            "origin": [
+                0.5,
+                0.5
+            ],
+            "scale": {
+                "default": 0.1875
+            },
+            "depth": 25
         }
     },
     "characters": {

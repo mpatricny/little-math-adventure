@@ -1,6 +1,5 @@
 import Phaser from 'phaser';
-
-const MAX_CHARGES = 4;
+import { accumulateSpeedCharges, SPEED_CHARGE_CAPACITY as MAX_CHARGES } from '../systems/SpeedChargeSystem';
 const SLOT_SIZE = 18;
 const SLOT_GAP = 3;
 const FILLED_TINT = 0xffffff;
@@ -46,9 +45,7 @@ export class SpeedChargeBar {
 
     addCharges(count: number): { bonusDamage: number; newCharges: number } {
         const previous = this.currentCharges;
-        const total = previous + count;
-        const bonusDamage = Math.floor(total / MAX_CHARGES);
-        const newCharges = total % MAX_CHARGES;
+        const { bonusDamage, newCharges } = accumulateSpeedCharges(previous, count);
 
         this.container.setVisible(true).setAlpha(1);
         if (bonusDamage > 0) this.animateCompletedMeter(previous, newCharges);

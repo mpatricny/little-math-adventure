@@ -161,20 +161,38 @@
         {
           "id": "guardianHost",
           "asset": "ui.containers.empty",
-          "x": 942,
-          "y": 554,
-          "width": 300,
-          "height": 315,
+          "x": 850,
+          "y": 552,
+          "width": 235,
+          "height": 235,
           "depth": 23
+        },
+        {
+          "id": "guardianRankHost",
+          "asset": "ui.containers.empty",
+          "x": 850,
+          "y": 439,
+          "width": 48,
+          "height": 48,
+          "depth": 24
         },
         {
           "id": "guardianEscortHost",
           "asset": "ui.containers.empty",
-          "x": 1040,
-          "y": 570,
-          "width": 115,
-          "height": 130,
+          "x": 1080,
+          "y": 552,
+          "width": 235,
+          "height": 235,
           "depth": 22
+        },
+        {
+          "id": "guardianEscortRankHost",
+          "asset": "ui.containers.empty",
+          "x": 1080,
+          "y": 439,
+          "width": 48,
+          "height": 48,
+          "depth": 23
         },
         {
           "id": "mechanismHost",
@@ -292,19 +310,37 @@
           "id": "guardianHost",
           "asset": "ui.containers.empty",
           "x": 784,
-          "y": 558,
+          "y": 498,
           "width": 170,
           "height": 185,
           "depth": 23
         },
         {
+          "id": "guardianRankHost",
+          "asset": "ui.containers.empty",
+          "x": 784,
+          "y": 385,
+          "width": 48,
+          "height": 48,
+          "depth": 24
+        },
+        {
           "id": "guardianEscortHost",
           "asset": "ui.containers.empty",
           "x": 900,
-          "y": 575,
+          "y": 515,
           "width": 140,
           "height": 142,
           "depth": 22
+        },
+        {
+          "id": "guardianEscortRankHost",
+          "asset": "ui.containers.empty",
+          "x": 900,
+          "y": 422,
+          "width": 48,
+          "height": 48,
+          "depth": 23
         }
       ],
       "zones": [
@@ -396,6 +432,15 @@
           "width": 480,
           "height": 480,
           "depth": 24
+        },
+        {
+          "id": "guardianRankHost",
+          "asset": "ui.containers.empty",
+          "x": 838,
+          "y": 173,
+          "width": 48,
+          "height": 48,
+          "depth": 25
         },
         {
           "id": "depthCrystalHost",
@@ -845,6 +890,15 @@
           "depth": 22
         },
         {
+          "id": "guardianRankHost",
+          "asset": "ui.containers.empty",
+          "x": 845,
+          "y": 408,
+          "width": 48,
+          "height": 48,
+          "depth": 23
+        },
+        {
           "id": "chestHost",
           "asset": "ui.containers.empty",
           "x": 480,
@@ -870,6 +924,24 @@
           "width": 140,
           "height": 192,
           "depth": 32
+        },
+        {
+          "id": "guardianEscortHost",
+          "asset": "ui.containers.empty",
+          "x": 1100,
+          "y": 530,
+          "width": 150,
+          "height": 140,
+          "depth": 22
+        },
+        {
+          "id": "guardianEscortRankHost",
+          "asset": "ui.containers.empty",
+          "x": 1100,
+          "y": 449,
+          "width": 48,
+          "height": 48,
+          "depth": 23
         }
       ],
       "zones": [
@@ -1150,6 +1222,15 @@
           "depth": 23
         },
         {
+          "id": "guardianRankHost",
+          "asset": "ui.containers.empty",
+          "x": 860,
+          "y": 443,
+          "width": 48,
+          "height": 48,
+          "depth": 24
+        },
+        {
           "id": "guardianEscortHost",
           "asset": "ui.containers.empty",
           "x": 975,
@@ -1157,6 +1238,15 @@
           "width": 142,
           "height": 137,
           "depth": 22
+        },
+        {
+          "id": "guardianEscortRankHost",
+          "asset": "ui.containers.empty",
+          "x": 975,
+          "y": 486,
+          "width": 48,
+          "height": 48,
+          "depth": 23
         },
         {
           "id": "exitLeftHost",
@@ -1286,10 +1376,19 @@
           "id": "guardianHost",
           "asset": "ui.containers.empty",
           "x": 860,
-          "y": 536,
+          "y": 560,
           "width": 185,
           "height": 175,
           "depth": 23
+        },
+        {
+          "id": "guardianRankHost",
+          "asset": "ui.containers.empty",
+          "x": 860,
+          "y": 474,
+          "width": 48,
+          "height": 48,
+          "depth": 24
         },
         {
           "id": "guardianEscortHost",
@@ -1299,6 +1398,15 @@
           "width": 142,
           "height": 137,
           "depth": 22
+        },
+        {
+          "id": "guardianEscortRankHost",
+          "asset": "ui.containers.empty",
+          "x": 975,
+          "y": 476,
+          "width": 48,
+          "height": 48,
+          "depth": 23
         },
         {
           "id": "exitLeftHost",
@@ -2156,6 +2264,15 @@
           "depth": 23
         },
         {
+          "id": "guardianRankHost",
+          "asset": "ui.containers.empty",
+          "x": 918,
+          "y": 498,
+          "width": 48,
+          "height": 48,
+          "depth": 24
+        },
+        {
           "id": "guardianEscortHost",
           "asset": "ui.containers.empty",
           "x": 1043,
@@ -2163,6 +2280,15 @@
           "width": 115,
           "height": 116,
           "depth": 22
+        },
+        {
+          "id": "guardianEscortRankHost",
+          "asset": "ui.containers.empty",
+          "x": 1043,
+          "y": 515,
+          "width": 48,
+          "height": 48,
+          "depth": 23
         },
         {
           "id": "chestHost",
@@ -2934,6 +3060,15 @@
           "depth": 23
         },
         {
+          "id": "guardianRankHost",
+          "asset": "ui.containers.empty",
+          "x": 580,
+          "y": 460,
+          "width": 48,
+          "height": 48,
+          "depth": 24
+        },
+        {
           "id": "guardianEscortHost",
           "asset": "ui.containers.empty",
           "x": 1010,
@@ -2941,6 +3076,15 @@
           "width": 150,
           "height": 140,
           "depth": 22
+        },
+        {
+          "id": "guardianEscortRankHost",
+          "asset": "ui.containers.empty",
+          "x": 1010,
+          "y": 485,
+          "width": 48,
+          "height": 48,
+          "depth": 23
         },
         {
           "id": "exitReturnHost",
@@ -4115,6 +4259,15 @@
           "height": 28
         },
         {
+          "id": "battleEnemyRankHost1",
+          "asset": "ui.containers.empty",
+          "x": 859,
+          "y": 316,
+          "width": 48,
+          "height": 48,
+          "depth": 81
+        },
+        {
           "id": "battleEnemyStatusHost2",
           "asset": "misc.battle-hud.status-frame-v2",
           "x": 822,
@@ -4122,6 +4275,15 @@
           "depth": 80,
           "width": 118,
           "height": 28
+        },
+        {
+          "id": "battleEnemyRankHost2",
+          "asset": "ui.containers.empty",
+          "x": 909,
+          "y": 402,
+          "width": 48,
+          "height": 48,
+          "depth": 81
         },
         {
           "id": "battleEnemyStatusHost3",
@@ -4133,6 +4295,15 @@
           "height": 28
         },
         {
+          "id": "battleEnemyRankHost3",
+          "asset": "ui.containers.empty",
+          "x": 1068,
+          "y": 354,
+          "width": 48,
+          "height": 48,
+          "depth": 81
+        },
+        {
           "id": "battleEnemyStatusHost4",
           "asset": "misc.battle-hud.status-frame-v2",
           "x": 1000,
@@ -4140,6 +4311,15 @@
           "depth": 80,
           "width": 118,
           "height": 28
+        },
+        {
+          "id": "battleEnemyRankHost4",
+          "asset": "ui.containers.empty",
+          "x": 1087,
+          "y": 409,
+          "width": 48,
+          "height": 48,
+          "depth": 81
         },
         {
           "id": "battleActionDockFrame",

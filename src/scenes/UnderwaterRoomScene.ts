@@ -43,6 +43,7 @@ import { UnderwaterLightPuzzle } from '../ui/UnderwaterLightPuzzle';
 import { waterPearl } from '../ui/UnderwaterPearls';
 import { getPlayerSpriteConfig } from '../utils/characterUtils';
 import { needsDepthCrystalShipReturn } from '../systems/DepthCrystalProgressSystem';
+import { createEnemyRankBadge } from '../ui/EnemyRankBadge';
 
 type EntryData = { preview?: boolean; fromSurface?: boolean; roomId?: string; entryId?: string; battleLost?: boolean; resumeX?: number; arriving?: boolean; guardianFreed?: boolean };
 
@@ -362,6 +363,8 @@ export class UnderwaterRoomScene extends Phaser.Scene {
             fish.setData('waterArtwork', true);
             const anim = `${enemy.animPrefix}-idle`;
             if (this.anims.exists(anim)) fish.play(anim);
+            if (enemy.rank === 'elite') createEnemyRankBadge(this, enemy,
+                waterHost(this.builder, index === 0 ? 'guardianRankHost' : 'guardianEscortRankHost'));
             if (index === 0) this.guardianHotspot = hotspot;
         });
     }

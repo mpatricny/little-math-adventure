@@ -441,9 +441,10 @@ describe('EncounterCatalog forest and boss resolver', () => {
         const mushroom = catalog.resolveJourneyEncounter('forest-room-riddle-mushroom', 'solo').enemies[0];
         const treant = catalog.resolveJourneyEncounter('forest-room-grove-treant', 'solo').enemies[0];
 
-        expect([wolf.id, wolf.hp, wolf.attack, wolf.defense]).toEqual(['forest_wolf', 15, 4, 2]);
-        expect([mushroom.id, mushroom.hp, mushroom.attack, mushroom.defense]).toEqual(['giant_mushroom', 20, 3, 3]);
-        expect([treant.id, treant.hp, treant.attack, treant.defense]).toEqual(['ancient_treant', 25, 3, 4]);
+        for (const resolved of [wolf, mushroom, treant]) {
+            const source = enemiesJson.find(enemy => enemy.id === resolved.id)!;
+            expect([resolved.hp, resolved.attack, resolved.defense]).toEqual([source.hp, source.attack, source.defense]);
+        }
     });
 
     it('resolves a two-enemy room encounter and appends the last enemy in co-op', () => {
@@ -460,6 +461,56 @@ describe('EncounterCatalog forest and boss resolver', () => {
         expect(coop.coopAdjustment).toBe('append-last');
         expect(coop.enemies[1]).not.toBe(coop.enemies[2]);
     });
+
+    it('validates optional creature frame inset geometry while accepting zero', () => {
+        for (const frameTopInset of [-1, Number.NaN, Number.POSITIVE_INFINITY, Number.NEGATIVE_INFINITY]) {
+            const core = mutableEnemies();
+            core[0].frameTopInset = frameTopInset;
+            expect(() => createEncounterCatalog(encountersJson, enemySources(core))).toThrowError(/frameTopInset/);
+        }
+        for (const frameTopInset of [0, 12]) {
+            const core = mutableEnemies();
+            core[0].frameTopInset = frameTopInset;
+            expect(() => createEncounterCatalog(encountersJson, enemySources(core))).not.toThrow();
+        }
+    });
+
+    it('validates ranked variant base links rather than silently losing pet unlocks', () => {
+        for (const baseEnemyId of ['missing', 'silverpond_silverfin_scalefish_deep', 'silverpond_ruin_axolotl_deep']) {
+            const core = mutableEnemies();
+            requireEnemy('silverpond_silverfin_scalefish_deep', core).baseEnemyId = baseEnemyId;
+            expect(() => createEncounterCatalog(encountersJson, enemySources(core))).toThrowError(/baseEnemyId/);
+        }
+        const rankedBase = mutableEnemies();
+        requireEnemy('silverpond_silverfin_scalefish', rankedBase).rank = 'elite';
+        expect(() => createEncounterCatalog(encountersJson, enemySources(rankedBase))).toThrowError(/baseEnemyId/);
+        const core = mutableEnemies();
+        (requireEnemy('silverpond_silverfin_scalefish_deep', core) as MutableFixture).rank = 'unknown';
+        expect(() => createEncounterCatalog(encountersJson, enemySources(core))).toThrowError(/rank/);
+    });
+
+    it('scales a complete underwater roster without changing attacks, order, rewards or the solo source', () => {
+        const catalog = createProductionCatalog();
+        const solo = catalog.resolveJourneyEncounter('silverpond-shallows-guardian', 'solo');
+        const coop = catalog.resolveJourneyEncounter('silverpond-shallows-guardian', 'coop');
+        const policy = encountersJson.multiplayerPolicies['underwater-coop-v1'];
+        expect(coop.coopAdjustment).toBe('scale-full-roster');
+        expect(coop.enemies).toHaveLength(solo.enemies.length);
+        solo.enemies.forEach((enemy, index) => {
+            expect(coop.enemies[index]).toEqual({ ...enemy, hp: Math.ceil(enemy.hp * policy.nonBossHpScale) });
+            coop.enemies[index].goldReward[0] = 999;
+        });
+        expect(catalog.resolveJourneyEncounter('silverpond-shallows-guardian', 'solo')).toEqual(solo);
+        expect(coop.rewardPolicy).toBe('resolved-roster');
+    });
+
+    it.each([undefined, null, 0, 0.9, -1, Number.NaN, Number.POSITIVE_INFINITY, '1.65'])(
+        'rejects an invalid full-roster journey HP scale: %s', scale => {
+            const fixture = mutableEncounters();
+            fixture.multiplayerPolicies['underwater-coop-v1'].nonBossHpScale = scale;
+            expect(() => createEncounterCatalog(fixture, enemySources())).toThrowError(/nonBossHpScale/);
+        },
+    );
 
     it('resolves all boss phases from one profile and scales every phase in co-op', () => {
         const catalog = createProductionCatalog();

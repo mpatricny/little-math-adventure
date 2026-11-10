@@ -58,7 +58,10 @@ describe('postal wreck branch', () => {
         const solo = catalog.resolveJourneyEncounter('silverpond-wreck-watch', 'solo');
         const coop = catalog.resolveJourneyEncounter('silverpond-wreck-watch', 'coop');
         expect(solo.enemies.map(e => e.id)).toEqual(encounters.scenes.UnderwaterRoomScene.rooms.sp_post_wreck.encounters[0].enemies.map(e => e.enemyId));
-        expect(coop.enemies).toHaveLength(solo.enemies.length + 1);
+        expect(coop.enemies).toHaveLength(solo.enemies.length);
+        const policy = encounters.multiplayerPolicies['underwater-coop-v1'];
+        expect(coop.enemies.map(e => e.hp)).toEqual(solo.enemies.map(e => Math.ceil(e.hp * policy.nonBossHpScale)));
+        expect(coop.enemies.map(e => e.goldReward)).toEqual(solo.enemies.map(e => e.goldReward));
     });
     for (const band of ['A', 'B', 'C', 'D', 'E'] as BandId[]) it(`${band}: postal representations have one unambiguous ordering`, () => {
         const clues = underwaterWordCipher('KOTVA', band, true, seededRandom(123));

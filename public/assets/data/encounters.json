@@ -35,14 +35,23 @@
       "bossHpScale": 1.35,
       "rounding": "ceil",
       "rewardPolicy": "resolved-roster"
+    },
+    "underwater-coop-v1": {
+      "kind": "journey",
+      "nonBossStrategy": "scale-full-roster",
+      "nonBossHpScale": 1.55,
+      "bossStrategy": "scale-all-phases",
+      "bossHpScale": 1.35,
+      "rounding": "ceil",
+      "rewardPolicy": "resolved-roster"
     }
   },
   "bosses": {
     "depth-guardian-v1": {
       "phases": [
         {
-          "hp": 28,
-          "attack": 5,
+          "hp": 52,
+          "attack": 10,
           "defense": 4,
           "name": "Clouded guardian",
           "nameCs": "Zakalený strážce",
@@ -50,8 +59,8 @@
           "attackAnim": "depth-guardian-attack"
         },
         {
-          "hp": 26,
-          "attack": 6,
+          "hp": 56,
+          "attack": 10,
           "defense": 3,
           "name": "Rising currents",
           "nameCs": "Rozbouřené proudy",
@@ -60,9 +69,9 @@
           "attackAnim": "depth-guardian-attack-tide"
         },
         {
-          "hp": 32,
-          "attack": 4,
-          "defense": 6,
+          "hp": 60,
+          "attack": 9,
+          "defense": 5,
           "name": "Breaking the bond",
           "nameCs": "Praskající pouto",
           "healPercent": 0,
@@ -73,8 +82,8 @@
       "diamondReward": 0,
       "tidalWave": {
         "everyTurns": 2,
-        "bonusDamage": 3,
-        "blessingReduction": 3
+        "bonusDamage": 4,
+        "blessingReduction": 4
       }
     },
     "verdant-guardian-v1": {
@@ -139,11 +148,11 @@
               "id": "silverpond-chamber-keepers",
               "objectId": "guardianHost",
               "kind": "battle",
-              "multiplayerPolicy": "forest-coop-v1",
+              "multiplayerPolicy": "underwater-coop-v1",
               "enemies": [
                 {
                   "source": "core",
-                  "enemyId": "silverpond_mill_turtle"
+                  "enemyId": "silverpond_mill_turtle_deep"
                 },
                 {
                   "source": "core",
@@ -159,15 +168,15 @@
               "id": "silverpond-garden-patrol",
               "objectId": "guardianHost",
               "kind": "battle",
-              "multiplayerPolicy": "forest-coop-v1",
+              "multiplayerPolicy": "underwater-coop-v1",
               "enemies": [
                 {
                   "source": "core",
-                  "enemyId": "silverpond_silverfin_scalefish"
+                  "enemyId": "silverpond_silverfin_scalefish_deep"
                 },
                 {
                   "source": "core",
-                  "enemyId": "silverpond_ruin_axolotl"
+                  "enemyId": "silverpond_ruin_axolotl_deep"
                 }
               ]
             }
@@ -179,11 +188,11 @@
               "id": "silverpond-canal-blockade",
               "objectId": "guardianHost",
               "kind": "battle",
-              "multiplayerPolicy": "forest-coop-v1",
+              "multiplayerPolicy": "underwater-coop-v1",
               "enemies": [
                 {
                   "source": "core",
-                  "enemyId": "silverpond_bubble_crab"
+                  "enemyId": "silverpond_bubble_crab_deep"
                 },
                 {
                   "source": "core",
@@ -199,11 +208,15 @@
               "id": "silverpond-shallows-guardian",
               "objectId": "guardianHost",
               "kind": "battle",
-              "multiplayerPolicy": "forest-coop-v1",
+              "multiplayerPolicy": "underwater-coop-v1",
               "enemies": [
                 {
                   "source": "core",
-                  "enemyId": "silverpond_silverfin_scalefish"
+                  "enemyId": "silverpond_silverfin_scalefish_deep"
+                },
+                {
+                  "source": "core",
+                  "enemyId": "silverpond_silverfin_scalefish_deep"
                 }
               ]
             }
@@ -215,15 +228,15 @@
               "id": "silverpond-wreck-watch",
               "objectId": "guardianHost",
               "kind": "battle",
-              "multiplayerPolicy": "forest-coop-v1",
+              "multiplayerPolicy": "underwater-coop-v1",
               "enemies": [
                 {
                   "source": "core",
-                  "enemyId": "silverpond_bubble_crab"
+                  "enemyId": "silverpond_bubble_crab_deep"
                 },
                 {
                   "source": "core",
-                  "enemyId": "silverpond_ruin_axolotl"
+                  "enemyId": "silverpond_ruin_axolotl_deep"
                 }
               ]
             }
@@ -235,11 +248,15 @@
               "id": "silverpond-grotto-keeper",
               "objectId": "guardianHost",
               "kind": "battle",
-              "multiplayerPolicy": "forest-coop-v1",
+              "multiplayerPolicy": "underwater-coop-v1",
               "enemies": [
                 {
                   "source": "core",
-                  "enemyId": "silverpond_pearl_jellyfish"
+                  "enemyId": "silverpond_pearl_jellyfish_deep"
+                },
+                {
+                  "source": "core",
+                  "enemyId": "silverpond_rune_nautilus"
                 }
               ]
             }
@@ -251,7 +268,7 @@
               "id": "silverpond-depth-watch",
               "objectId": "guardianHost",
               "kind": "battle",
-              "multiplayerPolicy": "forest-coop-v1",
+              "multiplayerPolicy": "underwater-coop-v1",
               "enemies": [
                 {
                   "source": "core",
@@ -271,7 +288,7 @@
               "id": "silverpond-depth-guardian",
               "objectId": "guardianHost",
               "kind": "boss",
-              "multiplayerPolicy": "forest-coop-v1",
+              "multiplayerPolicy": "underwater-coop-v1",
               "enemies": [
                 {
                   "source": "core",

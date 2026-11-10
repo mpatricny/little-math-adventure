@@ -219,7 +219,8 @@ describe('underwater content contracts', () => {
             expect(simulation.enemies.map(e => ({ id: e.id, hp: e.hp })))
                 .toEqual(runtime.enemies.map(e => ({ id: e.id, hp: e.hp })));
             const soloSize = catalog.resolveJourneyEncounter(room.encounter!.id, 'solo').enemies.length;
-            expect(runtime.enemies).toHaveLength(soloSize + (mode === 'coop' && !runtime.boss ? 1 : 0));
+            expect(runtime.enemies).toHaveLength(soloSize);
+            if (mode === 'coop' && !runtime.boss) expect(runtime.coopAdjustment).toBe('scale-full-roster');
         }
     });
 

@@ -1,12 +1,17 @@
 import { test, expect, openSeededGame, activateCoopSession, waitForScene } from '../arena/helpers/arena-harness';
 import { tap } from './hands-on-helpers';
 import type { Page } from 'playwright/test';
+import { AUDIT_BUILDS } from '../../src/simulation/UnderwaterBalanceAudit';
 
 const progress = { schemaVersion: 1, active: true, introSeen: true, roomId: 'sp_depth_gate', entryId: 'bell',
     visitedRooms: ['sp_bell_hub'], defeatedEncounters: ['silverpond-depth-watch', 'silverpond-grotto-keeper'], openedChests: [],
     bellNotes: 3, puzzleAttempts: 3, restoredMechanisms: ['shrine-memory', 'chamber-routes', 'grotto-light'] };
 const hero = { storyProgress: { hasCompletedIntro: true, hasUnlockedSilverpond: true, hasWaterBreathingScale: true },
-    underwaterProgress: progress, attack: 8, defense: 2, hp: 55, maxHp: 55, equippedWeapon: 'sword_iron', equippedShield: 'shield_iron', potions: 3 };
+    underwaterProgress: progress, attack: AUDIT_BUILDS.tide.attack, defense: 0,
+    hp: AUDIT_BUILDS.tide.maxHp,maxHp: AUDIT_BUILDS.tide.maxHp,
+    equippedWeapon: AUDIT_BUILDS.tide.weaponId,equippedShield: AUDIT_BUILDS.tide.shieldId,
+    ownedPets:[AUDIT_BUILDS.tide.petId!],activePet:AUDIT_BUILDS.tide.petId,
+    unlockedPets:['silverpond_silverfin_scalefish'],potions:1 };
 async function ready(page: Page, roomId: string) {
     await page.waitForFunction(id => { const s = (globalThis as any).__LITTLE_MATH_GAME__.scene.keys.UnderwaterRoomScene;
         return s.scene.isActive() && s.roomId === id && s.party.length && !s.transitioning && !s.revealing; }, roomId);
@@ -71,10 +76,13 @@ for (const coop of [false, true]) test(`continuous descent and three-phase guard
             const b = (globalThis as any).__LITTLE_MATH_GAME__.scene.keys.BattleScene;
             if (!b.scene.isActive()) return { done: true, phase: -1, answer: false };
             b.time.timeScale = 5; b.tweens.timeScale = 5;
-            const board = b.mathBoard, row = board.problemRows[board.currentProblemIndex];
+            const board = b.mathBoard, problem = board.problems[board.currentProblemIndex];
             let answer = false;
-            if (board.getContainer().visible && row && !row.solved) { board.submitChoice(row.problem.choices.indexOf(row.problem.answer)); answer = true; }
+            if (board.getContainer().visible && board.acceptingAnswer && problem) {
+                board.submitChoice(problem.choices.indexOf(problem.answer)); answer = true;
+            }
             if (['player_turn', 'player_b_turn'].includes(b.battleState.phase)) b.onAttackClicked();
+            if (['pet_turn','pet_b_turn'].includes(b.battleState.phase)) b.onPetAttackClicked();
             return { done: false, phase: b.currentBossPhase, answer, overlay: Boolean(b.children.getByName('depthPhaseTransition')) };
         });
         if (state.done) break;

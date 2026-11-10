@@ -308,7 +308,13 @@ export class EncounterCatalog {
         }
 
         if (mode === 'coop') {
-            enemies.push(cloneJsonValue(enemies[enemies.length - 1]));
+            if (policy.nonBossStrategy === 'scale-full-roster') {
+                enemies = enemies.map(enemy => cloneEnemyWithHp(
+                    enemy, roundScaledHp(enemy.hp, policy.nonBossHpScale, policy.rounding),
+                ));
+            } else {
+                enemies.push(cloneJsonValue(enemies[enemies.length - 1]));
+            }
         }
         return {
             encounterId: encounter.id,
@@ -316,7 +322,7 @@ export class EncounterCatalog {
             mode,
             enemies,
             boss: null,
-            coopAdjustment: mode === 'coop' ? 'append-last' : 'none',
+            coopAdjustment: mode === 'coop' ? policy.nonBossStrategy : 'none',
             rewardPolicy: policy.rewardPolicy,
         };
     }
@@ -374,10 +380,19 @@ function prepareEncounterData(rawEncounters: unknown, rawEnemySources: unknown):
 
 function parseCoreEnemyDefinitions(raw: unknown): ReadonlyMap<string, EnemyDefinition> {
     if (!Array.isArray(raw)) fail('enemySources.core', 'must be an array');
-    return parseEnemyCollection(raw, 'enemySources.core', (enemy, path) => {
+    const enemies = parseEnemyCollection(raw, 'enemySources.core', (enemy, path) => {
         validateStandardEnemy(enemy, path);
         return cloneJsonValue(enemy) as unknown as EnemyDefinition;
     });
+    for (const enemy of enemies.values()) {
+        if (enemy.baseEnemyId !== undefined) {
+            const base = enemies.get(enemy.baseEnemyId);
+            if (!base || base.id === enemy.id || base.baseEnemyId !== undefined || base.rank !== undefined) {
+                fail(`enemySources.core.${enemy.id}.baseEnemyId`, 'must reference a different unranked base enemy without baseEnemyId');
+            }
+        }
+    }
+    return enemies;
 }
 
 function parseEnemyCollection(
@@ -407,9 +422,12 @@ function validateStandardEnemy(enemy: UnknownRecord, path: string): void {
     requireNonNegativeInteger(enemy.difficulty, `${path}.difficulty`);
     validateGoldReward(enemy.goldReward, `${path}.goldReward`);
     validateOptionalString(enemy.animPrefix, `${path}.animPrefix`);
+    if (enemy.baseEnemyId !== undefined) requireNonEmptyString(enemy.baseEnemyId, `${path}.baseEnemyId`);
+    if (enemy.rank !== undefined && enemy.rank !== 'elite') fail(`${path}.rank`, 'must equal "elite" when present');
     validateOptionalPositiveNumber(enemy.scale, `${path}.scale`);
     validateOptionalPositiveNumber(enemy.worldScale, `${path}.worldScale`);
     validateOptionalPositiveNumber(enemy.battleScale, `${path}.battleScale`);
+    validateOptionalNonNegativeNumber(enemy.frameTopInset, `${path}.frameTopInset`);
     validateOptionalFiniteNumber(enemy.battleOffsetX, `${path}.battleOffsetX`);
     validateOptionalFiniteNumber(enemy.battleOffsetY, `${path}.battleOffsetY`);
 }
@@ -826,14 +844,22 @@ function parseArenaPolicy(policy: UnknownRecord, path: string): ArenaMultiplayer
 }
 
 function parseJourneyPolicy(policy: UnknownRecord, path: string): JourneyMultiplayerPolicy {
-    if (policy.nonBossStrategy !== 'append-last') fail(`${path}.nonBossStrategy`, 'must equal "append-last"');
+    if (policy.nonBossStrategy !== 'append-last' && policy.nonBossStrategy !== 'scale-full-roster') {
+        fail(`${path}.nonBossStrategy`, 'must equal "append-last" or "scale-full-roster"');
+    }
+    if (policy.nonBossStrategy === 'scale-full-roster'
+        && (typeof policy.nonBossHpScale !== 'number' || !Number.isFinite(policy.nonBossHpScale) || policy.nonBossHpScale < 1)) {
+        fail(`${path}.nonBossHpScale`, 'must be a finite number greater than or equal to 1');
+    }
     if (policy.bossStrategy !== 'scale-all-phases') fail(`${path}.bossStrategy`, 'must equal "scale-all-phases"');
     if (policy.bossHpScale !== COOP_FULL_ROSTER_HP_SCALE) fail(`${path}.bossHpScale`, `must equal ${COOP_FULL_ROSTER_HP_SCALE}`);
     if (policy.rounding !== 'ceil') fail(`${path}.rounding`, 'must equal "ceil"');
     if (policy.rewardPolicy !== 'resolved-roster') fail(`${path}.rewardPolicy`, 'must equal "resolved-roster"');
     return {
         kind: 'journey',
-        nonBossStrategy: 'append-last',
+        ...(policy.nonBossStrategy === 'scale-full-roster'
+            ? { nonBossStrategy: 'scale-full-roster' as const, nonBossHpScale: policy.nonBossHpScale as number }
+            : { nonBossStrategy: 'append-last' as const }),
         bossStrategy: 'scale-all-phases',
         bossHpScale: COOP_FULL_ROSTER_HP_SCALE,
         rounding: 'ceil',
@@ -975,6 +1001,12 @@ function validateOptionalString(value: unknown, path: string): void {
 function validateOptionalPositiveNumber(value: unknown, path: string): void {
     if (value !== undefined && (typeof value !== 'number' || !Number.isFinite(value) || value <= 0)) {
         fail(path, 'must be a positive finite number when present');
+    }
+}
+
+function validateOptionalNonNegativeNumber(value: unknown, path: string): void {
+    if (value !== undefined && (typeof value !== 'number' || !Number.isFinite(value) || value < 0)) {
+        fail(path, 'must be a non-negative finite number when present');
     }
 }
 

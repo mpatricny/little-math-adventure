@@ -44,6 +44,8 @@ describe('production underwater creature animations', () => {
     for (const [id, prefix, asset] of [
         ['silverpond_pearl_jellyfish', 'pearl-jellyfish', 'pearl_jellyfish'],
         ['silverpond_depth_guardian', 'depth-guardian', 'depth_guardian'],
+        ['silverpond_armored_seahorse', 'armored-seahorse', 'armored_seahorse'],
+        ['silverpond_rune_nautilus', 'rune-nautilus', 'rune_nautilus'],
     ]) it(`${prefix}: registered complete, stable-canvas video animation family`, () => {
         const enemy = enemies.find(e => e.id === id)!;
         const family = (animations.enemies as Record<string, any>)[prefix];
@@ -69,6 +71,21 @@ describe('production underwater creature animations', () => {
         const sequence = family[`${prefix}-idle`].frames.sequence as number[];
         expect(sequence.every((value, i) => value !== sequence[(i + 1) % sequence.length])).toBe(true);
     });
+
+    for (const id of ['silverpond_armored_seahorse', 'silverpond_rune_nautilus']) {
+        it(`${id}: ordinary and stronger forms share the complete species art and measured inset`, () => {
+            const base = enemies.find(enemy => enemy.id === id)!;
+            const elite = enemies.find(enemy => enemy.id === `${id}_deep`)!;
+            expect(base).toBeDefined(); expect(elite).toBeDefined();
+            expect(elite.baseEnemyId).toBe(id); expect(elite.rank).toBe('elite');
+            expect(base.rank).toBeUndefined();
+            expect(elite.spriteKey).toBe(base.spriteKey); expect(elite.animPrefix).toBe(base.animPrefix);
+            expect(base.frameTopInset).toBeGreaterThan(0);
+            expect(elite.frameTopInset).toBe(base.frameTopInset);
+            const portrait = (textures.images as Record<string, string>)[`${base.spriteKey}-portrait`];
+            expect(portrait).toBeTruthy(); expect(existsSync(`public/assets/${portrait}`)).toBe(true);
+        });
+    }
 
     it('each guardian phase resolves its own complete attack with a visible follow-through', () => {
         const phases = encounters.bosses['depth-guardian-v1'].phases;

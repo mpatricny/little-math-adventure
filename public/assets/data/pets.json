@@ -199,7 +199,22 @@
         },
         "mathProblemType": "subtraction",
         "mathProblemMax": 10,
-        "damageMultiplier": 12,
+        "damageMultiplier": 13,
+        "scale": 0.4
+    },
+    {
+        "id": "pet_silverpond_depth_guardian",
+        "name": "Hloubek",
+        "spriteKey": "silverpond-depth-guardian-idle-sheet",
+        "animPrefix": "depth-guardian",
+        "unlockedByEnemy": "silverpond_depth_guardian",
+        "requiredAmulet": {
+            "tier": "prism",
+            "value": 12
+        },
+        "mathProblemType": "subtraction",
+        "mathProblemMax": 10,
+        "damageMultiplier": 15,
         "scale": 0.4
     },
     {
@@ -230,21 +245,6 @@
         "mathProblemType": "subtraction",
         "mathProblemMax": 10,
         "damageMultiplier": 12,
-        "scale": 0.4
-    },
-    {
-        "id": "pet_silverpond_depth_guardian",
-        "name": "Hloubek",
-        "spriteKey": "silverpond-depth-guardian-idle-sheet",
-        "animPrefix": "depth-guardian",
-        "unlockedByEnemy": "silverpond_depth_guardian",
-        "requiredAmulet": {
-            "tier": "prism",
-            "value": 12
-        },
-        "mathProblemType": "subtraction",
-        "mathProblemMax": 10,
-        "damageMultiplier": 13,
         "scale": 0.4
     }
 ]

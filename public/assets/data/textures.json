@@ -710,6 +710,7 @@
         "rune-fox-sheet-portrait": "sprites/portraits/rune-fox-sheet.webp",
         "pet-porcupine-sheet-portrait": "sprites/portraits/pet-porcupine-sheet.webp",
         "pet-porcupine-2-portrait": "sprites/portraits/pet-porcupine-2.webp",
+        "underwater-elite-rank-badge": "ui/underwater/elite-rank-badge.webp",
         "silverpond-armored-seahorse-idle-sheet-portrait": "sprites/portraits/silverpond-armored-seahorse-idle-sheet.webp",
         "silverpond-rune-nautilus-idle-sheet-portrait": "sprites/portraits/silverpond-rune-nautilus-idle-sheet.webp"
     }

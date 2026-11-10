@@ -24,9 +24,8 @@ export interface SimulationResolvedArenaWave
 const productionEnemies = enemiesJson as unknown as EnemyDefinition[];
 
 /** The validated production catalog shared by simulator adapter calls. */
-export const productionEncounterCatalog = createEncounterCatalog(encountersJson, {
-  core: productionEnemies,
-});
+const productionAdapter = createProductionEncounterAdapter(encountersJson, productionEnemies);
+export const productionEncounterCatalog = productionAdapter.catalog;
 
 function toSimulationEnemy(enemy: EnemyDefinition): EnemyStats {
   return {
@@ -46,12 +45,7 @@ function toSimulationEnemy(enemy: EnemyDefinition): EnemyStats {
 export function resolveProductionArenaWave(
   request: ResolveArenaWaveRequest,
 ): SimulationResolvedArenaWave {
-  const resolved = productionEncounterCatalog.resolveArenaWave(request);
-
-  return {
-    ...resolved,
-    enemies: resolved.enemies.map(toSimulationEnemy),
-  };
+  return productionAdapter.resolveArenaWave(request);
 }
 
 /** Resolve every wave in a production arena through the shared catalog policy. */
@@ -76,9 +70,21 @@ export function resolveProductionJourneyEncounter(
   encounterId: string,
   mode: EncounterMode = 'solo',
 ): SimulationResolvedJourneyEncounter {
-  const resolved = productionEncounterCatalog.resolveJourneyEncounter(encounterId, mode);
+  return productionAdapter.resolveJourneyEncounter(encounterId, mode);
+}
+
+/** Audit a staged, complete catalog through the same validation/policy adapter. */
+export function createProductionEncounterAdapter(rawEncounters: unknown, enemies: readonly EnemyDefinition[]) {
+  const catalog = createEncounterCatalog(rawEncounters, { core: enemies });
   return {
-    ...resolved,
-    enemies: resolved.enemies.map(toSimulationEnemy),
+    catalog,
+    resolveArenaWave(request: ResolveArenaWaveRequest): SimulationResolvedArenaWave {
+      const resolved = catalog.resolveArenaWave(request);
+      return { ...resolved, enemies: resolved.enemies.map(toSimulationEnemy) };
+    },
+    resolveJourneyEncounter(encounterId: string, mode: EncounterMode = 'solo'): SimulationResolvedJourneyEncounter {
+      const resolved = catalog.resolveJourneyEncounter(encounterId, mode);
+      return { ...resolved, enemies: resolved.enemies.map(toSimulationEnemy) };
+    },
   };
 }

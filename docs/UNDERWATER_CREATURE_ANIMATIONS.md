@@ -70,6 +70,132 @@ Save schéma se nemění; před testy ověřeno, že tato úprava nevyžaduje da
 
 Závěrečné ověření této úpravy: **23 cílených unit testů / 3 soubory, 4 E2E scénáře a produkční build prošly**. E2E zahrnuje celý sólo boj se skutečnými 58 odpověďmi a předáním příznaku čerstvého vítězství, dále odplutí, měnící se snímky idle, oddělení od hráčů/krystalu, průchod pod strážcem, starší save, vyzvednutí krystalu a reload v desktopu 1280×720, Canvas 1024×768 a co-op Canvas 1280×800. Otevřeny a vizuálně posouzeny `friendly-desktop-departing/resting/swim-under.png`, `friendly-tablet-resting.png` a `friendly-coop-tablet-loaded/swim-under.png` v `artifacts/underwater/`; žádný přesah strážce do hráčů, názvu místnosti, ovládání nebo krystalu. Celá ostatní unit sada nebyla v této navazující úpravě spouštěna znovu. Fyzický tablet ani skutečné savy se nepoužívaly; původní server 8001 zůstal běžet.
 
+## Rozšíření 4. listopadu 2026 — dva nové druhy
+
+Pancéřový koník (`armored-seahorse`) a Runová loděnka (`rune-nautilus`) mají vlastní
+kanonické ilustrace a skutečný pohyb z image-to-video. Zdroje, schválení přesných
+bajtů a výrobní manifest jsou v `artifacts/sorceress/underwater-expansion/`.
+Původní nepřátelé v aréně používají své dosavadní animace. Silnější podvodní
+varianty sdílejí animaci svého druhu a jednotný zlatý znak se třemi fialovými
+krystaly; znak nevyžaduje čtení ani rozlišování barev.
+
+Osm původních úloh Sorceress `imagine-1.5`, 720p, požadovaná délka 1 s, vrátilo
+49 skutečných snímků při 24 FPS a 960 × 960. Oba původní útoky byly celé
+zamítnuty: bublina koníka a průsvitný paprsek loděnky překročily levý okraj.
+Zůstávají archivované v historii manifestu. Dvě samostatně schválená opakování
+v2 používají kompaktní fyzický útok bez emitovaného efektu. Ostatních šest
+zdrojů se znovu negenerovalo. Každý výsledný zdroj prošel nezávislou kontrolou
+všech 49 snímků, extrémů a úplného přehrání před klíčováním.
+
+| Druh | Idle | Attack | Defend | Defeat | Společný výřez z 512px zdroje |
+|---|---|---|---|---|---|
+| Koník | 0–48 / 13 | 12–44 / 9 | 0–24 / 7 | 16–48 / 9 | `(60,76,434,450)` |
+| Loděnka | 0–48 / 13 | 0–40 / 11 | 0–24 / 7 | 16–48 / 9 | `(59,71,437,449)` |
+
+Tabulka uvádí inkluzivní zdrojové okno / počet snímků. Všechny pohyby používají
+Every 4 → 6 FPS, společné čtvercové plátno 512 × 512 a původní RGB videa.
+Idle běží vpřed/zpět bez zdvojení krajních snímků. Celkem jde o 78 snímků
+v osmi horizontálních WebP souborech, quality 88 / method 6 / přesná alfa.
+
+AutoSprite opět hlásil vlastní čas 30 FPS. Alfa se proto páruje podle obou
+časových základen a shody siluet monotónním zarovnáním. Stejná statická póza
+nesmí svévolně přetáhnout všechny pozdější masky na jeden starý snímek.
+Prahová shoda siluet zůstává nad 0,90; skutečné vybrané masky dosáhly nejméně
+0,975. Po společné změně velikosti se odstraňuje pouze zbytková zelená složka
+průsvitného okraje. Alfa, červený/modrý kanál a všechny plně neprůhledné
+pixely zůstávají beze změny; zlatá a tyrkysová paleta uvnitř těla se nepřebarvuje.
+
+Reprodukce:
+
+- `sorceress-underwater-expansion.mjs`: předem zapisovaný žurnál každé placené
+  operace, zamykání procesu, bezpečné pokračování, odlišení odmítnuté HTTP
+  odpovědi od nejistého výsledku, explicitní verzovaná opakování.
+- `inspect-underwater-expansion-videos.py`: všechny nativní snímky, Every 4,
+  nativní extrémy, SHA256, kontrola rozměrů a skutečného FPS.
+- `build-underwater-expansion-sheets.py`: původní RGB, konzervativní alfa,
+  monotónní zarovnání, jedna transformace celé rodiny a lokální despill okrajů.
+- `verify-underwater-expansion-sheets.py --assets-only --receipt`: všechny
+  snímky a přesná WebP alfa před změnou registrů. Bez `--assets-only` navíc
+  ověřuje oba registrované nepřátele a jejich HUD inset.
+- `prepare-underwater-expansion-review.py`: samostatné přehrávání přesných
+  PNG při 6 FPS, první/poslední snímek, světlé/tmavé pozadí a kontaktní listy.
+- `register-underwater-expansion.mjs`: vyžaduje zvlášť schválené zdroje,
+  extrahované výsledky, úspěšný kontrolní manifest a aktuální schválený
+  bilanční rozdíl. Změna bajtů nebo živých sestav schválení zneplatní.
+
+Každý druh poskytuje `idle`, `attack`, `attack-anim`, `defend`, `hurt`,
+`defeat` a `death`. Oba aliasy útoku mají `holdUntilComplete`; zásah sdílí
+defend a smrt sdílí defeat. Průhledná výška pro bojové HUD je 21 px u koníka
+a 45 px u loděnky, změřená přes všechny pohyby. Pozice světových tvorů i znaků
+zůstávají samostatně upravitelné v `scenes.json`.
+
+Pro E2E je sdílený `e2e/helpers/isolated-dev-profile.ts` zapojen před startem.
+Dev savy existují jen v paměti daného prohlížeče, analytika je zakázána a celý
+backendový prostor `/v1/**` je lokálně zachycen. Tyto souborové katalogy a
+izolované herní testy nevyžadují databázovou migraci; souběžné analytické
+migrace serveru se při této práci nespouštějí.
+
+Závěrečná kontrola rozšíření:
+
+- `verify-underwater-expansion-sheets.py` prošel po registraci pro **78/78**
+  snímků. Samostatné srovnání všech 78 PNG před/po despillu potvrdilo stejnou
+  alfu, červený/modrý kanál a neprůhledné RGBA. Přesný schválený výrobní SHA256
+  je `c153af0f1509b7adacd5a699a2cac596ddbd5a2879d82ddf02b509e095dfed9a`.
+- Cílený Vitest běh `UnderwaterEnemyRanks`, `EnemyUnlockSystem`,
+  `UnderwaterCreatureAnimations`, `UnderwaterLayout`: **25/25 testů**.
+- `LMA_E2E_BASE_URL=http://127.0.0.1:8014 npx playwright test --config
+  e2e/underwater/playwright.config.ts underwater-expansion-animation.spec.ts`:
+  **3/3 scénářů**. Desktop WebGL sólo a tablet Canvas sólo vyhrály bránu každý
+  se 49 skutečnými odpověďmi; Canvas co-op s hráčem A ve výbavě tide a slabším
+  B s 24 HP, železnou výbavou a vlkem použil 82 odpovědí. Testy ověřují celé
+  klipy, skutečné klidové snímky ve všech čtyřech dotčených místnostech,
+  katalogové HP včetně co-op ×1,55, výhru, zpřístupnění pokračování a návrat.
+  Zaznamenané základní ID jsou historie osvobození; nové adoptovatelné
+  mazlíčky tato práce nevytváří.
+- Playwright MCP navíc prošel skutečným vstupem do brány, útokem a odpovědí
+  při skrytých slovech a zcela vypnutém zvuku, poté celým sólo bojem,
+  vítězstvím a návratem. Cesty všech pozorovaných API, dev-save a diagnostických
+  požadavků odpovídaly lokálním mockům; žádný neodešel na backend.
+- Posouzené herní obrazy jsou v `artifacts/underwater/new-species-*`:
+  obyčejní tvorové v kanálu/komoře/jeskyni, obě silné varianty u brány,
+  svět i boj v desktopu/Canvasu a jednotlivé pohyby. Samostatně
+  `new-species-mcp-pre-reader-world/battle.png` a
+  `new-species-mcp-victory.png`. Průhledné okraje, ploutve, chapadla,
+  odstupy HP a znaky zůstávají čitelné. U brány má znak přes celou rodinu
+  pohybů nejméně 10,97 / 11,30 px od viditelného těla; v idle 11,64 / 11,85 px.
+- `npm run build:dev` **prošel**. Jde o Vite development build, nikoli o
+  úplný TypeScript typecheck. Dřívější celoprojektový typecheck ve sdíleném
+  workspace měl nesouvisející chyby a v tomto závěrečném běhu se neopakoval.
+  Přetrvávají upozornění na velikost chunku, smíšený import MasterySystem
+  a anotace závislosti zod. Celá ostatní testovací sada se neopakovala.
+
+Dvě opravy testovacího harnessu nesměšovat s chybou produkce: API mock musí
+odpovídat kořenovému `/v1/`, nikoli také obrázkům v `assets/.../v1/`; stisk
+pokračování čeká na skutečné zpřístupnění výsledkové obrazovky po 1,5 s.
+Finální společný běh tří scénářů proběhl po obou opravách. Testovalo se na
+izolovaných profilech; fyzický tablet ani skutečné savy se nepoužily.
+
+## Kontrola umístění v Bráně hlubin — 7. listopadu 2026
+
+V `UnderwaterDepthGate` se hosty `guardianHost`, `guardianRankHost`,
+`guardianEscortHost` a `guardianEscortRankHost` posunuly společně o 60 px výš
+na dlážděnou plochu. Kontrola proběhla na desktopu 1280 px (WebGL, sólo)
+a tabletu 1024 px (Canvas, co-op): klidové snímky, hover, vypnutý zvuk
+a skryté slovní popisky. Skutečné kliknutí otevřelo boj se dvěma nepřáteli;
+oba renderery načetly znaky hodnosti, bez chyb stránky. Všechny API a save
+požadavky zůstaly zachycené v izolovaných kontextech.
+
+Snímky kontroly: `artifacts/underwater/gate-platform-final-20261107-{desktop,tablet-coop}-{0,1,2,pre-reader,hover}.png`.
+
+Parent i Astra finální umístění vizuálně schválili. Ocas i chapadla zůstávají
+na horní dlažbě s rezervou před hranou; znaky mají odstup od tvorů a nevznikly
+nové kolize s portálem, kelpem ani HUD. Astra posoudila všech deset snímků.
+
+První kontrola na dlouho běžícím serveru 8001 ukázala chybějící znaky kvůli
+zastaralému virtuálnímu manifestu assetů. Čerstvý server 8014 je načetl správně;
+runtime se kvůli tomu neměnil. Úprava layout JSON nevyžaduje databázovou
+migraci; širší testovací sada nebyla pro tento posun potřeba ani spuštěna.
+
 ## Černý obdélník na tabletu — 9. listopadu 2026
 
 Fotka ze Zatopeného kanálu ukázala vykresleného kraba a černý obdélník místo

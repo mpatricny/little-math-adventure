@@ -1,4 +1,6 @@
 import { sfx, voice, gameAudio } from '../audio/AudioDirector';
+import { createEnemyRankBadge } from '../ui/EnemyRankBadge';
+import { waterHost } from '../ui/SceneLayoutHost';
 import { recordDefeatedEnemy } from '../systems/EnemyUnlockSystem';
 import { getPetAttackPower } from '../systems/CatacombPetProgress';
 import Phaser from 'phaser';
@@ -578,6 +580,13 @@ export class BattleScene extends Phaser.Scene implements BattleSceneCallbacks {
                 undefined,
                 200,
             );
+            const rankHostId = `battleEnemyRankHost${index + 1}`;
+            if (def.rank === 'elite') {
+                const rankHost = waterHost(this.sceneBuilder, rankHostId);
+                const statusHost = this.sceneBuilder.getElementDef(`battleEnemyStatusHost${index + 1}`)!;
+                createEnemyRankBadge(this, def, rankHost, { anchor: hpBar.root, reference: statusHost });
+            }
+            this.sceneBuilder.get(rankHostId)?.destroy();
 
             // Make enemy clickable to select as target (for both player and pet turns)
             sprite.setInteractive({ useHandCursor: true });
@@ -602,6 +611,7 @@ export class BattleScene extends Phaser.Scene implements BattleSceneCallbacks {
         }
         for (let index = enemyCount; index < 4; index++) {
             this.sceneBuilder.get(`battleEnemyStatusHost${index + 1}`)?.destroy();
+            this.sceneBuilder.get(`battleEnemyRankHost${index + 1}`)?.destroy();
         }
 
         // Assign Y-based depths for correct 2.5D layering

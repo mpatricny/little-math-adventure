@@ -15,6 +15,7 @@ async function snapshot(page: Page) {
         const guardian = s.children.getByName('friendlyDepthGuardian'), g = guardian.getBounds();
         const crystal = s.builder.get('depthCrystalHost');
         return { x: guardian.x, y: guardian.y, frame: guardian.frame.name, flipX: guardian.flipX,
+            texture:guardian.texture.key,
             animation: guardian.anims.currentAnim?.key, playing: guardian.anims.isPlaying,
             uniform: guardian.scaleX === guardian.scaleY,
             clear: s.party.every((actor: any) => { const p = actor.getBounds();
@@ -29,6 +30,7 @@ async function snapshot(page: Page) {
 
 function audit(state: Awaited<ReturnType<typeof snapshot>>) {
     expect(state.animation).toBe('depth-guardian-friendly-idle');
+    expect(state.texture).toBe('silverpond-depth-guardian-friendly-idle-sheet');
     expect(state.playing).toBe(true); expect(state.uniform).toBe(true);
     expect(state.clear).toBe(true); expect(state.crystalClear).toBe(true); expect(state.inView).toBe(true);
 }
@@ -57,6 +59,11 @@ for (const mode of ['desktop', 'tablet', 'coop-tablet'] as const) test(`freed gu
     expect(loaded.leaderX).toBe(838); expect(loaded.savedX).toBe(838);
     expect(loaded.flipX).toBe(true);
     expect(loaded.x).toBe(loaded.targetX); expect(loaded.y).toBe(loaded.targetY);
+    // This fresh completed-save boot has never entered BattleScene and cannot
+    // borrow an animation cached by combat or the departure/restart below.
+    const bootFrames=new Set([loaded.frame]);
+    for(let i=0;i<8;i++) { await page.waitForTimeout(180);const state=await snapshot(page);audit(state);bootFrames.add(state.frame); }
+    expect(bootFrames.size).toBeGreaterThan(4);
     await page.screenshot({ path: `artifacts/underwater/friendly-${mode}-loaded.png` });
 
     // Exercise the fresh-victory presentation, without changing the saved checkpoint.

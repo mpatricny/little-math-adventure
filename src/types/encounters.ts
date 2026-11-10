@@ -75,14 +75,16 @@ export interface ArenaMultiplayerPolicy {
     rewardPolicy: 'preserve-as-if-last-appended';
 }
 
-export interface JourneyMultiplayerPolicy {
+export type JourneyMultiplayerPolicy = {
     kind: 'journey';
-    nonBossStrategy: 'append-last';
     bossStrategy: 'scale-all-phases';
     bossHpScale: number;
     rounding: 'ceil';
     rewardPolicy: 'resolved-roster';
-}
+} & (
+    | { nonBossStrategy: 'append-last' }
+    | { nonBossStrategy: 'scale-full-roster'; nonBossHpScale: number }
+);
 
 export type EncounterMultiplayerPolicy = ArenaMultiplayerPolicy | JourneyMultiplayerPolicy;
 
@@ -174,7 +176,7 @@ export type EncountersFileV2 = EncountersFileV3;
 export type EncounterMode = 'solo' | 'coop';
 
 export type ArenaCoopAdjustment = 'none' | 'append-last' | 'scale-full-roster';
-export type JourneyCoopAdjustment = 'none' | 'append-last' | 'scale-all-phases';
+export type JourneyCoopAdjustment = 'none' | 'append-last' | 'scale-full-roster' | 'scale-all-phases';
 
 export interface ArenaRewardSource {
     source: EncounterEnemySource;
