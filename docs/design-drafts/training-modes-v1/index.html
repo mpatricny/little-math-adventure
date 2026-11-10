@@ -1,0 +1,158 @@
+<!doctype html>
+<html lang="cs">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Trénovat / Dál — obrazové návrhy</title>
+  <style>
+    :root{color-scheme:dark;font-family:system-ui,sans-serif;color:#eef4f6;background:#101922}
+    *{box-sizing:border-box}body{margin:0}main{max-width:1332px;margin:auto;padding:28px 26px 64px}
+    h1{font-size:32px;margin:8px 0 14px;line-height:1.2}h2{font-size:23px;margin:0 0 12px}p{color:#c5d3dd;line-height:1.6;margin:10px 0}
+    a{color:#a2def5}header{max-width:1000px}.eyebrow{font-size:12px;letter-spacing:.12em;color:#90c5d9;text-transform:uppercase}
+    .notice{padding:12px 17px;margin:18px 0;border-left:3px solid #bd9b5d;background:#1b2a35;border-radius:0 8px 8px 0}
+    nav,.state-controls{display:flex;flex-wrap:wrap;gap:9px;margin:20px 0}
+    nav a,.state-controls button{font:inherit;color:#d9edf3;background:#22323f;border:1px solid #45616e;border-radius:7px;padding:9px 14px;text-decoration:none;cursor:pointer}
+    .state-controls button[aria-pressed="true"]{color:#fff1cb;border-color:#e9bf6e;background:#3d3526}
+    section{margin:36px 0 48px;scroll-margin-top:18px}.caption{max-width:1060px;font-size:15px}.caption strong{color:#e9f3f5}
+    .canvas{position:relative;width:100%;aspect-ratio:1672/941;container-type:inline-size;overflow:hidden;border-radius:10px;background:#13222e;isolation:isolate}
+    .canvas>img.art{width:100%;height:100%;display:block;object-fit:contain}
+    .draft{position:absolute;z-index:4;left:1%;top:1.5%;padding:.32cqw .65cqw;border:1px solid #9fb3bb66;border-radius:.3cqw;background:#0b172cbb;color:#e5edf1;font:600 .95cqw/1.3 system-ui,sans-serif;letter-spacing:.08em}
+    .overlay{position:absolute;left:var(--x);top:var(--y);width:var(--w);height:var(--h);transform:translate(-50%,-50%);display:flex;align-items:center;justify-content:center;text-align:center;white-space:nowrap;font-family:Georgia,serif;font-weight:700;color:#fff1c2;font-size:var(--size,3cqw);line-height:1;text-shadow:0 .14cqw .18cqw #05101f,0 0 .2cqw #05101f;gap:.6cqw}
+    .paper-text{color:#54321b;text-shadow:none}.number{font-family:Georgia,serif;font-variant-numeric:tabular-nums}
+    .formula{gap:.65cqw}.formula .base{font-size:3.6cqw}.formula .plus{color:#ffdb65;font-size:3cqw}.formula .result{font-size:5cqw}.formula .arrow{font-size:3cqw}
+    .mark{font-family:Arial,sans-serif;font-size:3.1cqw}.correct-mark{color:#a9ed91}.wrong-mark{color:#f99285}
+    .answer{font:700 4.6cqw/1 Georgia,serif;color:#5d361c;display:flex;align-items:center;justify-content:center;text-shadow:0 .08cqw #fff1c855}
+    .answer.selected-correct{outline:.28cqw solid #4d9843;outline-offset:-.5cqw;border-radius:1cqw;background:#86c56922}
+    .answer.selected-wrong{outline:.28cqw solid #b83e32;outline-offset:-.5cqw;border-radius:1cqw;background:#d8876922}
+    .equation{font-size:5cqw;gap:1.5cqw}.equal{font-size:1.3em;font-weight:700}
+    .slot{width:5.6cqw;height:6cqw;border:.18cqw dashed #947449;border-radius:.35cqw;display:flex;align-items:center;justify-content:center}
+    .slot.solved{border-color:transparent;color:#42763a}.slot.explained{border-color:#9c7b47;color:#76532c}
+    .dot-feedback{position:absolute;left:23%;top:61.1%;transform:translate(-50%,-50%);width:1.8cqw;height:1.8cqw;border-radius:50%;display:flex;align-items:center;justify-content:center;font:700 1.45cqw Arial;color:white}
+    .dot-feedback.right{background:#5c8c45}.dot-feedback.wrong{background:#ae5141}
+    .speed{filter:drop-shadow(0 0 .25cqw #f9b42d);height:4.8cqw;width:3.8cqw;display:block}
+    .apples{gap:.65cqw}.apple-group{display:flex;gap:.18cqw}.apples img{width:2.8cqw;height:2.8cqw;object-fit:contain}.apples .plus{font-size:2.7cqw}
+    .only-wrong{display:none}.math-wrong .only-wrong{display:flex}.math-wrong .equation{top:30.4%}
+    .mute-words .word{visibility:hidden}
+    footer{font-size:14px;color:#9db1bd;line-height:1.6;margin-top:30px}
+    body.single{margin:0;background:#101922}body.single main{max-width:none;padding:0}body.single header,body.single footer,body.single .review-ui{display:none}body.single section{display:none;margin:0}body.single section.active{display:block}body.single .canvas{border-radius:0}
+    @media(max-width:700px){main{padding:22px 10px 40px}h1{font-size:26px}h2{font-size:20px}.state-controls button{padding:8px 10px;font-size:14px}}
+  </style>
+</head>
+<body>
+<main>
+  <header>
+    <div class="eyebrow">Little Math Adventure · obrazové návrhy v1</div>
+    <h1>Trénovat / Dál</h1>
+    <p>Pět generovaných výtvarných návrhů zasazených do prostředí hry. Popisky a čísla jsou samostatné vrstvy. U MathBoardu lze přepínat všechny čtyři výsledky odpovědi.</p>
+    <div class="notice"><strong>Návrh k posouzení.</strong> Tyto obrazovky nejsou zapojené do hry. Hodnoty síly a odměn jsou ilustrační; tento přehled nemění uložené pozice ani ekonomiku hry.</div>
+    <nav><a href="#zyx">Zyx</a><a href="#coop">Před soubojem</a><a href="#math">MathBoard</a><a href="#victory">Výhra</a><a href="#fox">Osobní mazlíček</a></nav>
+  </header>
+
+  <section id="zyx" data-screen="zyx">
+    <h2 class="review-ui">1. Zyx představí obě cesty</h2>
+    <div class="canvas">
+      <img class="art" src="01-zyx-choice-art.png" alt="Zyx představuje cestu procvičování ke katakombám a cestu kupředu k silnějšímu meči a dalším srdíčkům.">
+      <span class="draft">NÁVRH · V1</span>
+      <div class="overlay word" style="--x:60%;--y:13%;--w:48%;--h:8%;--size:3.8cqw">Co dnes?</div>
+      <div class="overlay word" style="--x:42.2%;--y:85.4%;--w:25%;--h:8%;--size:3.5cqw">TRÉNOVAT</div>
+      <div class="overlay word" style="--x:76.6%;--y:85.4%;--w:24%;--h:8%;--size:3.5cqw">DÁL</div>
+    </div>
+    <p class="caption review-ui">První nabídka u Zyxe při domluveném milníku. Vlevo známé příklady → postup ke katakombám → osobní liška. Vpravo další cesta → silnější útok a více životů. <strong>Obě cesty mají stejnou váhu.</strong> Krátká animace a hlas ukážou souvislosti; samotné kliknutí na Trénovat mazlíčka neudělí.</p>
+  </section>
+
+  <section id="coop" data-screen="coop">
+    <h2 class="review-ui">2. Každé dítě si před soubojem vybere samo</h2>
+    <div class="canvas">
+      <img class="art" src="02-coop-choice-art.png" alt="První hráčka má vybrané trénování, druhá postup dál. Obě vstoupí do stejného souboje.">
+      <span class="draft">NÁVRH · V1</span>
+      <div class="overlay word" style="--x:50%;--y:14.2%;--w:46%;--h:7%;--size:3.5cqw">Před soubojem</div>
+      <div class="overlay" style="--x:25.7%;--y:46.8%;--w:5%;--h:4%;--size:2.5cqw">1</div>
+      <div class="overlay" style="--x:25.7%;--y:78.3%;--w:5%;--h:4%;--size:2.5cqw">2</div>
+      <div class="overlay word" style="--x:45.7%;--y:44.9%;--w:18%;--h:5.7%;--size:2.45cqw">TRÉNOVAT</div>
+      <div class="overlay word" style="--x:69.8%;--y:44.9%;--w:18%;--h:5.7%;--size:2.45cqw">DÁL</div>
+      <div class="overlay word" style="--x:45.7%;--y:76.7%;--w:18%;--h:5.7%;--size:2.45cqw">TRÉNOVAT</div>
+      <div class="overlay word" style="--x:69.8%;--y:76.7%;--w:18%;--h:5.7%;--size:2.45cqw">DÁL</div>
+      <div class="overlay word" style="--x:54%;--y:89.6%;--w:22%;--h:7%;--size:3.2cqw">DO BOJE</div>
+    </div>
+    <p class="caption review-ui">Portréty jednoznačně přiřazují volbu dítěti. Opakují se stejné obrázky jako u Zyxe. V jednom společném souboji může každé dítě dostávat příklady podle svého cíle. Zobrazený stav má první hráčka Trénovat, druhá Dál.</p>
+  </section>
+
+  <section id="math" data-screen="math">
+    <h2 class="review-ui">3. Síla příkladu přímo nad zadáním</h2>
+    <div class="state-controls review-ui" role="group" aria-label="Náhled výsledku odpovědi">
+      <button data-state="ready" aria-pressed="false">Před odpovědí</button>
+      <button data-state="wrong" aria-pressed="false">Chyba</button>
+      <button data-state="correct" aria-pressed="false">Správně</button>
+      <button data-state="quick" aria-pressed="true">Správně a rychle</button>
+      <button id="hideWords" aria-pressed="false">Skrýt slova</button>
+    </div>
+    <div class="canvas" id="mathCanvas">
+      <img class="art" src="03-mathboard-power-art.png" alt="Pergamen MathBoardu, výrazná síla útoku nahoře a společný součet tahu dole.">
+      <span class="draft">NÁVRH · V1</span>
+      <div class="overlay number formula" id="power" style="--x:54.6%;--y:16.1%;--w:22%;--h:11%;--size:5.3cqw"></div>
+      <div class="overlay paper-text equation" style="--x:50%;--y:34.2%;--w:42%;--h:13%"><span>2</span><span>+</span><span>3</span><span class="equal">=</span><span id="answerSlot" class="slot"></span></div>
+      <div class="overlay paper-text apples only-wrong" style="--x:50%;--y:40.3%;--w:33%;--h:5.5%"><span class="apple-group"><img src="/assets/ui/comparison/apple.svg" alt=""><img src="/assets/ui/comparison/apple.svg" alt=""></span><span class="plus">+</span><span class="apple-group"><img src="/assets/ui/comparison/apple.svg" alt=""><img src="/assets/ui/comparison/apple.svg" alt=""><img src="/assets/ui/comparison/apple.svg" alt=""></span></div>
+      <div class="overlay answer" id="answer4" style="--x:35.7%;--y:50.7%;--w:11.6%;--h:11%">4</div>
+      <div class="overlay answer" id="answer5" style="--x:50%;--y:50.7%;--w:11.6%;--h:11%">5</div>
+      <div class="overlay answer" id="answer6" style="--x:64.4%;--y:50.7%;--w:11.6%;--h:11%">6</div>
+      <span class="dot-feedback" id="progressDot"></span>
+      <div class="overlay" id="speedSocket" style="--x:75.2%;--y:58.4%;--w:4%;--h:8%"></div>
+      <div class="overlay word" style="--x:53.3%;--y:86.9%;--w:10%;--h:3%;--size:1.5cqw">Celkem</div>
+      <div class="overlay number" id="total" style="--x:53.3%;--y:91.4%;--w:10%;--h:7%;--size:3.4cqw"></div>
+    </div>
+    <p class="caption review-ui"><strong>4 → 0 / 4 / 5</strong> podle první odpovědi. Za správnou rychlou odpověď se přímo ukáže +1. Dole už bylo nasbíráno 8 bodů: chyba je nesmaže, běžná odpověď dá celkem 12 a rychlá 13. Po chybě obrázkové dopočítání ukáže správný výsledek, ale nepřidá útok. V hotové hře by získané body přelétly z horního ukazatele do součtu tahu.</p>
+  </section>
+
+  <section id="victory" data-screen="victory">
+    <h2 class="review-ui">4. Výhra: běžná odměna, mana za zlepšení a cesta ke zkoušce</h2>
+    <div class="canvas">
+      <img class="art" src="04-victory-improvement-art.png" alt="Mince za souboj, rychlejší vlastní výkon vedoucí ke třem manovým krystalům a pokrok ke katakombám.">
+      <span class="draft">NÁVRH · V1</span>
+      <div class="overlay word" style="--x:50%;--y:16.4%;--w:34%;--h:7%;--size:3.6cqw">Výhra!</div>
+      <div class="overlay number" style="--x:59.2%;--y:29%;--w:14%;--h:9%;--size:4.5cqw">+12</div>
+      <div class="overlay word" style="--x:50%;--y:39.8%;--w:27%;--h:4%;--size:2.1cqw">Za zlepšení</div>
+      <div class="overlay word" style="--x:49.7%;--y:58.5%;--w:27%;--h:4%;--size:2.1cqw">Cesta k lišce</div>
+      <div class="overlay word" style="--x:47%;--y:83.8%;--w:25%;--h:7%;--size:3.2cqw">DÁLE</div>
+    </div>
+    <p class="caption review-ui">Stejná odměna v mincích za stejný souboj. Tři modré krystaly ukazují ilustrační bonus many za zlepšení vlastního výkonu. Dole jsou zvládnuté dovednosti na cestě ke katakombám — <strong>obyčejný souboj ještě neuděluje lišku</strong>. Přesné množství many i počet kroků je součást dalšího vyvážení.</p>
+  </section>
+
+  <section id="fox" data-screen="fox">
+    <h2 class="review-ui">5. Osobní liška po katakombové zkoušce</h2>
+    <div class="canvas">
+      <img class="art" src="05-personal-fox-art.png" alt="Osobní runová liška s portrétem své hráčky a zvýšením síly.">
+      <span class="draft">NÁVRH · V1</span>
+      <div class="overlay word" style="--x:50%;--y:20%;--w:42%;--h:8%;--size:3.5cqw">Tvůj parťák</div>
+      <div class="overlay word" style="--x:66.3%;--y:33.5%;--w:20%;--h:5%;--size:2.7cqw">Silnější!</div>
+      <div class="overlay number" style="--x:70.5%;--y:47%;--w:18%;--h:10%;--size:4.6cqw">5 → 6</div>
+      <div class="overlay word" style="--x:46.7%;--y:83%;--w:24%;--h:7%;--size:3.2cqw">HOTOVO</div>
+    </div>
+    <p class="caption review-ui">Portrét ukazuje majitelku. První úspěšná osobní zkouška přinese lišku; další její vylepšení. Tento obrázek ukazuje právě posílení. I při společném hraní musí postup patřit konkrétnímu dítěti.</p>
+  </section>
+
+  <footer>Vygenerováno vestavěným image_gen podle skutečných referencí hry. <a href="prompts.json">Použité prompty a reference</a>. Hotové návrhy kombinují generované podklady s přesnými popisky a čísly. Při případné implementaci budou rámy, ikony, texty a interakční stavy samostatné vrstvy se statickými hosty ve scenes.json.</footer>
+</main>
+<script>
+  const bolt='<svg class="speed" viewBox="0 0 40 60" aria-label="Rychlá odpověď"><path d="M24 2 4 34h15l-4 24 22-35H23z" fill="#ffdb55" stroke="#ad6a0b" stroke-width="2" stroke-linejoin="round"/></svg>';
+  function setState(state){
+    const canvas=document.getElementById('mathCanvas'),power=document.getElementById('power'),slot=document.getElementById('answerSlot'),dot=document.getElementById('progressDot');
+    canvas.className='canvas math-'+state;canvas.dataset.state=state;
+    power.innerHTML=state==='quick'?'<span class="base">4</span><span class="plus">+1</span><span class="arrow">→</span><span class="result">5</span>':state==='wrong'?'<span class="mark wrong-mark">×</span><span>0</span>':state==='correct'?'<span class="mark correct-mark">✓</span><span>4</span>':'4';
+    slot.textContent=state==='ready'?'':'5';slot.className='slot'+(state==='wrong'?' explained':state==='ready'?'':' solved');
+    document.getElementById('answer4').className='overlay answer'+(state==='wrong'?' selected-wrong':'');
+    document.getElementById('answer5').className='overlay answer'+(['correct','quick'].includes(state)?' selected-correct':'');
+    document.getElementById('speedSocket').innerHTML=state==='quick'?bolt:'';
+    document.getElementById('total').textContent=({ready:'8',wrong:'8',correct:'12',quick:'13'})[state];
+    dot.textContent=state==='ready'?'':state==='wrong'?'×':'✓';dot.className='dot-feedback'+(state==='ready'?'':state==='wrong'?' wrong':' right');
+    document.querySelectorAll('[data-state]').forEach(b=>{if(b.tagName==='BUTTON')b.setAttribute('aria-pressed',String(b.dataset.state===state));});
+  }
+  document.querySelectorAll('button[data-state]').forEach(button=>button.addEventListener('click',()=>setState(button.dataset.state)));
+  document.getElementById('hideWords').addEventListener('click',event=>{document.body.classList.toggle('mute-words');event.currentTarget.setAttribute('aria-pressed',String(document.body.classList.contains('mute-words')));});
+  const query=new URLSearchParams(location.search),screen=query.get('screen');
+  if(screen){document.body.classList.add('single');document.querySelector(`[data-screen="${CSS.escape(screen)}"]`)?.classList.add('active');}
+  if(query.has('noWords'))document.body.classList.add('mute-words');
+  setState(['ready','wrong','correct','quick'].includes(query.get('state'))?query.get('state'):'quick');
+  window.previewReady=true;
+</script>
+</body>
+</html>

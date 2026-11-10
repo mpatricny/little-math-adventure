@@ -1,0 +1,49 @@
+{
+  "kind": "visual-concept-review",
+  "scope": "Five generated concepts for training, progression, personal speed rewards, and a personal pet. No game integration or save changes.",
+  "generator": "Built-in image_gen.imagegen",
+  "promptManifest": "prompts.json",
+  "databaseMigrations": "Not applicable: standalone static image gallery; no game or database state is loaded.",
+  "generatedBaseCount": 5,
+  "reviewedWidthsPx": [1280, 1024],
+  "screenStates": ["zyx", "coop", "math-ready", "math-wrong", "math-correct", "math-quick", "victory", "fox"],
+  "renderedChecks": {
+    "overlayOverflowCount": 0,
+    "imageAspectRatiosPreserved": true,
+    "currentGalleryConsoleErrors": 0,
+    "method": "Playwright screenshots plus measured visible overlay hosts; screenshots visually inspected. Text and numbers are HTML overlays, not generated bitmap text."
+  },
+  "reviewedImages": [
+    "01-zyx-choice.png",
+    "02-coop-choice.png",
+    "03a-mathboard-ready.png",
+    "03b-mathboard-wrong.png",
+    "03c-mathboard-correct.png",
+    "03d-mathboard-quick.png",
+    "04-victory-improvement.png",
+    "05-personal-fox.png",
+    "02-coop-choice-tablet.png",
+    "03b-mathboard-wrong-tablet.png",
+    "03d-mathboard-quick-tablet.png",
+    "04-victory-improvement-tablet.png",
+    "05-personal-fox-tablet.png",
+    "review-zyx-without-words.png",
+    "review-victory-without-words.png"
+  ],
+  "visualFindings": [
+    "Titles and action labels fit their plates without overlap.",
+    "Training and progression receive equal visual weight; neither is preselected in the introductory choice.",
+    "Portraits associate each co-op choice with its player.",
+    "MathBoard clearly separates current problem power from accumulated turn power; a wrong answer preserves the prior total.",
+    "Key choice and reward illustrations remain visible and meaningful with words hidden and without audio.",
+    "Correct, wrong, and quick states use symbols and numbers as well as color."
+  ],
+  "limits": [
+    "Concept review only; not approval for production UI or gameplay balance.",
+    "Stats and reward quantities are illustrative.",
+    "Co-op selection is an illustrated state; only MathBoard review controls are interactive.",
+    "Animation, narration, gameplay input states, and child playtesting are not assessed.",
+    "Production should retain the established mana icon and separate reusable frames, icons, runtime text, and interaction states.",
+    "Production comparison-size baseline and Canvas/WebGL rendering must be verified when integrating with the shared MathBoard."
+  ]
+}
