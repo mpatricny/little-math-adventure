@@ -13,20 +13,40 @@ export function bellSolutions(p: PuzzleProfile, start: number, target: number, c
 }
 export function bellPool(p: PuzzleProfile) {
     return cachedPool('bell',p,()=>{
-        const pool: {start:number;target:number;cards:number[]}[] = [];
+        type Candidate = {start:number;target:number;cards:number[]};
+        const pool = new Map<string, { challenge: Candidate; distance: number }>();
         const domain=deltaChoices(p);
         for (const flow of flowPool({ ...p, tier: Math.max(2, p.tier) as 2 | 3 },2)) {
-            if (flow.changes[0] === flow.changes[1]) continue;
-            for(let shift=0;shift<Math.min(domain.length,6);shift++) {
-                const cards=[...flow.changes];
-                for(let i=0; i<domain.length && cards.length < 4; i++) {
-                    const n=domain[(i+shift)%domain.length]; if(!cards.includes(n)) cards.push(n);
+            const [first, second] = flow.changes;
+            if (first === second) continue;
+            const start = flow.start, target = flow.values[2];
+            // A distractor must be a possible move, not an obviously out-of-band number.
+            // Addition-only beginners retain +0: within 0..5 there are too few
+            // four-card challenges without it. Both distinct slots are still required.
+            const legal = domain.filter(n => allowsStep(p, start, n)
+                && (!p.subtraction || n !== 0 && n !== target - start));
+            if (!legal.includes(first) || !legal.includes(second)) continue;
+            const distance = (n: number) => Math.min(Math.abs(n - first), Math.abs(n - second));
+            const alternatives = legal.filter(n => n !== first && n !== second)
+                .sort((a,b) => distance(a) - distance(b) || Math.abs(a) - Math.abs(b) || a - b)
+                .slice(0,6);
+            for (let i = 0; i < alternatives.length; i++) for (let j = i + 1; j < alternatives.length; j++) {
+                const cards = [first, second, alternatives[i], alternatives[j]].sort((a,b) => a-b);
+                // Every card must also have a legal continuation using another card.
+                if (!cards.every((a,i) => cards.some((b,j) => i !== j && allowsStep(p,start+a,b)))) continue;
+                const challenge = { start, target, cards };
+                const key = JSON.stringify([start,target,bellSolutions(p,start,target,cards).map(pair => pair.map(i => cards[i]))]);
+                const score = distance(alternatives[i]) + distance(alternatives[j]);
+                const previous = pool.get(key);
+                // Distractor variations and button permutations do not inflate capacity.
+                // Keep the nearest alternatives for the same mathematical challenge.
+                if (!previous || score < previous.distance) {
+                    pool.set(key, { challenge, distance: score });
                 }
-                cards.sort((a,b)=>a-b); pool.push({start:flow.start,target:flow.values[2],cards});
             }
         }
-        return pool;
-    },c=>JSON.stringify([c.start,c.target,bellSolutions(p,c.start,c.target,c.cards).map(pair=>pair.map(i=>c.cards[i]))]));
+        return [...pool.values()].map(candidate => candidate.challenge);
+    });
 }
 export function drawBell(p: PuzzleProfile, rng: PuzzleRng) {
     const c=pickPuzzle(bellPool(p),rng), cards=shuffle(c.cards,rng);

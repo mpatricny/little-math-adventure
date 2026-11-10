@@ -58,13 +58,24 @@ background:
    independently.
 8. Review the extracted first, last, and motion-extreme frames on both dark and
    light contact sheets, then review the assembled animation at 6 FPS.
-9. Assemble frames horizontally and export WebP with quality `88`, method `6`,
-   lossy RGB, and exact alpha. Register the sheet in `textures.json`, the motions
+9. Assemble frames in a row-major grid bounded to **2048 pixels per side** (for
+   `512x512` frames, at most four columns and four rows). A long horizontal strip
+   can decode successfully yet render as a black rectangle on tablet WebGL.
+   Export WebP with quality `88`, method `6`, lossy RGB, and exact alpha. When
+   repacking an already approved sheet, use lossless WebP with exact RGBA and
+   prove every decoded frame is unchanged; use a new asset URL to replace cached
+   oversized sheets. Keep the same frame indices, timing, canvas and baseline.
+   Register the sheet in `textures.json`, the motions
    in `animations.json`, the Scene Editor asset in `assets.json`, and the enemy in
    `enemies.json` plus localization.
 10. For the current BattleScene contract, provide both `*-attack` and
     `*-attack-anim`. Keep a requested defense available as `*-defend` and alias it
     to `*-hurt`; keep defeat as `*-defeat` and alias it to `*-death`.
+
+Run `npx vitest run scripts/__tests__/creature-sheet-size.test.ts` before release
+(also included in the standard `npm test` suite).
+Also verify rendered pixels through a constrained WebGL upload test; texture
+availability alone does not prove a successful GPU upload.
 
 The reproducible Bubble Crab scripts are:
 

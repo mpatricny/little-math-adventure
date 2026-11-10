@@ -22,6 +22,10 @@ export class UnderwaterBellPuzzle {
     private feedback: Phaser.GameObjects.Text;
     private lamps: Phaser.GameObjects.Image[] = [];
     private timers: Phaser.Time.TimerEvent[] = [];
+    private tweens = new Set<Phaser.Tweens.Tween>();
+    private slotCues = new Set<Phaser.Tweens.Tween>();
+    private bell: Phaser.GameObjects.Image;
+    private readyCueShown = false;
 
     constructor(private scene: Phaser.Scene, ui: UnderwaterUI, options: {
         state?: Record<string, unknown>;
@@ -46,7 +50,7 @@ export class UnderwaterBellPuzzle {
             }).setOrigin(0.5).setDepth(host.depth).setName(id);
             fitWaterText(label, host, size); this.root.add(label); return label;
         };
-        text('flowHintHost', 'Dva kroky. Pak rozezvoň zvon.', 23);
+        text('flowHintHost', 'Dva kroky', 23);
         this.feedback = text('flowFeedbackHost', '', 25);
         ui.button(this.builder, 'iconCloseHost', '×', options.onClose, true, 30);
         ui.hint(this.builder, 'iconFlowHintHost', () => this.showHint(), () => this.phase === 'building' && this.hintLevel < 2);
@@ -75,6 +79,7 @@ export class UnderwaterBellPuzzle {
         this.root.add(waterPearl(scene, start.x, start.y - 12, 82).setDepth(start.depth));
         text('flowStartValueHost', String(this.challenge.start), 31).setColor('#153343');
         const bell = waterArtwork(scene, 'underwater-bell-instrument', bellHost);
+        this.bell = bell;
         this.root.add(bell);
         const target = waterHost(this.builder, 'bellTargetHost');
         this.root.add(scene.add.circle(target.x, target.y, 29, 0x0c2b39, 0.95).setStrokeStyle(2, 0xd2c899).setDepth(target.depth));
@@ -97,10 +102,10 @@ export class UnderwaterBellPuzzle {
             card.setSize(host.width, host.height).setInteractive({ useHandCursor: true }).setData('waterControl', true);
             const halo = scene.add.circle(0, -12, 35, 0x72dacc, 0.1).setStrokeStyle(2, value > 0 ? 0xd7d7a8 : 0x9bbfdc, 0.5);
             const pearl = waterPearl(scene, 0, -12, 68);
-            const label = scene.add.text(0, 31, this.signed(value), {
-                resolution: 2, fontFamily: 'Georgia', fontSize: '29px', color: '#f3f4d9',
+            const label = scene.add.text(0, -12, this.signed(value), {
+                resolution: 2, fontFamily: 'Georgia', fontSize: '29px', color: '#153343',
             }).setOrigin(0.5).setName(`flowCard${index}Value`);
-            fitWaterText(label, { x: 0, y: 31, width: 85, height: 36 }, 29);
+            fitWaterText(label, { x: 0, y: -12, width: 58, height: 40 }, 29);
             card.add([halo, pearl, label]); this.root.add(card); this.cards.push(card);
             card.on('pointerover', () => halo.setAlpha(1));
             card.on('pointerout', () => halo.setAlpha(0.5));
@@ -132,7 +137,11 @@ export class UnderwaterBellPuzzle {
         ring.on('pointerup', () => {
             if (!ringing || this.phase !== 'building') return;
             ringing = false;
-            if (this.selected.includes(null)) { this.feedback.setText('Vyber dvě perly.'); return; }
+            if (this.selected.includes(null)) {
+                this.feedback.setText('Vyber dvě perly.');
+                this.pulseEmptySlots();
+                return;
+            }
             this.phase = 'feedback';
             const result = evaluatePearlFlow(this.challenge, this.selected);
             sfx(scene, result.correct ? 'puzzle.solved' : 'math.retry');
@@ -140,14 +149,14 @@ export class UnderwaterBellPuzzle {
             this.submitted = true;
             this.feedback.setText(result.values.join('  →  ')).setColor(result.correct ? '#beffd9' : '#f2d2ac');
             const moving = waterPearl(scene, start.x, start.y, 28); this.root.add(moving);
-            scene.tweens.add({ targets: moving, x: bellHost.x, duration: 1000,
+            this.animate({ targets: moving, x: bellHost.x, duration: 1000,
                 onComplete: () => { if (!this.disposed) moving.destroy(); } });
             this.timers.push(scene.time.delayedCall(1020, () => {
                 if (this.disposed) return;
                 waterRipple(scene, bellHost.x, bellHost.y + 45, 820, result.correct ? 0xb6ffce : 0xf2b782);
                 if (result.correct) {
                     this.lamps[options.notes]?.setAlpha(1);
-                    scene.tweens.add({ targets: bell, angle: { from: -7, to: 7 }, duration: 130, yoyo: true, repeat: 2,
+                    this.animate({ targets: bell, angle: { from: -7, to: 7 }, duration: 130, yoyo: true, repeat: 2,
                         onComplete: () => { if (!this.disposed) bell.setAngle(0); } });
                 }
             }));
@@ -162,6 +171,7 @@ export class UnderwaterBellPuzzle {
         this.root.sort('depth');
         this.root.once('destroy', () => {
             this.disposed = true; this.timers.forEach(timer => timer.remove(false));
+            this.tweens.forEach(tween => tween.remove()); this.tweens.clear(); this.slotCues.clear();
             scene.input.dragDistanceThreshold = dragThreshold;
             const defs = scene.cache.json.get('scenes').scenes.UnderwaterFlow.elements;
             defs.forEach((def: { id: string }) => this.builder.get(def.id)?.destroy());
@@ -178,18 +188,44 @@ export class UnderwaterBellPuzzle {
     private signed(value: number): string { return value >= 0 ? `+${value}` : `−${Math.abs(value)}`; }
 
     private refresh(): void {
+        this.clearSlotCues();
         this.slots.forEach((slot, i) => {
             slot.removeAll(true);
             slot.add(this.scene.add.circle(0, -8, 43, 0x0b2c40, 0.65).setStrokeStyle(3, 0x99b6b4));
             const index = this.selected[i];
             if (index !== null) slot.add(waterPearl(this.scene, 0, -8, 78));
-            const label = this.scene.add.text(0, index === null ? -8 : 46, index === null ? String(i + 1) : this.signed(this.challenge.cards[index]), {
-                resolution: 2, fontFamily: 'Georgia', fontSize: '29px', color: index === null ? '#839aa7' : '#efffed',
+            const label = this.scene.add.text(0, -8, index === null ? String(i + 1) : this.signed(this.challenge.cards[index]), {
+                resolution: 2, fontFamily: 'Georgia', fontSize: '29px', color: index === null ? '#839aa7' : '#153343',
             }).setOrigin(0.5).setName(`flowStep${i}Value`);
-            fitWaterText(label, { x: 0, y: index === null ? -8 : 46, width: 96, height: 36 }, 29);
+            fitWaterText(label, { x: 0, y: -8, width: 64, height: 40 }, 29);
             slot.add(label);
         });
         this.cards.forEach((card, index) => card.setAlpha(this.selected.includes(index) ? 0.32 : 1));
+        if (!this.selected.includes(null) && !this.readyCueShown) {
+            this.readyCueShown = true;
+            // Animate only the artwork; the ring target and authored host stay still.
+            this.animate({ targets: this.bell, scaleX: this.bell.scaleX * 1.035, scaleY: this.bell.scaleY * 1.035,
+                duration: 220, yoyo: true, ease: 'Sine.easeInOut' });
+        }
+    }
+
+    private animate(config: Phaser.Types.Tweens.TweenBuilderConfig): Phaser.Tweens.Tween {
+        const tween = this.scene.tweens.add(config); this.tweens.add(tween);
+        tween.once('complete', () => { this.tweens.delete(tween); this.slotCues.delete(tween); });
+        return tween;
+    }
+
+    private clearSlotCues(): void {
+        this.slotCues.forEach(tween => { tween.remove(); this.tweens.delete(tween); });
+        this.slotCues.clear();
+    }
+
+    private pulseEmptySlots(): void {
+        this.clearSlotCues();
+        this.slots.forEach((slot, i) => {
+            if (this.selected[i] !== null) return;
+            this.slotCues.add(this.animate({ targets: slot.list[0], alpha: { from:1, to:0.25 }, duration: 210, yoyo: true, repeat: 1 }));
+        });
     }
 
     private showHint(): void {
@@ -200,7 +236,7 @@ export class UnderwaterBellPuzzle {
             const [first] = this.challenge.solutions[0];
             this.place(first, 0);
             const card = this.cards[first];
-            this.scene.tweens.add({ targets: card, alpha: 0.8, duration: 300, yoyo: true, repeat: 2 });
+            this.animate({ targets: card, alpha: 0.8, duration: 300, yoyo: true, repeat: 2 });
         }
         this.feedback.setText(`${this.challenge.start}  ${this.signed(delta)}  =  ${this.challenge.target}`).setColor('#e0eebd');
     }

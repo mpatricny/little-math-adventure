@@ -10,9 +10,34 @@ import { acquirePuzzle, puzzleProgress, recordPuzzleAnswer } from '../PuzzleServ
 import { bindPuzzleViewState, observePuzzleViewState, stopObservingPuzzleViewState } from '../../../ui/PuzzleViewState';
 import { isCurrentLightChallenge, LEGACY_LIGHT, underwaterLightChallenge } from '../../UnderwaterLightPuzzle';
 import { bridgePuzzle, isCurrentBridgePuzzle } from '../PuzzleCatalog';
+import { underwaterBellChallenge, evaluatePearlFlow, type PearlFlowChallenge } from '../../UnderwaterBellProblems';
+import type { PuzzleInstance } from '../../../types/puzzles';
 
 beforeEach(() => { runtime.player = {} as PlayerState; });
 describe('puzzle lifecycle and adaptation', () => {
+    it('reopens an unfinished legacy bell without replacing its cards, indices or recorded attempt', () => {
+        const profile = bandProfile('D');
+        // Production D/tier2 + seed581 before the distractor fix.
+        const payload: PearlFlowChallenge = { start:6, target:2, limit:20, cards:[-15,-14,-1,-3],
+            profile, solutions:[[2,3],[3,2]] };
+        const store: Record<string, PuzzleInstance<PearlFlowChallenge>> = JSON.parse(JSON.stringify({
+            'bell:0': { version:1, family:'bell', profile, payload, startedAt:123,
+                firstCorrect:false, assisted:true, completed:false,
+                state:{ selected:[2,3], hintLevel:1, submitted:true } },
+        }));
+        const old = store['bell:0'], snapshot = structuredClone(store);
+        const draw = vi.fn(() => underwaterBellChallenge(profile));
+        const reopened = acquirePuzzle(store,'bell:0','bell',draw,profile,false);
+        expect(draw).not.toHaveBeenCalled();
+        expect(reopened).toBe(old);
+        expect(reopened.payload).toBe(old.payload);
+        const view = { selected:[null,null] as (number | null)[], hintLevel:0, submitted:false };
+        bindPuzzleViewState(view,reopened.state,['selected','hintLevel','submitted']);
+        expect(view.selected).toEqual([2,3]);
+        expect(evaluatePearlFlow(reopened.payload,view.selected).correct).toBe(true);
+        expect(store).toEqual(snapshot);
+    });
+
     it('replaces a shortened bridge together with its single-slot state and keeps the replacement on re-entry', () => {
         const store = puzzleProgress(runtime.player).active, profile = bandProfile('A', 1);
         const old = acquirePuzzle(store, 'forest:bridge', 'sequence', () => ({ full: [1, 2, 3], stoneDisplayValues: [1, 3, null, null, null] }), profile);

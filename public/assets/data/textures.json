@@ -357,49 +357,49 @@
             "frameCount": 9
         },
         "silverpond-armored-seahorse-idle-sheet": {
-            "path": "sprites/silverpond/armored-seahorse-idle.webp",
+            "path": "sprites/silverpond/armored-seahorse-idle-gpu2048.webp",
             "frameWidth": 512,
             "frameHeight": 512,
             "frameCount": 13
         },
         "silverpond-armored-seahorse-attack-sheet": {
-            "path": "sprites/silverpond/armored-seahorse-attack.webp",
+            "path": "sprites/silverpond/armored-seahorse-attack-gpu2048.webp",
             "frameWidth": 512,
             "frameHeight": 512,
             "frameCount": 9
         },
         "silverpond-armored-seahorse-defend-sheet": {
-            "path": "sprites/silverpond/armored-seahorse-defend.webp",
+            "path": "sprites/silverpond/armored-seahorse-defend-gpu2048.webp",
             "frameWidth": 512,
             "frameHeight": 512,
             "frameCount": 7
         },
         "silverpond-armored-seahorse-defeat-sheet": {
-            "path": "sprites/silverpond/armored-seahorse-defeat.webp",
+            "path": "sprites/silverpond/armored-seahorse-defeat-gpu2048.webp",
             "frameWidth": 512,
             "frameHeight": 512,
             "frameCount": 9
         },
         "silverpond-rune-nautilus-idle-sheet": {
-            "path": "sprites/silverpond/rune-nautilus-idle.webp",
+            "path": "sprites/silverpond/rune-nautilus-idle-gpu2048.webp",
             "frameWidth": 512,
             "frameHeight": 512,
             "frameCount": 13
         },
         "silverpond-rune-nautilus-attack-sheet": {
-            "path": "sprites/silverpond/rune-nautilus-attack.webp",
+            "path": "sprites/silverpond/rune-nautilus-attack-gpu2048.webp",
             "frameWidth": 512,
             "frameHeight": 512,
             "frameCount": 11
         },
         "silverpond-rune-nautilus-defend-sheet": {
-            "path": "sprites/silverpond/rune-nautilus-defend.webp",
+            "path": "sprites/silverpond/rune-nautilus-defend-gpu2048.webp",
             "frameWidth": 512,
             "frameHeight": 512,
             "frameCount": 7
         },
         "silverpond-rune-nautilus-defeat-sheet": {
-            "path": "sprites/silverpond/rune-nautilus-defeat.webp",
+            "path": "sprites/silverpond/rune-nautilus-defeat-gpu2048.webp",
             "frameWidth": 512,
             "frameHeight": 512,
             "frameCount": 9
