@@ -1,0 +1,646 @@
+{
+  "scenes": {
+    "FoxBattlePrototype": {
+      "viewport": {
+        "width": 1280,
+        "height": 720
+      },
+      "safeContent": {
+        "board": {
+          "left": 68,
+          "top": 0,
+          "right": 1212,
+          "bottom": 612
+        },
+        "footer": {
+          "left": 128,
+          "top": 620,
+          "right": 1226,
+          "bottom": 710
+        }
+      },
+      "elements": [
+        {
+          "id": "background",
+          "asset": "ui.containers.empty",
+          "x": 640,
+          "y": 360,
+          "width": 1280,
+          "height": 720,
+          "depth": 0,
+          "visible": false
+        },
+        {
+          "id": "heroA",
+          "asset": "ui.containers.empty",
+          "x": 267.5,
+          "y": 470.5,
+          "width": 185,
+          "height": 185,
+          "depth": 5,
+          "visible": false
+        },
+        {
+          "id": "heroB",
+          "asset": "ui.containers.empty",
+          "x": 372.5,
+          "y": 534.5,
+          "width": 175,
+          "height": 175,
+          "depth": 6,
+          "visible": false
+        },
+        {
+          "id": "fox",
+          "asset": "ui.containers.empty",
+          "x": 520,
+          "y": 424,
+          "width": 140,
+          "height": 140,
+          "depth": 7,
+          "visible": false
+        },
+        {
+          "id": "hpA",
+          "asset": "ui.containers.empty",
+          "x": 268,
+          "y": 347,
+          "width": 150,
+          "height": 34,
+          "depth": 8,
+          "visible": false
+        },
+        {
+          "id": "hpB",
+          "asset": "ui.containers.empty",
+          "x": 370,
+          "y": 437,
+          "width": 150,
+          "height": 34,
+          "depth": 8,
+          "visible": false
+        },
+        {
+          "id": "enemy0",
+          "asset": "ui.containers.empty",
+          "x": 772,
+          "y": 437,
+          "width": 210,
+          "height": 200,
+          "depth": 5,
+          "visible": false
+        },
+        {
+          "id": "enemy1",
+          "asset": "ui.containers.empty",
+          "x": 822,
+          "y": 523,
+          "width": 210,
+          "height": 200,
+          "depth": 6,
+          "visible": false
+        },
+        {
+          "id": "enemy2",
+          "asset": "ui.containers.empty",
+          "x": 981,
+          "y": 475,
+          "width": 210,
+          "height": 200,
+          "depth": 5,
+          "visible": false
+        },
+        {
+          "id": "enemyHp0",
+          "asset": "ui.containers.empty",
+          "x": 772,
+          "y": 316,
+          "width": 132,
+          "height": 32,
+          "depth": 8,
+          "visible": false
+        },
+        {
+          "id": "enemyHp1",
+          "asset": "ui.containers.empty",
+          "x": 822,
+          "y": 403,
+          "width": 132,
+          "height": 32,
+          "depth": 8,
+          "visible": false
+        },
+        {
+          "id": "enemyHp2",
+          "asset": "ui.containers.empty",
+          "x": 981,
+          "y": 356,
+          "width": 132,
+          "height": 32,
+          "depth": 8,
+          "visible": false
+        },
+        {
+          "id": "dock",
+          "asset": "ui.containers.empty",
+          "x": 677,
+          "y": 664,
+          "width": 1114,
+          "height": 96,
+          "depth": 40,
+          "visible": false
+        },
+        {
+          "id": "ownerPortrait",
+          "asset": "ui.containers.empty",
+          "x": 172,
+          "y": 665,
+          "width": 72,
+          "height": 72,
+          "depth": 43,
+          "visible": false
+        },
+        {
+          "id": "ownerName",
+          "asset": "ui.containers.empty",
+          "x": 304,
+          "y": 637,
+          "width": 170,
+          "height": 24,
+          "depth": 43,
+          "visible": false
+        },
+        {
+          "id": "dockHp",
+          "asset": "ui.containers.empty",
+          "x": 284,
+          "y": 670,
+          "width": 142,
+          "height": 32,
+          "depth": 43,
+          "visible": false
+        },
+        {
+          "id": "shieldBadge",
+          "asset": "ui.containers.empty",
+          "x": 382,
+          "y": 667,
+          "width": 42,
+          "height": 42,
+          "depth": 44,
+          "visible": false
+        },
+        {
+          "id": "potion",
+          "asset": "ui.containers.empty",
+          "x": 448,
+          "y": 664,
+          "width": 78,
+          "height": 78,
+          "depth": 44,
+          "visible": false
+        },
+        {
+          "id": "attack",
+          "asset": "ui.containers.empty",
+          "x": 551,
+          "y": 666,
+          "width": 92,
+          "height": 92,
+          "depth": 44,
+          "visible": false
+        },
+        {
+          "id": "divider",
+          "asset": "ui.containers.empty",
+          "x": 615,
+          "y": 664,
+          "width": 2,
+          "height": 58,
+          "depth": 43,
+          "visible": false
+        },
+        {
+          "id": "shield",
+          "asset": "ui.containers.empty",
+          "x": 876,
+          "y": 664,
+          "width": 88,
+          "height": 88,
+          "depth": 44,
+          "visible": false
+        },
+        {
+          "id": "heal",
+          "asset": "ui.containers.empty",
+          "x": 980,
+          "y": 664,
+          "width": 88,
+          "height": 88,
+          "depth": 44,
+          "visible": false
+        },
+        {
+          "id": "strike",
+          "asset": "ui.containers.empty",
+          "x": 1084,
+          "y": 664,
+          "width": 88,
+          "height": 88,
+          "depth": 44,
+          "visible": false
+        },
+        {
+          "id": "help",
+          "asset": "ui.containers.empty",
+          "x": 1188,
+          "y": 664,
+          "width": 80,
+          "height": 80,
+          "depth": 44,
+          "visible": false
+        },
+        {
+          "id": "targetHint",
+          "asset": "ui.containers.empty",
+          "x": 640,
+          "y": 172,
+          "width": 400,
+          "height": 104,
+          "depth": 55,
+          "visible": false
+        },
+        {
+          "id": "cancelTarget",
+          "asset": "ui.containers.empty",
+          "x": 1130,
+          "y": 175,
+          "width": 80,
+          "height": 80,
+          "depth": 55,
+          "visible": false
+        },
+        {
+          "id": "guide",
+          "asset": "ui.containers.empty",
+          "x": 640,
+          "y": 308.5635,
+          "width": 550,
+          "height": 407.127,
+          "depth": 100,
+          "visible": false
+        },
+        {
+          "id": "victory",
+          "asset": "ui.containers.empty",
+          "x": 640,
+          "y": 270,
+          "width": 540,
+          "height": 180,
+          "depth": 100,
+          "visible": false
+        },
+        {
+          "id": "abilityOwnerA",
+          "asset": "ui.containers.empty",
+          "x": 673,
+          "y": 663,
+          "width": 82,
+          "height": 82,
+          "depth": 44,
+          "visible": false
+        },
+        {
+          "id": "abilityOwnerB",
+          "asset": "ui.containers.empty",
+          "x": 765,
+          "y": 663,
+          "width": 82,
+          "height": 82,
+          "depth": 44,
+          "visible": false
+        },
+        {
+          "id": "foxB",
+          "asset": "ui.containers.empty",
+          "x": 486,
+          "y": 549,
+          "width": 126,
+          "height": 126,
+          "depth": 7,
+          "visible": false
+        },
+        {
+          "id": "airShieldA",
+          "asset": "ui.containers.empty",
+          "x": 347.5,
+          "y": 462.5,
+          "width": 110,
+          "height": 188,
+          "depth": 5,
+          "visible": false
+        },
+        {
+          "id": "airShieldB",
+          "asset": "ui.containers.empty",
+          "x": 452.5,
+          "y": 526.5,
+          "width": 110,
+          "height": 178,
+          "depth": 6,
+          "visible": false
+        },
+        {
+          "id": "portraitShieldA",
+          "asset": "ui.containers.empty",
+          "x": 706,
+          "y": 663,
+          "width": 66,
+          "height": 90,
+          "depth": 88,
+          "visible": false
+        },
+        {
+          "id": "portraitShieldB",
+          "asset": "ui.containers.empty",
+          "x": 798,
+          "y": 663,
+          "width": 66,
+          "height": 90,
+          "depth": 88,
+          "visible": false
+        }
+      ]
+    },
+    "MathBoardArtLayout": {
+      "viewport": {
+        "width": 1280,
+        "height": 720
+      },
+      "safeContent": {
+        "power": {
+          "left": 394,
+          "top": 73,
+          "right": 881,
+          "bottom": 182
+        },
+        "question": {
+          "left": 272,
+          "top": 235,
+          "right": 992,
+          "bottom": 359
+        },
+        "answers": {
+          "left": 296,
+          "top": 415,
+          "right": 984,
+          "bottom": 529
+        },
+        "hints": {
+          "left": 296,
+          "top": 370,
+          "right": 984,
+          "bottom": 415
+        },
+        "feedback": {
+          "left": 442,
+          "top": 531,
+          "right": 982,
+          "bottom": 595
+        }
+      },
+      "elements": [
+        {
+          "id": "board",
+          "asset": "ui.containers.empty",
+          "x": 640,
+          "y": 306,
+          "width": 1144,
+          "height": 612,
+          "depth": 110,
+          "visible": false
+        },
+        {
+          "id": "parchment",
+          "asset": "ui.containers.empty",
+          "x": 640,
+          "y": 306,
+          "width": 1144,
+          "height": 612,
+          "depth": 100,
+          "visible": false
+        },
+        {
+          "id": "question",
+          "asset": "ui.containers.empty",
+          "x": 632,
+          "y": 296,
+          "width": 700,
+          "height": 140,
+          "depth": 102,
+          "visible": false
+        },
+        {
+          "id": "left",
+          "asset": "ui.containers.empty",
+          "x": 459,
+          "y": 296,
+          "width": 160,
+          "height": 125,
+          "depth": 102,
+          "visible": false
+        },
+        {
+          "id": "right",
+          "asset": "ui.containers.empty",
+          "x": 805,
+          "y": 296,
+          "width": 160,
+          "height": 125,
+          "depth": 102,
+          "visible": false
+        },
+        {
+          "id": "relation",
+          "asset": "ui.containers.empty",
+          "x": 632,
+          "y": 296,
+          "width": 100,
+          "height": 88,
+          "depth": 102,
+          "visible": false
+        },
+        {
+          "id": "answer0",
+          "asset": "ui.containers.empty",
+          "x": 400,
+          "y": 472,
+          "width": 208,
+          "height": 114,
+          "depth": 103,
+          "visible": false
+        },
+        {
+          "id": "answer1",
+          "asset": "ui.containers.empty",
+          "x": 640,
+          "y": 472,
+          "width": 208,
+          "height": 114,
+          "depth": 103,
+          "visible": false
+        },
+        {
+          "id": "answer2",
+          "asset": "ui.containers.empty",
+          "x": 880,
+          "y": 472,
+          "width": 208,
+          "height": 114,
+          "depth": 103,
+          "visible": false
+        },
+        {
+          "id": "hint0",
+          "asset": "ui.containers.empty",
+          "x": 400,
+          "y": 390,
+          "width": 72,
+          "height": 36,
+          "depth": 102,
+          "visible": false
+        },
+        {
+          "id": "hint1",
+          "asset": "ui.containers.empty",
+          "x": 640,
+          "y": 390,
+          "width": 72,
+          "height": 36,
+          "depth": 102,
+          "visible": false
+        },
+        {
+          "id": "hint2",
+          "asset": "ui.containers.empty",
+          "x": 880,
+          "y": 390,
+          "width": 72,
+          "height": 36,
+          "depth": 102,
+          "visible": false
+        },
+        {
+          "id": "source",
+          "asset": "ui.containers.empty",
+          "x": 457,
+          "y": 126,
+          "width": 132,
+          "height": 132,
+          "depth": 102,
+          "visible": false
+        },
+        {
+          "id": "counter",
+          "asset": "ui.containers.empty",
+          "x": 577,
+          "y": 126,
+          "width": 105,
+          "height": 100,
+          "depth": 102,
+          "visible": false
+        },
+        {
+          "id": "increment",
+          "asset": "ui.containers.empty",
+          "x": 747,
+          "y": 126,
+          "width": 192,
+          "height": 100,
+          "depth": 102,
+          "visible": false
+        },
+        {
+          "id": "feedback",
+          "asset": "ui.containers.empty",
+          "x": 712,
+          "y": 563,
+          "width": 540,
+          "height": 64,
+          "depth": 103,
+          "visible": false
+        },
+        {
+          "id": "progress",
+          "asset": "ui.containers.empty",
+          "x": 189,
+          "y": 556,
+          "width": 247,
+          "height": 34,
+          "depth": 103,
+          "visible": false
+        },
+        {
+          "id": "next",
+          "asset": "ui.containers.empty",
+          "x": 1053,
+          "y": 521,
+          "width": 102,
+          "height": 102,
+          "depth": 104,
+          "visible": false
+        },
+        {
+          "id": "demo",
+          "asset": "ui.containers.empty",
+          "x": 1071,
+          "y": 301,
+          "width": 84,
+          "height": 84,
+          "depth": 104,
+          "visible": false
+        },
+        {
+          "id": "owner",
+          "asset": "ui.containers.empty",
+          "x": 197,
+          "y": 102,
+          "width": 86,
+          "height": 190,
+          "depth": 103,
+          "visible": false
+        },
+        {
+          "id": "incoming",
+          "asset": "ui.containers.empty",
+          "x": 1027,
+          "y": 131,
+          "width": 128,
+          "height": 86,
+          "depth": 102,
+          "visible": false
+        },
+        {
+          "id": "timer",
+          "asset": "ui.containers.empty",
+          "x": 632,
+          "y": 208,
+          "width": 500,
+          "height": 8,
+          "depth": 103,
+          "visible": false
+        },
+        {
+          "id": "sequenceCount",
+          "asset": "ui.containers.empty",
+          "x": 1070,
+          "y": 380,
+          "width": 110,
+          "height": 44,
+          "depth": 103,
+          "visible": false
+        }
+      ]
+    }
+  }
+}

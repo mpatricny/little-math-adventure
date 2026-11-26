@@ -60,7 +60,11 @@ test.describe('production battle HUD', () => {
             };
         }, GAME_GLOBAL);
 
-        await page.waitForTimeout(80);
+        await page.waitForFunction(({ globalName, heroOffset, enemyOffset }) => {
+            const battle = (globalThis as Record<string, any>)[globalName].scene.keys.BattleScene;
+            return Math.abs(battle.heroHpBar.root.x - battle.heroContainer.x - heroOffset.x) < 0.01
+                && Math.abs(battle.enemyHpBars[1].root.x - battle.enemyContainers[1].x - enemyOffset.x) < 0.01;
+        }, { globalName: GAME_GLOBAL, heroOffset: before.heroOffset, enemyOffset: before.enemyOffset });
 
         const after = await page.evaluate((globalName) => {
             const game = (globalThis as Record<string, any>)[globalName];
@@ -85,7 +89,9 @@ test.describe('production battle HUD', () => {
                 targetGap: battle.enemyHpBars[1].getTopY() - battle.targetIndicator.y,
                 targetHeight: battle.targetIndicator.displayHeight,
                 statusFrameCount: countTexture(battle.children.list, 'battle-hud-status-frame-v2'),
-                actionDockFrameCount: countTexture(battle.children.list, 'battle-hud-action-dock-v1'),
+                actionDockFrames: [battle.battleActionDock.attack.frame, battle.battleActionDock.potion.frame,
+                    battle.battleActionDock.ownerFrame].map(frame => frame.texture.key),
+                attackPoint: { x: battle.battleActionDock.attackRoot.x, y: battle.battleActionDock.attackRoot.y },
             };
         }, GAME_GLOBAL);
 
@@ -101,14 +107,14 @@ test.describe('production battle HUD', () => {
         expect(after.targetGap).toBeGreaterThan(after.targetHeight / 2 - 6);
         expect(after.targetGap).toBeLessThan(after.targetHeight / 2 + 10);
         expect(after.statusFrameCount).toBe(5);
-        expect(after.actionDockFrameCount).toBe(1);
+        expect(after.actionDockFrames).toEqual(Array(3).fill('battle-dock-round-v3'));
 
         const canvas = page.locator('#game-container canvas');
         const canvasBox = await canvas.boundingBox();
         if (!canvasBox) throw new Error('Phaser canvas is not visible');
         await page.mouse.click(
-            canvasBox.x + (640 / 1280) * canvasBox.width,
-            canvasBox.y + (648 / 720) * canvasBox.height,
+            canvasBox.x + (after.attackPoint.x / 1280) * canvasBox.width,
+            canvasBox.y + (after.attackPoint.y / 720) * canvasBox.height,
         );
         await expect.poll(() => page.evaluate((globalName) => {
             const game = (globalThis as Record<string, any>)[globalName];
@@ -165,7 +171,11 @@ test.describe('production battle HUD', () => {
                 actionDockFrameCount: countTexture(trial.children.list, 'battle-hud-action-dock-v1'),
             };
         }, GAME_GLOBAL);
-        await page.waitForTimeout(80);
+        await page.waitForFunction(({ globalName, offset }) => {
+            const trial = (globalThis as Record<string, any>)[globalName].scene.keys.CatacombTrialScene;
+            return Math.abs(trial.enemyHpBar.root.x - trial.creatureContainer.x - offset.x) < 0.01
+                && Math.abs(trial.enemyHpBar.root.y - trial.creatureContainer.y - offset.y) < 0.01;
+        }, { globalName: GAME_GLOBAL, offset: before.offset });
         const after = await page.evaluate((globalName) => {
             const game = (globalThis as Record<string, any>)[globalName];
             const trial = game.scene.keys.CatacombTrialScene as any;

@@ -1,0 +1,116 @@
+{
+  "errors": [],
+  "requests": [],
+  "states": [
+    "01-ready",
+    "02-hover",
+    "03-pressed",
+    "04-pointer-out",
+    "05-wrong",
+    "06-correct",
+    "07-slow-correct",
+    "08-quick",
+    "09-complete",
+    "10-no-words",
+    "tablet-1024-ready",
+    "tablet-1024-correct",
+    "tablet-768-ready",
+    "tablet-768-correct",
+    "canvas-ready",
+    "canvas-correct"
+  ],
+  "tablet": [
+    {
+      "size": {
+        "width": 1024,
+        "height": 768
+      },
+      "overflow": false,
+      "targets": [
+        {
+          "w": 141.01960784313727,
+          "h": 77.29034936238044
+        },
+        {
+          "w": 141.01960784313727,
+          "h": 77.29034936238044
+        },
+        {
+          "w": 141.01960784313727,
+          "h": 77.29034936238044
+        },
+        {
+          "w": 56.95022624434389,
+          "h": 56.95078374070138
+        }
+      ]
+    },
+    {
+      "size": {
+        "width": 768,
+        "height": 1024
+      },
+      "overflow": false,
+      "targets": [
+        {
+          "w": 120.4656862745098,
+          "h": 66.02550478214665
+        },
+        {
+          "w": 120.4656862745098,
+          "h": 66.02550478214665
+        },
+        {
+          "w": 120.4656862745098,
+          "h": 66.02550478214665
+        },
+        {
+          "w": 48.64960407239819,
+          "h": 48.65037194473964
+        }
+      ]
+    }
+  ],
+  "batch": {
+    "charges": 0,
+    "completions": 1,
+    "damage": 13,
+    "results": [
+      true,
+      true,
+      true
+    ],
+    "timings": [
+      66.73000000000002,
+      5386.650000000001,
+      86.77000000000027
+    ],
+    "problem": "reference-2",
+    "pendingNext": true,
+    "accepting": false,
+    "completed": true
+  },
+  "text": [
+    {
+      "style": 2,
+      "source": 2,
+      "rootScale": 1,
+      "surfaceY": 0
+    },
+    {
+      "style": 2,
+      "source": 2,
+      "rootScale": 1,
+      "surfaceY": 0
+    },
+    {
+      "style": 2,
+      "source": 2,
+      "rootScale": 1,
+      "surfaceY": 0
+    }
+  ],
+  "storage": [],
+  "referencePaused": true,
+  "touch": true
+}

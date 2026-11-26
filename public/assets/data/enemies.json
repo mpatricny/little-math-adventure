@@ -138,6 +138,7 @@
     {
         "id": "giant_mushroom",
         "name": "Mushroom Giant",
+        "nameCs": "Houbový obr",
         "spriteKey": "spritesheet--36--sheet",
         "animPrefix": "mushroom",
         "hp": 20,
@@ -153,6 +154,7 @@
     {
         "id": "ancient_treant",
         "name": "Ancient Treant",
+        "nameCs": "Prastarý strom",
         "spriteKey": "spritesheet--37--sheet",
         "animPrefix": "treant",
         "hp": 25,
@@ -168,6 +170,7 @@
     {
         "id": "verdant_guardian",
         "name": "Verdant Guardian",
+        "nameCs": "Lesní strážce",
         "spriteKey": "spritesheet--38--sheet",
         "animPrefix": "verdant",
         "hp": 15,

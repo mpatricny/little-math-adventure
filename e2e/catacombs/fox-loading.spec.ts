@@ -1,160 +1,106 @@
-import { test, expect, openSeededGame, waitForScene } from '../arena/helpers/arena-harness';
-import type { Page } from 'playwright/test';
-import textures from '../../public/assets/data/textures.json';
+import { test, expect, waitForScene, openSeededGame } from '../arena/helpers/arena-harness';
+import { openModule, tapNamed } from './helpers/observatory';
 
-const foxPath = textures.spritesheets['rune-fox-sheet'].path;
-
-test.beforeEach(async ({ page }) => {
-    await page.route('**/v1/me', route => route.fulfill({
-        status: 200, contentType: 'application/json', body: JSON.stringify({ authenticated: false }),
-    }));
-});
-
-async function clickHost(page: Page, id: string) {
-    await page.evaluate(() => new Promise<void>(resolve => requestAnimationFrame(() => requestAnimationFrame(() => resolve()))));
-    const point = await page.evaluate(id => {
-        const host = (window as any).__LITTLE_MATH_GAME__.scene.keys.CatacombTrialScene.sceneBuilder.get(id);
-        return { x: host.x, y: host.y };
-    }, id);
-    const box = (await page.locator('canvas').boundingBox())!;
-    await page.mouse.click(box.x + point.x * box.width / 1280, box.y + point.y * box.height / 720);
-}
-
-async function answerCorrectly(page: Page) {
-    const index = await page.evaluate(() => {
-        const p = (window as any).__LITTLE_MATH_GAME__.scene.keys.CatacombTrialScene.currentProblem;
-        return p.choices.indexOf(p.answer) + 1;
-    });
-    await clickHost(page, `catacombAnswer${index}`);
-}
-
-async function forceCanvas(page: Page) {
+test('the guild decodes the painted cast and shield mural before entry and reuses them on retry', async ({ page }) => {
+    const completed = () => page.evaluate(() => (window as any).observatoryDecodes as string[]);
     await page.addInitScript(() => {
-        const original = HTMLCanvasElement.prototype.getContext;
-        HTMLCanvasElement.prototype.getContext = function (type: string, ...args: any[]) {
-            if (type.includes('webgl')) return null;
-            return (original as any).call(this, type, ...args);
-        } as typeof original;
-    });
-}
-
-for (const renderer of ['canvas', 'webgl']) test(`cold fox preload and first answer ${renderer}`, async ({ page }) => {
-    if (renderer === 'canvas') await forceCanvas(page);
-    let requested = false;
-    let release!: () => void;
-    const held = new Promise<void>(resolve => { release = resolve; });
-    await page.route(`**/${foxPath}`, async route => {
-        requested = true;
-        await held;
-        await route.continue();
-    });
-    await openSeededGame(page);
-    expect(await page.evaluate(() => (window as any).__LITTLE_MATH_GAME__.renderer.type)).toBe(renderer === 'canvas' ? 1 : 2);
-    expect(await page.evaluate(() => (window as any).__LITTLE_MATH_GAME__.textures.exists('rune-fox-sheet'))).toBe(false);
-    await page.evaluate(() => (window as any).__LITTLE_MATH_GAME__.scene.keys.MenuScene.scene.start('CatacombTrialScene', { examType: 'fluency_challenge', subAtomId: 'A1' }));
-    await expect.poll(() => requested).toBe(true);
-    expect(await page.evaluate(() => {
-        const g = (window as any).__LITTLE_MATH_GAME__;
-        return { active: g.scene.isActive('CatacombTrialScene'), creatureCreated: !!g.scene.keys.CatacombTrialScene.creatureSprite };
-    })).toEqual({ active: false, creatureCreated: false });
-    release();
-    await waitForScene(page, 'CatacombTrialScene');
-    const loaded = await page.evaluate(() => {
-        const s = (window as any).__LITTLE_MATH_GAME__.scene.keys.CatacombTrialScene;
-        const sheet = s.cache.json.get('textures').spritesheets['rune-fox-sheet'];
-        const texture = s.textures.get('rune-fox-sheet');
-        const definitions = Object.entries(s.animationDefs).filter(([key]) => key.startsWith('rune-fox-'));
-        return {
-            key: s.creatureSprite.texture.key,
-            allFrames: Array.from({ length: sheet.frameCount }, (_, index) => texture.has(index)).every(Boolean),
-            noPaddingFrame: !texture.has(sheet.frameCount),
-            canonical: definitions.every(([key, definition]: [string, any]) => {
-                const expected = definition.frames.sequence ?? Array.from({ length: definition.frames.end - definition.frames.start + 1 }, (_, n) => definition.frames.start + n);
-                const actual = s.anims.get(key).frames.map((frame: any) => Number(frame.textureFrame));
-                return JSON.stringify(actual) === JSON.stringify(expected);
-            }),
+        const log: string[] = (window as any).observatoryDecodes = [];
+        const decode = HTMLImageElement.prototype.decode;
+        HTMLImageElement.prototype.decode = async function () {
+            const prefix = '/assets/ui/catacomb-observatory/';
+            const path = new URL(this.src, location.href).pathname;
+            await decode.call(this);
+            if (path.startsWith(prefix)) log.push(path.slice(prefix.length));
         };
     });
-    expect(loaded).toEqual({ key: 'rune-fox-sheet', allFrames: true, noPaddingFrame: true, canonical: true });
-    await page.screenshot({ path: `artifacts/catacombs/loading-${renderer}-intro.png` });
-    await clickHost(page, 'catacombPrimary');
-    await answerCorrectly(page);
-    await page.waitForFunction(() => {
-        const s = (window as any).__LITTLE_MATH_GAME__.scene.keys.CatacombTrialScene;
-        return s.phase === 'charging' && s.correctCount === 1 && !s.mathBoard.answered;
+    await openSeededGame(page, false, {}, {}, { unlockedPets: ['catacomb_creature_A'], catacombFoxBonus: 1 });
+    await page.evaluate(async () => {
+        const { GameStateManager } = await import('/src/systems/GameStateManager.ts');
+        const state = GameStateManager.getInstance();
+        state.loadSlot(0); state.getMasteryData()!.subAtoms.A1.state = 'mastery'; state.save();
+        (window as any).__LITTLE_MATH_GAME__.scene.keys.MenuScene.scene.start('GuildScene');
     });
-    expect(await page.evaluate(() => {
-        const s = (window as any).__LITTLE_MATH_GAME__.scene.keys.CatacombTrialScene;
-        return { hp: s.creatureHp, maxHp: s.creatureMaxHp, heroAtHome: Math.abs(s.heroContainer.x - s.sceneBuilder.getSpawnPoints().player.x) < 1 };
-    })).toMatchObject({ hp: 9, maxHp: 10, heroAtHome: true });
-    await page.screenshot({ path: `artifacts/catacombs/loading-${renderer}-next-question.png` });
-    await page.setViewportSize({ width: 1024, height: 768 });
-    await page.evaluate(() => new Promise<void>(resolve => requestAnimationFrame(() => requestAnimationFrame(() => resolve()))));
-    await page.screenshot({ path: `artifacts/catacombs/loading-${renderer}-tablet.png` });
-});
-
-test('an attack finishing before travel cannot strand the trial in resolve', async ({ page }) => {
-    await forceCanvas(page);
-    await openSeededGame(page);
-    await page.evaluate(() => (window as any).__LITTLE_MATH_GAME__.scene.keys.MenuScene.scene.start('CatacombTrialScene', { examType: 'fluency_challenge', subAtomId: 'A1' }));
-    await waitForScene(page, 'CatacombTrialScene');
-    await clickHost(page, 'catacombPrimary');
-    await page.evaluate(() => {
-        const s = (window as any).__LITTLE_MATH_GAME__.scene.keys.CatacombTrialScene;
-        s.heroSprite.anims.timeScale = 32;
-        (window as any).__foxCompletionTrace = [];
-        s.heroSprite.once('animationcomplete-' + s.playerSpriteConfig.attackAnim, () => (window as any).__foxCompletionTrace.push('attack'));
-        const original = s.updateHpBar.bind(s);
-        s.updateHpBar = () => { (window as any).__foxCompletionTrace.push('impact'); original(); };
-    });
-    await answerCorrectly(page);
-    await page.waitForFunction(() => {
-        const s = (window as any).__LITTLE_MATH_GAME__.scene.keys.CatacombTrialScene;
-        return s.phase === 'charging' && s.correctCount === 1 && !s.mathBoard.answered;
-    });
-    expect(await page.evaluate(() => (window as any).__foxCompletionTrace)).toEqual(['attack', 'impact']);
-});
-
-test('all ten hits, victory, another visit and a wrong answer keep advancing', async ({ page }) => {
-    await forceCanvas(page);
-    await openSeededGame(page);
-    await page.evaluate(() => (window as any).__LITTLE_MATH_GAME__.scene.keys.MenuScene.scene.start('CatacombTrialScene', { examType: 'fluency_challenge', subAtomId: 'A1' }));
-    await waitForScene(page, 'CatacombTrialScene');
-    await clickHost(page, 'catacombPrimary');
-    for (let hits = 1; hits <= 10; hits++) {
-        await answerCorrectly(page);
-        await page.waitForFunction(hits => {
-            const s = (window as any).__LITTLE_MATH_GAME__.scene.keys.CatacombTrialScene;
-            return s.correctCount === hits && (hits === 10 ? s.phase === 'victory' : s.phase === 'charging' && !s.mathBoard.answered);
-        }, hits);
-        expect(await page.evaluate(() => (window as any).__LITTLE_MATH_GAME__.scene.keys.CatacombTrialScene.creatureHp)).toBe(10 - hits);
-    }
-    const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('littleMathAdventure_slot_0')!));
-    expect(saved.player.unlockedPets).toContain('catacomb_creature_A');
-    expect(saved.player.catacombFoxBonus).toBe(0);
-    expect(saved.mathStats.masteryData.globalSolveSequence).toBe(10);
-    await page.screenshot({ path: 'artifacts/catacombs/loading-canvas-victory.png' });
-    await page.setViewportSize({ width: 1024, height: 768 });
-    await page.evaluate(() => new Promise<void>(resolve => requestAnimationFrame(() => requestAnimationFrame(() => resolve()))));
-    await page.screenshot({ path: 'artifacts/catacombs/loading-canvas-victory-tablet.png' });
-    await clickHost(page, 'catacombPrimary');
     await waitForScene(page, 'GuildScene');
-    await page.evaluate(() => (window as any).__LITTLE_MATH_GAME__.scene.keys.GuildScene.scene.start('CatacombTrialScene', { examType: 'fluency_challenge', subAtomId: 'A1' }));
-    await waitForScene(page, 'CatacombTrialScene');
-    await clickHost(page, 'catacombPrimary');
-    const wrongChoice = await page.evaluate(() => {
-        const p = (window as any).__LITTLE_MATH_GAME__.scene.keys.CatacombTrialScene.currentProblem;
-        return (p.choices.indexOf(p.answer) + 1) % p.choices.length + 1;
-    });
-    await clickHost(page, `catacombAnswer${wrongChoice}`);
-    await page.screenshot({ path: 'artifacts/catacombs/loading-canvas-wrong.png' });
-    await page.waitForFunction(() => {
-        const s = (window as any).__LITTLE_MATH_GAME__.scene.keys.CatacombTrialScene;
-        return s.phase === 'charging' && s.wrongCount === 1 && !s.mathBoard.answered;
-    });
-    await answerCorrectly(page);
-    await page.waitForFunction(() => {
-        const s = (window as any).__LITTLE_MATH_GAME__.scene.keys.CatacombTrialScene;
-        return s.phase === 'charging' && s.correctCount === 1 && !s.mathBoard.answered;
-    });
+    await expect.poll(completed).toEqual(expect.arrayContaining(['actors/fox/adjust-0.webp', 'actors/fox/adjust-1.webp', 'actors/knight/idle-0.webp']));
+    await tapNamed(page, 'catacombDoorway');
+    await expect.poll(completed).toEqual(expect.arrayContaining(['mural-etch-shield.webp', 'mural-shield.webp', 'mural-star-sleep.webp', 'stage-room.webp']));
+    const warm = await completed();
+    expect(new Set(warm).size).toBe(warm.length);
+    await tapNamed(page, 'catacombEnter'); await waitForScene(page, 'FoxLessonScene');
+    const prompt = () => page.waitForFunction(() => !!(window as any).__LITTLE_MATH_GAME__.scene.keys.FoxLessonScene.round?.board.getActiveProblemSnapshot());
+    for (let i = 0; i < 2; i++) {
+        await prompt();
+        const wrong = await page.evaluate(() => {
+            const s = (window as any).__LITTLE_MATH_GAME__.scene.keys.FoxLessonScene, p = s.queue[s.answers.length];
+            return p.choices.findIndex((value: number) => value !== p.answer);
+        });
+        await tapNamed(page, 'observatoryChoice' + wrong);
+        await page.waitForFunction(n => (window as any).__LITTLE_MATH_GAME__.scene.keys.FoxLessonScene.answers.length === n, i + 1);
+    }
+    await page.waitForFunction(() => (window as any).__LITTLE_MATH_GAME__.scene.keys.FoxLessonScene.phase === 'retry');
+    await tapNamed(page, 'foxLessonRetry'); await prompt();
+    expect(await completed()).toEqual(warm);
+    expect(await page.evaluate(() => (window as any).__LITTLE_MATH_GAME__.scene.keys.FoxLessonScene.answers.length)).toBe(0);
 });
+
+for (const renderer of ['canvas', 'webgl']) {
+    test('cold painted observatory waits for both actors and releases its textures in ' + renderer, async ({ page }) => {
+        const folder = '/assets/ui/catacomb-observatory/';
+        const received = new Set<string>();
+        page.on('response', response => {
+            const path = new URL(response.url()).pathname;
+            if (response.ok() && path.startsWith(folder)) received.add(path.slice(folder.length));
+        });
+        let allowSheet!: () => void;
+        const held = new Promise<void>(resolve => { allowSheet = resolve; });
+        const sheetRequested = page.waitForRequest('**/catacomb-observatory/actors/fox/adjust-1.webp', { timeout: 90_000 });
+        await page.route('**/catacomb-observatory/actors/fox/adjust-1.webp', async route => {
+            await held;
+            await route.continue();
+        });
+        const entering = openModule(page, renderer);
+        try {
+            await sheetRequested;
+            // The child can see the room while the sheets are downloading.
+            // Questions and the whole-series clock wait together for the cast.
+            await page.waitForFunction(() => !!(window as any).__LITTLE_MATH_GAME__?.scene.keys.CatacombTrialScene?.children.getByName('observatory-room'));
+            const loading = await page.evaluate(() => {
+                const r = (window as any).__LITTLE_MATH_GAME__.scene.keys.CatacombTrialScene.round;
+                return { snapshot: r.board.getActiveProblemSnapshot(), elapsed: r.batch.elapsedMs };
+            });
+            expect(loading).toEqual({ snapshot: null, elapsed: 0 });
+        } finally {
+            allowSheet();
+            await entering;
+        }
+        for (const file of ['stage-room.webp', 'stage-planet.webp', 'mural-rescue.webp', 'mural-etch-rescue.webp',
+            'mural-star-sleep.webp', 'mural-star-lit.webp', 'actors/knight/idle-0.webp', 'actors/knight/motion.json',
+            'actors/fox/motion.json', 'actors/fox/adjust-0.webp', 'actors/fox/adjust-1.webp']) {
+            expect(received.has(file), file).toBe(true);
+        }
+        const before = await page.evaluate(() => {
+            const game = (window as any).__LITTLE_MATH_GAME__;
+            const scene = game.scene.keys.CatacombTrialScene;
+            const objects = ['observatory-room', 'observatory-fox', 'observatory-knight', 'observatory-light', 'observatory-constellation']
+                .map(name => scene.children.getByName(name));
+            const [room, fox, knight] = objects;
+            // Project two known points on the room painting into each actor's fixed cutout.
+            const isPainted = (actor: typeof fox, x: number, y: number) => {
+                const ctx = actor.texture.context as CanvasRenderingContext2D;
+                const world = room.getBounds(), bounds = actor.getBounds();
+                return ctx.getImageData(
+                    Math.round((world.x + world.width * x/1440 - bounds.x) / bounds.width * ctx.canvas.width),
+                    Math.round((world.y + world.height * y/900 - bounds.y) / bounds.height * ctx.canvas.height),
+                    1, 1).data[3] > 150;
+            };
+            return { renderer: game.renderer.type, keys: objects.map(o => o.texture.key),
+                visible: objects.every(o => o.visible && o.texture.key !== '__MISSING'),
+                fox: isPainted(fox, 312, 520), knight: isPainted(knight, 250, 336) };
+        });
+        expect(before).toMatchObject({ renderer: renderer === 'canvas' ? 1 : 2, visible: true, fox: true, knight: true });
+        await tapNamed(page, 'observatoryPauseButton');
+        await tapNamed(page, 'observatoryExitButton');
+        await waitForScene(page, 'GuildScene');
+        expect(await page.evaluate(keys => keys.filter(key => (window as any).__LITTLE_MATH_GAME__.textures.exists(key)), before.keys)).toEqual([]);
+    });
+}

@@ -35,6 +35,16 @@ describe('adaptive generated puzzles',()=>{
         }
         for(const flow of flowPool(p,3))expect(flow.changes.every((d,i)=>allowsStep(p,flow.values[i],d))).toBe(true);
     });
+    it('draws authored regional puzzles for F–H without expanding their numeric domains', () => {
+        for (const band of ['F','G','H'] as const) {
+            const profile = bandProfile(band);
+            expect(profile).toEqual(bandProfile('E'));
+            const bell = underwaterBellChallenge(band, 0, 0, seededRandom(47));
+            expect(bell.solutions.length).toBeGreaterThan(0);
+            expect(evaluatePearlFlow(bell, bell.solutions[0]).correct).toBe(true);
+            expect(sharedPuzzleProfile([profile, bandProfile('B')]).band).toBe('B');
+        }
+    });
     it('has 25 non-paraphrased riddles, 25 words and at least 20 solvable optical boards',()=>{
         expect(new Set(wordPools.riddles.map(r=>r.id)).size).toBeGreaterThanOrEqual(20);
         expect(wordPools.riddles.every(r=>/^[A-Z]{4}$/.test(r.answer))).toBe(true);

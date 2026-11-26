@@ -52,8 +52,10 @@ async function audit(page: Page) {
                 if (o.style.resolution !== o.texture.source[0].resolution) errors.push('text resolution');
                 const safe = o.getData('waterTextBox');
                 const b = o.getBounds();
-                if (safe && (b.left < safe.x - safe.width / 2 || b.right > safe.x + safe.width / 2
-                    || b.top < safe.y - safe.height / 2 || b.bottom > safe.y + safe.height / 2)) errors.push('text inset');
+                const center = safe && o.parentContainer
+                    ? o.parentContainer.getWorldTransformMatrix().transformPoint(safe.x, safe.y) : safe;
+                if (safe && (b.left < center.x - safe.width / 2 || b.right > center.x + safe.width / 2
+                    || b.top < center.y - safe.height / 2 || b.bottom > center.y + safe.height / 2)) errors.push('text inset');
             }
             if ((o.getData('waterArtwork') || o.texture?.key === 'zyx-dialog-action-frame-story')
                 && Math.abs(o.scaleX - o.scaleY) > .001) errors.push('stretched art');

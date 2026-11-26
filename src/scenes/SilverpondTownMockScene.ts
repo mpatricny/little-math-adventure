@@ -4,7 +4,7 @@ import { SceneBuilder } from '../systems/SceneBuilder';
 import { WalkingSceneHud } from '../ui/WalkingSceneHud';
 import { GameStateManager } from '../systems/GameStateManager';
 import { StorySystem } from '../systems/StorySystem';
-import { MasterySystem } from '../systems/MasterySystem';
+import { hasGuildNews } from '../systems/GuildNotices';
 import { shouldBackfillLakeFairyReward } from '../systems/SilverpondProgressSystem';
 import { hasUnseenSilverpondQuest } from '../systems/SilverpondQuestProgress';
 import { needsDepthCrystalShipReturn, hasNextCityAccess } from '../systems/DepthCrystalProgressSystem';
@@ -304,8 +304,7 @@ export class SilverpondTownMockScene extends Phaser.Scene {
     private createGuildNotification(): void {
         const host = this.requireHost('guildNotificationHost');
         const root = this.add.container(host.x, host.y).setDepth(host.depth);
-        const hasExam = MasterySystem.getInstance().getAvailableExams().length > 0;
-        const shouldShow = hasUnseenSilverpondQuest(GameStateManager.getInstance().getPlayer()) || hasExam;
+        const shouldShow = hasUnseenSilverpondQuest(GameStateManager.getInstance().getPlayer()) || hasGuildNews();
         const normal = this.add.image(0, 0, 'silverpond-guild-notification-normal')
             .setScale(host.scale);
         const active = this.add.image(0, 0, 'silverpond-guild-notification-active')

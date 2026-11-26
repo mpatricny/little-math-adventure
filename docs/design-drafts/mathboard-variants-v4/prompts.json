@@ -1,0 +1,43 @@
+{
+  "date": "2026-11-18",
+  "tool": "image_gen.imagegen",
+  "reference": "../mathboard-reference-v3/assets/arena-parchment.webp",
+  "canonicalAnswer": "../mathboard-reference-v3/prompts.json",
+  "assets": [
+    {
+      "output": "assets/arena.webp",
+      "source": "/Users/datamole/.codex/generated_images/01a1bfe3-6721-7d33-b884-18d02e756092/exec-1ee4a578-b171-44d6-bc48-326258d3f449.png",
+      "transparent": false,
+      "prompt": "Use case: precise-object-edit. Edit target: the supplied approved game scene. Remove ALL interface artwork: the entire parchment board with its wooden posts, the top sword plaque, question recess, progress sockets, round socket, and the bottom central sword plaque. Reconstruct the magical Silverpond arena environment behind those interface objects: sunlit blue sky, distant evergreen trees and pale stone towers, waterfalls and blue crystal architecture, continuous circular stone arena. Keep the existing foreground arena, heroine on the left, rune fox beside her, and blue turtle enemy on the right EXACTLY in their original positions, proportions, expressions, anatomy and style. Keep the camera, 1672:941 aspect ratio, composition and lighting unchanged. Absolutely no new characters, no character animation, no floating UI or decorative panels, no writing or numbers. This is only the static background layer below the separately rendered original parchment. Preserve all three full-body characters and their equipment unchanged.",
+      "normalization": "Full bitmap, WebP quality 94; uniform scale and symmetric viewport crop."
+    },
+    {
+      "output": null,
+      "source": "/Users/datamole/.codex/generated_images/01a1bfe3-6721-7d33-b884-18d02e756092/exec-344212b3-56b6-43d0-8325-058a317ed0cb.png",
+      "transparent": true,
+      "status": "Intermediate parchment extraction before removing baked progress sockets",
+      "prompt": "Use case: background-extraction. Extract ONLY the complete large upper parchment board with its two wooden end posts from the supplied approved game UI. Preserve the exact board silhouette and proportions, warm golden parchment texture, narrow wooden vertical posts, gold-rimmed charcoal leather top plaque with four blue diamonds, large recessed rectangular question well below it, the three small progress sockets at lower left, and round gold-rimmed socket at lower right. Keep all these features in precisely the same relative positions. ONE intentional alteration: remove the sword icon from the top plaque and fill its former area with identical dark leather, so the entire plaque interior is empty. The board is approximately 1.88 times as wide as it is tall. Keep the question well's original height and width. The lower middle of the parchment is empty, no answer buttons. Remove ALL environment, ground, sky, characters and the separate lower sword plaque outside the board. Truly transparent background with a small clear margin around the entire board. No text, no numbers, no new symbols, no glow, no changed border, no added decoration. Match the reference exactly, do not redesign. This is one canonical structural layer for children's UI; runtime icons, numerals and button states will be composed and animated in code with stable hit targets."
+    },
+    {
+      "output": "assets/parchment.webp",
+      "source": "/Users/datamole/.codex/generated_images/01a1bfe3-6721-7d33-b884-18d02e756092/exec-ecbe92cd-05b4-4233-a913-0adbe77c6d4a.png",
+      "transparent": true,
+      "reference": "/Users/datamole/.codex/generated_images/01a1bfe3-6721-7d33-b884-18d02e756092/exec-344212b3-56b6-43d0-8325-058a317ed0cb.png",
+      "prompt": "Use case: precise-object-edit. Edit ONLY the three small circular brown/gold progress sockets at the lower left of this transparent parchment UI board. Remove those three tiny circles and reconstruct seamless matching golden parchment beneath. Preserve EVERYTHING else exactly: board dimensions, silhouette, both wood posts, empty black leather gold/blue-gem top plaque, question recess, round socket at lower right, colors, textures and spacing. Maintain transparency outside the board. Do not add text, symbols, icons or buttons. All runtime progress dots will be drawn separately. This is the canonical structural frame shared across children's arithmetic and comparison boards, composed in code with large runtime symbols and stable control geometry.",
+      "normalization": "assets/normalization.json; one shared structural source, lossless WebP."
+    },
+    {
+      "output": "assets/plaque.webp",
+      "source": "/Users/datamole/.codex/generated_images/01a1bfe3-6721-7d33-b884-18d02e756092/exec-3a38a9fe-515d-4252-9da7-358e36f8fa33.png",
+      "transparent": true,
+      "reference": "/Users/datamole/.codex/generated_images/01a1bfe3-6721-7d33-b884-18d02e756092/exec-344212b3-56b6-43d0-8325-058a317ed0cb.png",
+      "prompt": "Use case: background-extraction. Extract ONLY the empty upper horizontal black leather UI plaque with its thin rich gold bevel and four blue diamond ornaments from the supplied board. Preserve its exact silhouette, width:height approximately 3.6:1, corner curvature, thin gold concentric rims, charcoal leather, blue diamonds at top/bottom/left/right and their exact arrangement. Remove all surrounding parchment and wooden posts. One complete centered plaque on a transparent background with generous padding. NO text, no icons, no numbers, no sword, no glow or extra particles. Do not redesign. This is the one canonical reusable frame that matches the approved reference, with runtime numbers and code-based glows layered separately. It must remain recognizably the exact same plaque, uniformly scalable, never a new navy enamel style.",
+      "normalization": "assets/normalization.json; complete frame is always uniformly scaled."
+    }
+  ],
+  "reused": [
+    "assets/answer-wood.webp",
+    "assets/Gelasio.ttf",
+    "assets/Gelasio-OFL.txt"
+  ]
+}

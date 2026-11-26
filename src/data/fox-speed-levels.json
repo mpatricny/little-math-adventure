@@ -1,0 +1,9 @@
+{
+  "grandmaster": { "label": "Velmistr", "ratio": 0.6, "runeTier": 1, "goal": { "total": 8, "required": 7 } },
+  "legend": { "label": "Legenda", "ratio": 0.4, "runeTier": 2, "goal": { "total": 10, "required": 10 } },
+  "evidence": { "window": 40, "days": 2, "accuracy": 0.95, "fastShare": 0.9, "distinctProblems": 8, "forms": 2 },
+  "trial": {
+    "paceWindow": 10,
+    "timeWeights": { "standard": 1, "missingPart": 1.5, "threeOperands": 2, "expressionVsNumber": 1.5, "expressionVsExpression": 2.5 }
+  }
+}

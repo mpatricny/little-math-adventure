@@ -1,0 +1,1418 @@
+{
+  "status": "animation-review",
+  "source": "Real imagine-1.5 video; native RGB and aligned AutoSprite alpha",
+  "frameWidth": 512,
+  "frameHeight": 512,
+  "forms": {
+    "01": {
+      "sourceUnion": [
+        49,
+        87,
+        446,
+        439
+      ],
+      "sharedCrop": [
+        25,
+        18,
+        470,
+        463
+      ],
+      "motions": {
+        "idle": {
+          "source": "fox-01-idle-raw.mp4",
+          "sourceFps": 24,
+          "sampleEvery": 4,
+          "fps": 6,
+          "alphaSource": "fox-01-idle-autosprite.png",
+          "mapping": [
+            {
+              "sourceFrame": 0,
+              "alphaFrame": 0,
+              "alphaSourceFrame": 1,
+              "alphaIoU": 0.9841
+            },
+            {
+              "sourceFrame": 4,
+              "alphaFrame": 1,
+              "alphaSourceFrame": 4,
+              "alphaIoU": 0.985
+            },
+            {
+              "sourceFrame": 8,
+              "alphaFrame": 2,
+              "alphaSourceFrame": 7,
+              "alphaIoU": 0.9852
+            },
+            {
+              "sourceFrame": 12,
+              "alphaFrame": 3,
+              "alphaSourceFrame": 11,
+              "alphaIoU": 0.9856
+            },
+            {
+              "sourceFrame": 16,
+              "alphaFrame": 5,
+              "alphaSourceFrame": 17,
+              "alphaIoU": 0.9851
+            },
+            {
+              "sourceFrame": 20,
+              "alphaFrame": 6,
+              "alphaSourceFrame": 20,
+              "alphaIoU": 0.9859
+            },
+            {
+              "sourceFrame": 24,
+              "alphaFrame": 7,
+              "alphaSourceFrame": 23,
+              "alphaIoU": 0.9843
+            },
+            {
+              "sourceFrame": 28,
+              "alphaFrame": 8,
+              "alphaSourceFrame": 27,
+              "alphaIoU": 0.9857
+            },
+            {
+              "sourceFrame": 32,
+              "alphaFrame": 10,
+              "alphaSourceFrame": 33,
+              "alphaIoU": 0.9853
+            },
+            {
+              "sourceFrame": 36,
+              "alphaFrame": 11,
+              "alphaSourceFrame": 36,
+              "alphaIoU": 0.9854
+            }
+          ],
+          "sheet": "assets/sheets/fox-01-idle-7a27d25ff8.webp",
+          "preview": "assets/sheets/fox-01-idle-preview-5ed3e5708a.webp",
+          "columns": 4,
+          "rows": 3,
+          "frames": 10,
+          "playback": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9
+          ],
+          "loop": true,
+          "direction": "forward",
+          "width": 2048,
+          "height": 1536,
+          "bytes": 500942
+        },
+        "attack": {
+          "source": "fox-01-attack-raw.mp4",
+          "sourceFps": 24,
+          "sampleEvery": 4,
+          "fps": 6,
+          "alphaSource": "fox-01-attack-autosprite.png",
+          "mapping": [
+            {
+              "sourceFrame": 12,
+              "alphaFrame": 3,
+              "alphaSourceFrame": 11,
+              "alphaIoU": 0.9839
+            },
+            {
+              "sourceFrame": 16,
+              "alphaFrame": 5,
+              "alphaSourceFrame": 17,
+              "alphaIoU": 0.9812
+            },
+            {
+              "sourceFrame": 20,
+              "alphaFrame": 6,
+              "alphaSourceFrame": 20,
+              "alphaIoU": 0.9834
+            },
+            {
+              "sourceFrame": 24,
+              "alphaFrame": 7,
+              "alphaSourceFrame": 23,
+              "alphaIoU": 0.9837
+            },
+            {
+              "sourceFrame": 28,
+              "alphaFrame": 8,
+              "alphaSourceFrame": 27,
+              "alphaIoU": 0.9833
+            },
+            {
+              "sourceFrame": 32,
+              "alphaFrame": 10,
+              "alphaSourceFrame": 33,
+              "alphaIoU": 0.9829
+            },
+            {
+              "sourceFrame": 36,
+              "alphaFrame": 11,
+              "alphaSourceFrame": 36,
+              "alphaIoU": 0.9837
+            }
+          ],
+          "sheet": "assets/sheets/fox-01-attack-2c83724d05.webp",
+          "preview": "assets/sheets/fox-01-attack-preview-8c990f6e7c.webp",
+          "columns": 4,
+          "rows": 2,
+          "frames": 7,
+          "playback": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6
+          ],
+          "loop": false,
+          "direction": "forward",
+          "width": 2048,
+          "height": 1024,
+          "bytes": 355936
+        },
+        "cast": {
+          "source": "fox-01-cast-raw.mp4",
+          "sourceFps": 24,
+          "sampleEvery": 4,
+          "fps": 6,
+          "alphaSource": "fox-01-cast-autosprite.png",
+          "mapping": [
+            {
+              "sourceFrame": 4,
+              "alphaFrame": 1,
+              "alphaSourceFrame": 4,
+              "alphaIoU": 0.9842
+            },
+            {
+              "sourceFrame": 8,
+              "alphaFrame": 2,
+              "alphaSourceFrame": 7,
+              "alphaIoU": 0.9841
+            },
+            {
+              "sourceFrame": 12,
+              "alphaFrame": 3,
+              "alphaSourceFrame": 11,
+              "alphaIoU": 0.9856
+            },
+            {
+              "sourceFrame": 16,
+              "alphaFrame": 5,
+              "alphaSourceFrame": 17,
+              "alphaIoU": 0.9853
+            },
+            {
+              "sourceFrame": 20,
+              "alphaFrame": 6,
+              "alphaSourceFrame": 20,
+              "alphaIoU": 0.9853
+            },
+            {
+              "sourceFrame": 24,
+              "alphaFrame": 7,
+              "alphaSourceFrame": 23,
+              "alphaIoU": 0.9848
+            },
+            {
+              "sourceFrame": 28,
+              "alphaFrame": 8,
+              "alphaSourceFrame": 27,
+              "alphaIoU": 0.9854
+            },
+            {
+              "sourceFrame": 32,
+              "alphaFrame": 10,
+              "alphaSourceFrame": 33,
+              "alphaIoU": 0.9845
+            },
+            {
+              "sourceFrame": 36,
+              "alphaFrame": 11,
+              "alphaSourceFrame": 36,
+              "alphaIoU": 0.9857
+            }
+          ],
+          "sheet": "assets/sheets/fox-01-cast-7f4066e153.webp",
+          "preview": "assets/sheets/fox-01-cast-preview-79281d0e33.webp",
+          "columns": 4,
+          "rows": 3,
+          "frames": 9,
+          "playback": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8
+          ],
+          "loop": false,
+          "direction": "forward",
+          "width": 2048,
+          "height": 1536,
+          "bytes": 450670
+        }
+      },
+      "authorDecision": "accepted"
+    },
+    "02": {
+      "sourceUnion": [
+        44,
+        63,
+        498,
+        440
+      ],
+      "sharedCrop": [
+        20,
+        -38,
+        522,
+        464
+      ],
+      "motions": {
+        "idle": {
+          "source": "fox-02-idle-raw.mp4",
+          "sourceFps": 24,
+          "sampleEvery": 4,
+          "fps": 6,
+          "alphaSource": "fox-02-idle-autosprite.png",
+          "mapping": [
+            {
+              "sourceFrame": 0,
+              "alphaFrame": 0,
+              "alphaSourceFrame": 1,
+              "alphaIoU": 0.9843
+            },
+            {
+              "sourceFrame": 4,
+              "alphaFrame": 1,
+              "alphaSourceFrame": 4,
+              "alphaIoU": 0.9847
+            },
+            {
+              "sourceFrame": 8,
+              "alphaFrame": 2,
+              "alphaSourceFrame": 7,
+              "alphaIoU": 0.9841
+            },
+            {
+              "sourceFrame": 12,
+              "alphaFrame": 3,
+              "alphaSourceFrame": 11,
+              "alphaIoU": 0.9839
+            },
+            {
+              "sourceFrame": 16,
+              "alphaFrame": 5,
+              "alphaSourceFrame": 17,
+              "alphaIoU": 0.9839
+            },
+            {
+              "sourceFrame": 20,
+              "alphaFrame": 6,
+              "alphaSourceFrame": 20,
+              "alphaIoU": 0.9848
+            },
+            {
+              "sourceFrame": 24,
+              "alphaFrame": 7,
+              "alphaSourceFrame": 23,
+              "alphaIoU": 0.9851
+            },
+            {
+              "sourceFrame": 28,
+              "alphaFrame": 8,
+              "alphaSourceFrame": 27,
+              "alphaIoU": 0.9846
+            },
+            {
+              "sourceFrame": 32,
+              "alphaFrame": 10,
+              "alphaSourceFrame": 33,
+              "alphaIoU": 0.984
+            },
+            {
+              "sourceFrame": 36,
+              "alphaFrame": 11,
+              "alphaSourceFrame": 36,
+              "alphaIoU": 0.9837
+            },
+            {
+              "sourceFrame": 40,
+              "alphaFrame": 12,
+              "alphaSourceFrame": 39,
+              "alphaIoU": 0.9844
+            },
+            {
+              "sourceFrame": 44,
+              "alphaFrame": 13,
+              "alphaSourceFrame": 43,
+              "alphaIoU": 0.984
+            },
+            {
+              "sourceFrame": 48,
+              "alphaFrame": 14,
+              "alphaSourceFrame": 46,
+              "alphaIoU": 0.9844
+            }
+          ],
+          "sheet": "assets/sheets/fox-02-idle-9ca0a67b79.webp",
+          "preview": "assets/sheets/fox-02-idle-preview-0deb0df680.webp",
+          "columns": 4,
+          "rows": 4,
+          "frames": 13,
+          "playback": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12
+          ],
+          "loop": true,
+          "direction": "forward",
+          "width": 2048,
+          "height": 2048,
+          "bytes": 573366
+        },
+        "attack": {
+          "source": "fox-02-attack-raw.mp4",
+          "sourceFps": 24,
+          "sampleEvery": 4,
+          "fps": 6,
+          "alphaSource": "fox-02-attack-autosprite.png",
+          "mapping": [
+            {
+              "sourceFrame": 12,
+              "alphaFrame": 3,
+              "alphaSourceFrame": 11,
+              "alphaIoU": 0.9835
+            },
+            {
+              "sourceFrame": 16,
+              "alphaFrame": 5,
+              "alphaSourceFrame": 17,
+              "alphaIoU": 0.9832
+            },
+            {
+              "sourceFrame": 20,
+              "alphaFrame": 6,
+              "alphaSourceFrame": 20,
+              "alphaIoU": 0.9833
+            },
+            {
+              "sourceFrame": 24,
+              "alphaFrame": 7,
+              "alphaSourceFrame": 23,
+              "alphaIoU": 0.9829
+            },
+            {
+              "sourceFrame": 28,
+              "alphaFrame": 8,
+              "alphaSourceFrame": 27,
+              "alphaIoU": 0.9827
+            },
+            {
+              "sourceFrame": 32,
+              "alphaFrame": 10,
+              "alphaSourceFrame": 33,
+              "alphaIoU": 0.9829
+            },
+            {
+              "sourceFrame": 36,
+              "alphaFrame": 11,
+              "alphaSourceFrame": 36,
+              "alphaIoU": 0.9804
+            }
+          ],
+          "sheet": "assets/sheets/fox-02-attack-3c61e8e837.webp",
+          "preview": "assets/sheets/fox-02-attack-preview-b9225b6d30.webp",
+          "columns": 4,
+          "rows": 2,
+          "frames": 7,
+          "playback": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6
+          ],
+          "loop": false,
+          "direction": "forward",
+          "width": 2048,
+          "height": 1024,
+          "bytes": 282552
+        },
+        "cast": {
+          "source": "fox-02-cast-raw.mp4",
+          "sourceFps": 24,
+          "sampleEvery": 4,
+          "fps": 6,
+          "alphaSource": "fox-02-cast-autosprite.png",
+          "mapping": [
+            {
+              "sourceFrame": 0,
+              "alphaFrame": 0,
+              "alphaSourceFrame": 1,
+              "alphaIoU": 0.983
+            },
+            {
+              "sourceFrame": 4,
+              "alphaFrame": 1,
+              "alphaSourceFrame": 4,
+              "alphaIoU": 0.9831
+            },
+            {
+              "sourceFrame": 8,
+              "alphaFrame": 2,
+              "alphaSourceFrame": 7,
+              "alphaIoU": 0.9835
+            },
+            {
+              "sourceFrame": 12,
+              "alphaFrame": 3,
+              "alphaSourceFrame": 11,
+              "alphaIoU": 0.9829
+            },
+            {
+              "sourceFrame": 16,
+              "alphaFrame": 5,
+              "alphaSourceFrame": 17,
+              "alphaIoU": 0.9836
+            },
+            {
+              "sourceFrame": 20,
+              "alphaFrame": 6,
+              "alphaSourceFrame": 20,
+              "alphaIoU": 0.9838
+            },
+            {
+              "sourceFrame": 24,
+              "alphaFrame": 7,
+              "alphaSourceFrame": 23,
+              "alphaIoU": 0.9833
+            },
+            {
+              "sourceFrame": 28,
+              "alphaFrame": 8,
+              "alphaSourceFrame": 27,
+              "alphaIoU": 0.984
+            },
+            {
+              "sourceFrame": 32,
+              "alphaFrame": 10,
+              "alphaSourceFrame": 33,
+              "alphaIoU": 0.9839
+            }
+          ],
+          "sheet": "assets/sheets/fox-02-cast-ef37d53701.webp",
+          "preview": "assets/sheets/fox-02-cast-preview-d569827cd4.webp",
+          "columns": 4,
+          "rows": 3,
+          "frames": 9,
+          "playback": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8
+          ],
+          "loop": false,
+          "direction": "forward",
+          "width": 2048,
+          "height": 1536,
+          "bytes": 391038
+        }
+      },
+      "authorDecision": "rework-natural-posture"
+    },
+    "04": {
+      "sourceUnion": [
+        58,
+        110,
+        478,
+        413
+      ],
+      "sharedCrop": [
+        34,
+        -31,
+        502,
+        437
+      ],
+      "motions": {
+        "idle": {
+          "source": "fox-04-idle-raw.mp4",
+          "sourceFps": 24,
+          "sampleEvery": 4,
+          "fps": 6,
+          "alphaSource": "fox-04-idle-autosprite.png",
+          "mapping": [
+            {
+              "sourceFrame": 0,
+              "alphaFrame": 0,
+              "alphaSourceFrame": 1,
+              "alphaIoU": 0.9744
+            },
+            {
+              "sourceFrame": 4,
+              "alphaFrame": 1,
+              "alphaSourceFrame": 4,
+              "alphaIoU": 0.9807
+            },
+            {
+              "sourceFrame": 8,
+              "alphaFrame": 2,
+              "alphaSourceFrame": 7,
+              "alphaIoU": 0.9833
+            },
+            {
+              "sourceFrame": 12,
+              "alphaFrame": 3,
+              "alphaSourceFrame": 11,
+              "alphaIoU": 0.9835
+            },
+            {
+              "sourceFrame": 16,
+              "alphaFrame": 5,
+              "alphaSourceFrame": 17,
+              "alphaIoU": 0.9829
+            },
+            {
+              "sourceFrame": 20,
+              "alphaFrame": 6,
+              "alphaSourceFrame": 20,
+              "alphaIoU": 0.9832
+            },
+            {
+              "sourceFrame": 24,
+              "alphaFrame": 7,
+              "alphaSourceFrame": 23,
+              "alphaIoU": 0.9831
+            },
+            {
+              "sourceFrame": 28,
+              "alphaFrame": 8,
+              "alphaSourceFrame": 27,
+              "alphaIoU": 0.9836
+            },
+            {
+              "sourceFrame": 32,
+              "alphaFrame": 10,
+              "alphaSourceFrame": 33,
+              "alphaIoU": 0.9839
+            },
+            {
+              "sourceFrame": 36,
+              "alphaFrame": 11,
+              "alphaSourceFrame": 36,
+              "alphaIoU": 0.9832
+            },
+            {
+              "sourceFrame": 40,
+              "alphaFrame": 12,
+              "alphaSourceFrame": 39,
+              "alphaIoU": 0.9835
+            },
+            {
+              "sourceFrame": 44,
+              "alphaFrame": 13,
+              "alphaSourceFrame": 43,
+              "alphaIoU": 0.9834
+            },
+            {
+              "sourceFrame": 48,
+              "alphaFrame": 14,
+              "alphaSourceFrame": 46,
+              "alphaIoU": 0.9828
+            }
+          ],
+          "sheet": "assets/sheets/fox-04-idle-81b72e2bdb.webp",
+          "preview": "assets/sheets/fox-04-idle-preview-de7ba90aca.webp",
+          "columns": 4,
+          "rows": 4,
+          "frames": 13,
+          "playback": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12
+          ],
+          "loop": true,
+          "direction": "forward",
+          "width": 2048,
+          "height": 2048,
+          "bytes": 548296
+        },
+        "attack": {
+          "source": "fox-04-attack-raw.mp4",
+          "sourceFps": 24,
+          "sampleEvery": 4,
+          "fps": 6,
+          "alphaSource": "fox-04-attack-autosprite.png",
+          "mapping": [
+            {
+              "sourceFrame": 16,
+              "alphaFrame": 5,
+              "alphaSourceFrame": 17,
+              "alphaIoU": 0.9797
+            },
+            {
+              "sourceFrame": 20,
+              "alphaFrame": 6,
+              "alphaSourceFrame": 20,
+              "alphaIoU": 0.9786
+            },
+            {
+              "sourceFrame": 24,
+              "alphaFrame": 7,
+              "alphaSourceFrame": 23,
+              "alphaIoU": 0.9783
+            },
+            {
+              "sourceFrame": 28,
+              "alphaFrame": 8,
+              "alphaSourceFrame": 27,
+              "alphaIoU": 0.9787
+            },
+            {
+              "sourceFrame": 32,
+              "alphaFrame": 10,
+              "alphaSourceFrame": 33,
+              "alphaIoU": 0.9789
+            },
+            {
+              "sourceFrame": 36,
+              "alphaFrame": 11,
+              "alphaSourceFrame": 36,
+              "alphaIoU": 0.9761
+            },
+            {
+              "sourceFrame": 40,
+              "alphaFrame": 12,
+              "alphaSourceFrame": 39,
+              "alphaIoU": 0.9777
+            }
+          ],
+          "sheet": "assets/sheets/fox-04-attack-30af006f6d.webp",
+          "preview": "assets/sheets/fox-04-attack-preview-cf25033636.webp",
+          "columns": 4,
+          "rows": 2,
+          "frames": 7,
+          "playback": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6
+          ],
+          "loop": false,
+          "direction": "forward",
+          "width": 2048,
+          "height": 1024,
+          "bytes": 276138
+        },
+        "cast": {
+          "source": "fox-04-cast-raw.mp4",
+          "sourceFps": 24,
+          "sampleEvery": 4,
+          "fps": 6,
+          "alphaSource": "fox-04-cast-autosprite.png",
+          "mapping": [
+            {
+              "sourceFrame": 0,
+              "alphaFrame": 0,
+              "alphaSourceFrame": 1,
+              "alphaIoU": 0.9813
+            },
+            {
+              "sourceFrame": 4,
+              "alphaFrame": 1,
+              "alphaSourceFrame": 4,
+              "alphaIoU": 0.9828
+            },
+            {
+              "sourceFrame": 8,
+              "alphaFrame": 2,
+              "alphaSourceFrame": 7,
+              "alphaIoU": 0.9819
+            },
+            {
+              "sourceFrame": 12,
+              "alphaFrame": 3,
+              "alphaSourceFrame": 11,
+              "alphaIoU": 0.9826
+            },
+            {
+              "sourceFrame": 16,
+              "alphaFrame": 5,
+              "alphaSourceFrame": 17,
+              "alphaIoU": 0.9827
+            },
+            {
+              "sourceFrame": 20,
+              "alphaFrame": 6,
+              "alphaSourceFrame": 20,
+              "alphaIoU": 0.9828
+            },
+            {
+              "sourceFrame": 24,
+              "alphaFrame": 7,
+              "alphaSourceFrame": 23,
+              "alphaIoU": 0.9816
+            },
+            {
+              "sourceFrame": 28,
+              "alphaFrame": 8,
+              "alphaSourceFrame": 27,
+              "alphaIoU": 0.9831
+            },
+            {
+              "sourceFrame": 32,
+              "alphaFrame": 10,
+              "alphaSourceFrame": 33,
+              "alphaIoU": 0.9819
+            },
+            {
+              "sourceFrame": 36,
+              "alphaFrame": 11,
+              "alphaSourceFrame": 36,
+              "alphaIoU": 0.982
+            },
+            {
+              "sourceFrame": 40,
+              "alphaFrame": 12,
+              "alphaSourceFrame": 39,
+              "alphaIoU": 0.9818
+            },
+            {
+              "sourceFrame": 44,
+              "alphaFrame": 13,
+              "alphaSourceFrame": 43,
+              "alphaIoU": 0.9815
+            }
+          ],
+          "sheet": "assets/sheets/fox-04-cast-21b5941cd3.webp",
+          "preview": "assets/sheets/fox-04-cast-preview-f648599c73.webp",
+          "columns": 4,
+          "rows": 3,
+          "frames": 12,
+          "playback": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11
+          ],
+          "loop": false,
+          "direction": "forward",
+          "width": 2048,
+          "height": 1536,
+          "bytes": 500338
+        }
+      },
+      "authorDecision": "accepted"
+    },
+    "03": {
+      "sourceUnion": [
+        70,
+        66,
+        445,
+        462
+      ],
+      "sharedCrop": [
+        36,
+        42,
+        480,
+        486
+      ],
+      "motions": {
+        "idle": {
+          "source": "take-03/fox-03-idle-raw.mp4",
+          "sourceFps": 24.0,
+          "sampleEvery": 4,
+          "fps": 6.0,
+          "alphaSource": "fox-03-idle-autosprite.png",
+          "mapping": [
+            {
+              "sourceFrame": 0,
+              "alphaFrame": 0,
+              "alphaSourceFrame": 1,
+              "alphaIoU": 0.9852
+            },
+            {
+              "sourceFrame": 4,
+              "alphaFrame": 1,
+              "alphaSourceFrame": 4,
+              "alphaIoU": 0.9853
+            },
+            {
+              "sourceFrame": 8,
+              "alphaFrame": 2,
+              "alphaSourceFrame": 7,
+              "alphaIoU": 0.9855
+            },
+            {
+              "sourceFrame": 12,
+              "alphaFrame": 3,
+              "alphaSourceFrame": 11,
+              "alphaIoU": 0.9855
+            },
+            {
+              "sourceFrame": 16,
+              "alphaFrame": 5,
+              "alphaSourceFrame": 17,
+              "alphaIoU": 0.9845
+            },
+            {
+              "sourceFrame": 20,
+              "alphaFrame": 6,
+              "alphaSourceFrame": 20,
+              "alphaIoU": 0.9848
+            },
+            {
+              "sourceFrame": 24,
+              "alphaFrame": 7,
+              "alphaSourceFrame": 23,
+              "alphaIoU": 0.9848
+            },
+            {
+              "sourceFrame": 28,
+              "alphaFrame": 8,
+              "alphaSourceFrame": 27,
+              "alphaIoU": 0.9849
+            },
+            {
+              "sourceFrame": 32,
+              "alphaFrame": 10,
+              "alphaSourceFrame": 33,
+              "alphaIoU": 0.9825
+            },
+            {
+              "sourceFrame": 36,
+              "alphaFrame": 11,
+              "alphaSourceFrame": 36,
+              "alphaIoU": 0.9851
+            },
+            {
+              "sourceFrame": 40,
+              "alphaFrame": 12,
+              "alphaSourceFrame": 39,
+              "alphaIoU": 0.9857
+            },
+            {
+              "sourceFrame": 44,
+              "alphaFrame": 13,
+              "alphaSourceFrame": 43,
+              "alphaIoU": 0.9849
+            },
+            {
+              "sourceFrame": 48,
+              "alphaFrame": 14,
+              "alphaSourceFrame": 46,
+              "alphaIoU": 0.9845
+            }
+          ],
+          "sheet": "assets/sheets/fox-03-idle-2e4555bd32.webp",
+          "preview": "assets/sheets/fox-03-idle-preview-8313185a45.webp",
+          "columns": 4,
+          "rows": 4,
+          "frames": 13,
+          "playback": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12
+          ],
+          "loop": true,
+          "direction": "forward",
+          "width": 2048,
+          "height": 2048,
+          "bytes": 800966
+        },
+        "attack": {
+          "source": "take-03/fox-03-cast-raw.mp4",
+          "sourceFps": 24.0,
+          "sampleEvery": 4,
+          "fps": 6.0,
+          "alphaSource": "fox-03-cast-autosprite.png",
+          "mapping": [
+            {
+              "sourceFrame": 20,
+              "alphaFrame": 6,
+              "alphaSourceFrame": 20,
+              "alphaIoU": 0.9829
+            },
+            {
+              "sourceFrame": 24,
+              "alphaFrame": 7,
+              "alphaSourceFrame": 23,
+              "alphaIoU": 0.9834
+            },
+            {
+              "sourceFrame": 28,
+              "alphaFrame": 8,
+              "alphaSourceFrame": 27,
+              "alphaIoU": 0.9837
+            },
+            {
+              "sourceFrame": 32,
+              "alphaFrame": 10,
+              "alphaSourceFrame": 33,
+              "alphaIoU": 0.983
+            },
+            {
+              "sourceFrame": 36,
+              "alphaFrame": 11,
+              "alphaSourceFrame": 36,
+              "alphaIoU": 0.9844
+            },
+            {
+              "sourceFrame": 40,
+              "alphaFrame": 12,
+              "alphaSourceFrame": 39,
+              "alphaIoU": 0.9843
+            },
+            {
+              "sourceFrame": 44,
+              "alphaFrame": 13,
+              "alphaSourceFrame": 43,
+              "alphaIoU": 0.9841
+            }
+          ],
+          "sheet": "assets/sheets/fox-03-attack-ead7e85dbd.webp",
+          "preview": "assets/sheets/fox-03-attack-preview-e13c3d03ca.webp",
+          "columns": 4,
+          "rows": 2,
+          "frames": 7,
+          "playback": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6
+          ],
+          "loop": false,
+          "direction": "forward",
+          "width": 2048,
+          "height": 1024,
+          "bytes": 408832
+        },
+        "cast": {
+          "source": "take-03/fox-03-cast-raw.mp4",
+          "sourceFps": 24.0,
+          "sampleEvery": 4,
+          "fps": 6.0,
+          "alphaSource": "fox-03-cast-autosprite.png",
+          "mapping": [
+            {
+              "sourceFrame": 16,
+              "alphaFrame": 4,
+              "alphaSourceFrame": 14,
+              "alphaIoU": 0.9822
+            },
+            {
+              "sourceFrame": 20,
+              "alphaFrame": 6,
+              "alphaSourceFrame": 20,
+              "alphaIoU": 0.9829
+            },
+            {
+              "sourceFrame": 24,
+              "alphaFrame": 7,
+              "alphaSourceFrame": 23,
+              "alphaIoU": 0.9834
+            },
+            {
+              "sourceFrame": 28,
+              "alphaFrame": 8,
+              "alphaSourceFrame": 27,
+              "alphaIoU": 0.9837
+            },
+            {
+              "sourceFrame": 32,
+              "alphaFrame": 10,
+              "alphaSourceFrame": 33,
+              "alphaIoU": 0.983
+            },
+            {
+              "sourceFrame": 36,
+              "alphaFrame": 11,
+              "alphaSourceFrame": 36,
+              "alphaIoU": 0.9844
+            },
+            {
+              "sourceFrame": 40,
+              "alphaFrame": 12,
+              "alphaSourceFrame": 39,
+              "alphaIoU": 0.9843
+            },
+            {
+              "sourceFrame": 44,
+              "alphaFrame": 13,
+              "alphaSourceFrame": 43,
+              "alphaIoU": 0.9841
+            }
+          ],
+          "sheet": "assets/sheets/fox-03-cast-f8c79a0d47.webp",
+          "preview": "assets/sheets/fox-03-cast-preview-6fbb0249ca.webp",
+          "columns": 4,
+          "rows": 2,
+          "frames": 8,
+          "playback": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7
+          ],
+          "loop": false,
+          "direction": "forward",
+          "width": 2048,
+          "height": 1024,
+          "bytes": 463476
+        }
+      },
+      "authorDecision": "rework-natural-posture"
+    },
+    "05": {
+      "sourceUnion": [
+        107,
+        92,
+        391,
+        429
+      ],
+      "sharedCrop": [
+        56,
+        68,
+        441,
+        453
+      ],
+      "motions": {
+        "idle": {
+          "source": "take-03/fox-05-idle-raw.mp4",
+          "sourceFps": 24.0,
+          "sampleEvery": 4,
+          "fps": 6.0,
+          "alphaSource": "fox-05-idle-autosprite.png",
+          "mapping": [
+            {
+              "sourceFrame": 0,
+              "alphaFrame": 0,
+              "alphaSourceFrame": 3,
+              "alphaIoU": 0.986
+            },
+            {
+              "sourceFrame": 4,
+              "alphaFrame": 1,
+              "alphaSourceFrame": 4,
+              "alphaIoU": 0.9858
+            },
+            {
+              "sourceFrame": 8,
+              "alphaFrame": 2,
+              "alphaSourceFrame": 9,
+              "alphaIoU": 0.9858
+            },
+            {
+              "sourceFrame": 12,
+              "alphaFrame": 3,
+              "alphaSourceFrame": 11,
+              "alphaIoU": 0.9851
+            },
+            {
+              "sourceFrame": 16,
+              "alphaFrame": 5,
+              "alphaSourceFrame": 17,
+              "alphaIoU": 0.9835
+            },
+            {
+              "sourceFrame": 20,
+              "alphaFrame": 6,
+              "alphaSourceFrame": 20,
+              "alphaIoU": 0.9842
+            },
+            {
+              "sourceFrame": 24,
+              "alphaFrame": 7,
+              "alphaSourceFrame": 23,
+              "alphaIoU": 0.9846
+            },
+            {
+              "sourceFrame": 28,
+              "alphaFrame": 8,
+              "alphaSourceFrame": 27,
+              "alphaIoU": 0.9859
+            },
+            {
+              "sourceFrame": 32,
+              "alphaFrame": 10,
+              "alphaSourceFrame": 33,
+              "alphaIoU": 0.9854
+            },
+            {
+              "sourceFrame": 36,
+              "alphaFrame": 11,
+              "alphaSourceFrame": 36,
+              "alphaIoU": 0.9854
+            },
+            {
+              "sourceFrame": 40,
+              "alphaFrame": 12,
+              "alphaSourceFrame": 39,
+              "alphaIoU": 0.9853
+            },
+            {
+              "sourceFrame": 44,
+              "alphaFrame": 13,
+              "alphaSourceFrame": 43,
+              "alphaIoU": 0.9852
+            },
+            {
+              "sourceFrame": 48,
+              "alphaFrame": 14,
+              "alphaSourceFrame": 45,
+              "alphaIoU": 0.9853
+            }
+          ],
+          "sheet": "assets/sheets/fox-05-idle-a829a2fe42.webp",
+          "preview": "assets/sheets/fox-05-idle-preview-c62bb89d6a.webp",
+          "columns": 4,
+          "rows": 4,
+          "frames": 13,
+          "playback": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12
+          ],
+          "loop": true,
+          "direction": "forward",
+          "width": 2048,
+          "height": 2048,
+          "bytes": 594940
+        },
+        "attack": {
+          "source": "take-03/fox-05-attack-raw.mp4",
+          "sourceFps": 24.0,
+          "sampleEvery": 4,
+          "fps": 6.0,
+          "alphaSource": "fox-05-attack-autosprite.png",
+          "mapping": [
+            {
+              "sourceFrame": 8,
+              "alphaFrame": 2,
+              "alphaSourceFrame": 7,
+              "alphaIoU": 0.9856
+            },
+            {
+              "sourceFrame": 12,
+              "alphaFrame": 3,
+              "alphaSourceFrame": 11,
+              "alphaIoU": 0.9858
+            },
+            {
+              "sourceFrame": 16,
+              "alphaFrame": 5,
+              "alphaSourceFrame": 17,
+              "alphaIoU": 0.9857
+            },
+            {
+              "sourceFrame": 20,
+              "alphaFrame": 6,
+              "alphaSourceFrame": 20,
+              "alphaIoU": 0.986
+            },
+            {
+              "sourceFrame": 24,
+              "alphaFrame": 7,
+              "alphaSourceFrame": 23,
+              "alphaIoU": 0.985
+            },
+            {
+              "sourceFrame": 28,
+              "alphaFrame": 8,
+              "alphaSourceFrame": 27,
+              "alphaIoU": 0.9866
+            },
+            {
+              "sourceFrame": 32,
+              "alphaFrame": 10,
+              "alphaSourceFrame": 33,
+              "alphaIoU": 0.9863
+            }
+          ],
+          "sheet": "assets/sheets/fox-05-attack-e367f0d2ac.webp",
+          "preview": "assets/sheets/fox-05-attack-preview-6a9659626a.webp",
+          "columns": 4,
+          "rows": 2,
+          "frames": 7,
+          "playback": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6
+          ],
+          "loop": false,
+          "direction": "forward",
+          "width": 2048,
+          "height": 1024,
+          "bytes": 353614
+        },
+        "cast": {
+          "source": "take-03/fox-05-cast-raw.mp4",
+          "sourceFps": 24.0,
+          "sampleEvery": 4,
+          "fps": 6.0,
+          "alphaSource": "fox-05-cast-autosprite.png",
+          "mapping": [
+            {
+              "sourceFrame": 4,
+              "alphaFrame": 1,
+              "alphaSourceFrame": 4,
+              "alphaIoU": 0.985
+            },
+            {
+              "sourceFrame": 8,
+              "alphaFrame": 2,
+              "alphaSourceFrame": 7,
+              "alphaIoU": 0.985
+            },
+            {
+              "sourceFrame": 12,
+              "alphaFrame": 3,
+              "alphaSourceFrame": 11,
+              "alphaIoU": 0.9856
+            },
+            {
+              "sourceFrame": 16,
+              "alphaFrame": 5,
+              "alphaSourceFrame": 17,
+              "alphaIoU": 0.9852
+            },
+            {
+              "sourceFrame": 20,
+              "alphaFrame": 6,
+              "alphaSourceFrame": 20,
+              "alphaIoU": 0.9866
+            },
+            {
+              "sourceFrame": 24,
+              "alphaFrame": 7,
+              "alphaSourceFrame": 23,
+              "alphaIoU": 0.9845
+            },
+            {
+              "sourceFrame": 28,
+              "alphaFrame": 8,
+              "alphaSourceFrame": 27,
+              "alphaIoU": 0.9846
+            },
+            {
+              "sourceFrame": 32,
+              "alphaFrame": 9,
+              "alphaSourceFrame": 31,
+              "alphaIoU": 0.9858
+            }
+          ],
+          "sheet": "assets/sheets/fox-05-cast-8c8316b4c2.webp",
+          "preview": "assets/sheets/fox-05-cast-preview-05c8332408.webp",
+          "columns": 4,
+          "rows": 2,
+          "frames": 8,
+          "playback": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7
+          ],
+          "loop": false,
+          "direction": "forward",
+          "width": 2048,
+          "height": 1024,
+          "bytes": 374508
+        }
+      },
+      "authorDecision": "rework-natural-posture"
+    }
+  },
+  "authorApprovedForms": [
+    "01",
+    "04"
+  ],
+  "reworkRequiredForms": [
+    "02",
+    "03",
+    "05"
+  ]
+}

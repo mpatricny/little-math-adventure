@@ -1,6 +1,7 @@
 import { MathProblem, MathStats, DifficultyConfig, MathProblemDef, ProblemStats, LevelAttackConfig, ItemDefinition, PetDefinition, ProblemDefinition } from '../types';
 import { GameStateManager } from './GameStateManager';
 import { ProblemDatabase } from './ProblemDatabase';
+import { getAdvancedProblem } from './AdvancedCurriculum';
 
 // Pool size limits
 const MIN_POOL_SIZE = 10;
@@ -464,6 +465,14 @@ export class MathEngine {
         const result: Array<MathProblemDef & { stats: ProblemStats }> = [];
 
         for (const [id, stats] of Object.entries(this.stats.problemStats)) {
+            const advanced = getAdvancedProblem(id);
+            if (advanced) {
+                const { operand1, operand2, operator, operand3, operator2, answer } = advanced;
+                const problemType = advanced.form === 'missing_part' ? 'missing_operand' :
+                    operand3 === undefined ? 'standard' : 'three_operand';
+                result.push({ id, operand1, operand2, operator, operand3, operator2, answer, problemType, stats });
+                continue;
+            }
             const parts = id.split('_');
             if (parts.length < 3) continue;
 
@@ -1184,7 +1193,7 @@ export class MathEngine {
      * Generate a MathProblem from a mastery problem key.
      * Bridges the mastery system's ProblemDefinition to the existing MathProblem format.
      */
-    generateProblemFromKey(problemKey: string): MathProblem | null {
+    generateProblemFromKey(problemKey: string, scope: 'standard' | 'practice' = 'standard'): MathProblem | null {
         const db = ProblemDatabase.getInstance();
         const def = db.getProblemByKey(problemKey);
         if (!def) {
@@ -1192,7 +1201,7 @@ export class MathEngine {
             return null;
         }
 
-        const choices = db.generateChoices(def);
+        const choices = db.generateChoices(def, scope);
 
         switch (def.form) {
             case 'result_unknown':
@@ -1210,7 +1219,7 @@ export class MathEngine {
 
     /** result_unknown: a + b = ? or a + b + c = ? */
     private defToResultUnknown(def: ProblemDefinition, choices: number[], masteryKey: string): MathProblem {
-        const id = def.operand3 !== undefined
+        const id = def.advanced ? masteryKey : def.operand3 !== undefined
             ? `three_${def.operand1}_${def.operand2}_${def.operand3}`
             : `${def.operator === '+' ? 'add' : 'sub'}_${def.operand1}_${def.operand2}`;
 
@@ -1234,7 +1243,7 @@ export class MathEngine {
 
     /** missing_part: a + ? = c (operand2 stores result, answer is the missing part) */
     private defToMissingPart(def: ProblemDefinition, choices: number[], masteryKey: string): MathProblem {
-        const id = `missing_${def.operator === '+' ? 'add' : 'sub'}_${def.operand1}_${def.answer}`;
+        const id = def.advanced ? masteryKey : `missing_${def.operator === '+' ? 'add' : 'sub'}_${def.operand1}_${def.answer}`;
 
         this.currentProblemId = id;
 

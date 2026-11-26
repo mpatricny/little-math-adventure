@@ -1,0 +1,81 @@
+{
+  "scope": "Functional MathBoard workshop; isolated origin, no production scene rollout",
+  "serverPort": 8013,
+  "databaseMigrations": "Not needed: no database or save middleware in preview",
+  "build": "Vite production compilation passed",
+  "functionalEvidence": [
+    "functional-results.json",
+    "lifecycle-results.json",
+    "layout-results.json"
+  ],
+  "checks": {
+    "formatsCorrectAndWrong": 15,
+    "contextModes": 10,
+    "mixedBatch": "[true, false, true], total 9, one completion callback",
+    "demoNoCredit": true,
+    "timeout": true,
+    "doubleAnswerGuard": true,
+    "cancelDuringDemo": true,
+    "coopOwnerSwitch": true,
+    "slowAndQuickShield": true,
+    "remindersAndExamSuppression": true,
+    "saveKeysWritten": 0,
+    "consoleErrors": 0,
+    "finalViewportWidths": [
+      1440,
+      1024,
+      768
+    ],
+    "horizontalOverflow": false,
+    "minimumTabletTargetCssPx": 46,
+    "canvasFallback": true,
+    "textConstructorAndSourceResolution": 2
+  },
+  "browserMethod": "Playwright standalone Chromium. Shared Playwright MCP was busy, so it was left untouched.",
+  "reviewedImages": [
+    "addition-ready.png",
+    "addition-correct.png",
+    "addition-wrong.png",
+    "missing-three-ready.png",
+    "missing-three-wrong.png",
+    "multiplication-wrong.png",
+    "long-expression-ready.png",
+    "expression-expression-correct.png",
+    "size-ready.png",
+    "count-wrong.png",
+    "numbered-ready.png",
+    "symbols-ready.png",
+    "guided-ready.png",
+    "mode-defense-correct.png",
+    "mode-catacomb-correct.png",
+    "mode-coop.png",
+    "mode-practice-correct.png",
+    "batch-mixed.png",
+    "tablet-no-words.png",
+    "canvas-size.png",
+    "final-1024-addition-correct.png",
+    "final-768-numbered.png",
+    "final-page-1024.png",
+    "final-canvas.png"
+  ],
+  "visualFindings": [
+    "Frame caps preserve their aspect ratio; only the straight frame center changes width.",
+    "Number ink is centered independently of its font line box.",
+    "Choice frame, glyph and status badge share a moving surface; root targets stay fixed.",
+    "Answer state is conveyed by a check or cross, in addition to color.",
+    "Long expressions retain every operand and operator; no overlap with choices.",
+    "Comparison target is empty before an answer; all three choices remain neutral.",
+    "Final tablet layouts were rechecked after fixing the specimen rail's minimum width.",
+    "No-word screenshots retain the visual task, choices, power and progress; audio is optional."
+  ],
+  "limitations": [
+    "Production scenes, rewards, preparation persistence and save integration are not changed by the workshop.",
+    "The new personal speed bonus is outside this preview; it uses current production speed charges.",
+    "Touchscreen checks use Playwright touch events, not a physical Samsung GPU.",
+    "A real child playtest is still required before release approval.",
+    "Repository-wide TypeScript checking reports existing errors in AssetFactory, SaveSystem and telemetry; the isolated workshop build passes."
+  ],
+  "authorVisualAcceptance": "rejected",
+  "rejectionDate": "2026-11-17",
+  "replacement": "../../mathboard-reference-v3/"
+}

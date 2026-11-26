@@ -140,6 +140,8 @@ export interface PlayerState {
     // === CRYSTAL & MANA SYSTEM ===
     crystals?: CrystalInventory;      // Crystal inventory with numeric values
     mana?: number;                    // Mana count for Crystal Forge operations (no max limit)
+    /** Idempotency receipt for the optional personal training reward. */
+    lastPracticeManaBattleId?: string;
     groundCrystals?: Crystal[];       // Overflow crystals dropped on ground
     defeatedBosses?: string[];        // Track defeated boss IDs for progression
     // === TRIAL HISTORY (mastery exams) ===
@@ -154,7 +156,13 @@ export interface PlayerState {
     // === CATACOMB TRIALS ===
     catacombFoxBonus?: number;                    // Persistent +1 attack per successful catacomb run
     catacombPetUpgrades?: Record<string, number>;  // Legacy per-band bonus, migrated to catacombFoxBonus
+    /** Explicit rewards for the two new higher tiers; never inferred from old mastery. */
+    catacombFoxJourney?: import('./foxAbilities').FoxJourneyProgress;
+    /** Battle host's durable special-ability ledger, including both co-op owners. */
+    foxAbilityBattle?: import('./foxBattleSession').BattleFoxAbilityCheckpoint;
     // === DAILY LEARNING SUMMARY ===
+    /** Observed foreground game time by local calendar day; absent means unmeasured. */
+    playTime?: { version: 1; days: Record<string, number> };
     dailyProgressLog?: Record<string, {
         coinsEarned: number;
         manaEarned: number;
@@ -268,7 +276,7 @@ export interface MathProblem {
     operator2?: MathOperator; // Optional 2nd operator
     operator3?: MathOperator; // For equation-vs-equation: right side operator
     answer: number;
-    choices: number[];        // 3 options (shuffled)
+    choices: number[];        // Shuffled answers, four for F–H arithmetic
     showVisualHint: boolean;
     hintType: 'apples' | 'dots' | 'none';
     // Equipment bonus metadata
@@ -388,6 +396,7 @@ export interface BattleState {
 export interface EnemyDefinition {
     id: string;
     name: string;
+    nameCs?: string;
     /** Stronger encounter variant, identified by the shared crystal crest. */
     rank?: 'elite';
     /** Canonical species unlocked when this stronger encounter variant is defeated. */
@@ -531,21 +540,44 @@ export interface StoryProgress {
 // ===== MASTERY SYSTEM =====
 // Band/sub-atom mastery-based progression (replaces level-based system)
 
-export type BandId = 'A' | 'B' | 'C' | 'D' | 'E';
+export type BandId = 'A' | 'B' | 'C' | 'D' | 'E' | 'F' | 'G' | 'H';
 export type SubAtomNumber = 1 | 2 | 3 | 4;
 export type SubAtomId = `${BandId}${SubAtomNumber}`;
 export type MasteryState = 'locked' | 'training' | 'secure' | 'fluent' | 'mastery';
 export type ProblemForm = 'result_unknown' | 'missing_part' | 'compare_equation_vs_number' | 'compare_equation_vs_equation';
 export type ExamType = 'sub_atom' | 'comparison_chapter' | 'fluency_challenge' | 'mastery_challenge' | 'band_gate' | 'band_mastery';
 export type MasteryTargetId = SubAtomId | BandId | 'comparison_symbols';
+export type PracticeTargetId = SubAtomId | 'comparison_symbols';
+export type LearningMode = 'progress' | 'practice';
 
-export const ALL_BANDS: BandId[] = ['A', 'B', 'C', 'D', 'E'];
+/** Per-child choice. Absent in older saves means ordinary progression. */
+export interface PracticePreference {
+    mode: LearningMode;
+    /** Mode selected at Zyx, offered again at the start of each battle. */
+    defaultMode?: LearningMode;
+    targetId?: PracticeTargetId;
+    /** Remembers the guild choice while the child temporarily chooses Dál. */
+    lastTargetId?: PracticeTargetId;
+    /** Set only by a deliberate module choice. Unmarked legacy targets also included automatic recommendations. */
+    pinnedTargetId?: PracticeTargetId;
+    introductionSeen?: boolean;
+    /** Unanswered practice items; the ordinary progression pool is preserved. */
+    pool?: { targetId: PracticeTargetId; keys: string[]; index: number };
+    /** Keeps separately drawn attack/sword/shield/pet comparison tasks distinct. */
+    comparisonCursor?: number;
+    /** Last issued practice items: bit 0 = value zero, bit 1 = value one. Shared across modules/modes. */
+    recentNumberMasks?: number[];
+}
+
+export const ALL_BANDS: BandId[] = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'];
 export const ALL_SUB_ATOM_NUMBERS: SubAtomNumber[] = [1, 2, 3, 4];
 export const ALL_PROBLEM_FORMS: ProblemForm[] = ['result_unknown', 'missing_part', 'compare_equation_vs_number', 'compare_equation_vs_equation'];
 
 /** A single attempt at solving a mastery problem */
 export interface MasteryAttempt {
     observation?: Observation;
+    /** Kept even when online analytics is disabled. */
+    assisted?: boolean;
     /** Legacy totals converted into synthetic history must not enter analytics as real answers. */
     synthetic?: boolean;
     timestamp: number;
@@ -577,7 +609,7 @@ export interface SubAtomState {
     fightsSinceSeen: number;
 }
 
-/** State of a band (A-E) */
+/** State of a learning band */
 export interface BandState {
     id: BandId;
     state: MasteryState;
@@ -587,6 +619,15 @@ export interface BandState {
 
 /** Root mastery data structure stored in MathStats */
 export interface MasteryData {
+    advancedStages?: Partial<Record<SubAtomId, import('../systems/AdvancedScheduler').AdvancedNodeProgress>>;
+    practice?: PracticePreference;
+    /** Board exams and catacomb challenges already announced to this player in the guild. */
+    seenGuildOffers?: string[];
+    /** Highest speed trial previously entered for this module. Entering does not award its rune. */
+    openedCatacombSpeed?: Partial<Record<PracticeTargetId, import('./foxAbilities').FoxRuneTier>>;
+    recentCatacombTrials?: Partial<Record<'grandmaster' | 'legend', import('../systems/CatacombTrialHistory').CatacombTrialRecord[]>>;
+    /** Complete summary evidence; does not change mastery or combat progression. */
+    learningHistory?: import('../systems/LearningHistory').LearningHistory;
     bands: Record<BandId, BandState>;
     subAtoms: Record<SubAtomId, SubAtomState>;
     problemRecords: Record<string, MasteryProblemRecord>;
@@ -674,6 +715,13 @@ export interface ComparisonStageStatistics {
 
 /** Definition of a single problem in the mastery database */
 export interface ProblemDefinition {
+    advanced?: {
+        stageId: string;
+        family: string;
+        group: 0 | 1;
+        role: 'target' | 'bridge';
+        direction: '+' | '-';
+    };
     key: string;                    // e.g. "A1:3+2:result_unknown"
     bandId: BandId;
     subAtomId: SubAtomId;

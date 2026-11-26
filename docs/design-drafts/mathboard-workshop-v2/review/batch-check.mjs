@@ -1,0 +1,6 @@
+import {chromium} from 'playwright';const browser=await chromium.launch({headless:true});const page=await browser.newPage({viewport:{width:1440,height:1080}});page.on('pageerror',e=>console.log('ERROR',e.message));
+try{await page.goto('http://localhost:8013/docs/design-drafts/mathboard-workshop-v2/index.html');await page.waitForFunction(()=>window.workshop?.board?.getActiveProblemSnapshot());await page.locator('#count').selectOption('3');await page.waitForTimeout(400);
+for(const good of [true,false,true]){console.log('BEFORE',await page.evaluate(()=>window.workshop.state));await mouse('answer',good);await page.waitForTimeout(1100);console.log('AFTER',await page.evaluate(()=>window.workshop.state));await mouse('next',true);await page.waitForTimeout(500);}
+console.log('END',await page.evaluate(()=>window.workshop.state));}finally{await browser.close();}
+
+async function mouse(kind,good){const pos=await page.evaluate(({kind,good})=>{const w=window.workshop,p=w.view.problem;const root=kind==='answer'?w.view.buttons[p.choices.findIndex(v=>good?v===p.answer:v!==p.answer)].root:w.view.next.root;const m=root.getWorldTransformMatrix();return {x:m.tx,y:m.ty};},{kind,good});const b=await page.locator('canvas').boundingBox();await page.mouse.click(b.x+pos.x*b.width/1280,b.y+pos.y*b.height/720);}

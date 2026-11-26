@@ -6,7 +6,7 @@ test.beforeEach(async ({ page }) => {
     }));
 });
 
-for (const renderer of ['canvas', 'webgl']) test(`fox portrait and canonical animations ${renderer}`, async ({ page }) => {
+for (const renderer of ['canvas', 'webgl']) test(`workshop fox portrait and observatory return ${renderer}`, async ({ page }) => {
     if (renderer === 'canvas') await page.addInitScript(() => {
         const original = HTMLCanvasElement.prototype.getContext;
         HTMLCanvasElement.prototype.getContext = function (type: string, ...args: any[]) {
@@ -14,24 +14,24 @@ for (const renderer of ['canvas', 'webgl']) test(`fox portrait and canonical ani
             return (original as any).call(this, type, ...args);
         } as typeof original;
     });
-    await openSeededGame(page, false, {}, {}, { unlockedPets: ['catacomb_creature_A'] });
-    expect(await page.evaluate(() => (window as any).__LITTLE_MATH_GAME__.renderer.type)).toBe(renderer === 'canvas' ? 1 : 2);
-    // Textures now belong to the destination's ordinary preload, not the menu.
-    await page.evaluate(() => (window as any).__LITTLE_MATH_GAME__.scene.keys.MenuScene.scene.start('CatacombTrialScene', { examType: 'fluency_challenge', subAtomId: 'A1' }));
-    await waitForScene(page, 'CatacombTrialScene');
-    const atlas = await page.evaluate(() => {
-        const g = (window as any).__LITTLE_MATH_GAME__;
-        const t = g.textures.get('rune-fox-sheet');
-        return { key: t.key, width: t.source[0].width, height: t.source[0].height, frames: g.anims.get('rune-fox-idle').frames.length };
+    await openSeededGame(page, false, {}, {}, {
+        unlockedPets: ['catacomb_creature_A'],
+        // This case reviews the pet portrait, after the separate first-visit
+        // demonstration. Never let that overlay conceal the screenshot target.
+        seenGuides: ['pythia.intro.v1'],
+        // A usable amulet keeps the forge explanation from hiding the selected
+        // portrait during the actual visual review.
+        crystals: { crystals: [{ id: 'fox-review-amulet', tier: 'shard', value: 5, locked: false }], maxCapacity: 60 },
     });
-    expect(atlas.key).toBe('rune-fox-sheet');
-    expect(Math.max(atlas.width, atlas.height)).toBeLessThanOrEqual(4096);
-    expect(atlas.frames).toBeGreaterThan(0);
-    await page.evaluate(() => (window as any).__LITTLE_MATH_GAME__.scene.keys.CatacombTrialScene.scene.start('PythiaWorkshopScene'));
-    await waitForScene(page, 'PythiaWorkshopScene');
+    expect(await page.evaluate(() => (window as any).__LITTLE_MATH_GAME__.renderer.type)).toBe(renderer === 'canvas' ? 1 : 2);
+    await page.evaluate(() => (window as any).__LITTLE_MATH_GAME__.scene.keys.MenuScene.scene.start('PythiaWorkshopScene'));
+    await page.waitForFunction(() => (window as any).__LITTLE_MATH_GAME__?.scene.isActive('PythiaWorkshopScene'), undefined, { timeout: 35_000 });
+    expect(await page.evaluate(() => (window as any).__LITTLE_MATH_GAME__.scene.keys.PythiaWorkshopScene.children.list
+        .some((o: any) => o.name?.startsWith('guide:')))).toBe(false);
     const portrait = await page.evaluate(() => {
         const s = (window as any).__LITTLE_MATH_GAME__.scene.keys.PythiaWorkshopScene;
-        const find = (nodes: any[]): any => { for (const o of nodes) { if (o.texture?.key === 'rune-fox-sheet') return o; const child = o.list && find(o.list); if (child) return child; } };
+        const pet = s.cache.json.get('pets').find((p: any) => p.id === 'pet_catacomb_A');
+        const find = (nodes: any[]): any => { for (const o of nodes) { if (o.texture?.key === `${pet.spriteKey}-portrait`) return o; const child = o.list && find(o.list); if (child) return child; } };
         const p = find(s.children.list);
         return { width: p.displayWidth, height: p.displayHeight, scaleX: p.scaleX, scaleY: p.scaleY };
     });
@@ -49,7 +49,8 @@ for (const renderer of ['canvas', 'webgl']) test(`fox portrait and canonical ani
     });
     const selected = await page.evaluate(() => {
         const s = (window as any).__LITTLE_MATH_GAME__.scene.keys.PythiaWorkshopScene;
-        const sprite = s.bindingPetDisplay.list.find((o: any) => o.texture?.key === 'rune-fox-sheet');
+        const pet = s.cache.json.get('pets').find((p: any) => p.id === 'pet_catacomb_A');
+        const sprite = s.bindingPetDisplay.list.find((o: any) => o.texture?.key === `${pet.spriteKey}-portrait`);
         const name = s.bindingPetDisplay.list.find((o: any) => typeof o.text === 'string');
         return { bottom: sprite.getBounds().bottom, nameTop: name.getBounds().top, scaleX: sprite.scaleX, scaleY: sprite.scaleY };
     });
@@ -61,8 +62,6 @@ for (const renderer of ['canvas', 'webgl']) test(`fox portrait and canonical ani
         g.scene.keys.PythiaWorkshopScene.scene.start('CatacombTrialScene', { examType: 'fluency_challenge', subAtomId: 'A1' });
     });
     await waitForScene(page, 'CatacombTrialScene');
-    expect(await page.evaluate(() => {
-        const s = (window as any).__LITTLE_MATH_GAME__.scene.keys.CatacombTrialScene;
-        return { phase: s.phase, frames: s.creatureSprite.anims.currentAnim.frames.length };
-    })).toEqual({ phase: 'intro', frames: 8 });
+    await page.waitForFunction(() => !!(window as any).__LITTLE_MATH_GAME__.scene.keys.CatacombTrialScene.round?.board.getActiveProblemSnapshot());
+    expect(await page.evaluate(() => (window as any).__LITTLE_MATH_GAME__.scene.keys.CatacombTrialScene.round.art.mural.gems.length)).toBe(10);
 });

@@ -1,0 +1,11 @@
+
+Running 2 tests using 1 worker
+
+(node:90465) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:90465) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓  1 e2e/practice/mathboard-runtime.spec.ts:39:6 › production comparison presentation keeps full expressions and stable touch controls — webgl (19.2s)
+  ✓  2 e2e/practice/mathboard-runtime.spec.ts:39:6 › production comparison presentation keeps full expressions and stable touch controls — canvas (16.2s)
+
+  2 passed (36.9s)

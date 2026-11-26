@@ -1,148 +1,131 @@
 import Phaser from 'phaser';
-import type { MathProblem } from '../types';
-import { SceneBuilder } from '../systems/SceneBuilder';
-import { MedievalActionButton } from './MedievalActionButton';
-import { formatMathProblem, getComparisonExpressions } from '../utils/formatMathProblem';
-import { ComparisonExpressionView } from './ComparisonExpressionView';
-import { ComparisonProblemView, comparisonGlyph } from './ComparisonProblemView';
-import { comparisonChoiceWidth } from './ComparisonPresentation';
+import { sfx } from '../audio/AudioDirector';
+import type { CatacombBatch } from '../systems/CatacombBatch';
+import type { SceneBuilder } from '../systems/SceneBuilder';
+import { learningHost, type LearningHost } from './LearningUi';
+import { PracticeChoiceControl, practiceArt, practiceLabel } from './PracticeChoiceControl';
+import { icon } from './mathboard/Art';
 
-type Host = {x:number; y:number; width:number; height:number; depth:number};
-type Presentation = {title:string; subtitle:string; subtitleFontSize?:number; body:string; bodyFontSize?:number; stats:string; statsFontSize?:number; frame?:number; primary:string; onPrimary:()=>void; secondary?:string; onSecondary?:()=>void};
+export interface CatacombRewardView {
+    kind: 'attack' | 'ability' | 'rescue';
+    before: number;
+    after: number;
+}
 
-/** Shared slate, bronze and rune presentation for the complete catacomb trial. */
+function rewardCaption(reward: CatacombRewardView): string {
+    if (reward.kind === 'rescue') return 'Liška u Pythie';
+    if (reward.after <= reward.before) return '';
+    return reward.kind === 'ability' ? `Bod lišky +${reward.after - reward.before}` : `Útok ${reward.before} → ${reward.after}`;
+}
+
+/** Keep the fox and her constellation visible throughout the verdict. */
 export class CatacombTrialUI {
-    readonly root: Phaser.GameObjects.Container;
-    private question: Phaser.GameObjects.Text;
-    private comparison: ComparisonExpressionView | ComparisonProblemView | null = null;
-    private feedback: Phaser.GameObjects.Text;
-    private choices: MedievalActionButton[];
-    private problem: MathProblem | null = null;
-    private startedAt = 0;
-    private answered = false;
-    private modal?: Phaser.GameObjects.Container;
+    constructor(private scene: Phaser.Scene, private builder: SceneBuilder) {}
 
-    constructor(private scene: Phaser.Scene, private builder: SceneBuilder,
-        private onAnswer:(damage:number, results:boolean[], timings:number[])=>void) {
-        const h = this.host('catacombQuestionPanel');
-        this.root = scene.add.container(0,0).setDepth(h.depth).setVisible(false);
-        this.root.add(this.panel(h));
-        this.root.add(this.text('catacombQuestionLabel', 'PROLOM KOUZLO', 12, '#b9a17c'));
-        this.question = this.text('catacombQuestion', '', 30, '#fff3d4');
-        this.feedback = this.text('catacombFeedback', '', 14, '#c0d7df');
-        this.root.add([this.question,this.feedback]);
-        this.choices = [1,2,3].map((n,index) => {
-            const host=this.host(`catacombAnswer${n}`);
-            const button=new MedievalActionButton(scene,{...host,label:'',layout:'text',accent:0x70c7cb,labelFontSize:24,
-                onClick:()=>this.answer(index)});
-            this.root.add(button.root);
-            return button;
-        });
-        this.root.sort('depth');
-    }
+    showResult(batch: CatacombBatch, reward: CatacombRewardView | null, exitResult: () => void, retry: () => void,
+        names = { primary: 'catacombPrimary', secondary: 'catacombSecondary' }): void {
+        const h = (id: string) => learningHost(this.builder, id);
+        const scene = this.scene;
+        const root = scene.add.container().setName('catacombTrialPanel').setDepth(h('observatoryVerdict').depth);
+        const won = reward !== null;
+        const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        root.setData('outcome', won ? 'won' : 'lost');
+        const shade = h('observatoryResultShade');
+        root.add(scene.add.rectangle(shade.x, shade.y, shade.width, shade.height, 0x071124, won ? .16 : .31));
+        const banner = scene.add.container().setName('observatoryOutcomeBanner');
+        root.add(banner);
+        banner.add(practiceArt(scene, 'catacomb-crafted-module', h('observatoryResultBanner')));
+        const prizeHost = h('observatoryPrize');
+        const art = !reward ? 'catacomb-painted-door-closed' : reward.kind === 'rescue' ? 'catacomb-progress-fox-01' :
+            reward.after <= reward.before ? 'catacomb-painted-door-open' :
+            reward.kind === 'ability' ? 'catacomb-crafted-paw-active' : 'catacomb-crafted-swords-normal';
+        const prize = practiceArt(scene, art, prizeHost).setName('observatoryResultPrize');
+        banner.add(prize);
 
-    private host(id:string):Host {
-        const object=this.builder.get<Phaser.GameObjects.Container>(id)!;
-        const def=this.builder.getElementDef(id)!;
-        return {x:object.x,y:object.y,depth:object.depth,width:def.width!,height:def.height!};
-    }
+        const host = h('observatoryResultSeal');
+        const radius = Math.min(host.width, host.height) / 2;
+        const seal = scene.add.container(host.x, host.y).setName(won ? 'observatoryWinSeal' : 'observatoryLossSeal');
+        seal.add([
+            scene.add.circle(0, 3, radius, 0x281a24, .75),
+            scene.add.circle(0, 0, radius - 2, won ? 0x20714f : 0x963d3f).setStrokeStyle(3, 0xf3d28c),
+            scene.add.circle(0, 0, radius - 7).setStrokeStyle(1, won ? 0xa8e1af : 0xf3a09a),
+            icon(scene, won ? 'check' : 'cross', radius * 1.88, 0xfff2c7),
+        ]);
+        banner.add(seal);
 
-    private text(id:string,value:string,size:number,color:string):Phaser.GameObjects.Text {
-        const h=this.host(id);
-        return this.scene.add.text(h.x,h.y,value,{resolution:2,fontFamily:'Georgia, serif',fontSize:`${size}px`,
-            color,align:'center',wordWrap:{width:h.width},lineSpacing:6}).setOrigin(0.5).setName(id).setDepth(h.depth);
-    }
+        banner.add(practiceLabel(scene, won ? 'Výhra!' : 'Nevyšlo to', h('observatoryVerdict'), 61)
+            .setColor(won ? '#ffe093' : '#ffe5d1').setName('observatoryResultTitle'));
+        const detail = reward ? rewardCaption(reward) : batch.expired ? 'Čas vypršel' : batch.correctCount < batch.rules.required ? 'Málo hvězd' : '';
+        if (detail) banner.add(practiceLabel(scene, detail, h('observatoryResultDetail'), 31).setName('observatoryResultDetail'));
+        // Scores count the child's own successes. Gifted seats retain a cyan rim, as on the mural.
+        const score = h('observatoryScore');
+        const scoreText = practiceLabel(scene, `${batch.correctCount}/${batch.rules.total}`, score, 30)
+            .setName('observatoryResultScore').setData('practiceWord', false);
+        banner.add(scoreText);
+        this.addStars(banner, h('observatoryResultStars'), batch);
 
-    private panel(h:Host):Phaser.GameObjects.Graphics {
-        const g=this.scene.add.graphics().setDepth(h.depth);
-        const x=h.x-h.width/2,y=h.y-h.height/2;
-        g.fillStyle(0x03070c,0.6);g.fillRoundedRect(x+6,y+10,h.width,h.height,20);
-        g.fillStyle(0x111e29,0.98);g.fillRoundedRect(x,y,h.width,h.height,18);
-        g.lineStyle(3,0x9a7447,1);g.strokeRoundedRect(x,y,h.width,h.height,18);
-        g.lineStyle(1,0xc6a977,0.5);g.strokeRoundedRect(x+8,y+8,h.width-16,h.height-16,12);
-        for(const dx of [18,h.width-18]) for(const dy of [18,h.height-18]) {
-            g.fillStyle(0x253f4c);g.fillCircle(x+dx,y+dy,5);g.lineStyle(1,0xe4c082);g.strokeCircle(x+dx,y+dy,5);
-        }
-        return g;
-    }
-
-    show(problems:MathProblem[]):void {
-        this.problem=problems[0];this.answered=false;this.startedAt=Date.now();
-        this.question.setText(formatMathProblem(this.problem, 'question'));this.feedback.setText('');
-        this.comparison?.destroy(); this.comparison = null;
-        const comparison = Boolean(getComparisonExpressions(this.problem));
-        this.question.setVisible(!comparison);
-        if (this.problem.comparisonMeta) {
-            this.comparison = new ComparisonProblemView(this.scene, this.problem, {
-                left: this.host('catacombComparisonLeft'),
-                right: this.host('catacombComparisonRight'),
-                relation: this.host('catacombComparisonRelation'),
-            }, 0xfff3d4);
-            this.root.add(this.comparison.root);
-        } else if (comparison) {
-            this.comparison = new ComparisonExpressionView(this.scene, this.problem, {
-                ...this.host('catacombQuestion'), fontSize: 30, color: '#fff3d4',
-            });
-            this.root.add(this.comparison.root);
-        }
-        this.choices.forEach((button,i)=>{
-            const choice=this.problem!.choices[i];
-            (button.root.getData('comparisonGlyph') as Phaser.GameObjects.Image | undefined)?.destroy();
-            button.root.setData('comparisonGlyph', null);
-            button.setLabel(comparison?'':String(choice),24).setEnabled(true);
-            if (comparison) {
-                const glyph = comparisonGlyph(this.scene, choice, true, comparisonChoiceWidth(button.root.width, button.root.height * 0.72))
-                    .setPosition(button.label.x, button.label.y);
-                button.label.parentContainer.add(glyph);
-                button.root.setData('comparisonGlyph', glyph);
+        if (!reduced) {
+            scene.tweens.add({ targets: banner, y: { from: -20, to: 0 }, alpha: { from: .2, to: 1 }, duration: 310, ease: 'Cubic.Out' });
+            if (won) {
+                scene.tweens.add({ targets: seal, scale: { from: .4, to: 1 }, duration: 420, ease: 'Back.Out' });
+                // The glints travel out from the real award, once, while the coloured constellation settles.
+                for (let i = 0; i < 12; i++) {
+                    const angle = Math.PI * 2 * i / 12;
+                    const distance = prizeHost.height * (.40 + (i % 3) * .025);
+                    const dx = Math.cos(angle), dy = Math.sin(angle);
+                    const glint = scene.add.star(prizeHost.x + dx * distance * .5, prizeHost.y + dy * distance * .5,
+                        4, 2, i % 2 ? 7 : 10, 0xffdf8a).setAlpha(0);
+                    banner.add(glint);
+                    scene.tweens.add({ targets: glint, x: prizeHost.x + dx * distance, y: prizeHost.y + dy * distance,
+                        alpha: { from: 1, to: 0 }, delay: 170 + i % 3 * 70, duration: 700, ease: 'Cubic.Out',
+                        onComplete: () => glint.destroy() });
+                }
+            } else {
+                scene.tweens.add({ targets: seal, scale: { from: 1.42, to: 1 }, angle: { from: -16, to: 0 },
+                    duration: 320, ease: 'Back.Out' });
             }
-            button.setPresentationState('enabled');
-        });
-        this.root.setVisible(true);
-    }
-    hide():void {this.root.setVisible(false);this.problem=null;}
-    private answer(index:number):void {
-        if(!this.problem||this.answered)return;
-        this.answered=true;
-        const correct=this.problem.choices[index]===this.problem.answer;
-        if (this.problem.comparisonMeta) this.problem.comparisonMeta.selectedRelation = (['less', 'equal', 'greater'] as const)[this.problem.choices[index]];
-        this.choices.forEach(b=>b.setEnabled(false));
-        this.choices[index].setPresentationState(correct?'selected':'disabled');
-        this.comparison?.reveal();
-        this.feedback.setColor(correct?'#a7e0b0':'#ffc0a5').setText(this.comparison ? (correct?'✓':'×') : correct?'Správně':formatMathProblem(this.problem,'answer'));
-        this.onAnswer(correct?1:0,[correct],[Date.now()-this.startedAt]);
+        }
+        if (won) sfx(scene, 'reward.victory');
+        let selected = false;
+        const action = (id: string, name: string, text: string, glyph: 'back' | 'replay' | 'fox', callback: () => void) => {
+            const host = h(id);
+            const button = new PracticeChoiceControl(scene, { ...host, regions: {
+                label: { x: host.width * .08, y: 0, width: host.width * .53, height: host.height * .6 },
+            } }, name, glyph === 'back' ? 'practice-choice-plaque-v1' : 'catacomb-crafted-action', text, null, () => {
+                if (selected) return;
+                selected = true;
+                callback();
+            });
+            if (glyph === 'fox') {
+                button.surface.add(practiceArt(scene, 'catacomb-painted-head-01', {
+                    ...host, x: -host.width * .28, y: 0, width: host.width * .19, height: host.height * .70,
+                }));
+            } else {
+                const sign = icon(scene, glyph === 'back' ? 'next' : glyph, glyph === 'back' ? 33 : 45);
+                if (glyph === 'back') sign.setAngle(180);
+                button.surface.add(sign.setX(-host.width * .24));
+            }
+            root.add(button.root);
+        };
+        if (!won) action('observatoryResultBack', names.secondary, 'Zpět', 'back', exitResult);
+        action(won ? 'observatoryResultDone' : 'observatoryResultAction', names.primary,
+            won ? 'Moje liška' : 'Znovu', won ? 'fox' : 'replay', won ? exitResult : retry);
     }
 
-    showPanel(p:Presentation):Phaser.GameObjects.Container {
-        this.modal?.destroy();
-        const h=this.host('catacombModal');
-        const root=this.scene.add.container(0,0).setDepth(h.depth);
-        const backdrop=this.host('catacombBackdrop');
-        root.add(this.scene.add.rectangle(backdrop.x,backdrop.y,backdrop.width,backdrop.height,0x03080f,0.82)
-            .setDepth(backdrop.depth).setInteractive());
-        root.add(this.panel(h));
-        root.add(this.text('catacombEyebrow','CECHOVNÍ KATAKOMBY',13,'#b99a69'));
-        root.add(this.text('catacombTitle',p.title,30,'#ffe5af'));
-        root.add(this.text('catacombSubtitle',p.subtitle,p.subtitleFontSize??15,'#9dd7dd'));
-        const portrait=this.host('catacombPortrait');
-        root.add(this.scene.add.circle(portrait.x,portrait.y,portrait.width/2,0x1c3341).setStrokeStyle(2,0x557985).setDepth(portrait.depth));
-        const fox=this.scene.add.sprite(portrait.x,portrait.y,'rune-fox-sheet',p.frame??0).setDepth(portrait.depth);
-        fox.setScale(Math.min(portrait.width/fox.width,portrait.height/fox.height));
-        const animation=p.frame===30?'rune-fox-freed':'rune-fox-idle';
-        if(this.scene.anims.exists(animation))fox.play(animation);
-        root.add(fox);
-        root.add(this.text('catacombBody',p.body,p.bodyFontSize??18,'#e0e7e8'));
-        root.add(this.text('catacombStats',p.stats,p.statsFontSize??15,'#e6c58d'));
-        const primary=new MedievalActionButton(this.scene,{...this.host('catacombPrimary'),label:p.primary,
-            layout:'text',accent:0x73b9be,labelFontSize:19,onClick:p.onPrimary});
-        root.add(primary.root);
-        if(p.secondary&&p.onSecondary){
-            const secondary=new MedievalActionButton(this.scene,{...this.host('catacombSecondary'),label:p.secondary,
-                layout:'text',accent:0xab9168,labelFontSize:17,onClick:p.onSecondary});
-            root.add(secondary.root);
+    private addStars(parent: Phaser.GameObjects.Container, host: LearningHost, batch: CatacombBatch): void {
+        const slots = this.scene.add.container(host.x, host.y).setName('observatoryResultStars');
+        parent.add(slots);
+        const width = Math.min(host.width / batch.rules.total, host.height);
+        const radius = width * .44;
+        const gifts = batch.giftedStars;
+        for (let i = 0; i < batch.rules.total; i++) {
+            const x = (i - (batch.rules.total - 1) / 2) * width;
+            const answered = batch.answers[i];
+            const star = this.scene.add.star(x, 0, 5, radius * .48, radius,
+                answered?.correct ? 0xfbc55c : 0x15233e).setStrokeStyle(1.8,
+                answered?.correct ? 0xffebae : gifts.includes(i) ? 0x80dcf5 : 0x8291a9);
+            slots.add(star);
+            if (answered && !answered.correct) slots.add(icon(this.scene, 'cross', radius * 1.6, 0xffb7a3).setX(x));
         }
-        root.sort('depth');
-        this.modal=root;
-        return root;
     }
 }

@@ -1,0 +1,94 @@
+{
+  "date": "2026-11-19",
+  "tool": "built-in image_gen",
+  "status": "Four new static proposals; only the baseline expression has author approval. No creature animation or production integration.",
+  "reference": "/Users/datamole/little-math-adventure/docs/design-drafts/fox-expression-v3/assets/fox-friendly.png",
+  "forms": [
+    {
+      "id": 2,
+      "name": "Runová",
+      "pose": "curious.png",
+      "prompt": "Use case: precise-object-edit. Asset type: one static evolution concept of the approved rune fox companion for a children's fantasy RPG.\nImage 1 is the REQUIRED canonical identity and rendering reference. Keep this exact sophisticated fox identity: long pointed muzzle, naturally sized warm amber eyes, gentle relaxed white eyebrows and tiny friendly closed-mouth smile, pointed large upright ears, elegant slender fox anatomy, rich orange fur, layered white fur, intricate cyan runic filigree, one large bushy tail. Keep the original detailed hand-painted rendering: many clear layered fur strands, nuanced highlights and shadows, dark precise outlines. This is NOT a chibi, baby, plush toy, flat cartoon or new species. Do not round the muzzle, enlarge the eyes/head or simplify the existing detailed markings. Always friendly and cute.\nThe requested evolutionary stage changes the large fur/rune pattern and silhouette in the SPECIFIC way below. It is the SAME fox grown in magical mastery, not a costume swap. No armor, clothing, crown, weapon, horns, wings, extra tails, extra limbs or aggressive expression. Avoid turning every evolution blue or white; retain recognizable orange head, orange back and orange flank areas. No enormous aura clouds or distracting particles. Changes must read through real fur patterns even without glow.\nOne complete full-body creature on a small low mossy-stone island matching the reference. Genuine transparent background, clean antialiased edges without colored matte halos. Center the COMPLETE fox and ground inside a square canvas with generous clear padding on every side. Every ear, toe, hair tuft and tail tip must be fully visible. No text, letters, numerals, frames, UI, symbols floating outside the animal or multiple panels. This is a single static approval illustration, NOT an animation frame sheet.\nImage 2 is a POSE reference only: use the naturally standing four-paw pose with a curious slight head tilt and tail sweeping behind to the right. Preserve the face and quality from image 1.\nEVOLUTION 2 OF 5, a restrained first upgrade: keep most fur orange and the existing fine cyan filigree. Add neat white fur socks only at the FRONT paws, and one clearly recognizable broad curved cyan ribbon integrated into the tail fur, about one third down from the white tip. Thin elegant pale-gold edging follows that one tail rune; it is a painted magical marking, not jewelry wrapped around the tail. Shoulder runes become slightly clearer but retain the detailed pattern. White chest remains close to the original size. Curious, lively, approachable stance."
+    },
+    {
+      "id": 3,
+      "name": "Stříbrná",
+      "pose": "playful.png",
+      "prompt": "Use case: precise-object-edit. Asset type: one static evolution concept of the approved rune fox companion for a children's fantasy RPG.\nImage 1 is the REQUIRED canonical identity and rendering reference. Keep this exact sophisticated fox identity: long pointed muzzle, naturally sized warm amber eyes, gentle relaxed white eyebrows and tiny friendly closed-mouth smile, pointed large upright ears, elegant slender fox anatomy, rich orange fur, layered white fur, intricate cyan runic filigree, one large bushy tail. Keep the original detailed hand-painted rendering: many clear layered fur strands, nuanced highlights and shadows, dark precise outlines. This is NOT a chibi, baby, plush toy, flat cartoon or new species. Do not round the muzzle, enlarge the eyes/head or simplify the existing detailed markings. Always friendly and cute.\nThe requested evolutionary stage changes the large fur/rune pattern and silhouette in the SPECIFIC way below. It is the SAME fox grown in magical mastery, not a costume swap. No armor, clothing, crown, weapon, horns, wings, extra tails, extra limbs or aggressive expression. Avoid turning every evolution blue or white; retain recognizable orange head, orange back and orange flank areas. No enormous aura clouds or distracting particles. Changes must read through real fur patterns even without glow.\nOne complete full-body creature on a small low mossy-stone island matching the reference. Genuine transparent background, clean antialiased edges without colored matte halos. Center the COMPLETE fox and ground inside a square canvas with generous clear padding on every side. Every ear, toe, hair tuft and tail tip must be fully visible. No text, letters, numerals, frames, UI, symbols floating outside the animal or multiple panels. This is a single static approval illustration, NOT an animation frame sheet.\nImage 2 is a POSE reference only: use the joyful play-bow with both front legs extended, chest low, hindquarters raised and tail lifted. Keep the same gentle face from image 1, clearly inviting play.\nEVOLUTION 3 OF 5: a prominent SILVER-WHITE chest ruff and silver-white front lower legs with clearly defined orange upper legs. The tail's upper HALF becomes pearly white and carries two broad clean nested cyan arcs with subtle warm-gold edging, integrated with fine original filigree. The shoulder shows one large cyan angular diamond amid the existing smaller detailed runes. Orange face, ears, back and hips remain rich orange. The new silver chest and front legs must read clearly at small scale, giving a more accomplished appearance without changing the fox's anatomy."
+    },
+    {
+      "id": 4,
+      "name": "Zářivá",
+      "prompt": "Use case: precise-object-edit. Asset type: one static evolution concept of the approved rune fox companion for a children's fantasy RPG.\nImage 1 is the REQUIRED canonical identity and rendering reference. Keep this exact sophisticated fox identity: long pointed muzzle, naturally sized warm amber eyes, gentle relaxed white eyebrows and tiny friendly closed-mouth smile, pointed large upright ears, elegant slender fox anatomy, rich orange fur, layered white fur, intricate cyan runic filigree, one large bushy tail. Keep the original detailed hand-painted rendering: many clear layered fur strands, nuanced highlights and shadows, dark precise outlines. This is NOT a chibi, baby, plush toy, flat cartoon or new species. Do not round the muzzle, enlarge the eyes/head or simplify the existing detailed markings. Always friendly and cute.\nThe requested evolutionary stage changes the large fur/rune pattern and silhouette in the SPECIFIC way below. It is the SAME fox grown in magical mastery, not a costume swap. No armor, clothing, crown, weapon, horns, wings, extra tails, extra limbs or aggressive expression. Avoid turning every evolution blue or white; retain recognizable orange head, orange back and orange flank areas. No enormous aura clouds or distracting particles. Changes must read through real fur patterns even without glow.\nOne complete full-body creature on a small low mossy-stone island matching the reference. Genuine transparent background, clean antialiased edges without colored matte halos. Center the COMPLETE fox and ground inside a square canvas with generous clear padding on every side. Every ear, toe, hair tuft and tail tip must be fully visible. No text, letters, numerals, frames, UI, symbols floating outside the animal or multiple panels. This is a single static approval illustration, NOT an animation frame sheet.\nPOSE: a buoyant mid-step three-quarter walking pose facing LEFT, one forward foreleg lightly raised, the opposite hind leg stepping under the body, head gently turned toward the viewer with relaxed friendly eyes. Use a flowing S-shaped bushy tail extended diagonally behind to the right rather than the original vertical curl. Grounded graceful movement captured in one still; no motion blur.\nEVOLUTION 4 OF 5: a substantial layered pearl-white mane flowing from throat across chest and shoulder like natural fur, white front stockings reaching almost to the elbows, small white hind socks. Orange head, main back and upper flanks stay clearly orange. The ONE tail is fuller with three distinct flowing tufts in its outline, its upper half pearly white, and a large linked CYAN CRESCENT motif edged with thin warm gold, continuing as interlocking runic arcs down the orange tail base. Add coherent linked cyan-and-gold filigree across the orange flank rather than random glowing spots. A small natural white forehead tuft frames the same cyan chevron. Keep the luxurious fur detailed and natural; no cape, armor or added tails. Clearly a bigger visual upgrade than simple white paws, still the same slim friendly fox."
+    },
+    {
+      "id": 5,
+      "name": "Hvězdná",
+      "pose": "proud.png",
+      "prompt": "Use case: precise-object-edit. Asset type: one static evolution concept of the approved rune fox companion for a children's fantasy RPG.\nImage 1 is the REQUIRED canonical identity and rendering reference. Keep this exact sophisticated fox identity: long pointed muzzle, naturally sized warm amber eyes, gentle relaxed white eyebrows and tiny friendly closed-mouth smile, pointed large upright ears, elegant slender fox anatomy, rich orange fur, layered white fur, intricate cyan runic filigree, one large bushy tail. Keep the original detailed hand-painted rendering: many clear layered fur strands, nuanced highlights and shadows, dark precise outlines. This is NOT a chibi, baby, plush toy, flat cartoon or new species. Do not round the muzzle, enlarge the eyes/head or simplify the existing detailed markings. Always friendly and cute.\nThe requested evolutionary stage changes the large fur/rune pattern and silhouette in the SPECIFIC way below. It is the SAME fox grown in magical mastery, not a costume swap. No armor, clothing, crown, weapon, horns, wings, extra tails, extra limbs or aggressive expression. Avoid turning every evolution blue or white; retain recognizable orange head, orange back and orange flank areas. No enormous aura clouds or distracting particles. Changes must read through real fur patterns even without glow.\nOne complete full-body creature on a small low mossy-stone island matching the reference. Genuine transparent background, clean antialiased edges without colored matte halos. Center the COMPLETE fox and ground inside a square canvas with generous clear padding on every side. Every ear, toe, hair tuft and tail tip must be fully visible. No text, letters, numerals, frames, UI, symbols floating outside the animal or multiple panels. This is a single static approval illustration, NOT an animation frame sheet.\nImage 2 is a POSE reference only: a serene proudly seated fox, both forelegs straight and distinct, chest raised, the one enormous bushy tail curled beside and in front of the paws. Keep the friendly amber eyes and subtle smile from image 1.\nEVOLUTION 5 OF 5, final STAR form: retain the familiar ORANGE face, ears, upper back and upper haunch, but give the chest, shoulder ruff, belly and all four lower legs luminous PEARL-WHITE fur. A broad sculpted layered mane forms an unmistakable star-like arrangement of NATURAL pointed fur tufts around the chest, not a separate emblem or collar. The single large sweeping tail is predominantly pearly white with orange at its root and outer side, bearing one prominent cyan FOUR-POINT STAR rune integrated into sweeping cyan-and-soft-gold filigree. Replace the forehead chevron with a small cyan four-point star integrated into the fur, no crown or jewelry. Include a restrained golden rim on the large cyan patterns; no glitter cloud. Rich detailed silver-white fur and the one full tail must distinguish this final form even when all glow is removed. Elegant, accomplished and warmly friendly, never oversized muscular or fierce."
+    }
+  ],
+  "revision4": {
+    "prompt": "Use case: precise-object-edit. EDIT TARGET image 1 is evolution 4 of the rune fox. Preserve this EXACT evolution's appearance: richly detailed fur, orange head/back/flanks, broad layered white mane, white stockings, white forelock, friendly amber eyes, small gentle smile, cyan-and-gold connected runes and a full single tail with cyan crescent markings. Preserve its detailed mature elegant fox anatomy and sophisticated original fantasy game rendering.\nCHANGE ONLY THE POSE and its natural perspective. The new pose must be unmistakably DIFFERENT from the existing left-facing raised paw: make the fox walk toward the RIGHT side of the image. Head and nose point RIGHT, tail streams horizontally toward the LEFT, body seen in a full side / slightly three-quarter view. Head gently turns a little toward the viewer, still a warm friendly face. The near front foreleg stretches forward toward the RIGHT just above the mossy ground as a long relaxed walking step; opposite front leg supports weight underneath. One hind leg trails to the LEFT and the other is stepping forward underneath. Full natural 4-legged walking anatomy, a fluid elongated body silhouette, no jumping. Not the bent paw held at chest height, not the existing static stance, not simply a horizontally flipped image.\nKeep every cyan-and-gold motif recognizably belonging to this same fourth evolution, including the linked crescent tail motif. No new costume, armor, jewelry, new tail, creature, symbols, body enlargement, oversized head or baby style. A small low mossy stone island, full body including all four paws and entire left-streaming tail visible with 10% clear padding all around. Genuine transparent background with clean edges. One static concept, no words or UI and no animation frames.",
+    "reference": "/Users/datamole/.codex/generated_images/01a1bfe3-6721-7d33-b884-18d02e756092/exec-debaedf0-6610-4416-9714-a71e938e9ede.png",
+    "source": "/Users/datamole/.codex/generated_images/01a1bfe3-6721-7d33-b884-18d02e756092/exec-812574bd-7b76-4f09-9417-bca6fff12bae.png"
+  },
+  "outputs": [
+    {
+      "id": 1,
+      "name": "Základní",
+      "feature": "Schválený základ",
+      "pose": "Zvednutá tlapka",
+      "status": "accepted-baseline",
+      "alt": "Původní oranžová liška s vlídným výrazem, jemnými tyrkysovými runami a zvednutou tlapkou.",
+      "asset": "assets/fox-01.webp",
+      "master": "assets/fox-01.png",
+      "source": "/Users/datamole/little-math-adventure/docs/design-drafts/fox-expression-v3/assets/fox-friendly.png"
+    },
+    {
+      "id": 2,
+      "name": "Runová",
+      "feature": "První zlatá linka",
+      "pose": "Zvědavé naklonění",
+      "status": "proposal",
+      "alt": "Liška stojí na čtyřech tlapkách, naklání hlavu a má bílé přední ponožky a jednu zlatem lemovanou runu na ocase.",
+      "asset": "assets/fox-02.webp",
+      "master": "assets/fox-02.png",
+      "source": "/Users/datamole/.codex/generated_images/01a1bfe3-6721-7d33-b884-18d02e756092/exec-1efbcc0b-d12e-4149-813a-b585326018d8.png"
+    },
+    {
+      "id": 3,
+      "name": "Stříbrná",
+      "feature": "Stříbrný ocas",
+      "pose": "Hravá poklona",
+      "status": "proposal",
+      "alt": "Liška se hravě uklání, ocas drží vysoko; jeho stříbrná špička nese dvě zlatem lemované tyrkysové linky.",
+      "asset": "assets/fox-03.webp",
+      "master": "assets/fox-03.png",
+      "source": "/Users/datamole/.codex/generated_images/01a1bfe3-6721-7d33-b884-18d02e756092/exec-d82e0a67-7984-40ef-9c87-3afd1cabed85.png"
+    },
+    {
+      "id": 4,
+      "name": "Zářivá",
+      "feature": "Propojené runy",
+      "pose": "Lehký krok",
+      "status": "proposal",
+      "alt": "Liška kráčí doprava, má bohatou bílou hřívu, bílé tlapky a propojené tyrkysové runy se zlatými okraji.",
+      "asset": "assets/fox-04.webp",
+      "master": "assets/fox-04.png",
+      "source": "/Users/datamole/.codex/generated_images/01a1bfe3-6721-7d33-b884-18d02e756092/exec-812574bd-7b76-4f09-9417-bca6fff12bae.png"
+    },
+    {
+      "id": 5,
+      "name": "Hvězdná",
+      "feature": "Hvězdný znak",
+      "pose": "Hrdý sed",
+      "status": "proposal",
+      "alt": "Liška sedí vzpřímeně, širokou stříbrnou hřívu a ocas zdobí tyrkysové hvězdné runy se zlatým lemem.",
+      "asset": "assets/fox-05.webp",
+      "master": "assets/fox-05.png",
+      "source": "/Users/datamole/.codex/generated_images/01a1bfe3-6721-7d33-b884-18d02e756092/exec-6654f19d-f4ca-4319-982f-32bbc5b41c4d.png"
+    }
+  ],
+  "normalization": "See normalize.mjs: remove only alpha<8 numerical residue; preserve all visible color; one proportional fit per independent static concept onto transparent 1200px canvas, common bottom padding. No illustration repainting. Original generated sources remain unchanged."
+}

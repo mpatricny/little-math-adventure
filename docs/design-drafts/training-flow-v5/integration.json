@@ -1,0 +1,32 @@
+{
+  "status": "Interactive visual proposal for author review; no production deployment",
+  "runtime": "HTML presentation using scenes.json hosts, stable native buttons, generated frame and picture layers",
+  "data": "getReviewSession from ../shared/practice-journey.ts; one top-window in-memory session. No live saves or database.",
+  "screens": {
+    "1": {
+      "id": "zyx",
+      "purpose": "Picture-led introduction; concrete target selection opens the catacombs. Training stays available after mastery."
+    },
+    "2": {
+      "id": "coop",
+      "purpose": "Independent mode confirmation per player; remembered targets come from the shared session. Solo uses the selected owner.",
+      "contract": "Do boje emits preview:battle-ready with players[{owner,mode,targetId}] and opens MathBoard preview without creating a battle receipt."
+    },
+    "4": {
+      "id": "victory",
+      "purpose": "Render the actual per-owner receipt, module median before/after, awarded coins/mana, and the shared journey lock. Null receipt is empty.",
+      "contract": "Journey navigation retains receipt.targetId and owner. Personal bonus percentage is not presented as a change of module medians."
+    },
+    "5": {
+      "id": "pet",
+      "purpose": "Rescue at catalog strength followed by Pythia; actual upgrades before/after; current ownership and two real trial marks.",
+      "contract": "Read session.trial(owner) and snapshot. Every action is navigation, never a reward or binding mutation."
+    }
+  },
+  "layout": "All static hosts are in scenes.json. Production Phaser integration must read the corresponding positions and depths through SceneBuilder. Preserve actual bitmap aspect ratios and safe insets.",
+  "animations": "Fixed hit targets with shared surface lift/press; selection glow; measured time-bar transition; strength highlight. No invented rune transfer or creature motion.",
+  "art": "prompts.json records every built-in image_gen prompt and original source. Final workspace assets are under assets/. assets/normalization.json records shared state transforms.",
+  "validation": "review/journey-verification.json and review/journey-visual-review.json supersede the earlier standalone fixture report. No migration required.",
+  "limits": "Proposal only. Current runtime rules over synthetic profiles; higher speed tiers and new economy await approval. Training after mastery is available in the proposal but its production bonus is not implemented. Touch emulation is not a child or physical-tablet playtest.",
+  "embedding": "embedded=1 hides review chrome. Include owner and targetId in first URL. Call flowPreview.route after flowPreview.ready or flow-preview-ready; session subscription handles later routes."
+}

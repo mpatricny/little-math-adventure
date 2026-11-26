@@ -99,6 +99,8 @@ export const CONTROLLER_STYLES = `
     .remote-comparison-pieces { display: grid; grid-template-columns: repeat(3, 28px); min-height: 64px; gap: 3px; justify-content: center; align-content: center; }
     .remote-comparison-pieces img { width: 28px; height: auto; }
     .remote-comparison-pieces.size { width: 88px; height: 96px; display: flex; align-items: center; justify-content: center; }
+    .remote-grid.remote-four-answers[data-layout="answers"] { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
+    .remote-four-answers .remote-button { padding-inline: 2px; font-size: clamp(20px, 7vw, 36px); }
     .remote-comparison-answers { grid-template-columns: repeat(3, minmax(0, 1fr)) !important; }
     .remote-comparison-choice { display: grid; gap: 8px; justify-items: center; }
     .remote-comparison-reminder { width: 40px; height: 37px; object-fit: contain; }

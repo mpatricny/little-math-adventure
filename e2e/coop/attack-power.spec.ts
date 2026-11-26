@@ -75,8 +75,12 @@ for (const renderer of ['webgl', 'canvas'] as const) {
             await assertHeroAttack(page, 'B', `${renderer}-${area}-B`);
             // Real victory bookkeeping, including two wins (the old counter's growth boundary).
             await winBattleToVictory(page);
-            const status = await page.evaluate(() => (window as any).__LITTLE_MATH_GAME__.scene.keys.VictoryScene.children.list
-                .find((o: any) => o.name === 'victoryStatusHost' && typeof o.text === 'string').text);
+            const status = await page.evaluate(() => {
+                const texts: string[] = [];
+                const read = (object: any) => { if (object.text) texts.push(object.text); object.list?.forEach(read); };
+                read((window as any).__LITTLE_MATH_GAME__.scene.keys.VictoryScene.children);
+                return texts.join(' ');
+            });
             expect(status).not.toContain('Společný útok');
         }
         await page.screenshot({ path: `artifacts/coop-attack/${renderer}-victory.png` });
@@ -90,7 +94,7 @@ for (const renderer of ['webgl', 'canvas'] as const) {
         await assertHeroAttack(page, 'B');
 
         // Leaving co-op must not change either saved hero's attack in solo.
-        await page.evaluate(() => (window as any).__LITTLE_MATH_GAME__.scene.keys.BattleScene.scene.start('MenuScene'));
+        await page.evaluate(() => (window as any).__LITTLE_MATH_GAME__.scene.keys.BattleScene.quitBattleToMenu());
         await waitForScene(page, 'MenuScene');
         for (const slot of [0, 1]) {
             await page.evaluate(async slot => {

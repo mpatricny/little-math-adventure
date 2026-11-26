@@ -1,0 +1,71 @@
+{
+  "date": "2026-11-18",
+  "status": "Concept review, not production acceptance",
+  "migrations": "No database or migration required; local static gallery.",
+  "referencesInspected": [
+    "assets/source-idle.png",
+    "public/assets/sprites/portraits/rune-fox-sheet.webp",
+    "../training-flow-v5/assets/fox-reward.webp"
+  ],
+  "reviewedImages": [
+    "overview-desktop.png",
+    "overview-portrait.png",
+    "abilities-desktop.png",
+    "abilities-portrait.png",
+    "layers-desktop.png",
+    "layers-tablet.png",
+    "layers-shield-tablet.png",
+    "battle-desktop.png",
+    "battle-tablet.png",
+    "battle-spent-tablet.png",
+    "battle-defense-tablet.png",
+    "battle-no-words-portrait.png",
+    "battle-heal-reduced.png",
+    "battle-shield-tablet.png",
+    "battle-hover.png",
+    "battle-pressed.png",
+    "actual-scale-comparison.png"
+  ],
+  "checks": {
+    "independentRanks": {
+      "shield": 3,
+      "heal": 2,
+      "strike": 1
+    },
+    "preset": {
+      "shield": 2,
+      "heal": 1,
+      "strike": 3
+    },
+    "strikeOnce": {
+      "beforeHP": 12,
+      "afterHP": 9,
+      "buttonDisabled": true
+    },
+    "resetDuringEffectHP": 12,
+    "defense": {
+      "disabledButtons": 3,
+      "usedAfterLeaving": 0
+    },
+    "layerToggle": true,
+    "stableHitArea": true,
+    "pointerOut": "none",
+    "touchAt768": {
+      "width": 68.8125,
+      "height": 67.515625
+    },
+    "foxFrameAt1024": {
+      "width": 96.1953125,
+      "height": 96.0390625
+    },
+    "horizontalOverflowAt768": false,
+    "runtimeErrors": [],
+    "localStorage": 0,
+    "sessionStorage": 0
+  },
+  "limits": [
+    "Concept anatomy must be reconciled with production before animation.",
+    "Shield/heal values deliberately not invented; only qualitative effects.",
+    "No physical-child playtest, no production controller or creature animation changed."
+  ]
+}

@@ -3,7 +3,7 @@ import { SceneBuilder } from '../systems/SceneBuilder';
 import { StorySystem } from '../systems/StorySystem';
 import { GameStateManager } from '../systems/GameStateManager';
 import { getPlayerSpriteConfig } from '../utils/characterUtils';
-import { MedievalActionButton } from '../ui/MedievalActionButton';
+import { GuideConfirmButton } from '../ui/GuideConfirmButton';
 import { waterArtwork, type WaterBox } from '../ui/UnderwaterTheme';
 import { gameAudio, voice } from '../audio/AudioDirector';
 
@@ -35,7 +35,7 @@ export class SilverpondFairyRewardScene extends Phaser.Scene {
     private swimmingPlayer!: Phaser.GameObjects.Sprite;
     private giftMotion!: Phaser.GameObjects.Image;
     private completionCheck!: Phaser.GameObjects.Image;
-    private actionButton!: MedievalActionButton;
+    private actionButton!: GuideConfirmButton;
 
     constructor() { super({ key: 'SilverpondFairyRewardScene' }); }
 
@@ -89,19 +89,10 @@ export class SilverpondFairyRewardScene extends Phaser.Scene {
         this.createDemonstration();
 
         const h = this.host('fairyRewardButtonHost');
-        const frame = this.textures.get('silverpond-fairy-action-normal').get();
-        const scale = Math.min(h.width / frame.width, h.height / frame.height);
-        this.actionButton = new MedievalActionButton(this, {
-            name: 'fairyRewardAction', x: h.x, y: h.y, depth: h.depth,
-            width: frame.width * scale, height: frame.height * scale,
-            label: 'DÁLE  →', labelFontSize: 25, labelOffsetX: -35,
-            labelMaxWidth: 180, labelMaxHeight: 44, accent: 0x54e4f6,
-            layout: 'text', frameTexture: 'silverpond-fairy-action-normal',
-            enabled: false, onClick: () => this.advance(),
+        this.actionButton = new GuideConfirmButton(this, {
+            name: 'fairyRewardAction', ...h, theme: 'water',
+            enabled: false, onConfirm: () => this.advance(),
         });
-        this.actionButton.label.setColor('#fff1bd').setStroke('#101827', 2);
-        // The safe inset follows the moving surface, while the hit area stays fixed.
-        this.actionButton.label.setData('waterTextBox', { x: -35, y: 1, width: 180, height: 44 });
         this.actionButton.root.setAlpha(0);
     }
 
@@ -178,7 +169,6 @@ export class SilverpondFairyRewardScene extends Phaser.Scene {
             this.demonstrateBreathing();
             const button = this.host('fairyRewardClaimButtonHost');
             this.actionButton.root.setPosition(button.x, button.y).setDepth(button.depth);
-            this.actionButton.setLabel('PŘIJMOUT  ✓', 23);
             this.revealAction();
         });
     }
@@ -208,7 +198,6 @@ export class SilverpondFairyRewardScene extends Phaser.Scene {
                 this.rewardTitle.setText('MŮŽEŠ POD VODU');
                 voice(this, 'vo.fairy.dive');
                 this.tweens.add({ targets: this.completionCheck, alpha: 1, duration: 300 });
-                this.actionButton.setLabel('DÁLE  →', 25);
                 this.revealAction();
             } });
     }

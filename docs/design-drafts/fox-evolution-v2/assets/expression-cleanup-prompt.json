@@ -1,0 +1,6 @@
+{
+  "tool": "built-in image_gen",
+  "prompt": "Use case: precise-object-edit.\nEdit this exact THREE-FOX expression sheet: replace the entire background with a perfectly flat solid #00ff00 chroma green background, including the gaps between legs and the tail curves. Remove all stray red/yellow edge pixels and white backdrop residues above the tails. Those pixels are extraction artifacts, not part of the fox. Keep the fur itself cleanly antialiased against green, without any external haze or shadow.\nPreserve the three full-body friendly foxes, their expression differences, open amber eyes, kind smiles, canonical anatomy, face shape, runes, same pose, scale, positions and three equal square cells. Keep the middle fox's little open smile exactly; don't add teeth or make any eyes angry. Entire foxes remain visible. No text, labels, borders, UI, ground or other objects. One shared source sheet will be keyed and split with an identical crop and transform for each cell, then composed with runtime UI. For young children, kindness must be communicated through clear pictures. Flat chroma background only, not a final background illustration.",
+  "reference": "sources/expressions.png",
+  "transparent_background": false
+}

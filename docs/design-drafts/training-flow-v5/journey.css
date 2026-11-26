@@ -1,0 +1,108 @@
+/* Presentation of shared PracticeJourney snapshots; no progression arithmetic. */
+.icon { display: inline-flex; align-items: center; justify-content: center; flex: none; }
+.icon svg { width: 100%; height: 100%; }
+.action .label > .icon { width: 3.2cqw; height: 3.2cqw; }
+.pet-stat > .icon { width: 5cqw; height: 5cqw; }
+#simulation { max-width: 1340px; margin: auto; padding: 0 18px 12px; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; color: #a9bdca; font-size: 12px; }
+#simulation button { min-height: 44px; padding: 8px 12px; color: #e2d6ba; background: #172b39; border: 1px solid #687d86; border-radius: 7px; }
+#simulation button:disabled { opacity: .4; cursor: default; }
+#stage { width: min(1340px, 100vw, calc((100dvh - 280px) * 1.776833)); }
+
+.receipt-speed { gap: 1.7cqw; color: #f3d18a; }
+.speed-clock { width: 4cqw; height: 4cqw; }
+.receipt-bars { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1.15cqw; }
+.receipt-bar { display: flex; align-items: center; gap: .8cqw; font: 700 1.25cqw Gelasio, Georgia; }
+.receipt-bar > .word { width: 3.4cqw; flex: none; color: #bed4df; }
+.receipt-track { flex: 1; height: 1.5cqw; border: 1px solid #527085; border-radius: 1cqw; background: #061827; overflow: hidden; }
+.receipt-fill { display: block; height: 100%; border-radius: inherit; background: linear-gradient(#a9c0cf, #526e83); }
+.receipt-fill.now { background: linear-gradient(#ffe8a3, #cf9e32); animation: measuredShift 1s ease-out; }
+.receipt-bar .time { width: 5.6cqw; text-align: right; flex: none; font: 700 1.7cqw Gelasio, Georgia; color: #fff1bd; }
+.measured-change { width: 5cqw; flex: none; text-align: right; font: 700 1.85cqw Gelasio, Georgia; color: #ffdb8a; }
+.empty-result { flex-direction: column; gap: 2cqw; font: 700 2.7cqw Gelasio, Georgia; color: #e8cd94; }
+.empty-result > .icon { width: 8cqw; height: 8cqw; color: #a8d9e1; }
+
+.journey-card { color: #f8e5b7; text-align: left; font: 700 1.7cqw Gelasio, Georgia; }
+.journey-card .surface { filter: drop-shadow(0 .22cqw .18cqw #0006); }
+.journey-frame { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; transition: filter .2s; }
+.journey-card:is(:hover, :focus-visible):not(:disabled) .journey-frame { filter: drop-shadow(0 0 .32cqw #82ccf15c); }
+.journey-region { position: absolute; }
+.module-tile { display: grid; place-items: center; color: #ffedbb; font: 700 2.7cqw Gelasio, Georgia; white-space: nowrap; text-shadow: 0 .12cqw .15cqw #000a; }
+.module-tile.relations { font-size: 3cqw; letter-spacing: .05cqw; }
+.journey-divider { background: linear-gradient(transparent, #d5a85888 24%, #d5a85888 76%, transparent); }
+.journey-title { display: flex; align-items: center; font-size: 1.65cqw; color: #ffe6ae; text-shadow: 0 .1cqw .15cqw #0009; }
+.journey-track { display: block; padding: .18cqw; border: .1cqw solid #af7e36; border-radius: 1cqw; background: #051424; box-shadow: inset 0 .18cqw .28cqw #000b, 0 .07cqw 0 #ffe1a46b; }
+.journey-fill { position: relative; display: block; height: 100%; border-radius: inherit; background: linear-gradient(#b5f4ff 0%, #5fd3ef 22%, #2d93cc 55%, #24648f 85%, #67b4da); box-shadow: 0 0 .5cqw #42cffa50, inset 0 .07cqw 0 #e0fbffb8; animation: journeyProgress 1.2s cubic-bezier(.2,.7,.2,1) .1s backwards; overflow: hidden; }
+.journey-fill::after { content: ''; position: absolute; inset: 0; background: linear-gradient(110deg, transparent 30%, #e2ffffa3 50%, transparent 70%); transform: translateX(-100%); animation: journeyShine 1.3s .6s ease-out; }
+.journey-gate { isolation: isolate; }
+.journey-gate::before { content: ''; position: absolute; inset: 5%; border-radius: 50%; background: radial-gradient(ellipse, #55dfff44, transparent 67%); opacity: 0; transition: opacity .2s; }
+.journey-gate > img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; }
+.gate-active { opacity: 0; transition: opacity .2s; }
+.journey-card:is(:hover, :focus-visible):not(:disabled) .gate-active { opacity: 1; }
+.journey-card[data-lock=open] .journey-gate::before, .journey-card[data-lock=complete] .journey-gate::before { opacity: 1; }
+.newly-open .gate-active { animation: journeyUnlock 1.5s 1.2s ease-in-out; }
+.gate-before { opacity: 0; }
+.newly-open .gate-before { animation: journeyBefore 1.3s ease-in backwards; }
+.newly-open .gate-normal { animation: journeyOpen 1.3s ease-in backwards; }
+.journey-card:disabled .surface { transform: none; }
+.journey-card:active:not(:hover):not(:focus-visible) .surface { transform: none; }
+.journey-card:disabled .gate-active, .journey-card:disabled .gate-before { animation: none; opacity: 0; }
+.journey-card:disabled .journey-fill::after { animation: none; }
+.gate-complete { position: absolute; right: 0; bottom: 6%; width: 2cqw; height: 2cqw; padding: .25cqw; color: #d8ffe9; background: #146252; border: .13cqw solid #b9e2a6; border-radius: 50%; }
+.journey-times, .journey-time-goal { display: flex; align-items: center; gap: .55cqw; font: 700 1.4cqw Gelasio, Georgia; color: #e6d3a8; }
+.journey-times .icon { width: 1.65cqw; height: 1.65cqw; color: #e6b966; }
+.journey-times .current-time { color: #fff0b5; }
+.journey-time-goal { justify-content: center; font-size: 1.3cqw; }
+.path-arrow { color: #f7cf7b; filter: drop-shadow(0 .1cqw .1cqw #0008); }
+.path-arrow svg { stroke-width: 4; }
+.journey-fox { display: grid; place-items: center; isolation: isolate; }
+.journey-fox::before { content: ''; position: absolute; inset: 5% -5%; z-index: -1; background: radial-gradient(ellipse, #47a2c630, transparent 68%); }
+.journey-fox img { width: 100%; height: 100%; object-fit: contain; }
+@keyframes journeyProgress { from { width: var(--from); } }
+@keyframes journeyShine { to { transform: translateX(100%); } }
+@keyframes journeyUnlock { 0%, 100% { opacity: 0; } 35%, 65% { opacity: 1; } }
+@keyframes journeyBefore { 0%, 82% { opacity: 1; } 100% { opacity: 0; } }
+@keyframes journeyOpen { 0%, 82% { opacity: 0; } 100% { opacity: 1; } }
+
+.trial-marks { gap: 2cqw; align-items: stretch; }
+.trial-mark { display: flex; align-items: center; flex-direction: column; justify-content: center; width: 9.5cqw; font: 700 1.3cqw Gelasio, Georgia; color: #9db6c6; gap: .25cqw; }
+.trial-mark.complete { color: #e9ddb7; }
+.trial-mark .stone { position: relative; display: block; width: 5cqw; height: 5cqw; }
+.trial-mark img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; }
+.trial-check { position: absolute; right: -.15cqw; bottom: 0; font: 700 1.6cqw Arial; color: #b4f1d8; text-shadow: 0 0 .4cqw #061b22; }
+.pet-empty { gap: 1.8cqw; color: #d5bf89; }
+.pet-empty .icon { width: 5cqw; height: 5cqw; }
+.pet-empty .icon:nth-child(2) { width: 3cqw; }
+.fox-future img { opacity: .6; filter: saturate(.45); }
+.pythia-next { gap: 1cqw; color: #f0d394; font: 700 1.55cqw Gelasio, Georgia; }
+.pythia-next > .icon { width: 2.8cqw; height: 2.8cqw; color: #e7bb62; }
+.pythia-next img { width: 10cqw; height: 5.625cqw; flex: none; object-fit: contain; border: .12cqw solid #e1b76b; border-radius: .7cqw; box-shadow: 0 .2cqw .6cqw #0005; }
+.pet-stat .after { animation: statLight 1.1s ease-out; }
+#external { position: absolute; inset: 0; z-index: 30; background: #061321; }
+#external[hidden] { display: none; }
+#external iframe { width: 100%; height: 100%; border: 0; }
+#externalBack { position: absolute; left: 10px; top: 10px; z-index: 2; width: 44px; height: 44px; border-radius: 50%; border: 1px solid #dbb973; background: #0b243be8; color: #ffe3a4; font-size: 25px; }
+body.embedded { background: #061321; overflow: hidden; }
+body.embedded > header, body.embedded > nav, body.embedded > #review, body.embedded > #simulation, body.embedded > footer { display: none; }
+body.embedded #stage { position: fixed; inset: 0; margin: auto; width: min(100vw, 177.6833vh); height: min(100vh, 56.279904vw); }
+body.embedded #full { display: none; }
+@keyframes statLight { from { text-shadow: 0 0 1.4cqw #7eeaff; } to { text-shadow: none; } }
+@keyframes measuredShift { from { width: var(--before-width); } }
+@media (max-width: 850px) { #stage { width: 100vw; } #simulation { padding: 0 8px 10px; gap: 6px; } #simulation button { font-size: 11px; padding: 6px 8px; } }
+@media (prefers-reduced-motion: reduce) { *, *:before, *:after { animation: none !important; transition: none !important; } }
+
+/* Pet reward: one canonical plaque + a separate gold medallion + runtime values. */
+.pet-power{gap:0;isolation:isolate;filter:drop-shadow(0 .2cqw .18cqw #00122180)}
+.power-frame{position:absolute;left:0;top:0;width:100%;height:100%;object-fit:contain}
+.paw-medallion{position:absolute;left:-6%;top:-16%;width:38%;height:132%;object-fit:contain}
+.power-values{position:absolute;left:29%;right:10%;top:8%;bottom:8%;display:flex;align-items:center;justify-content:center;gap:.9cqw;font:700 4.1cqw Gelasio,Georgia;text-shadow:0 .15cqw .2cqw #000}
+.power-values .before{color:#eed7a5;font-size:3.3cqw}.power-values .after{color:#fff0b5}
+.power-arrow{font-size:2.7cqw;color:#e2bb67}
+.pet-power.upgraded .paw-medallion{animation:petPowerLight 1.4s .2s ease-in-out}
+.pet-power.upgraded .after{animation:statLight 1.6s .2s ease-out}
+.pet .trial-mark{width:10.2cqw;font-size:1.4cqw;gap:.4cqw}
+.pet .trial-mark .stone{width:7.3cqw;height:7.3cqw}
+.pet .trial-mark.complete .stone{filter:drop-shadow(0 0 .55cqw #62dfea66)}
+.pet .trial-check{right:.15cqw;bottom:.25cqw;font-size:1.7cqw}
+.pythia-destination .destination-picture{position:absolute;left:10%;top:10%;width:80%;height:59%;object-fit:contain;border-radius:.45cqw}
+.pythia-destination .word{position:absolute;left:10%;bottom:10%;width:80%;height:18%;display:grid;place-items:center;font:700 1.55cqw Gelasio,Georgia;color:#ffe5a5;text-shadow:0 .1cqw .14cqw #000}
+@keyframes petPowerLight{50%{filter:drop-shadow(0 0 .65cqw #81ecf1aa)}}

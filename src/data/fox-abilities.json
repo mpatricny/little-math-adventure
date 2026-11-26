@@ -1,0 +1,20 @@
+{
+  "version": 1,
+  "contribution": {
+    "shield": [0, 1, 2],
+    "heal": [0, 1, 2],
+    "strike": [0, 1, 2]
+  },
+  "appearanceMilestones": [0, 4, 10, 20, 32],
+  "moduleFamilies": {
+    "A1": "shield", "A2": "heal", "A3": "strike", "A4": "shield",
+    "B1": "heal", "B2": "strike", "B3": "shield", "B4": "heal",
+    "C1": "strike", "C2": "shield", "C3": "heal", "C4": "strike",
+    "D1": "shield", "D2": "heal", "D3": "strike", "D4": "shield",
+    "E1": "heal", "E2": "strike", "E3": "shield", "E4": "heal",
+    "F1": "strike", "F2": "shield", "F3": "heal", "F4": "strike",
+    "G1": "shield", "G2": "heal", "G3": "strike", "G4": "shield",
+    "H1": "heal", "H2": "strike", "H3": "shield", "H4": "heal",
+    "comparison_symbols": "strike"
+  }
+}

@@ -1,4 +1,5 @@
 import type { Report } from '../../server/src/contracts/analytics';
+import { createRecordId } from '../utils/recordId';
 export class ApiError extends Error {constructor(readonly status:number){super(status===401?'Přihlášení vypršelo.':status===403?'Tento účet nemá přístup.':status===503?'Administrace zatím není zapnutá.':status===400?'Neplatný filtr.':'Data se nepodařilo načíst.');}}
 export class AdminApi {
     private controller=new AbortController();csrf='';
@@ -13,5 +14,5 @@ export class AdminApi {
     report<T=any>(resource:string,query:URLSearchParams){return this.request<Report<T>>(resource+(query.size?'?'+query:''));}
     annotate(input:unknown){return this.request<{id:string}>('annotations',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':this.csrf},body:JSON.stringify(input)});}
     revoke(id:string,reason:string){return this.request('annotations/'+encodeURIComponent(id)+'/revoke',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':this.csrf},
-        body:JSON.stringify({mutationId:crypto.randomUUID(),reason})});}
+        body:JSON.stringify({mutationId:createRecordId(),reason})});}
 }

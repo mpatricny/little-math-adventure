@@ -8,13 +8,14 @@ export const PILOT_SCENE_KEYS = Object.freeze([
   'ZyxRocketInterludeScene', 'ZyxCrystalMachineScene', 'ForestAdventureStartScene',
   'ForestMapScene', 'ForestPuzzleScene', 'ForestRoomScene', 'LetterLockPuzzleScene',
   'SpinLockPuzzleScene', 'ForestCampScene', 'ForestRiddleScene', 'ComicScene',
-  'CrashSiteScene', 'CatacombTrialScene', 'ManaCollectionScene', 'CoopSetupScene',
+  'CrashSiteScene', 'CatacombOverviewScene', 'CatacombTrialScene', 'FoxLessonScene', 'ManaCollectionScene', 'CoopSetupScene',
   'TvPairingScene',
 ]);
 
 export const PILOT_LAYOUT_KEYS = Object.freeze([
-  ...PILOT_SCENE_KEYS, 'WalkingHudOverlay', 'LearningMapOverlay', 'AudioControlHosts', 'AncientForestScene',
-  'MathBoardComparisonLayout', 'ComparisonFeedbackLayout', 'RendererRecoveryOverlay', 'SceneLoadingOverlay',
+  ...PILOT_SCENE_KEYS, 'WalkingHudOverlay', 'LearningMapOverlay', 'LearningPanelLayout', 'DailyProgressLayout', 'PlayersHubLayout', 'AudioControlHosts', 'AncientForestScene',
+  'CatacombProgressOverlay', 'PracticeChoiceOverlay', 'MathBoardArtLayout', 'MathBoardComparisonLayout',
+  'ComparisonFeedbackLayout', 'PictureDialogOverlay', 'RendererRecoveryOverlay', 'SceneLoadingOverlay',
 ]);
 
 // This production scene retains its historical filename; do not discard every "Mock" file.
@@ -30,7 +31,7 @@ export const EXCLUDED_SOURCE_PREFIXES = Object.freeze([
 // not chapter ownership; its frames and stable icon states remain real pilot dependencies.
 export const SHARED_RUNTIME_SOURCE_FILES = Object.freeze(['src/ui/UnderwaterTheme.ts']);
 export const SHARED_CHAPTER_TEXTURE_KEYS = Object.freeze([
-  'silverpond-fairy-title-frame', 'silverpond-fairy-reward-frame',
+  'silverpond-fairy-title-frame',
 ]);
 
 export const EXCLUDED_MUSIC_KEYS = Object.freeze(['m08_silverpond', 'm09_underwater']);

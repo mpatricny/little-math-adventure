@@ -1,0 +1,343 @@
+{
+  "recordings": [
+    {
+      "name": "healing",
+      "frames": [
+        {
+          "path": "/Users/datamole/little-math-adventure/docs/design-drafts/fox-battle-v5/review/effect-recordings/healing/000.png",
+          "at": 0
+        },
+        {
+          "path": "/Users/datamole/little-math-adventure/docs/design-drafts/fox-battle-v5/review/effect-recordings/healing/001.png",
+          "at": 219
+        },
+        {
+          "path": "/Users/datamole/little-math-adventure/docs/design-drafts/fox-battle-v5/review/effect-recordings/healing/002.png",
+          "at": 508
+        },
+        {
+          "path": "/Users/datamole/little-math-adventure/docs/design-drafts/fox-battle-v5/review/effect-recordings/healing/003.png",
+          "at": 698
+        },
+        {
+          "path": "/Users/datamole/little-math-adventure/docs/design-drafts/fox-battle-v5/review/effect-recordings/healing/004.png",
+          "at": 903
+        },
+        {
+          "path": "/Users/datamole/little-math-adventure/docs/design-drafts/fox-battle-v5/review/effect-recordings/healing/005.png",
+          "at": 1122
+        },
+        {
+          "path": "/Users/datamole/little-math-adventure/docs/design-drafts/fox-battle-v5/review/effect-recordings/healing/006.png",
+          "at": 1341
+        },
+        {
+          "path": "/Users/datamole/little-math-adventure/docs/design-drafts/fox-battle-v5/review/effect-recordings/healing/007.png",
+          "at": 1557
+        },
+        {
+          "path": "/Users/datamole/little-math-adventure/docs/design-drafts/fox-battle-v5/review/effect-recordings/healing/008.png",
+          "at": 1770
+        },
+        {
+          "path": "/Users/datamole/little-math-adventure/docs/design-drafts/fox-battle-v5/review/effect-recordings/healing/009.png",
+          "at": 1974
+        },
+        {
+          "path": "/Users/datamole/little-math-adventure/docs/design-drafts/fox-battle-v5/review/effect-recordings/healing/010.png",
+          "at": 2174
+        },
+        {
+          "path": "/Users/datamole/little-math-adventure/docs/design-drafts/fox-battle-v5/review/effect-recordings/healing/011.png",
+          "at": 2370
+        },
+        {
+          "path": "/Users/datamole/little-math-adventure/docs/design-drafts/fox-battle-v5/review/effect-recordings/healing/012.png",
+          "at": 2570
+        }
+      ],
+      "state": {
+        "phase": "battle",
+        "activeMathOwner": "A",
+        "abilityOwner": "A",
+        "busy": false,
+        "players": {
+          "A": {
+            "hp": 20,
+            "maxHp": 24,
+            "shield": 0,
+            "potions": 2,
+            "used": [
+              "heal"
+            ],
+            "locked": []
+          },
+          "B": {
+            "hp": 10,
+            "maxHp": 24,
+            "shield": 0,
+            "potions": 1,
+            "used": [],
+            "locked": []
+          }
+        },
+        "enemies": [
+          10,
+          10,
+          10
+        ],
+        "question": null,
+        "answers": [],
+        "events": [
+          {
+            "type": "ability",
+            "owner": "A",
+            "family": "heal",
+            "gain": 6
+          }
+        ],
+        "effects": {
+          "jobs": [],
+          "shields": {
+            "A": {
+              "power": 0,
+              "compact": false
+            },
+            "B": {
+              "power": 0,
+              "compact": false
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "instant-strike",
+      "frames": [
+        {
+          "path": "/Users/datamole/little-math-adventure/docs/design-drafts/fox-battle-v5/review/effect-recordings/instant-strike/000.png",
+          "at": 0
+        },
+        {
+          "path": "/Users/datamole/little-math-adventure/docs/design-drafts/fox-battle-v5/review/effect-recordings/instant-strike/001.png",
+          "at": 200
+        },
+        {
+          "path": "/Users/datamole/little-math-adventure/docs/design-drafts/fox-battle-v5/review/effect-recordings/instant-strike/002.png",
+          "at": 509
+        },
+        {
+          "path": "/Users/datamole/little-math-adventure/docs/design-drafts/fox-battle-v5/review/effect-recordings/instant-strike/003.png",
+          "at": 720
+        },
+        {
+          "path": "/Users/datamole/little-math-adventure/docs/design-drafts/fox-battle-v5/review/effect-recordings/instant-strike/004.png",
+          "at": 944
+        },
+        {
+          "path": "/Users/datamole/little-math-adventure/docs/design-drafts/fox-battle-v5/review/effect-recordings/instant-strike/005.png",
+          "at": 1155
+        },
+        {
+          "path": "/Users/datamole/little-math-adventure/docs/design-drafts/fox-battle-v5/review/effect-recordings/instant-strike/006.png",
+          "at": 1372
+        },
+        {
+          "path": "/Users/datamole/little-math-adventure/docs/design-drafts/fox-battle-v5/review/effect-recordings/instant-strike/007.png",
+          "at": 1587
+        },
+        {
+          "path": "/Users/datamole/little-math-adventure/docs/design-drafts/fox-battle-v5/review/effect-recordings/instant-strike/008.png",
+          "at": 1809
+        },
+        {
+          "path": "/Users/datamole/little-math-adventure/docs/design-drafts/fox-battle-v5/review/effect-recordings/instant-strike/009.png",
+          "at": 2006
+        },
+        {
+          "path": "/Users/datamole/little-math-adventure/docs/design-drafts/fox-battle-v5/review/effect-recordings/instant-strike/010.png",
+          "at": 2223
+        }
+      ],
+      "state": {
+        "phase": "battle",
+        "activeMathOwner": "A",
+        "abilityOwner": "A",
+        "busy": false,
+        "players": {
+          "A": {
+            "hp": 14,
+            "maxHp": 24,
+            "shield": 0,
+            "potions": 2,
+            "used": [
+              "strike"
+            ],
+            "locked": []
+          },
+          "B": {
+            "hp": 10,
+            "maxHp": 24,
+            "shield": 0,
+            "potions": 1,
+            "used": [],
+            "locked": []
+          }
+        },
+        "enemies": [
+          10,
+          10,
+          6
+        ],
+        "question": null,
+        "answers": [],
+        "events": [
+          {
+            "type": "targeting",
+            "owner": "A"
+          },
+          {
+            "type": "ability",
+            "owner": "A",
+            "family": "strike",
+            "target": 2,
+            "damage": 4
+          }
+        ],
+        "effects": {
+          "jobs": [],
+          "shields": {
+            "A": {
+              "power": 0,
+              "compact": false
+            },
+            "B": {
+              "power": 0,
+              "compact": false
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "air-shield-block",
+      "frames": [
+        {
+          "path": "/Users/datamole/little-math-adventure/docs/design-drafts/fox-battle-v5/review/effect-recordings/air-shield-block/000.png",
+          "at": 0
+        },
+        {
+          "path": "/Users/datamole/little-math-adventure/docs/design-drafts/fox-battle-v5/review/effect-recordings/air-shield-block/001.png",
+          "at": 218
+        },
+        {
+          "path": "/Users/datamole/little-math-adventure/docs/design-drafts/fox-battle-v5/review/effect-recordings/air-shield-block/002.png",
+          "at": 423
+        },
+        {
+          "path": "/Users/datamole/little-math-adventure/docs/design-drafts/fox-battle-v5/review/effect-recordings/air-shield-block/003.png",
+          "at": 650
+        },
+        {
+          "path": "/Users/datamole/little-math-adventure/docs/design-drafts/fox-battle-v5/review/effect-recordings/air-shield-block/004.png",
+          "at": 853
+        },
+        {
+          "path": "/Users/datamole/little-math-adventure/docs/design-drafts/fox-battle-v5/review/effect-recordings/air-shield-block/005.png",
+          "at": 1054
+        },
+        {
+          "path": "/Users/datamole/little-math-adventure/docs/design-drafts/fox-battle-v5/review/effect-recordings/air-shield-block/006.png",
+          "at": 1253
+        },
+        {
+          "path": "/Users/datamole/little-math-adventure/docs/design-drafts/fox-battle-v5/review/effect-recordings/air-shield-block/007.png",
+          "at": 1474
+        },
+        {
+          "path": "/Users/datamole/little-math-adventure/docs/design-drafts/fox-battle-v5/review/effect-recordings/air-shield-block/008.png",
+          "at": 1686
+        },
+        {
+          "path": "/Users/datamole/little-math-adventure/docs/design-drafts/fox-battle-v5/review/effect-recordings/air-shield-block/009.png",
+          "at": 1902
+        },
+        {
+          "path": "/Users/datamole/little-math-adventure/docs/design-drafts/fox-battle-v5/review/effect-recordings/air-shield-block/010.png",
+          "at": 2124
+        },
+        {
+          "path": "/Users/datamole/little-math-adventure/docs/design-drafts/fox-battle-v5/review/effect-recordings/air-shield-block/011.png",
+          "at": 2322
+        },
+        {
+          "path": "/Users/datamole/little-math-adventure/docs/design-drafts/fox-battle-v5/review/effect-recordings/air-shield-block/012.png",
+          "at": 2523
+        }
+      ],
+      "state": {
+        "phase": "battle",
+        "activeMathOwner": "A",
+        "abilityOwner": "A",
+        "busy": false,
+        "players": {
+          "A": {
+            "hp": 14,
+            "maxHp": 24,
+            "shield": 3,
+            "potions": 2,
+            "used": [
+              "shield"
+            ],
+            "locked": []
+          },
+          "B": {
+            "hp": 10,
+            "maxHp": 24,
+            "shield": 0,
+            "potions": 1,
+            "used": [],
+            "locked": []
+          }
+        },
+        "enemies": [
+          10,
+          10,
+          10
+        ],
+        "question": null,
+        "answers": [],
+        "events": [
+          {
+            "type": "ability",
+            "owner": "A",
+            "family": "shield",
+            "gain": 5
+          },
+          {
+            "type": "incoming",
+            "owner": "A",
+            "incoming": 2,
+            "blocked": 0,
+            "absorbed": 2,
+            "lost": 0
+          }
+        ],
+        "effects": {
+          "jobs": [],
+          "shields": {
+            "A": {
+              "power": 3,
+              "compact": false
+            },
+            "B": {
+              "power": 0,
+              "compact": false
+            }
+          }
+        }
+      }
+    }
+  ],
+  "errors": []
+}

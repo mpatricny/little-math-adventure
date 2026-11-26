@@ -45,7 +45,9 @@ import { ForestRiddleScene } from '../scenes/ForestRiddleScene';
 import { ComicScene } from '../scenes/ComicScene';
 import { CrashSiteScene } from '../scenes/CrashSiteScene';
 import { BandSelectScene } from '../scenes/BandSelectScene';
+import { CatacombOverviewScene } from '../scenes/CatacombOverviewScene';
 import { CatacombTrialScene } from '../scenes/CatacombTrialScene';
+import { FoxLessonScene } from '../scenes/FoxLessonScene';
 import { ManaCollectionScene } from '../scenes/ManaCollectionScene';
 import { CoopSetupScene } from '../scenes/CoopSetupScene';
 import { TvPairingScene } from '../scenes/TvPairingScene';
@@ -103,7 +105,9 @@ export const GAME_SCENES = [
     ForestRiddleScene,
     ComicScene,
     CrashSiteScene,
+    CatacombOverviewScene,
     CatacombTrialScene,
+    FoxLessonScene,
     ManaCollectionScene,
     CoopSetupScene,
     TvPairingScene,

@@ -1,0 +1,54 @@
+{
+  "date": "2026-11-23",
+  "tool": "image_gen.imagegen",
+  "notes": "The room prompts below are reconstructed descriptions; the atlas and doorway prompts are exact saved tool inputs. All labels and interaction geometry remain runtime layers. Open and closed doors are semantic states; normal/hover/pressed reuse the same surface.",
+  "sources": {
+    "journey-portal.png": {
+      "reference": "artifacts/katakomby-malovane-v2/moje-liska.png, crop 1125,718,420,225",
+      "purpose": "The actual painted open reward portal and gilded plaque used for the companion's next trial."
+    },
+    "journey-portal-locked.png": {
+      "generation": "exec-2b63e611-e2c2-4096-bdeb-12f7effaef62",
+      "reference": "journey-portal.png",
+      "purpose": "Shut gate inside the exact same outer silhouette."
+    },
+    "module-pictograms.png": {
+      "reference": "artifacts/katakomby-malovane-v2/katakomby.png, crop 13,440,275,450",
+      "purpose": "Original painted fruit pictograms for the module list. Only the fruit, arithmetic mark and disappearing apple are retained."
+    },
+    "speed-rail-strip.png": {
+      "reference": "artifacts/katakomby-malovane-v2/katakomby-cas.png, crop 549,516,807,65",
+      "purpose": "Original painted rail and turquoise end stones. Numeric labels and example threshold ticks are removed by the export."
+    },
+    "axis-hall-open.png": {
+      "generation": "exec-732a9b27-1750-4b40-97ad-8c296321d153",
+      "reference": "artifacts/katakomby-malovane-v2/katakomby-cas.png, crop 512,298,1069,507",
+      "purpose": "Restore the stone measuring alcove and open rune door without any painted values. The speed rail, fox, thresholds and rewards remain live UI."
+    },
+    "axis-locked-door.png": {
+      "generation": "exec-7650f86b-c0fb-4cc7-bb52-da4db70f37db",
+      "reference": "axis-hall-open.png, right-hand crop 1480,0,341,650",
+      "purpose": "Closed door inset for the same alcove. The export only blends the edited doorway into the shared base plate."
+    },
+    "catacombs-clean.png": {
+      "generation": "exec-152c2358-2390-45c3-b25f-457176f698a1",
+      "promptSummary": "Clean the approved painted Katakomby panel into a reusable background: preserve navy/gold border, navy title and left rail, warm blue stone corridor; remove all portraits, creatures, text, icons, cards and controls."
+    },
+    "fox-room-clean.png": {
+      "generation": "exec-4a9e32de-6627-4638-9440-d436a252719c",
+      "promptSummary": "Clean the approved Moje liška room into a reusable background, preserving the blue stone chamber, pedestals, lighting and outer gold frame. Remove all foxes, UI, text, icons and controls."
+    },
+    "frame-atlas.png": {
+      "generation": "exec-90cdf5e4-a01f-4e96-bf3d-8f866b6b2302",
+      "prompt": "Use case: background-extraction. Reference: approved painted game interface. Extract and clean reusable EMPTY structural frames matching this exact navy painted enamel, beveled warm gold and tiny cyan sapphire system. Produce a transparent 1536 x 1024 atlas with FOUR isolated components, one per 768 x 512 quadrant, with generous transparent padding. Top left: the long empty top title plaque, gold chamfered corners and central sapphire crest, about 680x155. Top right: ONE empty wide rectangular list-card frame, chamfered corners, navy painted interior, about 660x210. Bottom left: ONE empty action-button frame, chamfered warm gold rim, navy painted interior, small cyan diamond at left/right ends, about 660x180. Bottom right: ONE empty circular gold portrait rim, about 300x300, transparent hole inside. These are normal-state reusable surfaces, not full composed buttons. Preserve a single consistent frame design; related controls will reuse these exact sources with code-driven glow and surface lift. Absolutely NO text, letters, numbers, apples, characters, swords, foxes, shields, locks, symbols, icons, scenery or shadows outside the components. No active variants. Actual transparent alpha background. Children cannot read; all labels, hit areas, layout and comparison signs are runtime layers, not part of this bitmap. Complete ornaments safely inside each cell, never clipped."
+    },
+    "door-pair.png": {
+      "generation": "exec-459b9e78-4d27-4a17-9cdf-89e55bc48b3a",
+      "prompt": "Use case: precise-object-edit. Reference is the approved painted catacomb interface. Create exactly TWO isolated stone catacomb doorway icons SIDE BY SIDE in identical 512x640 cells on one 1024x640 canvas. Match the hand-painted blue stone, thick warm gold bevels, glowing cyan accents and warm lantern light. Left: same doorway visibly OPEN, both golden doors swung outwards, inviting bright golden stairway and light visible through its full open center. Right: exactly the same arch at the same scale and placement, doors fully CLOSED, large clearly visible closed gold padlock at the center. No lettering, numerals, UI rectangles, people, animals or scene. Shared outer silhouette, shared ground baseline. Generous padding, complete stone arch and doors inside each cell. Perfectly flat bright #00ff00 background with no gradient, no shadow or ambient glow outside each icon. This will be chroma keyed and normalized with one shared crop per pair for a pre-reader children's game."
+    },
+    "shield-reference.png": {
+      "generation": "exec-66090221-2b4f-4007-bd9f-65c704e88e3d",
+      "purpose": "Approved parent-chat reference. Only the central shield illustration is extracted."
+    }
+  }
+}

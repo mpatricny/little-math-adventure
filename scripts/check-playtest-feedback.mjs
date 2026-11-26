@@ -35,6 +35,15 @@ try {
             }
             const guideId = () => page.evaluate(() => window.__LITTLE_MATH_GAME__.scene.getScenes(true).flatMap(scene => scene.children.list)
                 .find(object => object.name?.startsWith('guide:'))?.getData('guideId') ?? null);
+            async function confirmGuide() {
+                await page.waitForFunction(() => window.__LITTLE_MATH_GAME__.scene.getScenes(true).flatMap(s => s.children.list)
+                    .some(o => o.name?.startsWith('guide:') && o.getData('ready')));
+                const host = await page.evaluate(() => {
+                    const s = window.__LITTLE_MATH_GAME__.scene.getScenes(true).at(-1), h = s.sceneBuilder.get('guideConfirmHost');
+                    return { x: h.x, y: h.y };
+                });
+                await tap(host.x, host.y);
+            }
             async function finishGuides(prefix) {
                 await page.waitForTimeout(1500);
                 const seen = [];
@@ -43,7 +52,7 @@ try {
                     await page.waitForTimeout(2800);
                     await shot(`${prefix}-${id}`);
                     await page.waitForTimeout(id.startsWith('shop.') && id !== 'shop.intro.v1' ? 4000 : 700);
-                    await tap(1000, 620);
+                    await confirmGuide();
                     await page.waitForTimeout(200);
                     assert.notEqual(await guideId(), id, 'completed demonstration advances');
                     assert.ok(seen.length < 9, 'bounded guide queue');
@@ -110,7 +119,7 @@ try {
             });
             await page.waitForTimeout(2900); await shot('missing-crystal');
             assert.equal(await guideId(), 'pythia.missingCrystal');
-            await tap(1080, 329);
+            await confirmGuide();
             await startScene('ShopScene');
             const shop = await finishGuides('shop');
             await shot('shop-normal');

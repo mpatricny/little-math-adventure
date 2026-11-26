@@ -5,8 +5,10 @@ import { assetPreparation, queueTexture } from '../loading/AssetPreparation';
 import { analytics } from '../telemetry/AnalyticsClient';
 import { prepareSceneTelemetry, readySceneTelemetry } from '../telemetry/SceneTelemetry';
 import { GameStateManager } from './GameStateManager';
+import { getFoxJourney } from './FoxAbilitySystem';
 import { CoopSessionManager } from './CoopSessionManager';
 import { SaveSystem } from './SaveSystem';
+import { checkpointLocalPlayTime } from './LocalPlayTimeBridge';
 import { isPetUnlocked } from './PetCatalog';
 import { getShopEquipment, type ShopCity } from './ShopCatalog';
 import { createEncounterCatalog } from './EncounterCatalog';
@@ -49,6 +51,10 @@ export function registerLoadedAnimations(scene: Phaser.Scene): void {
 export class SceneAssetPlugin extends Phaser.Plugins.ScenePlugin {
     boot(): void {
         const scene = this.scene!;
+        // These events fire after Phaser changes the scene's running/paused status.
+        const timeEvents = ['create', 'pause', 'resume', 'sleep', 'wake', 'shutdown'];
+        timeEvents.forEach(event => scene.events.on(event, checkpointLocalPlayTime));
+        scene.events.once('destroy', () => timeEvents.forEach(event => scene.events.off(event, checkpointLocalPlayTime)));
         if (['BootScene', 'AssetLoaderScene'].includes(scene.sys.settings.key)) return;
         const originalPreload = (scene as Phaser.Scene & { preload?: () => void }).preload;
         const originalCreate = (scene as Phaser.Scene & { create?: (data: unknown) => void }).create;
@@ -60,6 +66,7 @@ export class SceneAssetPlugin extends Phaser.Plugins.ScenePlugin {
         });
         Object.assign(scene, {
             preload: () => {
+                checkpointLocalPlayTime();
                 scene.load.off('loaderror', loadError).on('loaderror', loadError);
                 scene.events.once('shutdown', () => scene.load.off('loaderror', loadError));
                 analytics()?.setLoading(true);
@@ -149,6 +156,35 @@ export class SceneAssetPlugin extends Phaser.Plugins.ScenePlugin {
         const catalog = scene.cache.json.get('textures') as TexturesFile | undefined;
         if (!catalog) return new Set();
         const required = new Set(sceneAssets[sceneKey] ?? []);
+        if (required.has('companion-fox-02-idle-sheet')) {
+            // The showcase can display five forms. Decode only the current
+            // party's visible pairs before entry; inspection of another saved
+            // owner can request its own pair when opened.
+            const visibleForms = new Set<number>();
+            for (const player of profiles) {
+                const form = Number(getFoxJourney(player).form);
+                visibleForms.add(form);
+                visibleForms.add(Math.min(5, form + 1));
+            }
+            for (let form = 1; form <= 5; form++) {
+                if (!visibleForms.has(form)) required.delete(`companion-fox-0${form}-idle-sheet`);
+            }
+        }
+        // The shared presentation references every theme, but a scene only
+        // decodes its own complete frame. Keep tablet texture memory bounded.
+        const observatory = sceneKey === 'FoxLessonScene' || sceneKey === 'CatacombTrialScene';
+        const mathBoardFrame = observatory ? null
+            : /Shop/.test(sceneKey) ? 'mathboard-shop-v4'
+            : /Guild/.test(sceneKey) ? 'mathboard-exam-v4' : 'mathboard-parchment-v4';
+        for (const frame of ['mathboard-parchment-v4','mathboard-shop-v4','mathboard-exam-v4','mathboard-catacomb-v4']) {
+            if(frame!==mathBoardFrame)required.delete(frame);
+        }
+        if (observatory) {
+            required.add('mathboard-plaque-v4');
+            required.add('mathboard-answer-v4');
+        } else required.delete('mathboard-plaque-v4');
+        required.delete('mathboard-fist-active-v4');
+        if(!/Battle/.test(sceneKey))required.delete('mathboard-fist-normal-v4');
         const definitions = scene.registry.get('animationDefs') as Record<string, AnimationDefinition> ?? {};
         const addDynamic = (value: unknown): void => {
             if (typeof value === 'string') {
@@ -185,6 +221,18 @@ export class SceneAssetPlugin extends Phaser.Plugins.ScenePlugin {
             }
         }
         if (sceneKey === scene.sys.settings.key) {
+            if (sceneKey === 'VictoryScene') {
+                const receipt = scene.sys.settings.data as import('../scenes/VictoryScene').VictoryData;
+                addDynamic(receipt?.battleBackground);
+                addDynamic(state.destination?.texture);
+                const addPortrait = (key?: string) => {
+                    if (key) required.add(actorPortraitKey(scene, key));
+                };
+                receipt?.foes?.forEach(foe => addPortrait(foe.spriteKey));
+                addPortrait(receipt?.enemySpriteKey);
+                addPortrait(receipt?.unlockedPet?.spriteKey);
+                receipt?.personalLoot?.forEach(loot => addPortrait(loot.unlockedPet?.spriteKey));
+            }
             if (/Arena/.test(sceneKey)) (state.enemyDefs ?? []).forEach(addIdle);
             else addDynamic(state.enemyDefs);
             addDynamic(state.bossPhases);
@@ -241,7 +289,11 @@ export class SceneAssetPlugin extends Phaser.Plugins.ScenePlugin {
                 const equipped = profiles.some(player => player.activePet === pet.id);
                 const available = /Workshop|Witch/.test(sceneKey)
                     && profiles.some(player => isPetUnlocked(pet, player));
-                if (available) addDynamic(actorPortraitKey(scene, pet.spriteKey));
+                // Combat controls also display the equipped pet's compact portrait.
+                // Keep it ready before create(), without loading other pets' art.
+                if (available || (equipped && /Battle|Catacomb/.test(sceneKey))) {
+                    addDynamic(actorPortraitKey(scene, pet.spriteKey));
+                }
                 if (!equipped) continue;
                 if (equipped && /Battle|Catacomb/.test(sceneKey)) addDynamic(pet);
                 else { addDynamic(pet.spriteKey); addDynamic(`${pet.animPrefix}-idle`); }

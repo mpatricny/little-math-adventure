@@ -210,7 +210,7 @@ describe('production BattleScene HUD contract', () => {
             battleEnemyStatusHost1: 'misc.battle-hud.status-frame-v2',
             battleEnemyStatusHost2: 'misc.battle-hud.status-frame-v2',
             battleEnemyStatusHost3: 'misc.battle-hud.status-frame-v2',
-            battleActionDockFrame: 'misc.battle-hud.action-dock-frame',
+            battleAttackActionHost: 'misc.battle-dock-v3.round',
             battlePreparationHost: 'misc.battle-hud.preparation-frame',
             pauseButton: 'misc.battle-hud.pause-button',
             battleTargetSwordHost: 'misc.prep-sword-normal-v2',
@@ -219,11 +219,16 @@ describe('production BattleScene HUD contract', () => {
             expect(productionById.get(id)?.asset, id).toBe(asset);
         });
         [
+            'battleActionFooterHost',
             'battlePotionActionHost',
             'battlePotionBadgeHost',
-            'battleSwordActionHost',
-            'battlePetActionHost',
-            'battlePetBadgeHost',
+            'battleAttackIconHost',
+            'battlePotionIconHost',
+            'battleActionPowerHost',
+            'battleActionOwnerHost',
+            'battleActionPortraitFrameHost',
+            'battleActionPortraitHost',
+            'battleActionOwnerMarkHost',
             'battlePauseHoverHost',
             'battlePauseOverlayHost',
             'battlePausePanelHost',
@@ -266,6 +271,41 @@ describe('production BattleScene HUD contract', () => {
         expect(productionById.has('potionBtn')).toBe(false);
         expect(productionById.has('preparationStatusHostA')).toBe(false);
         expect(productionById.has('preparationStatusHostB')).toBe(false);
+        expect(productionById.has('battlePetActionHost')).toBe(false);
+        expect(productionById.has('battlePetBadgeHost')).toBe(false);
+        expect(productionById.has('battleActionDockFrame')).toBe(false);
+    });
+
+    it('fits the approved bottom-edge dock and all controls on a small tablet', () => {
+        const footer = productionById.get('battleActionFooterHost')!;
+        expect(footer.y + footer.height / 2).toBe(720);
+        expect(footer.x + footer.width / 2).toBe(1280);
+        const ids = ['battlePotionActionHost', 'battleAttackActionHost', 'battleFoxOwnerHostA', 'battleFoxOwnerHostB',
+            'battleFoxShieldHost', 'battleFoxHealHost', 'battleFoxStrikeHost'];
+        const controls = ids.map(id => productionById.get(id)!);
+        for (const control of controls) {
+            expect(Math.min(control.width, control.height) * 768 / 1280, control.id).toBeGreaterThanOrEqual(44);
+            expect(control.y + control.height / 2 + 2, control.id).toBeLessThanOrEqual(720);
+        }
+        for (let index = 1; index < controls.length; index++) {
+            const a = controls[index - 1], b = controls[index];
+            expect(b.x - b.width / 2 - a.x - a.width / 2, `${a.id}/${b.id}`).toBeGreaterThanOrEqual(6);
+        }
+        const frame = productionById.get('battleFoxFrameHost')!;
+        for (const control of controls.slice(2)) {
+            expect(control.x - control.width / 2).toBeGreaterThan(frame.x - frame.width / 2);
+            expect(control.x + control.width / 2).toBeLessThan(frame.x + frame.width / 2);
+            expect(control.y - control.height / 2 - 2).toBeGreaterThan(frame.y - frame.height / 2);
+            expect(control.y + control.height / 2 + 2).toBeLessThan(frame.y + frame.height / 2);
+        }
+        const math = (scenesJson.scenes as JsonObject).MathBoardArtLayout;
+        const parchment = [...(math.elements ?? []), ...(math.ui ?? [])].find((h: JsonObject) => h.id === 'parchment');
+        const offset = productionById.get('battleMathBoardOffsetHost')!;
+        expect(parchment.y + parchment.height / 2 + offset.y).toBeLessThan(frame.y - frame.height / 2 - 8);
+        expect(productionById.get('battleActionNameHost')!.width).toBeGreaterThanOrEqual(160);
+        for (const id of ['battleFoxOwnerHostA', 'battleFoxOwnerHostB']) {
+            expect(productionById.get(id)?.data.regions.name).toBeDefined();
+        }
     });
 
     it('gives the catacomb battle its own scene definition and actor status host', () => {

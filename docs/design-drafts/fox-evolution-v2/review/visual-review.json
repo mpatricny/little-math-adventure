@@ -1,0 +1,35 @@
+{
+ "date":"2026-11-19",
+ "status":"Concept gallery reviewed; author acceptance and production animation work remain separate.",
+ "tools":["built-in image_gen","Playwright MCP","view_image","Sharp normalization and QA contact sheets"],
+ "viewports":[[1440,1100],[1024,768],[768,1024]],
+ "reviewedImages":[
+  "review/assets-dark.png","review/assets-light.png","review/expressions-dark.png",
+  "fox-expressions.png","fox-evolution-overview.png","fox-abilities-overview.png","fox-battle-scale.png",
+  "review/forms-tablet.png","review/forms-portrait.png","review/expressions-portrait.png","review/abilities-portrait.png",
+  "review/growth-desktop.png","review/growth-first-evolution-tablet.png","review/growth-near-evolution.png",
+  "review/growth-short-path-tablet.png","review/growth-no-words-tablet.png","review/growth-portrait.png",
+  "review/battle-tablet.png","review/battle-defense-tablet.png","review/battle-spent-tablet.png",
+  "review/battle-shield-effect-tablet.png","review/battle-heal-effect-tablet.png",
+  "review/battle-reduced-motion.png","review/actual-size-five-forms.png",
+  "review/interaction-contact.png","review/effects-contact.png"
+ ],
+ "findings":{
+  "face":"All five forms retain open friendly amber eyes and a small kind smile; the middle expression is recommended.",
+  "art":"Common frames preserve aspect ratios, aligned labels fit their safe regions. Orange identity and large tail patterns remain readable at actual battle size.",
+  "alpha":"Removed colored remnants from the initial direct-alpha source and the enclosed green neck/tail hole. Final matte protects internal cyan runes and was inspected on light/dark backgrounds.",
+  "growth":"Unique I/II contributions across nodes unlock shared forms; first evolution needs two completed nodes. Full-path and short-path completion screenshots wait for CSS fill to settle. Final bar measures 348.52px of 348.77px inner width, rounding only.",
+  "controls":"Frame and symbol move together on hover/press; root hit area stays stable. Pointer-out restores the surface. Defense locks remain bright on opaque gold/navy controls; spent symbols and use lights darken.",
+  "effects":"Shield surrounds the heroine; heart moves to the heroine; strike changes enemy HP. No whole-body animation, morph or warp is used.",
+  "preReader":"Game cutouts use pictures, counts, locks, pips, HP changes and at most a short title/labels. Reviewed with words hidden and no audio. Reviewer prose stays outside game cutouts.",
+  "checks":"34 functional checks pass after final polish; no page errors or write requests. No database/migration dependency. Static hosts remain inside stage and touch targets exceed 44 CSS px."
+ },
+ "limitations":[
+  "Forms 4 and 5 are closest; crescent versus spiral on the tail is their main small-scale difference. Author review on a physical tablet remains needed; no additional generation in this delivery.",
+  "Generated static poses have small residual differences. These are not interchangeable frames of a production animation.",
+  "0/4/10/20/32 milestones, short-path adaptation and cyclic family assignment are illustrative proposals, not approved production configuration.",
+  "Shared-family numerical aggregation, shield/heal balance, real saves, co-op and production Canvas/WebGL integration are not implemented by this concept gallery.",
+  "New companion artwork must have a separate asset from the enemy's currently shared rune-fox-sheet."
+ ],
+ "additionalReview":"Implementation chat inspected dark/light contact sheets, all five forms, no-words completion and final defense state; it confirmed the concept direction and requested no further variants this round."
+}

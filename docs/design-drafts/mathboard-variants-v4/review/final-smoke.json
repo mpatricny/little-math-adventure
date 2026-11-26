@@ -1,0 +1,28 @@
+{
+  "errors": [],
+  "webgl": {
+    "renderer": 2,
+    "damage": 5,
+    "results": [
+      true
+    ]
+  },
+  "canvas": {
+    "renderer": 1,
+    "damage": 5,
+    "results": [
+      true
+    ]
+  },
+  "touch": {
+    "renderer": 2,
+    "damage": 5,
+    "results": [
+      true
+    ]
+  },
+  "pointerOut": {
+    "x": 0,
+    "y": 0
+  }
+}

@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="cs">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="icon" href="data:,"><title>Společná cesta · vývoj a schopnosti lišky</title><link rel="stylesheet" href="style.css"></head>
+<body>
+<header><div><p class="eyebrow">SPOJENÝ NÁVRH · V4</p><h1>Vývoj lišky a její schopnosti</h1></div><a href="../fox-expression-v3/index.html">Výraz lišky →</a></header>
+<main>
+ <div class="toolbar" aria-label="Ovládání návrhářské ukázky">
+  <label>Stav <select id="preset"><option value="mixed">Část získaná</option><option value="locked">Zamčeno</option><option value="near">Před první proměnou</option><option value="near_final">Před poslední proměnou</option><option value="late">Téměř hotovo</option><option value="complete">Vše získané</option></select></label>
+  <button id="award" type="button">Ukázat odměnu</button><button id="words" aria-pressed="false">Skrýt slova</button><button id="restart">Obnovit stav</button>
+ </div>
+ <section id="fit"><div id="stage" class="game-stage" aria-label="Společná cesta lišky a tři schopnosti">
+  <div id="heading" class="placed title-plaque"><img src="../mathboard-variants-v4/assets/plaque.webp" alt=""><h2 class="word">Společná cesta</h2></div>
+  <div id="owners" class="placed" role="group" aria-label="Hráči"></div>
+  <div id="currentPortrait" class="placed fox-portrait"><img class="portrait-frame" src="../training-flow-v5/assets/tall-frame.webp" alt=""><img class="portrait-fox" src="../fox-evolution-v4/assets/fox-01.webp" alt="Nynější liška"><span class="portrait-rank" aria-label="Získaná podoba">1</span><span class="portrait-label word">Nyní</span></div>
+  <div id="nextPortrait" class="placed fox-portrait"><img class="portrait-frame" src="../training-flow-v5/assets/tall-frame.webp" alt=""><img class="portrait-fox" src="../fox-evolution-v4/assets/fox-01.webp" alt="Návrh příští podoby"><span class="portrait-rank">2</span><span class="portrait-label word">Příště</span></div>
+  <div id="growthMilestones" class="placed" aria-label="Pět podob lišky"></div>
+  <div id="progressTrack" class="placed" role="progressbar" aria-label="Cesta k příští podobě"><span id="progressFill"></span><span class="track-arrow" aria-hidden="true">➜</span></div>
+  <button id="selectedReward" class="placed" aria-label="Vybraný modul a jeho odměna"></button>
+  <div id="rows" class="placed" role="group" aria-label="Trvalá vylepšení schopností"></div>
+  <div id="completion" class="placed" aria-live="polite"></div>
+  <div id="effects" aria-hidden="true"></div>
+  <div id="detail" hidden role="dialog" aria-modal="true" aria-labelledby="detailTitle">
+   <div id="detailPanel" class="placed">
+    <img class="outer-frame" src="../training-flow-v5/assets/modal-frame.webp" alt="">
+    <button id="detailClose" class="detail-close" aria-label="Zavřít detail">×</button>
+    <h3 id="detailTitle" class="word"></h3>
+    <div id="detailOwner"></div><div id="detailExample"></div><div id="detailRunes"></div><div id="detailPower"></div>
+   </div>
+  </div>
+ </div></section>
+ <p id="reviewStatus" class="note" aria-live="polite"></p>
+ <p class="note">Oprava rozložení: horní vývoj zůstává, pouze spodní mřížku nahradily tři řádky schopností. Jedna nová odměna posílí schopnost a posune společnou cestu téhož hráče. Hranice 0 / 4 / 10 / 20 / 32 i účinky jsou návrhový model.</p>
+ <p class="note">Horní část už obsahuje pět různých podob z UI chatu. Základ vychází ze zvolené úpravy výrazu; podoby 2–5 jsou nové statické návrhy k posouzení. Jejich podobu můžeš porovnat v <a href="../fox-evolution-v4/index.html">galerii evolucí</a>.</p>
+</main>
+<footer><a href="../catacombs-access-v1/index.html">Katakomby</a><a href="../fox-abilities-v3/index.html">Dílčí návrh schopností V3</a><a href="HANDOFF.md">Podklady</a></footer>
+<script type="module" src="main.js"></script>
+</body></html>

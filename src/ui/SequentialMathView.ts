@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import type { AnswerChoiceIndex } from '../remote/types';
 import { ComparisonStageId, MathProblem } from '../types';
 import { SceneBuilder } from '../systems/SceneBuilder';
 import { createComparisonDemoProblems } from '../systems/ComparisonLearningSystem';
@@ -130,7 +131,7 @@ export class SequentialMathView {
         border.strokeRoundedRect(-button.width / 2 + 3, -button.height / 2 + 3, button.width - 6, button.height - 6, 9);
     }
 
-    showQuestion(problem: MathProblem, onChoice: (index: 0 | 1 | 2) => void): void {
+    showQuestion(problem: MathProblem, onChoice: (index: AnswerChoiceIndex) => void): void {
         this.cancel();
         this.clearQuestion();
         this.problem = problem;
@@ -161,14 +162,15 @@ export class SequentialMathView {
             this.content.add(text);
         }
         const comparison = problem.problemType === 'comparison' || problem.problemType === 'comparison_eq_vs_eq';
-        for (let i = 0; i < 3; i++) {
-            const value = problem.choices[i];
+        for (const [i, value] of problem.choices.entries()) {
             const symbol = comparison ? comparisonGlyph(this.scene, value, !meta?.showCrocodile, (meta?.showCrocodile ? 70 : 58) * COMPARISON_CHOICE_SCALE)
                 : this.scene.add.text(0, 0, `${value}`, { fontFamily: 'Arial, sans-serif', fontSize: '38px', fontStyle: 'bold', color: '#4a3826', resolution: 2 }).setOrigin(0.5);
-            const button = this.control(this.host(`answer${i}`), symbol, () => onChoice(i as 0 | 1 | 2));
+            const hostId = problem.choices.length === 4 ? `answerFour${i}` : `answer${i}`;
+            const button = this.control(this.host(hostId), symbol, () => onChoice(i as AnswerChoiceIndex));
             button.setData({ value, isCorrect: value === problem.answer }).setName(`comparisonAnswer${i}`);
             this.buttons.push(button);
             this.content.add(button);
+            if (!comparison) continue;
             const host = this.host(`hint${i}`);
             const hint = comparisonGlyph(this.scene, value, false, host.width).setPosition(host.x, host.y).setDepth(host.depth).setVisible(false).setName(`comparisonHint${i}`);
             this.hints.push(hint); this.content.add(hint);
@@ -286,6 +288,14 @@ export class SequentialMathView {
         const tween = this.scene.tweens.add(config); this.tweens.add(tween);
         if (this.paused) tween.pause();
         tween.once('complete', () => this.tweens.delete(tween));
+    }
+
+    restoreFeedback(state: import('./mathboard/checkpoint').MathBoardFeedbackCheckpoint, done: () => void): void {
+        this.setEnabled(false); this.hideHints(); this.expression?.reveal(); this.comparison?.reveal();
+        this.outline(this.buttons[state.choiceIndex], state.correct ? 0x668c43 : 0xad563b);
+        this.feedback.setText(state.correct ? '✓' : '×').setColor(state.correct ? '#527b37' : '#9a4a30');
+        if (this.defense) this.showDefenseResult(state.blocked, state.quickBlock);
+        this.later(550, done);
     }
 
     setPaused(paused: boolean): void {

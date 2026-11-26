@@ -1,0 +1,295 @@
+{
+  "errors": [],
+  "contexts": [
+    {
+      "mode": "attack",
+      "state": {
+        "completions": 1,
+        "damage": 5,
+        "results": [
+          true
+        ],
+        "timings": [
+          366.54666666666634
+        ],
+        "bonuses": [
+          {
+            "damage": 1,
+            "baselineMs": 8000,
+            "quick": true
+          }
+        ],
+        "mode": "attack",
+        "problem": "addition-0",
+        "accepting": false,
+        "pendingNext": false,
+        "displayedTotal": 5,
+        "blocked": 0,
+        "teaching": false,
+        "completed": false,
+        "phase": "answered",
+        "quick": 1,
+        "quickBlock": false,
+        "impact": {
+          "phase": "done",
+          "raw": 5,
+          "defense": 3,
+          "blocked": 3,
+          "damage": 2,
+          "hpBefore": 20,
+          "hpAfter": 18,
+          "hpLost": 2,
+          "target": "enemy"
+        },
+        "context": {
+          "theme": "attack",
+          "visible": false,
+          "earned": -1,
+          "background": "arena"
+        }
+      }
+    },
+    {
+      "mode": "sword",
+      "state": {
+        "completions": 1,
+        "damage": 7,
+        "results": [
+          true
+        ],
+        "timings": [
+          781.76
+        ],
+        "bonuses": [
+          {
+            "damage": 1,
+            "baselineMs": 8000,
+            "quick": true
+          }
+        ],
+        "mode": "sword",
+        "problem": "addition-0",
+        "accepting": false,
+        "pendingNext": false,
+        "displayedTotal": 7,
+        "blocked": 0,
+        "teaching": false,
+        "completed": false,
+        "phase": "answered",
+        "quick": 1,
+        "quickBlock": false,
+        "impact": {
+          "phase": "done",
+          "raw": 7,
+          "defense": 3,
+          "blocked": 3,
+          "damage": 4,
+          "hpBefore": 20,
+          "hpAfter": 16,
+          "hpLost": 4,
+          "target": "enemy"
+        },
+        "context": {
+          "theme": "sword",
+          "visible": false,
+          "earned": -1,
+          "background": "arena"
+        }
+      }
+    },
+    {
+      "mode": "prep-sword",
+      "state": {
+        "completions": 1,
+        "damage": 1,
+        "results": [
+          true
+        ],
+        "timings": [
+          781.3000000000011
+        ],
+        "bonuses": [
+          {
+            "damage": 1,
+            "baselineMs": 8000,
+            "quick": true
+          }
+        ],
+        "mode": "prep-sword",
+        "problem": "addition-0",
+        "accepting": false,
+        "pendingNext": true,
+        "displayedTotal": 1,
+        "blocked": 0,
+        "teaching": false,
+        "completed": true,
+        "phase": "complete",
+        "quick": 0,
+        "quickBlock": false,
+        "impact": {
+          "phase": "idle",
+          "raw": 7,
+          "defense": 3,
+          "blocked": 3,
+          "damage": 4,
+          "hpBefore": 20,
+          "hpAfter": 16,
+          "hpLost": 4,
+          "target": "enemy"
+        },
+        "context": {
+          "theme": "prep-sword",
+          "visible": true,
+          "earned": 1,
+          "background": "shop-room"
+        }
+      }
+    },
+    {
+      "mode": "prep-shield",
+      "state": {
+        "completions": 1,
+        "damage": 1,
+        "results": [
+          true
+        ],
+        "timings": [
+          1071.6299999999994
+        ],
+        "bonuses": [
+          {
+            "damage": 1,
+            "baselineMs": 8000,
+            "quick": true
+          }
+        ],
+        "mode": "prep-shield",
+        "problem": "addition-0",
+        "accepting": false,
+        "pendingNext": true,
+        "displayedTotal": 1,
+        "blocked": 0,
+        "teaching": false,
+        "completed": true,
+        "phase": "complete",
+        "quick": 0,
+        "quickBlock": false,
+        "impact": {
+          "phase": "idle",
+          "raw": 7,
+          "defense": 3,
+          "blocked": 3,
+          "damage": 4,
+          "hpBefore": 20,
+          "hpAfter": 16,
+          "hpLost": 4,
+          "target": "enemy"
+        },
+        "context": {
+          "theme": "prep-shield",
+          "visible": true,
+          "earned": 1,
+          "background": "shop-room"
+        }
+      }
+    },
+    {
+      "mode": "exam",
+      "state": {
+        "completions": 1,
+        "damage": 1,
+        "results": [
+          true
+        ],
+        "timings": [
+          809.7299999999999
+        ],
+        "bonuses": [
+          {
+            "damage": 1,
+            "baselineMs": 8000,
+            "quick": true
+          }
+        ],
+        "mode": "exam",
+        "problem": "addition-0",
+        "accepting": false,
+        "pendingNext": true,
+        "displayedTotal": 1,
+        "blocked": 0,
+        "teaching": false,
+        "completed": true,
+        "phase": "complete",
+        "quick": 0,
+        "quickBlock": false,
+        "impact": {
+          "phase": "idle",
+          "raw": 7,
+          "defense": 3,
+          "blocked": 3,
+          "damage": 4,
+          "hpBefore": 20,
+          "hpAfter": 16,
+          "hpLost": 4,
+          "target": "enemy"
+        },
+        "context": {
+          "theme": "exam",
+          "visible": true,
+          "earned": 1,
+          "background": "guild-room"
+        }
+      }
+    },
+    {
+      "mode": "catacomb",
+      "state": {
+        "completions": 1,
+        "damage": 1,
+        "results": [
+          true
+        ],
+        "timings": [
+          836.8499999999993
+        ],
+        "bonuses": [
+          {
+            "damage": 1,
+            "baselineMs": 8000,
+            "quick": true
+          }
+        ],
+        "mode": "catacomb",
+        "problem": "addition-0",
+        "accepting": false,
+        "pendingNext": true,
+        "displayedTotal": 1,
+        "blocked": 0,
+        "teaching": false,
+        "completed": true,
+        "phase": "complete",
+        "quick": 0,
+        "quickBlock": false,
+        "impact": {
+          "phase": "idle",
+          "raw": 7,
+          "defense": 3,
+          "blocked": 3,
+          "damage": 4,
+          "hpBefore": 20,
+          "hpAfter": 16,
+          "hpLost": 4,
+          "target": "enemy"
+        },
+        "context": {
+          "theme": "catacomb",
+          "visible": true,
+          "earned": 1,
+          "background": "catacomb-room"
+        }
+      }
+    }
+  ],
+  "storage": [],
+  "canvas": 1
+}

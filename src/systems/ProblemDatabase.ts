@@ -1,3 +1,4 @@
+import { advancedChoices, advancedProblems, isAdvancedNode } from './AdvancedCurriculum';
 import { BAND_RANGES, crossesTen } from './MathSkillRules';
 import { BandId, SubAtomId, SubAtomNumber, ProblemForm, ProblemDefinition, ALL_BANDS, ALL_SUB_ATOM_NUMBERS, ALL_PROBLEM_FORMS } from '../types';
 
@@ -45,16 +46,19 @@ export class ProblemDatabase {
         return this.problems.get(key);
     }
 
-    /** Generate 3 answer choices (including correct) with plausible distractors */
-    generateChoices(problem: ProblemDefinition): number[] {
+    /** Generate the numeric choices for the curriculum used by this problem. */
+    generateChoices(problem: ProblemDefinition, scope: 'standard' | 'practice' = 'standard'): number[] {
         if (problem.form === 'compare_equation_vs_number' || problem.form === 'compare_equation_vs_equation') {
             return [0, 1, 2]; // <, =, >
         }
+
+        if (problem.advanced) return advancedChoices(problem);
 
         const correct = problem.answer;
         const choices = new Set<number>([correct]);
         const range = BAND_RANGES[problem.bandId];
         const maxVal = range.maxResult;
+        const maxChoice = scope === 'practice' ? maxVal : maxVal + 5;
 
         let attempts = 0;
         while (choices.size < 3 && attempts < 50) {
@@ -75,15 +79,15 @@ export class ProblemDatabase {
                 wrong = Math.floor(Math.random() * (maxVal + 1));
             }
 
-            if (wrong >= 0 && wrong <= maxVal + 5 && wrong !== correct && !choices.has(wrong)) {
+            if (wrong >= 0 && wrong <= maxChoice && wrong !== correct && !choices.has(wrong)) {
                 choices.add(wrong);
             }
         }
 
         // Fallback if we couldn't generate enough distractors
-        while (choices.size < 3) {
-            const wrong = correct + choices.size;
-            choices.add(wrong);
+        for (let distance = 1; choices.size < 3 && distance <= maxChoice; distance++) {
+            if (correct >= distance) choices.add(correct - distance);
+            if (choices.size < 3 && correct + distance <= maxChoice) choices.add(correct + distance);
         }
 
         return this.shuffle([...choices]);
@@ -102,9 +106,11 @@ export class ProblemDatabase {
         for (const band of ALL_BANDS) {
             for (const num of ALL_SUB_ATOM_NUMBERS) {
                 const subAtomId = `${band}${num}` as SubAtomId;
-                this.generateSubAtomProblems(band, num, subAtomId);
+                if (!isAdvancedNode(subAtomId)) this.generateSubAtomProblems(band, num, subAtomId);
             }
         }
+
+        for (const problem of advancedProblems()) this.register(problem);
 
         console.log(`[ProblemDatabase] Generated ${this.problems.size} problems`);
     }
@@ -114,15 +120,18 @@ export class ProblemDatabase {
 
         for (const form of ALL_PROBLEM_FORMS) {
             const problems = this.generateProblemsForForm(band, subAtomId, subAtomNum, form, operators);
-            for (const p of problems) {
-                this.problems.set(p.key, p);
-                if (!this.bySubAtom.has(subAtomId)) this.bySubAtom.set(subAtomId, []);
-                this.bySubAtom.get(subAtomId)!.push(p);
-                const formKey = `${subAtomId}:${form}`;
-                if (!this.bySubAtomAndForm.has(formKey)) this.bySubAtomAndForm.set(formKey, []);
-                this.bySubAtomAndForm.get(formKey)!.push(p);
-            }
+            for (const problem of problems) this.register(problem);
         }
+    }
+
+    private register(problem: ProblemDefinition): void {
+        this.problems.set(problem.key, problem);
+        const subAtom = problem.subAtomId;
+        if (!this.bySubAtom.has(subAtom)) this.bySubAtom.set(subAtom, []);
+        this.bySubAtom.get(subAtom)!.push(problem);
+        const formKey = `${subAtom}:${problem.form}`;
+        if (!this.bySubAtomAndForm.has(formKey)) this.bySubAtomAndForm.set(formKey, []);
+        this.bySubAtomAndForm.get(formKey)!.push(problem);
     }
 
     /** Sub-atom 1=addition, 2=subtraction, 3=three-operand (mixed), 4=mixed */
@@ -387,6 +396,7 @@ export class ProblemDatabase {
                     return a > 10 && a <= 20 && b > 0 && b < 10 && crossesTen(a, answer) && answer >= 0;
                 }
         }
+        return false;
     }
 
     /** Get comparison target numbers for a band */

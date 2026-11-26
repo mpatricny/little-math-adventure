@@ -2,7 +2,12 @@ import { sfx, voice, gameAudio } from '../audio/AudioDirector';
 import { createEnemyRankBadge } from '../ui/EnemyRankBadge';
 import { waterHost } from '../ui/SceneLayoutHost';
 import { recordDefeatedEnemy } from '../systems/EnemyUnlockSystem';
-import { getPetAttackPower } from '../systems/CatacombPetProgress';
+import { CATACOMB_FOX_PET, getPetAttackPower } from '../systems/CatacombPetProgress';
+import { BattleFoxAbilitySession } from '../systems/BattleFoxAbilitySession';
+import { FOX_ABILITY_IDS, getFoxJourney } from '../systems/FoxAbilitySystem';
+import type { FoxAbilityId, FoxAbilityState, FoxOwnerId } from '../types/foxAbilities';
+import type { BattleFoxCombatCheckpoint } from '../types/foxBattleSession';
+import type { FoxAbilityPanelState } from '../ui/BattleFoxAbilityPanel';
 import Phaser from 'phaser';
 import { DEV_TOOLS_ENABLED } from '../config/buildVariant';
 import { finishEncounter } from '../telemetry/SceneTelemetry';
@@ -11,6 +16,7 @@ import { MathEngine } from '../systems/MathEngine';
 import { MathBoard, MathBoardRemoteSnapshot } from '../ui/MathBoard';
 import { MasterySystem } from '../systems/MasterySystem';
 import { GameStateManager } from '../systems/GameStateManager';
+import { SaveSystem } from '../systems/SaveSystem';
 import { ProgressionSystem, createInitialTownProgress } from '../systems/ProgressionSystem';
 import { CrystalSystem } from '../systems/CrystalSystem';
 import { awardArenaRewardMana } from '../systems/ArenaRewardSystem';
@@ -22,7 +28,9 @@ import { TrialFeedbackVisualizer } from '../ui/TrialFeedbackVisualizer';
 import { formatMathProblem } from '../utils/formatMathProblem';
 import { SpeedChargeBar } from '../ui/SpeedChargeBar';
 import { BattleActorStatusHud } from '../ui/BattleActorStatusHud';
+import { BattleFoxEffects } from '../ui/BattleFoxEffects';
 import { BattleActionDock, BattleHudPoint } from '../ui/BattleActionDock';
+import { BattleDockControl, dockImage, DOCK_OWNER_COLORS, type DockHost } from '../ui/BattleDockArt';
 import { BattlePreparationHud } from '../ui/BattlePreparationHud';
 import { TurnManager, BattleSceneCallbacks } from '../battle/TurnManager';
 import { CoopSessionManager } from '../systems/CoopSessionManager';
@@ -62,8 +70,36 @@ import { StorySystem } from '../systems/StorySystem';
 import { applyProblemComplexityDamage } from '../systems/ProblemComplexity';
 import { markComparisonStageIntroSeen } from '../systems/ComparisonLearningSystem';
 import { calculateShieldAnswerBlock } from '../systems/ShieldBlockSystem';
+import { createMathBoardView } from '../ui/mathboard/MathBoardView';
+import type { MathBoardCheckpoint } from '../ui/mathboard/checkpoint';
+import type { PersonalBattleBonusCheckpoint } from '../systems/PersonalBattleBonuses';
+import type { VictoryData, VictoryLoot } from './VictoryScene';
+import { PersonalBattleBonuses, type PracticeImprovementReward, type PracticeVictoryResult } from '../systems/PersonalBattleBonuses';
+import { PracticeSystem, type PracticePlayer } from '../systems/PracticeSystem';
+import { PracticeChoiceOverlay, type PracticeChoicePlayer } from '../ui/PracticeChoiceOverlay';
+import { ManaSystem } from '../systems/ManaSystem';
 
 export class BattleScene extends Phaser.Scene implements BattleSceneCallbacks {
+    private foxEffects!: BattleFoxEffects;
+    private foxSession: BattleFoxAbilitySession | null = null;
+    private foxRestored: BattleFoxCombatCheckpoint | null = null;
+    private foxTurnToken = 0;
+    private foxBusy = false;
+    private foxTargetOwner: FoxOwnerId | null = null;
+    private foxEnemyHitCommitted = false;
+    private foxActionHitCommitted = false;
+    private foxRestoring = false;
+    private foxInterruptedMathRecorded = false;
+    private foxBossTransition: { healAmount: number; healPercent: number; applied: boolean } | null = null;
+    private actorsHiddenByBoard = false;
+    private foxTargetOverlay: Phaser.GameObjects.Container | null = null;
+    private foxTargetLayout!: { cancel: DockHost; hint: DockHost; retry: DockHost };
+    private foxSaveRetry: Phaser.GameObjects.Container | null = null;
+    private practiceChoice: PracticeChoiceOverlay | null = null;
+    private awaitingPracticeChoice = false;
+    private personalBonuses: { A: PersonalBattleBonuses | null; B: PersonalBattleBonuses | null } = { A: null, B: null };
+    private personalBonusBattleId = '';
+    private victoryHandled = false;
     // Turn management
     private turnManager!: TurnManager;
 
@@ -86,7 +122,6 @@ export class BattleScene extends Phaser.Scene implements BattleSceneCallbacks {
     private blockAttemptsText!: Phaser.GameObjects.Text;
     private targetIndicator!: Phaser.GameObjects.Image;
     private battleActionDock!: BattleActionDock;
-    private battleActionDockFrame: Phaser.GameObjects.Image | null = null;
 
     // Wrong answer feedback
     private feedbackOverlay!: Phaser.GameObjects.Container;
@@ -148,7 +183,6 @@ export class BattleScene extends Phaser.Scene implements BattleSceneCallbacks {
     private petTargetIndex: number = 0;
     private petMathProblem: MathProblem | null = null;
     private petAttackDamage = 0;
-    private petAttackButton!: Phaser.GameObjects.Container;
     private petTargetIndicator: Phaser.GameObjects.Image | null = null;
     private petTargetIndicatorTween: Phaser.Tweens.Tween | null = null;
 
@@ -258,6 +292,10 @@ export class BattleScene extends Phaser.Scene implements BattleSceneCallbacks {
         // Get global game state
         this.gameState = GameStateManager.getInstance();
         const player = this.gameState.getPlayer();
+        this.foxSession = null; this.foxRestored = null; this.foxTurnToken = 0;
+        this.foxBusy = false; this.foxTargetOwner = null; this.foxEnemyHitCommitted = false;
+        this.foxActionHitCommitted = false; this.foxRestoring = false; this.foxTargetOverlay = null; this.foxSaveRetry = null;
+        this.foxInterruptedMathRecorded = false; this.foxBossTransition = null; this.actorsHiddenByBoard = false;
         this.mockMode = data.mockMode === true;
         this.storyVictory = data.storyVictory ?? null;
         this.ritualBossAttackReduction = Math.max(0, data.ritualBossAttackReduction ?? 0);
@@ -267,6 +305,11 @@ export class BattleScene extends Phaser.Scene implements BattleSceneCallbacks {
         this.coopSession = CoopSessionManager.getInstance();
         this.isCoopMode = !this.mockMode && this.coopSession.isCoopActive();
         this.playerBFallen = false;
+        this.victoryHandled = false;
+        this.personalBonusBattleId = Phaser.Utils.String.UUID();
+        this.personalBonuses = { A: null, B: null };
+        this.practiceChoice = null;
+        this.awaitingPracticeChoice = !this.mockMode;
 
         // Store journey mode data
         this.journeyMode = data.mode === 'journey';
@@ -485,6 +528,7 @@ export class BattleScene extends Phaser.Scene implements BattleSceneCallbacks {
             200,
         );
         this.speedChargeBar = this.heroHpBar.speedChargeBar!;
+        this.speedChargeBar.setVisible(false);
 
         // Pet position from spawn points or default relative to hero
         let petX: number, petY: number;
@@ -592,9 +636,11 @@ export class BattleScene extends Phaser.Scene implements BattleSceneCallbacks {
             // Make enemy clickable to select as target (for both player and pet turns)
             sprite.setInteractive({ useHandCursor: true });
             sprite.on('pointerdown', () => {
-                if (this.battleState.phase === 'player_turn') {
+                if (this.foxTargetOwner) {
+                    this.confirmFoxTarget(index);
+                } else if (!this.foxBusy && ['player_turn', 'player_b_turn'].includes(this.battleState.phase)) {
                     this.selectTarget(index);
-                } else if (this.battleState.phase === 'pet_turn') {
+                } else if (!this.foxBusy && ['pet_turn', 'pet_b_turn'].includes(this.battleState.phase)) {
                     this.selectPetTarget(index);
                 }
             });
@@ -609,6 +655,8 @@ export class BattleScene extends Phaser.Scene implements BattleSceneCallbacks {
         // leak through as empty decorative frames.
         if (!this.isCoopMode) {
             this.sceneBuilder.get('battlePlayerStatusHostB')?.destroy();
+            this.sceneBuilder.get('battlePlayerNameHostB')?.destroy();
+            this.sceneBuilder.get('battlePlayerNumberHostB')?.destroy();
         }
         for (let index = enemyCount; index < 4; index++) {
             this.sceneBuilder.get(`battleEnemyStatusHost${index + 1}`)?.destroy();
@@ -644,8 +692,41 @@ export class BattleScene extends Phaser.Scene implements BattleSceneCallbacks {
         this.mathEngine = new MathEngine(this.registry);
 
         // One shared board owns each complete attack batch; pets can still use showSingle.
-        this.mathBoard = new MathBoard(this, this.onMathComplete.bind(this));
+        const mathBoardPortraits = this.isCoopMode
+            ? [this.coopSession!.getPlayerASlotIndex(),this.coopSession!.getPlayerBSlotIndex()].map(slot =>
+                SaveSystem.load(slot)?.player.characterType === 'boy_knight' ? 'town-hud-hero-portrait' : 'town-hud-heroine-portrait')
+            : undefined;
+        this.mathBoard = new MathBoard(this, this.onMathComplete.bind(this),
+            (scene, onDemo) => {
+                const view = createMathBoardView(scene, onDemo, () => ({
+                practice: (this.isCoopMode
+                    ? this.coopSession?.getActivePlayer() === 'B'
+                        ? this.coopSession.getPlayerBMasteryData() : this.coopSession?.getPlayerAMasteryData()
+                    : this.gameState.getMasteryData())?.practice?.mode === 'practice',
+                // Actual saved portraits, including two children with the same character.
+                portraits: mathBoardPortraits,
+                activePlayer: this.isCoopMode && this.coopSession?.getActivePlayer() === 'B' ? 2 : 1,
+                }));
+                const offset = this.sceneBuilder.getElementDef('battleMathBoardOffsetHost')!;
+                view.setDisplayOffset(offset.x, offset.y);
+                return view;
+            });
+        this.mathBoard.setNumberIntroductionProvider(problem => this.mockMode ? undefined :
+            this.getCoopSafeMasterySystem().getNumberIntroduction(problem, () => {
+                if (this.isCoopMode) this.coopSession?.persistActiveMasteryProgress();
+                else this.gameState.save();
+            }));
+        this.sceneBuilder.get('battleMathBoardOffsetHost')?.destroy();
+        this.mathBoard.setCheckpointChangedCallback(() => this.checkpointFoxCombat());
+        const pauseBoard = () => { this.mathBoard.suspend('scene-pause'); this.checkpointFoxCombat(); };
+        const resumeBoard = () => this.mathBoard.resume('scene-pause');
+        this.events.on(Phaser.Scenes.Events.PAUSE, pauseBoard);
+        this.events.on(Phaser.Scenes.Events.RESUME, resumeBoard);
+        this.events.once('shutdown', () => { this.events.off(Phaser.Scenes.Events.PAUSE, pauseBoard); this.events.off(Phaser.Scenes.Events.RESUME, resumeBoard); });
+        this.events.on(Phaser.Scenes.Events.POST_UPDATE, this.syncBattleActorsForBoard, this);
+        this.events.once('shutdown', () => this.events.off(Phaser.Scenes.Events.POST_UPDATE, this.syncBattleActorsForBoard, this));
         this.mathBoard.setActiveProblemChangedCallback((snapshot) => {
+            if(snapshot)this.hideCoopTurnLabel();
             // A previous block's floating result must not cover a new question.
             if (this.blockResultText) {
                 this.tweens.killTweensOf(this.blockResultText);
@@ -658,19 +739,9 @@ export class BattleScene extends Phaser.Scene implements BattleSceneCallbacks {
             this.handleRemoteCommand(command);
         });
 
-        // Speed charge bar callback: MathBoard delegates charge management to BattleScene
-        this.mathBoard.setSpeedChargeCallback((charges, _type) => {
-            // Don't accumulate charges during block phase — block has its own quick-block bonus
-            if (this.isBlockPhase) return 0;
-
-            // Use the correct player's speed charge bar in co-op
-            const isPlayerB = this.isCoopMode && this.coopSession?.getActivePlayer() === 'B';
-            const activeBar = (isPlayerB && this.speedChargeBarB) ? this.speedChargeBarB : this.speedChargeBar;
-            const result = activeBar.addCharges(charges);
-            if (result.bonusDamage > 0) {
-                this.showChargeBarFilledEffect(result.bonusDamage);
-            }
-            return result.bonusDamage;
+        this.mathBoard.setPersonalBonusCallback(answer => {
+            const owner = this.isCoopMode ? this.coopSession!.getActivePlayer() : 'A';
+            return this.personalBonuses[owner]?.answer(answer) ?? { damage: 0, baselineMs: null, quick: false };
         });
 
         // Wrong answer feedback overlay
@@ -679,6 +750,9 @@ export class BattleScene extends Phaser.Scene implements BattleSceneCallbacks {
             this.showWrongAnswerFeedback(problem, onDismiss);
         });
         this.events.on('shutdown', () => {
+            this.practiceChoice?.destroy();
+            this.practiceChoice = null;
+            this.awaitingPracticeChoice = false;
             this.closeFeedbackOverlay();
             this.events.off(Phaser.Scenes.Events.POST_UPDATE, this.followTargetIndicator, this);
             this.unsubscribeRemoteCommand?.();
@@ -687,16 +761,18 @@ export class BattleScene extends Phaser.Scene implements BattleSceneCallbacks {
             MasterySystem.getInstance().setActiveData(null);
         });
 
+        this.foxEffects = new BattleFoxEffects(this);
+        this.openFoxBattleSession();
         this.createBattleActionDock();
         this.createBlockUI();
 
         if (this.resolvedJourneyEncounter?.boss?.tidalWave) {
             this.depthBossHud = new UnderwaterBossHud(this);
             this.depthPlayerMaxHp = player.maxHp;
-            this.tidalBlessing.A = hasUnderwaterBlessing(player);
+            if (!this.foxRestored) this.tidalBlessing.A = hasUnderwaterBlessing(player);
             if (this.isCoopMode && this.coopSession) {
                 this.coopSession.activatePlayerB();
-                this.tidalBlessing.B = hasUnderwaterBlessing(this.gameState.getPlayer());
+                if (!this.foxRestored) this.tidalBlessing.B = hasUnderwaterBlessing(this.gameState.getPlayer());
                 this.coopSession.activatePlayerA();
             }
             this.refreshDepthBossHud();
@@ -710,8 +786,74 @@ export class BattleScene extends Phaser.Scene implements BattleSceneCallbacks {
         // Setup universal debugger
         this.setupDebugger();
 
-        // Start battle
-        this.time.delayedCall(500, () => this.setPhase('player_turn'));
+        // Every encounter, including arena waves, uses this single confirmation
+        // gate. The first timed problem and bonus snapshots follow its choices.
+        if (this.foxRestored && this.foxRestored.battle.phase !== 'start') this.resumeFoxBattle();
+        else this.openPracticeChoice();
+        // A backgrounded tab retains the unfinished question's active time.
+        const saveInterrupted = () => this.checkpointFoxCombat();
+        const saveHidden = () => { if (document.hidden) saveInterrupted(); };
+        window.addEventListener('pagehide', saveInterrupted);
+        document.addEventListener('visibilitychange', saveHidden);
+        const timer = this.time.addEvent({ delay: 5000, loop: true, callback: () => {
+            if (this.mathBoard.exportCheckpoint() && !this.mathBoard.isSuspended()) this.checkpointFoxCombat();
+        } });
+        this.events.once('shutdown', () => {
+            timer.destroy(); window.removeEventListener('pagehide', saveInterrupted);
+            document.removeEventListener('visibilitychange', saveHidden);
+            this.foxTargetOverlay?.destroy(true);
+            this.foxSession?.close();
+        });
+    }
+
+    private openPracticeChoice(): void {
+        if (this.mockMode) { this.beginConfirmedBattle(); return; }
+        const owners: PracticePlayer[] = this.isCoopMode ? ['A', 'B'] : ['active'];
+        const players: PracticeChoicePlayer[] = owners.flatMap((owner, index) => {
+            const overview = PracticeSystem.getOverview(owner);
+            if (!overview) return [];
+            const character = this.isCoopMode
+                ? SaveSystem.load(owner === 'B' ? this.coopSession!.getPlayerBSlotIndex() : this.coopSession!.getPlayerASlotIndex())?.player.characterType
+                : this.gameState.getPlayer().characterType;
+            return [{ owner, overview, number: index + 1,
+                portrait: character === 'boy_knight' ? 'town-hud-hero-portrait' : 'town-hud-heroine-portrait' }];
+        });
+        // Young starting profiles meet the two paths at their existing milestone.
+        if (!players.some(p => p.overview.introductionSeen || p.overview.introductionAvailable)) {
+            this.beginConfirmedBattle(); return;
+        }
+        this.practiceChoice = new PracticeChoiceOverlay(this, {
+            players,
+            location: 'battle',
+            onConfirm: choices => {
+                // Inspect both actual owners before persisting either preference.
+                if (choices.some(choice => {
+                    const overview = PracticeSystem.getOverview(choice.owner);
+                    return !overview || (choice.mode === 'practice'
+                        && !overview.targets.some(target => target.targetId === choice.targetId));
+                })) return false;
+                for (const choice of choices) {
+                    if (!PracticeSystem.setMode(choice.mode, undefined, choice.owner, 'battle')) return false;
+                }
+                this.beginConfirmedBattle();
+                this.practiceChoice = null;
+                return true;
+            },
+        });
+    }
+
+    private beginConfirmedBattle(): void {
+        if (!this.mockMode) {
+            const a = this.isCoopMode ? this.coopSession!.getPlayerAMasteryData()! : this.gameState.getMasteryData();
+            this.personalBonuses.A = new PersonalBattleBonuses(a, CoopSessionManager.getInstance().getFoxProgressForMastery(a));
+            if (this.isCoopMode) {
+                const b = this.coopSession!.getPlayerBMasteryData()!;
+                this.personalBonuses.B = new PersonalBattleBonuses(b, this.coopSession!.getFoxProgressForMastery(b));
+            }
+        }
+        this.awaitingPracticeChoice = false;
+        // Delay prevents the confirmation tap from also selecting a battle action.
+        this.time.delayedCall(250, () => this.setPhase('player_turn'));
     }
 
     /**
@@ -770,10 +912,19 @@ export class BattleScene extends Phaser.Scene implements BattleSceneCallbacks {
         const x = authoredHost?.x ?? referencePoint.x;
         const y = authoredHost?.y ?? referencePoint.y + defaultOffsetY;
         const depth = authoredHost?.depth ?? 80;
-        const frameWidth = authoredHost?.displayWidth || (kind === 'player' ? 150 : 118);
-        const frameHeight = authoredHost?.displayHeight || (kind === 'player' ? 34 : 28);
+        const hostDef = this.sceneBuilder.getElementDef(hostId);
+        const frameWidth = hostDef?.width || (kind === 'player' ? 150 : 118);
+        const frameHeight = hostDef?.height || (kind === 'player' ? 34 : 28);
         authoredHost?.destroy();
 
+        const ownerId = hostId.endsWith('B') ? 'B' : 'A';
+        const identity = kind === 'player' ? {
+            name: (this.isCoopMode
+                ? SaveSystem.load(ownerId === 'B' ? this.coopSession!.getPlayerBSlotIndex() : this.coopSession!.getPlayerASlotIndex())?.player.name
+                : this.gameState.getPlayer().name) || 'Hrdina',
+            label: this.consumeHudPoint(`battlePlayerNameHost${ownerId}`, this.sceneBuilder.getElementDef(`battlePlayerNameHost${ownerId}`)! as BattleHudPoint) as DockHost,
+            number: this.consumeHudPoint(`battlePlayerNumberHost${ownerId}`, this.sceneBuilder.getElementDef(`battlePlayerNumberHost${ownerId}`)! as BattleHudPoint) as DockHost,
+        } : undefined;
         return new BattleActorStatusHud(this, {
             anchor,
             sprite,
@@ -794,6 +945,9 @@ export class BattleScene extends Phaser.Scene implements BattleSceneCallbacks {
             trackWidth: kind === 'player' ? 115 : 86,
             trackHeight: kind === 'player' ? 9 : 7,
             name: hostId,
+            ownerIndex: kind === 'player' ? ownerId === 'B' ? 2 : 1 : undefined,
+            identity,
+            anchorToBody: true,
         });
     }
 
@@ -824,59 +978,444 @@ export class BattleScene extends Phaser.Scene implements BattleSceneCallbacks {
     }
 
     private createBattleActionDock(): void {
-        this.battleActionDockFrame = this.sceneBuilder.get<Phaser.GameObjects.Image>('battleActionDockFrame') ?? null;
-        const layout = {
-            potion: this.consumeHudPoint('battlePotionActionHost', {
-                x: 499, y: 664, depth: 83, width: 50, height: 50,
-            }),
-            potionBadge: this.consumeHudPoint('battlePotionBadgeHost', {
-                x: 534, y: 677, depth: 84, width: 32, height: 32,
-            }),
-            attack: this.consumeHudPoint('battleSwordActionHost', {
-                x: 640, y: 648, depth: 84, width: 84, height: 84,
-            }),
-            pet: this.consumeHudPoint('battlePetActionHost', {
-                x: 782, y: 660, depth: 83, width: 60, height: 60,
-            }),
-            petBadge: this.consumeHudPoint('battlePetBadgeHost', {
-                x: 822, y: 677, depth: 84, width: 32, height: 32,
-            }),
+        const host = (id: string): DockHost => {
+            const def = this.sceneBuilder.getElementDef(id);
+            if (!def?.width || !def?.height) throw new Error(`Missing battle dock host: ${id}`);
+            const point = this.consumeHudPoint(id, def as BattleHudPoint);
+            return { ...def, ...point, width: point.width ?? def.width, height: point.height ?? def.height,
+                regions: def.data?.regions, wide: def.data?.wide } as DockHost;
         };
-        this.battleActionDock = new BattleActionDock(this, layout, {
-            onAttack: () => this.onAttackClicked(),
-            onPotion: () => this.usePotion(),
-            onPet: () => this.onPetAttackClicked(),
-        });
+        this.battleActionDock = new BattleActionDock(this, {
+            footer: host('battleActionFooterHost'), attack: host('battleAttackActionHost'),
+            attackIcon: host('battleAttackIconHost'), potion: host('battlePotionActionHost'), potionIcon: host('battlePotionIconHost'),
+            potionBadge: host('battlePotionBadgeHost'), power: host('battleActionPowerHost'), owner: host('battleActionOwnerHost'),
+            portraitFrame: host('battleActionPortraitFrameHost'), portrait: host('battleActionPortraitHost'),
+            name: host('battleActionNameHost'), ownerMark: host('battleActionOwnerMarkHost'), divider: host('battleActionDividerHost'),
+            oneFoxOffset: host('battleActionOneFoxOffsetHost'),
+            fox: {
+                frame: host('battleFoxFrameHost'), singleFrame: host('battleFoxSingleFrameHost'),
+                tabs: [host('battleFoxOwnerHostA'), host('battleFoxOwnerHostB')], singleTab: host('battleFoxSingleOwnerHost'),
+                divider: host('battleFoxDividerHost'),
+                abilities: { shield: host('battleFoxShieldHost'), heal: host('battleFoxHealHost'), strike: host('battleFoxStrikeHost') },
+            },
+        }, { onAttack: () => this.onAttackClicked(), onPotion: () => this.usePotion(),
+            useFoxAbility: (owner, ability) => this.useFoxAbility(owner, ability) });
+        this.foxTargetLayout = { cancel: host('battleFoxTargetCancelHost'), hint: host('battleFoxTargetHintHost'), retry: host('battleFoxRetryHost') };
         this.attackButton = this.battleActionDock.attackRoot;
         this.potionButton = this.battleActionDock.potionRoot;
-        this.petAttackButton = this.battleActionDock.petRoot;
         this.renderBattleActionDock();
     }
 
     private renderBattleActionDock(): void {
         if (!this.battleActionDock || !this.battleState) return;
+        this.syncFoxShields();
         const phase = this.battleState.phase;
-        const visible = phase !== 'victory' && phase !== 'defeat';
+        const visible = !this.awaitingPracticeChoice && phase !== 'start'
+            && phase !== 'victory' && phase !== 'defeat';
         const isPlayerTurn = phase === 'player_turn' || phase === 'player_b_turn';
         const isPetTurn = phase === 'pet_turn' || phase === 'pet_b_turn';
-        const activeB = phase.includes('_b_')
-            || (this.isCoopMode && this.coopSession?.getActivePlayer() === 'B');
+        const isPetAction = phase.startsWith('pet_');
+        // Phase callbacks have already activated the owner, including enemy-block
+        // context. Reading that context does not switch or mutate either save.
+        const activeB = this.isCoopMode && this.coopSession?.getActivePlayer() === 'B';
         const petDef = activeB ? this.equippedPetBDef : this.equippedPetDef;
         const petSprite = activeB ? this.petBSprite : this.petSprite;
         const player = this.gameState.getPlayer();
+        const petPortrait = petDef ? `${petDef.spriteKey}-portrait` : null;
+        const hasPetPortrait = Boolean(petPortrait && this.textures.exists(petPortrait));
+        const ownerColor = DOCK_OWNER_COLORS[activeB ? 'B' : 'A'];
+        const actorActing = phase.startsWith('player_') || phase.startsWith('pet_');
+        this.heroHpBar?.setSelected(visible && !activeB && actorActing, ownerColor);
+        this.heroBHpBar?.setSelected(visible && Boolean(activeB) && actorActing, ownerColor);
 
-        this.battleActionDockFrame?.setVisible(visible);
         this.battleActionDock.render({
             visible,
-            attackEnabled: isPlayerTurn,
-            attackEmphasized: isPlayerTurn,
-            potionEnabled: isPlayerTurn && !this.mockMode && player.potions > 0,
+            attackEnabled: (isPlayerTurn || isPetTurn) && !this.pauseMenu?.isPaused() && !this.foxBusy && !this.foxTargetOwner,
+            actorKind: isPetAction ? 'pet' : 'hero',
+            owner: activeB ? 'B' : 'A',
+            ownerName: player.name || 'Hrdina',
+            attackPower: player.attack,
+            fox: this.foxPanelState(visible),
+            ownerPortrait: player.characterType === 'boy_knight'
+                ? 'town-hud-hero-portrait' : 'town-hud-heroine-portrait',
+            coop: this.isCoopMode,
+            potionEnabled: isPlayerTurn && !this.mockMode && player.potions > 0 && !this.pauseMenu?.isPaused()
+                && !this.foxBusy && !this.foxTargetOwner && (activeB ? this.battleState.playerBHp ?? 0 : this.battleState.playerHp) < player.maxHp,
             potionCount: this.mockMode ? 0 : player.potions,
-            petEnabled: isPetTurn,
-            petTexture: petDef?.spriteKey ?? null,
-            petFrame: petSprite?.frame?.name ?? 0,
+            petTexture: hasPetPortrait ? petPortrait : petSprite?.texture.key ?? petDef?.spriteKey ?? null,
+            petFrame: hasPetPortrait ? undefined : petSprite?.frame?.name ?? 0,
+            petId: petDef?.id,
             petDamage: petDef?.damageMultiplier ?? 0,
         });
+    }
+
+    private foxPlayer(owner: FoxOwnerId): PlayerState | null {
+        const slot = this.isCoopMode ? owner === 'B' ? this.coopSession!.getPlayerBSlotIndex() : this.coopSession!.getPlayerASlotIndex()
+            : owner === 'A' ? this.gameState.getActiveSlotIndex() : null;
+        if (slot === null) return null;
+        return this.gameState.getActiveSlotIndex() === slot ? this.gameState.getPlayer() : SaveSystem.load(slot)?.player ?? null;
+    }
+
+    private syncFoxShields(): void {
+        const ledger = this.foxSession?.snapshot().ledger;
+        if (!this.foxEffects || !ledger) return;
+        this.foxEffects.syncShield('A', this.hero, ledger.owners.A?.shieldRemaining ?? 0);
+        if (this.heroB) this.foxEffects.syncShield('B', this.heroB, ledger.owners.B?.shieldRemaining ?? 0);
+    }
+
+    private captureFoxCombat(): BattleFoxCombatCheckpoint {
+        const owners: BattleFoxCombatCheckpoint['owners'] = {};
+        for (const id of (this.isCoopMode ? ['A', 'B'] : ['A']) as FoxOwnerId[]) {
+            const p = this.foxPlayer(id);
+            if (p) owners[id] = { maxHp: p.maxHp, foxEquipped: p.activePet === CATACOMB_FOX_PET,
+                shieldEquipped: Boolean(p.equippedShield), preparation: PreparationSystem.getState(p) };
+        }
+        return {
+            battle: structuredClone(this.battleState),
+            enemyKeys: this.battleState.enemies.map(e => `${this.currentBossPhase}:${e.id}`),
+            owners, activeOwner: this.isCoopMode ? this.coopSession!.getActivePlayer() : 'A',
+            turnToken: String(this.foxTurnToken), paused: this.pauseMenu?.isPaused() ?? false,
+            defenseActive: this.isBlockPhase || ['enemy_turn', 'enemy_attack', 'player_defend'].includes(this.battleState.phase),
+            busy: this.foxBusy || this.foxTargetOwner !== null || this.awaitingPracticeChoice || this.foxBossTransition !== null
+                || !['player_turn', 'player_b_turn', 'pet_turn', 'pet_b_turn', 'player_math', 'player_b_math', 'pet_math', 'pet_b_math'].includes(this.battleState.phase),
+            resumeData: {
+                currentBossPhase: this.currentBossPhase, currentEnemyAttackTarget: this.currentEnemyAttackTarget,
+                currentAttackingEnemyIndex: this.currentAttackingEnemyIndex, enemyHitCommitted: this.foxEnemyHitCommitted,
+                actionHitCommitted: this.foxActionHitCommitted, isBlockPhase: this.isBlockPhase,
+                bossTransition: this.foxBossTransition, interruptedMathRecorded: this.foxInterruptedMathRecorded,
+                waveWrongAnswerCount: this.waveWrongAnswerCount, lastStandTriggered: this.lastStandTriggered,
+                lastAnswerCorrect: this.lastAnswerCorrect, petTargetIndex: this.petTargetIndex,
+                playerBFallen: this.playerBFallen, mathBoardContext: this.mathBoardContext,
+                pendingDamage: this.pendingDamage, currentBlockPower: this.currentBlockPower,
+                blockCorrectCount: this.blockCorrectCount,
+                mathBoard: this.mathBoard?.exportCheckpoint() ?? null, petMathProblem: this.petMathProblem, petAttackDamage: this.petAttackDamage,
+                personalBonuses: { A: this.personalBonuses.A?.exportCheckpoint(), B: this.personalBonuses.B?.exportCheckpoint() },
+                coopWrongCounts: this.coopSession ? [this.coopSession.playerAWrongCount, this.coopSession.playerBWrongCount] : [0, 0],
+                selectedAbilityOwner: this.battleActionDock?.abilityOwner,
+                tidalAttacks: this.tidalAttacks, tidalBlessing: this.tidalBlessing, personalBonusBattleId: this.personalBonusBattleId,
+            },
+        };
+    }
+
+    private openFoxBattleSession(): void {
+        if (this.mockMode) return;
+        const hostSlot = this.isCoopMode ? this.coopSession!.getPlayerASlotIndex() : this.gameState.getActiveSlotIndex();
+        const host = this.foxPlayer('A');
+        if (hostSlot === null || !host?.gameplayProfileId) return;
+        const owners = ((this.isCoopMode ? ['A', 'B'] : ['A']) as FoxOwnerId[]).flatMap(id => {
+            const player = this.foxPlayer(id);
+            return player?.gameplayProfileId ? [{ id, profileId: player.gameplayProfileId, player }] : [];
+        });
+        if (!owners.some(owner => owner.player.activePet === CATACOMB_FOX_PET)) return;
+        const encounterKey = JSON.stringify([this.encounterId ?? this.battleState.enemies.map(e => e.id),
+            this.fromArena ? 'arena' : this.returnScene, this.fromArena ? null : this.returnData]);
+        const previous = SaveSystem.load(hostSlot)?.player.foxAbilityBattle;
+        if (previous?.ledger.status === 'active' && (previous.encounterKey !== encounterKey
+            || JSON.stringify(Object.entries(previous.ledger.owners).map(([id, owner]) => [id, owner?.profileId]).sort())
+                !== JSON.stringify(owners.map(owner => [owner.id, owner.profileId]).sort()))) {
+            const closed = structuredClone(previous); closed.ledger.status = 'closed'; closed.revision++;
+            if (!SaveSystem.writeFoxAbilityCheckpoint(hostSlot, host.gameplayProfileId!, closed,
+                { battleId: previous.battleId, revision: previous.revision }, this.gameState.getActiveSlotIndex() === hostSlot
+                    ? { player: this.gameState.getPlayer(), mathStats: this.gameState.getMathStats(), timestamp: Date.now() } : undefined)) {
+                console.warn('[Fox abilities] Previous expedition could not be closed'); return;
+            }
+        }
+        const opened = BattleFoxAbilitySession.open({ encounterKey, owners,
+            capture: () => this.captureFoxCombat(),
+            store: {
+                read: () => SaveSystem.load(hostSlot)?.player.foxAbilityBattle ?? null,
+                write: (next, expected) => SaveSystem.writeFoxAbilityCheckpoint(hostSlot, host.gameplayProfileId!, next, expected,
+                    this.gameState.getActiveSlotIndex() === hostSlot
+                        ? { player: this.gameState.getPlayer(), mathStats: this.gameState.getMathStats(), timestamp: Date.now() } : undefined),
+            },
+        });
+        if (!opened.ok) { console.warn('[Fox abilities] Checkpoint unavailable:', opened.reason); return; }
+        this.foxSession = opened.session;
+        if (opened.resumed) {
+            this.foxRestoring = true;
+            this.foxRestored = opened.combat;
+            this.applyFoxCombat(opened.combat);
+            const data = opened.combat.resumeData;
+            this.foxTurnToken = Number(opened.combat.turnToken) || 0;
+            this.currentBossPhase = Number(data.currentBossPhase ?? 0);
+            this.waveWrongAnswerCount = Number(data.waveWrongAnswerCount ?? 0);
+            this.lastStandTriggered = Boolean(data.lastStandTriggered);
+            this.lastAnswerCorrect = data.lastAnswerCorrect !== false;
+            this.petTargetIndex = Number(data.petTargetIndex ?? 0);
+            this.playerBFallen = Boolean(data.playerBFallen);
+            this.currentAttackingEnemyIndex = Number(data.currentAttackingEnemyIndex ?? 0);
+            this.currentEnemyAttackTarget = data.currentEnemyAttackTarget === 'B' ? 'B' : 'A';
+            this.foxEnemyHitCommitted = Boolean(data.enemyHitCommitted);
+            this.foxActionHitCommitted = Boolean(data.actionHitCommitted);
+            this.foxBossTransition = (data.bossTransition as BattleScene['foxBossTransition']) ?? null;
+            this.foxInterruptedMathRecorded = Boolean(data.interruptedMathRecorded);
+            this.pendingDamage = Number(data.pendingDamage ?? 0);
+            this.currentBlockPower = Number(data.currentBlockPower ?? 1);
+            this.blockCorrectCount = Number(data.blockCorrectCount ?? 0);
+            this.isBlockPhase = Boolean(data.isBlockPhase);
+            this.mathBoardContext = ['attack', 'block', 'pet'].includes(String(data.mathBoardContext)) ? data.mathBoardContext as 'attack'|'block'|'pet' : null;
+            this.petMathProblem = data.petMathProblem as MathProblem | null;
+            this.petAttackDamage = Number(data.petAttackDamage ?? 0);
+            if (data.tidalAttacks) this.tidalAttacks = data.tidalAttacks as Record<FoxOwnerId, number>;
+            if (data.tidalBlessing) this.tidalBlessing = data.tidalBlessing as Record<FoxOwnerId, boolean>;
+            if (this.coopSession && Array.isArray(data.coopWrongCounts)) {
+                this.coopSession.playerAWrongCount = Number(data.coopWrongCounts[0]);
+                this.coopSession.playerBWrongCount = Number(data.coopWrongCounts[1]);
+            }
+            this.personalBonusBattleId = String(data.personalBonusBattleId ?? this.personalBonusBattleId);
+            if (this.isBoss && this.bossPhases[this.currentBossPhase]) {
+                this.currentPhaseAbility = this.bossPhases[this.currentBossPhase].ability ?? null;
+                this.applyBossPhaseOverrides(this.bossPhases[this.currentBossPhase]);
+                this.enemies[0].play(this.getBossAnimKey(0, 'idle'));
+            }
+        }
+    }
+
+    private applyFoxCombat(combat: BattleFoxCombatCheckpoint): void {
+        Object.assign(this.battleState, structuredClone(combat.battle));
+        this.updateHpBar(this.heroHpBar, this.battleState.playerHp, combat.owners.A?.maxHp ?? this.foxPlayer('A')!.maxHp);
+        if (this.heroBHpBar && combat.owners.B) this.updateHpBar(this.heroBHpBar, this.battleState.playerBHp ?? 0, combat.owners.B.maxHp);
+        this.battleState.enemies.forEach((enemy, index) => this.enemyHpBars[index]?.setHp(enemy.hp, enemy.maxHp));
+        for (const id of ['A', 'B'] as const) {
+            const actor = combat.owners[id], p = this.foxPlayer(id);
+            if (!actor || !p || JSON.stringify(PreparationSystem.getState(p)) === JSON.stringify(actor.preparation)) continue;
+            p.preparation = structuredClone(actor.preparation);
+            const slot = this.isCoopMode ? id === 'B' ? this.coopSession!.getPlayerBSlotIndex() : this.coopSession!.getPlayerASlotIndex() : this.gameState.getActiveSlotIndex();
+            if (slot === this.gameState.getActiveSlotIndex()) this.gameState.save();
+            else if (slot !== null) { const saved = SaveSystem.load(slot); if (saved) SaveSystem.save(slot, p, saved.mathStats); }
+        }
+        this.refreshActivePreparationIndicator();
+    }
+
+    private syncBattleActorsForBoard(): void {
+        const foxOverlay = Boolean(this.foxBusy || this.foxTargetOwner);
+        const hidden = Boolean(this.mathBoardContext && this.mathBoard?.getContainer().visible
+            && this.mathBoard.getContainer().alpha > .01 && !foxOverlay);
+        // The board's entrance may finish after the picker opened. Keep late
+        // turn labels and ordinary target markers out of the ability overlay.
+        this.coopTurnLabel?.setVisible(!foxOverlay);
+        if (hidden || foxOverlay) { this.targetIndicator?.setVisible(false); this.hidePetTargetIndicator(); }
+        if (hidden === this.actorsHiddenByBoard) return;
+        this.actorsHiddenByBoard = hidden;
+        [this.heroContainer, this.heroBContainer, this.petContainer, this.petBContainer, ...this.enemyContainers]
+            .forEach(actor => actor?.setVisible(!hidden));
+        this.heroHpBar?.setVisible(!hidden); this.heroBHpBar?.setVisible(!hidden);
+        this.enemyHpBars.forEach((hud, index) => hud.setVisible(!hidden && this.battleState.enemies[index].hp > 0));
+    }
+
+    private checkpointFoxCombat(): void {
+        if (!this.foxSession || this.foxRestoring || this.foxSession.snapshot().ledger.status !== 'active') return;
+        if (!this.foxSession.checkpointCombat()) console.warn('[Fox abilities] Combat checkpoint could not be saved');
+    }
+
+    /** Restore the committed result, never replay a consumed ability or an applied hit. */
+    private resumeFoxBattle(): void {
+        const saved = this.foxRestored!;
+        const data = saved.resumeData;
+        this.awaitingPracticeChoice = false;
+        if (this.isCoopMode) {
+            if (saved.activeOwner === 'B') this.coopSession!.activatePlayerB();
+            else this.coopSession!.activatePlayerA();
+        }
+        for (const owner of (this.isCoopMode ? ['A', 'B'] : ['A']) as FoxOwnerId[]) {
+            const mastery = this.isCoopMode ? owner === 'A' ? this.coopSession!.getPlayerAMasteryData() : this.coopSession!.getPlayerBMasteryData()
+                : this.gameState.getMasteryData();
+            if (!mastery) continue;
+            this.personalBonuses[owner] = new PersonalBattleBonuses(mastery, CoopSessionManager.getInstance().getFoxProgressForMastery(mastery), 'resume');
+            const bonus = (data.personalBonuses as Partial<Record<FoxOwnerId, PersonalBattleBonusCheckpoint>> | undefined)?.[owner];
+            if (bonus) this.personalBonuses[owner]!.restoreCheckpoint(bonus);
+        }
+        this.battleState.enemies.forEach((enemy, i) => {
+            if (enemy.hp <= 0) { this.enemyContainers[i].setAlpha(0); this.enemyHpBars[i].setVisible(false); }
+        });
+        if (this.battleState.playerHp <= 0) this.heroContainer.setAlpha(.4);
+        if ((this.battleState.playerBHp ?? 1) <= 0) this.heroBContainer?.setAlpha(.4);
+        this.registry.set('playerLevel', this.gameState.getPlayer().level);
+        this.mathEngine.reloadStats();
+        this.foxRestoring = false;
+        if (this.foxBossTransition) {
+            this.enemyContainers[0].setAlpha(1); this.enemyHpBars[0].setVisible(true);
+            if (this.foxBossTransition.applied) { this.foxBossTransition = null; this.setPhase('enemy_turn'); }
+            else this.showBossPhaseOverlay(this.bossPhases[this.currentBossPhase], this.foxBossTransition.healAmount, this.foxBossTransition.healPercent);
+            this.foxRestored = null;
+            return;
+        }
+        if (!this.battleState.enemies.some(enemy => enemy.hp > 0)) {
+            this.finishFoxBattleIfWon(); this.foxRestored = null; return;
+        }
+        const board = data.mathBoard as MathBoardCheckpoint | null;
+        const phase = saved.battle.phase;
+        if (board && !board.completionDelivered && this.mathBoardContext) {
+            const options = this.getComparisonBoardOptions(this.getCoopSafeMasterySystem());
+            if (this.mathBoardContext === 'pet') {
+                this.petMathProblem = board.problems[0];
+                this.mathBoard.showSingle(this.petMathProblem, this.onPetMathComplete.bind(this), options);
+            }
+            if (this.isBlockPhase) this.blockPhaseResumeCallback = () => this.returnEnemyToPosition(this.currentAttackingEnemyIndex);
+            this.mathBoard.restoreCheckpoint(board, options);
+        } else if (phase === 'enemy_turn' || phase === 'enemy_attack' || phase === 'player_defend') {
+            if (this.foxEnemyHitCommitted) this.returnEnemyToPosition(this.currentAttackingEnemyIndex);
+            else this.playEnemyAttack();
+        } else if (this.foxActionHitCommitted && (phase.endsWith('_attack') || phase === 'pet_math' || phase === 'pet_b_math')) {
+            this.setPhase(phase.startsWith('pet_b') ? this.turnManager.nextPhaseAfterPetBAction()
+                : phase.startsWith('pet_') ? this.turnManager.nextPhaseAfterPetAction()
+                : phase.startsWith('player_b') ? this.turnManager.nextPhaseAfterPlayerB() : this.turnManager.nextPhaseAfterPlayerAttack());
+        } else {
+            // Idle turns and pre-hit animations are safe to enter again.
+            this.turnManager.setPhase(phase);
+        }
+        this.foxRestored = null;
+        this.battleActionDock.abilityPanel.restoreSelection(data.selectedAbilityOwner === 'B' ? 'B' : 'A', String(this.foxTurnToken));
+        this.renderBattleActionDock();
+        this.checkpointFoxCombat();
+    }
+
+    private useFoxAbility(owner: FoxOwnerId, ability: FoxAbilityId, targetIndex?: number): void {
+        if (!this.foxSession || this.foxBusy || this.foxTargetOwner || this.pauseMenu?.isPaused()) return;
+        if (this.foxSession.readOwner(owner)[ability].disabledReason !== null) {
+            this.mathBoard.getContainer().setAlpha(1); this.mathBoard.resume('fox-ability');
+            this.renderBattleActionDock(); return;
+        }
+        this.mathBoard.suspend('fox-ability');
+        if (ability === 'strike' && targetIndex === undefined) {
+            this.foxTargetOwner = owner;
+            this.openFoxTargetPicker(owner);
+            this.renderBattleActionDock();
+            return;
+        }
+        const key = targetIndex === undefined ? undefined : `${this.currentBossPhase}:${this.battleState.enemies[targetIndex]?.id}`;
+        const result = this.foxSession.useAbility(owner, ability, key);
+        if (!result.ok) {
+            this.mathBoard.getContainer().setAlpha(1); this.mathBoard.resume('fox-ability');
+            this.renderBattleActionDock(); return;
+        }
+        this.applyFoxCombat(result.combat);
+        this.foxBusy = true;
+        this.mathBoard.getContainer().setAlpha(0);
+        this.renderBattleActionDock();
+        const target = targetIndex === undefined ? owner === 'B' ? this.heroB! : this.hero : this.enemies[targetIndex];
+        const source = owner === 'B' ? this.petBSprite! : this.petSprite!;
+        this.foxEffects.play(ability, owner, source, target, result.effect.amount, () => {
+            const finish = () => {
+                this.foxBusy = false;
+                if (!this.finishFoxBattleIfWon()) {
+                    this.getCurrentEnemyIndex();
+                    if (this.battleState.enemies[this.petTargetIndex]?.hp <= 0) this.petTargetIndex = this.findNextAliveEnemy(-1);
+                    this.mathBoard.getContainer().setAlpha(1);
+                    this.mathBoard.resume('fox-ability');
+                    if (this.battleState.phase === 'player_turn' || this.battleState.phase === 'player_b_turn') this.updateTargetIndicator();
+                    if (this.battleState.phase === 'pet_turn' || this.battleState.phase === 'pet_b_turn') this.updatePetTargetIndicator();
+                    this.checkpointFoxCombat(); this.renderBattleActionDock();
+                }
+            };
+            if (targetIndex !== undefined && this.battleState.enemies[targetIndex].hp <= 0) {
+                this.enemyHpBars[targetIndex].setVisible(false);
+                this.playEnemyDeathAndFade(targetIndex, this.enemies[targetIndex], this.enemyAnimPrefixes[targetIndex], finish);
+            } else finish();
+        });
+    }
+
+    private openFoxTargetPicker(owner: FoxOwnerId): void {
+        this.mathBoard.getContainer().setAlpha(0);
+        const root = this.add.container(0, 0).setDepth(this.foxTargetLayout.cancel.depth).setName('foxTargetPicker');
+        this.foxTargetOverlay = root;
+        // One stable input veil prevents a target tap from also starting a normal attack.
+        const veil = this.add.rectangle(640, 360, 1280, 720, 0x031522, .3).setInteractive();
+        root.add(veil);
+        const hint = this.foxTargetLayout.hint;
+        root.add([dockImage(this, 'battle-dock-round-v3', hint), dockImage(this, 'battle-dock-strike-active-v3', { ...hint, width: hint.width * .7, height: hint.height * .7 })]);
+        this.targetIndicator.setVisible(false); this.hidePetTargetIndicator();
+        this.coopTurnLabel?.setVisible(false);
+        this.enemyHpBars.forEach(hud => hud.setSelected(false));
+        const cancel = new BattleDockControl(this, this.foxTargetLayout.cancel, 'foxCancelTarget', 'battle-dock-round-v3',
+            'battle-dock-gem-v3', 'battle-dock-gem-v3', () => this.cancelFoxTarget());
+        cancel.normalIcon.setVisible(false); cancel.activeIcon.setVisible(false);
+        cancel.surface.add(this.add.graphics().lineStyle(5, 0xffe8a5).lineBetween(-13, -13, 13, 13).lineBetween(-13, 13, 13, -13));
+        cancel.setEnabled(true); root.add(cancel.root);
+        this.battleState.enemies.forEach((enemy, index) => {
+            if (enemy.hp <= 0) return;
+            const hud = this.enemyHpBars[index];
+            const target = this.add.container(hud.root.x, hud.root.y + 56).setSize(80, 80).setName(`foxTarget${index}`)
+                .setInteractive({ useHandCursor: true });
+            const frame = dockImage(this, 'battle-dock-round-v3', { x: 0, y: 0, width: 80, height: 80 });
+            const symbol = dockImage(this, 'battle-dock-strike-active-v3', { x: 0, y: 0, width: 56, height: 56 });
+            const outline = this.add.graphics().lineStyle(3, DOCK_OWNER_COLORS[owner], 1).strokeCircle(0, 0, 39)
+                .fillStyle(DOCK_OWNER_COLORS[owner]).fillTriangle(-8, 43, 8, 43, 0, 53);
+            target.add([frame, symbol, outline]); root.add(target);
+            target.on('pointerdown', () => target.setData('pressed', true));
+            target.on('pointerout', () => target.setData('pressed', false));
+            target.on('pointerup', () => { if (target.getData('pressed')) this.confirmFoxTarget(index); });
+        });
+    }
+
+    private confirmFoxTarget(index: number): void {
+        const owner = this.foxTargetOwner;
+        if (!owner || this.pauseMenu?.isPaused() || this.battleState.enemies[index]?.hp <= 0) return;
+        this.foxTargetOwner = null; this.foxTargetOverlay?.destroy(true); this.foxTargetOverlay = null;
+        this.useFoxAbility(owner, 'strike', index);
+    }
+
+    private cancelFoxTarget(): void {
+        this.foxTargetOwner = null; this.foxTargetOverlay?.destroy(true); this.foxTargetOverlay = null;
+        this.mathBoard.getContainer().setAlpha(1); this.mathBoard.resume('fox-ability');
+        if (this.battleState.phase === 'player_turn' || this.battleState.phase === 'player_b_turn') this.updateTargetIndicator();
+        if (this.battleState.phase === 'pet_turn' || this.battleState.phase === 'pet_b_turn') this.updatePetTargetIndicator();
+        this.renderBattleActionDock(); this.checkpointFoxCombat();
+    }
+
+    private finishFoxBattleIfWon(): boolean {
+        if (this.battleState.enemies.some(enemy => enemy.hp > 0)) return false;
+        // Accepted answers still count when an instant strike finishes the battle;
+        // the unfinished question is never turned into a correct answer.
+        const board = this.mathBoard.exportCheckpoint() ?? this.foxRestored?.resumeData.mathBoard as MathBoardCheckpoint | null;
+        if (board && !board.completionDelivered) this.recordInterruptedFoxAnswers(board);
+        this.mathBoardContext = null; this.mathBoard.hide(); this.mathBoard.resume('fox-ability');
+        this.hidePetTargetIndicator(); this.targetIndicator.setVisible(false);
+        if (this.isBoss && this.currentBossPhase < this.bossPhases.length - 1) this.triggerBossPhaseTransition();
+        else this.setPhase('victory');
+        return true;
+    }
+
+    private recordInterruptedFoxAnswers(board: MathBoardCheckpoint): void {
+        if (this.mockMode || !board.results.length || this.foxInterruptedMathRecorded) return;
+        this.foxInterruptedMathRecorded = true;
+        const mastery = this.getCoopSafeMasterySystem();
+        board.results.forEach((correct, index) => {
+            const problem = board.problems[index];
+            const context = problem.source === 'pet' ? 'battle_pet' : problem.source === 'sword' ? 'battle_sword' : 'battle';
+            if (this.isCoopMode) this.mathEngine.reloadStats();
+            this.mathEngine.recordResultForProblem(problem.id, correct);
+            if (problem.masteryKey) mastery.recordSolve(problem.masteryKey, correct, board.timings[index], context, board.assisted[index]);
+            if (problem.comparisonMeta) mastery.recordComparisonSolve(problem, correct, board.timings[index], board.assisted[index]);
+            if (!correct && this.fromArena) {
+                this.waveWrongAnswerCount++;
+                if (this.isCoopMode && this.coopSession) {
+                    if (this.coopSession.getActivePlayer() === 'B') this.coopSession.playerBWrongCount++;
+                    else this.coopSession.playerAWrongCount++;
+                }
+            }
+        });
+        if (this.isCoopMode) this.coopSession?.persistActiveMasteryProgress();
+        else this.gameState.save();
+        this.checkpointFoxCombat();
+    }
+
+    private foxPanelState(visible: boolean): FoxAbilityPanelState {
+        const owners: FoxAbilityPanelState['owners'] = [];
+        for (const id of (this.isCoopMode ? ['A', 'B'] : ['A']) as FoxOwnerId[]) {
+            const p = this.foxPlayer(id);
+            if (!p || p.activePet !== CATACOMB_FOX_PET) continue;
+            const power = getFoxJourney(p).powers;
+            const abilities = this.foxSession?.readOwner(id) ?? Object.fromEntries(FOX_ABILITY_IDS.map(ability => [ability,
+                { unlocked: power[ability] > 0, power: power[ability], used: false,
+                    disabledReason: power[ability] > 0 ? 'busy' : 'locked' }])) as Record<FoxAbilityId, FoxAbilityState>;
+            owners.push({ id, name: p.name || 'Hrdina',
+                portrait: p.characterType === 'boy_knight' ? 'town-hud-hero-portrait' : 'town-hud-heroine-portrait',
+                foxPortrait: (id === 'B' ? this.equippedPetBDef : this.equippedPetDef)?.spriteKey === 'companion-fox-01-idle-sheet'
+                    ? 'battle-dock-fox-01-head-v3' : 'companion-fox-01-idle-sheet-portrait', abilities });
+        }
+        return { owners, turnOwner: this.isCoopMode ? this.coopSession!.getActivePlayer() : 'A', turnToken: String(this.foxTurnToken),
+            visible, selectionEnabled: visible && !this.pauseMenu?.isPaused() && !this.foxBusy && !this.foxTargetOwner };
     }
 
     private createPetCompanion(player: PlayerState, petX: number, petY: number): void {
@@ -965,6 +1504,7 @@ export class BattleScene extends Phaser.Scene implements BattleSceneCallbacks {
             270,
         );
         this.speedChargeBarB = this.heroBHpBar.speedChargeBar;
+        this.speedChargeBarB?.setVisible(false);
 
         // Create Player B's pet — use spawn points if available, else offset from hero
         const petBX = spawnPoints?.petB?.x ?? (heroBX - 60);
@@ -1215,7 +1755,8 @@ export class BattleScene extends Phaser.Scene implements BattleSceneCallbacks {
                     this.petMathProblem.masteryKey,
                     isCorrect,
                     responseTimeMs,
-                    'battle_pet'
+                    'battle_pet',
+                    assisted,
                 );
             }
             if (this.petMathProblem.comparisonMeta) {
@@ -1242,6 +1783,7 @@ export class BattleScene extends Phaser.Scene implements BattleSceneCallbacks {
             this.setPhase(isPetB ? 'pet_b_attack' : 'pet_attack');
         } else {
             // Pet misses turn
+            this.foxActionHitCommitted = true; this.checkpointFoxCombat();
             this.showPetMissMessage();
             if (isPetB) {
                 this.time.delayedCall(500, () => this.setPhase(this.turnManager.nextPhaseAfterPetBAction()));
@@ -1336,7 +1878,23 @@ export class BattleScene extends Phaser.Scene implements BattleSceneCallbacks {
 
         // Play attack animation immediately during approach
         const attackAnim = `${animPrefix}-attack`;
-        if (this.anims.exists(attackAnim)) {
+        const hasAttack = this.anims.exists(attackAnim);
+        let animationDone = !hasAttack || !movement?.waitForComplete;
+        let arrived = false;
+        let returning = false;
+        const returnWhenReady = () => {
+            if (!arrived || !animationDone || returning) return;
+            returning = true;
+            this.time.delayedCall(100, () => {
+                activePet.sprite!.play(`${animPrefix}-idle`);
+                this.returnPetToPosition(startX, startY, onComplete);
+            });
+        };
+        if (!animationDone) activePet.sprite.once(`animationcomplete-${attackAnim}`, () => {
+            animationDone = true;
+            returnWhenReady();
+        });
+        if (hasAttack) {
             activePet.sprite.play(attackAnim);
         }
 
@@ -1350,12 +1908,8 @@ export class BattleScene extends Phaser.Scene implements BattleSceneCallbacks {
             onComplete: () => {
                 // Apply damage
                 this.applyPetDamageToEnemy(targetIdx, damage);
-
-                // Brief pause at enemy (100ms), then return
-                this.time.delayedCall(100, () => {
-                    activePet.sprite!.play(`${animPrefix}-idle`);
-                    this.returnPetToPosition(startX, startY, onComplete);
-                });
+                arrived = true;
+                returnWhenReady();
             }
         });
     }
@@ -1495,7 +2049,7 @@ export class BattleScene extends Phaser.Scene implements BattleSceneCallbacks {
         const animPrefix = this.enemyAnimPrefixes[targetIdx];
         const damage = resolveDamageAfterDefense(rawDamage, enemy.defense).damage;
 
-        enemy.hp -= damage;
+        enemy.hp = Math.max(0, enemy.hp - damage);
         if (damage > 0) sfx(this, 'combat.hit');
 
         // Check for Last Stand ability (boss survives with 1 HP once)
@@ -1506,6 +2060,7 @@ export class BattleScene extends Phaser.Scene implements BattleSceneCallbacks {
             this.showAbilityText('🛡️ Last Stand! Survived with 1 HP!');
         }
 
+        this.foxActionHitCommitted = true; this.checkpointFoxCombat();
         this.updateHpBar(this.enemyHpBars[targetIdx], enemy.hp, enemy.maxHp);
 
         // Show damage number
@@ -1662,15 +2217,33 @@ export class BattleScene extends Phaser.Scene implements BattleSceneCallbacks {
         });
     }
 
+    private quitBattleToMenu(): void {
+        // Close while both save slots and their identities are still available.
+        if (this.foxSession && !this.foxSession.close()) {
+            this.showFoxSaveRetry(() => this.foxSession!.close(), () => this.quitBattleToMenu());
+            return;
+        }
+        this.mathBoard.hide();
+        if (this.isCoopMode) this.coopSession?.endSession();
+        const player = this.gameState.getPlayer();
+        if (player.arena.isActive) { player.arena.isActive = false; player.hp = player.arena.playerHpAtStart; }
+        this.gameState.save(); this.scene.start('MenuScene');
+    }
+
     private setupDebugger(): void {
         this.debugger = new SceneDebugger(this, 'BattleScene');
 
         // Create pause menu (ESC key to toggle)
-        this.pauseMenu = new PauseMenu(this, undefined, {
+        this.pauseMenu = new PauseMenu(this, () => this.renderBattleActionDock(), {
             variant: 'medieval',
             showTvPairing: true,
             showFullscreen: true,
             layout: this.consumePauseMenuLayout(),
+            onPauseChange: paused => {
+                if (paused) this.mathBoard.suspend('pause'); else this.mathBoard.resume('pause');
+                this.checkpointFoxCombat(); this.renderBattleActionDock();
+            },
+            onQuitToMenu: () => this.quitBattleToMenu(),
         });
 
         // Visible pause button (for mobile + desktop convenience)
@@ -1711,6 +2284,7 @@ export class BattleScene extends Phaser.Scene implements BattleSceneCallbacks {
         pauseBtn.on('pointerup', () => {
             pauseBtn.setAlpha(1);
             this.pauseMenu.toggle();
+            this.renderBattleActionDock();
         });
 
         // Register containers (sprite + HP bar move together)
@@ -1901,12 +2475,11 @@ export class BattleScene extends Phaser.Scene implements BattleSceneCallbacks {
     }
 
     private onPetAttackClicked(): void {
+        if (this.pauseMenu?.isPaused()) return;
         if (this.battleState.phase === 'pet_turn') {
-            this.petAttackButton.setVisible(false);
             this.hidePetTargetIndicator();
             this.setPhase('pet_math');
         } else if (this.battleState.phase === 'pet_b_turn') {
-            this.petAttackButton.setVisible(false);
             this.hidePetTargetIndicator();
             this.setPhase('pet_b_math');
         }
@@ -1958,12 +2531,13 @@ export class BattleScene extends Phaser.Scene implements BattleSceneCallbacks {
     }
 
     private usePotion(): void {
+        if (this.pauseMenu?.isPaused() || this.foxBusy || this.foxTargetOwner) return;
         const isPlayerA = this.battleState.phase === 'player_turn';
         const isPlayerB = this.battleState.phase === 'player_b_turn';
         if (!isPlayerA && !isPlayerB) return;
 
         const player = this.gameState.getPlayer();
-        if (player.potions <= 0) return;
+        if (player.potions <= 0 || (isPlayerB ? this.battleState.playerBHp ?? 0 : this.battleState.playerHp) >= player.maxHp) return;
 
         // Use potion - heal to full
         player.potions = 0;
@@ -1981,6 +2555,7 @@ export class BattleScene extends Phaser.Scene implements BattleSceneCallbacks {
         sfx(this, 'item.potion');
         // Save state (potion used)
         this.gameState.save();
+        this.checkpointFoxCombat();
         this.renderBattleActionDock();
         this.publishRemoteBattleTurnState(isPlayerB ? 'Tah hráče 2' : 'Tvůj tah', 'Lektvar použit.');
 
@@ -2015,9 +2590,13 @@ export class BattleScene extends Phaser.Scene implements BattleSceneCallbacks {
      * Transition to a new battle phase. Delegates to TurnManager.
      */
     private setPhase(phase: BattlePhase): void {
+        if (['player_turn', 'player_b_turn', 'pet_turn', 'pet_b_turn'].includes(phase)) this.foxTurnToken++;
+        if (phase.endsWith('_attack')) this.foxActionHitCommitted = false;
+        if (phase.endsWith('_math')) this.foxInterruptedMathRecorded = false;
         this.turnManager.setPhase(phase);
         this.syncPreparationIndicatorVisibility();
         this.renderBattleActionDock();
+        this.checkpointFoxCombat();
     }
 
     // --- BattleSceneCallbacks implementation ---
@@ -2034,10 +2613,7 @@ export class BattleScene extends Phaser.Scene implements BattleSceneCallbacks {
                 return;
             }
         }
-        this.attackButton.setVisible(true);
-        const playerForTurn = this.gameState.getPlayer();
-        this.potionButton.setVisible(!this.mockMode && playerForTurn.potions > 0);
-        this.hideActiveHighlight();
+        this.showActiveHighlight(this.heroContainer.x, this.heroContainer.y + 30, 'green');
 
         // Retarget indicator to next alive enemy (fixes stuck indicator on dead enemy)
         this.getCurrentEnemyIndex();
@@ -2047,8 +2623,6 @@ export class BattleScene extends Phaser.Scene implements BattleSceneCallbacks {
 
     onEnterPlayerMath(): void {
         gameAudio().stopVoice();
-        this.attackButton.setVisible(false);
-        this.potionButton.setVisible(false);
         // Ensure MathEngine uses the correct player's level and stats
         this.registry.set('playerLevel', this.gameState.getPlayer().level);
         if (!this.mockMode) {
@@ -2089,7 +2663,6 @@ export class BattleScene extends Phaser.Scene implements BattleSceneCallbacks {
             return;
         }
 
-        this.petAttackButton.setVisible(true);
         this.targetIndicator.setVisible(false);
         this.showActiveHighlight(this.petContainer.x, this.petContainer.y + 30, 'green');
         this.petTargetIndex = this.battleState.enemies.findIndex(e => e.hp > 0);
@@ -2118,10 +2691,6 @@ export class BattleScene extends Phaser.Scene implements BattleSceneCallbacks {
         // Swap to Player B's context
         if (this.coopSession) this.coopSession.activatePlayerB();
 
-        this.attackButton.setVisible(true);
-        const playerB = this.gameState.getPlayer();
-        this.potionButton.setVisible(!this.mockMode && playerB.potions > 0);
-
         // Highlight Player B's hero
         if (this.heroBContainer) {
             this.showActiveHighlight(this.heroBContainer.x, this.heroBContainer.y + 30, 'green');
@@ -2134,8 +2703,6 @@ export class BattleScene extends Phaser.Scene implements BattleSceneCallbacks {
     }
 
     onEnterPlayerBMath(): void {
-        this.attackButton.setVisible(false);
-        this.potionButton.setVisible(false);
         // Ensure MathEngine uses Player B's level and stats (context already swapped to B)
         this.registry.set('playerLevel', this.gameState.getPlayer().level);
         this.mathEngine.reloadStats();
@@ -2166,7 +2733,6 @@ export class BattleScene extends Phaser.Scene implements BattleSceneCallbacks {
             return;
         }
 
-        this.petAttackButton.setVisible(true);
         this.targetIndicator.setVisible(false);
         this.showActiveHighlight(this.petBContainer.x, this.petBContainer.y + 30, 'green');
         this.petTargetIndex = this.battleState.enemies.findIndex(e => e.hp > 0);
@@ -2190,12 +2756,15 @@ export class BattleScene extends Phaser.Scene implements BattleSceneCallbacks {
     }
 
     onEnterEnemyTurn(): void {
+        this.foxEnemyHitCommitted = false;
         this.hideActiveHighlight();
         this.publishRemoteWaitingState('Útok nepřítele', 'Sleduj TV obrazovku.');
 
         // Co-op: determine which player all enemies attack this round
         if (this.isCoopMode && this.coopSession) {
-            this.currentEnemyAttackTarget = this.coopSession.getNextEnemyTarget();
+            this.currentEnemyAttackTarget = this.foxSession
+                ? (this.battleState.playerHp <= 0 ? 'B' : (this.battleState.playerBHp ?? 0) <= 0 ? 'A' : this.battleState.turnCount % 2 === 0 ? 'A' : 'B')
+                : this.coopSession.getNextEnemyTarget();
             // Swap to target player's context (for shield lookup during block)
             if (this.currentEnemyAttackTarget === 'B') {
                 this.coopSession.activatePlayerB();
@@ -2222,6 +2791,7 @@ export class BattleScene extends Phaser.Scene implements BattleSceneCallbacks {
         this.hideActiveHighlight();
         this.publishRemoteWaitingState('Vítězství', 'Sleduj TV obrazovku.');
         this.onVictory();
+        this.foxSession?.close();
     }
 
     onEnterDefeat(): void {
@@ -2230,6 +2800,7 @@ export class BattleScene extends Phaser.Scene implements BattleSceneCallbacks {
         this.hideActiveHighlight();
         this.publishRemoteWaitingState('Porážka', 'Sleduj TV obrazovku.');
         this.onDefeat();
+        this.foxSession?.close();
     }
 
     // --- BattleSceneCallbacks state queries ---
@@ -2267,11 +2838,7 @@ export class BattleScene extends Phaser.Scene implements BattleSceneCallbacks {
 
         switch (command.type) {
             case 'attack':
-                if (this.battleState.phase === 'pet_turn' || this.battleState.phase === 'pet_b_turn') {
-                    this.onPetAttackClicked();
-                } else {
-                    this.onAttackClicked();
-                }
+                this.onAttackClicked();
                 break;
             case 'answerChoice':
                 this.mathBoard.submitChoice(command.index);
@@ -2465,11 +3032,17 @@ export class BattleScene extends Phaser.Scene implements BattleSceneCallbacks {
     }
 
     private onAttackClicked(): void {
-        gameAudio().cancel(this);
+        if (this.awaitingPracticeChoice || this.pauseMenu?.isPaused() || this.foxBusy || this.foxTargetOwner) return;
         if (this.battleState.phase === 'player_turn') {
+            gameAudio().cancel(this);
             this.setPhase('player_math');
         } else if (this.battleState.phase === 'player_b_turn') {
+            gameAudio().cancel(this);
             this.setPhase('player_b_math');
+        } else {
+            // Local, keyboard/template and remote inputs share this dispatcher.
+            // Phase guards prevent a second click from creating another batch.
+            this.onPetAttackClicked();
         }
     }
 
@@ -2493,6 +3066,21 @@ export class BattleScene extends Phaser.Scene implements BattleSceneCallbacks {
 
         // Get mastery system with co-op safety (ensures correct player context)
         const masterySystem = this.getCoopSafeMasterySystem();
+
+        const practiceProblems = masterySystem.drawPracticeBattleProblems(masterySystem.getProblemsPerTurn(),
+            key => this.mathEngine.generateProblemFromKey(key, 'practice'));
+        if (practiceProblems?.length) {
+            if (equippedSword?.mathProblemType) practiceProblems.push(this.generateSwordProblem(equippedSword));
+            this.applyAttackPowerDistribution(practiceProblems);
+            this.battleState.currentProblems = practiceProblems;
+            this.mathBoardContext = 'attack';
+            if (practiceProblems.some(problem => problem.comparisonMeta)) {
+                this.showComparisonLessonThenProblems(practiceProblems, masterySystem);
+            } else {
+                this.mathBoard.show(practiceProblems);
+            }
+            return;
+        }
 
         const comparisonProblems = masterySystem.generateComparisonBattleProblems(masterySystem.getProblemsPerTurn());
         if (comparisonProblems) {
@@ -2642,7 +3230,7 @@ export class BattleScene extends Phaser.Scene implements BattleSceneCallbacks {
                     // Mastery recording: feeds into [retry]/[slow] pools
                     if (problem.masteryKey) {
                         const rt = timings[index] || 0;
-                        masterySystem.recordSolve(problem.masteryKey, isCorrect, rt, 'battle_block');
+                        masterySystem.recordSolve(problem.masteryKey, isCorrect, rt, 'battle_block', assisted[index] === true);
                     }
                     if (problem.comparisonMeta) {
                         masterySystem.recordComparisonSolve(problem, isCorrect, timings[index] || 0, assisted[index] === true);
@@ -2665,7 +3253,7 @@ export class BattleScene extends Phaser.Scene implements BattleSceneCallbacks {
             // actually prevents damage that the player's answers did not.
             if (this.isCoopMode && !this.mockMode) this.coopSession?.persistActiveMasteryProgress();
             const unblockedDamage = Math.max(0, this.pendingDamage - correctCount);
-            if (!this.mockMode && unblockedDamage > 0) {
+            if (!this.mockMode && !this.foxSession && unblockedDamage > 0) {
                 const preparedBlock = PreparationSystem.consume(this.gameState.getPlayer(), 'shield');
                 if (preparedBlock.applied) {
                     correctCount += Math.min(preparedBlock.bonus, unblockedDamage);
@@ -2707,7 +3295,7 @@ export class BattleScene extends Phaser.Scene implements BattleSceneCallbacks {
                 if (!this.mockMode && problem.masteryKey) {
                     const responseTimeMs = timings[index] || 0;
                     const ctx = problem.source === 'sword' ? 'battle_sword' : 'battle';
-                    masterySystem.recordSolve(problem.masteryKey, isCorrect, responseTimeMs, ctx);
+                    masterySystem.recordSolve(problem.masteryKey, isCorrect, responseTimeMs, ctx, assisted[index] === true);
                 }
                 if (problem.comparisonMeta) {
                     recordedComparisonAttempt = true;
@@ -2735,7 +3323,7 @@ export class BattleScene extends Phaser.Scene implements BattleSceneCallbacks {
         });
         if (recordedComparisonAttempt && !this.isCoopMode) this.gameState.save();
 
-        // Use MathBoard's damage total (includes multipliers + speed charge bar fill bonuses)
+        // Use MathBoard's damage total (includes task power + personal quick bonuses).
         if (this.isCoopMode && !this.mockMode) this.coopSession?.persistActiveMasteryProgress();
         let totalDamage = mathBoardDamage;
         if (totalDamage > 0) {
@@ -2790,6 +3378,13 @@ export class BattleScene extends Phaser.Scene implements BattleSceneCallbacks {
     private generateSwordProblem(sword: ItemDefinition): MathProblem {
         const masterySystem = this.getCoopSafeMasterySystem();
 
+        const practice = masterySystem.drawPracticeBattleProblems(1, key => this.mathEngine.generateProblemFromKey(key, 'practice'))?.[0];
+        if (practice) {
+            practice.damageMultiplier = sword.damageMultiplier || 1;
+            practice.source = 'sword';
+            return practice;
+        }
+
         // 1. Try master pool (Mastery sub-atoms)
         const masterKeys = masterySystem.drawFromMasterPool(1);
         if (masterKeys.length > 0) {
@@ -2828,7 +3423,14 @@ export class BattleScene extends Phaser.Scene implements BattleSceneCallbacks {
         const masterySystem = this.getCoopSafeMasterySystem();
         const problems: MathProblem[] = [];
 
-        const comparison = masterySystem.generateComparisonBattleProblems(count);
+        const known = masterySystem.drawKnownAdvancedBlockKeys(count);
+        if (known !== null) {
+            return known.map(key => this.mathEngine.generateProblemFromKey(key, 'practice'))
+                .filter((problem): problem is MathProblem => problem !== null);
+        }
+
+        const comparison = masterySystem.drawPracticeBattleProblems(count, key => this.mathEngine.generateProblemFromKey(key, 'practice'))
+            ?? masterySystem.generateComparisonBattleProblems(count);
         if (comparison) return comparison;
 
         // 1. Try review pool (Fluent sub-atoms)
@@ -2855,7 +3457,8 @@ export class BattleScene extends Phaser.Scene implements BattleSceneCallbacks {
     private generatePetProblemFromPool(pet: PetDefinition): MathProblem | null {
         const masterySystem = this.getCoopSafeMasterySystem();
 
-        const comparison = masterySystem.generateComparisonBattleProblems(1)?.[0];
+        const comparison = (masterySystem.drawPracticeBattleProblems(1, key => this.mathEngine.generateProblemFromKey(key, 'practice'))
+            ?? masterySystem.generateComparisonBattleProblems(1))?.[0];
         if (comparison) {
             comparison.source = 'pet';
             comparison.damageMultiplier = pet.damageMultiplier || 1;
@@ -2888,48 +3491,6 @@ export class BattleScene extends Phaser.Scene implements BattleSceneCallbacks {
         return applyProblemComplexityDamage(this.mathEngine.generatePetTurnProblem(pet));
     }
 
-    /** Show effect when speed charge bar fills and grants bonus damage */
-    private showChargeBarFilledEffect(bonusDamage: number): void {
-        const heroX = this.heroContainer.x;
-        const heroY = this.heroContainer.y;
-
-        const effectText = this.add.text(heroX, heroY - 130, `⚡ +${bonusDamage}`, {
-            fontSize: '36px',
-            fontFamily: 'Arial, sans-serif',
-            color: '#ffcc00',
-            fontStyle: 'bold',
-            stroke: '#000000',
-            strokeThickness: 4,
-        }).setOrigin(0.5).setDepth(200).setScale(0.5).setAlpha(0);
-
-        // Pop-in then float up and fade
-        this.tweens.add({
-            targets: effectText,
-            scale: 1,
-            alpha: 1,
-            duration: 200,
-            ease: 'Back.easeOut',
-            onComplete: () => {
-                this.tweens.add({
-                    targets: effectText,
-                    y: heroY - 190,
-                    alpha: 0,
-                    duration: 1500,
-                    ease: 'Sine.easeIn',
-                    onComplete: () => effectText.destroy(),
-                });
-            },
-        });
-
-        // Brief gold glow on hero
-        if (this.hero) {
-            this.hero.setTint(0xffdd88);
-            this.time.delayedCall(200, () => {
-                this.hero.clearTint();
-            });
-        }
-    }
-
     private getEquippedShield(): ItemDefinition | null {
         const player = this.gameState.getPlayer();
         if (!player.equippedShield) return null;
@@ -2940,7 +3501,7 @@ export class BattleScene extends Phaser.Scene implements BattleSceneCallbacks {
 
     private startBlockPhase(damage: number): void {
         if (damage <= 0) {
-            this.applyDamageToPlayer(0);
+            if (!this.applyDamageToPlayer(0)) return;
             if (this.blockPhaseResumeCallback) {
                 this.blockPhaseResumeCallback();
                 this.blockPhaseResumeCallback = undefined;
@@ -2950,7 +3511,7 @@ export class BattleScene extends Phaser.Scene implements BattleSceneCallbacks {
         const shield = this.getEquippedShield();
         if (!shield) {
             // No shield - apply damage directly and resume enemy attack sequence
-            this.applyDamageToPlayer(damage);
+            if (!this.applyDamageToPlayer(damage)) return;
             if (this.blockPhaseResumeCallback) {
                 this.blockPhaseResumeCallback();
                 this.blockPhaseResumeCallback = undefined;
@@ -2992,6 +3553,8 @@ export class BattleScene extends Phaser.Scene implements BattleSceneCallbacks {
             ...this.getComparisonBoardOptions(this.getCoopSafeMasterySystem()),
             defense: { power: this.currentBlockPower, incomingDamage: damage },
         });
+        this.checkpointFoxCombat();
+        this.renderBattleActionDock();
     }
 
     private endBlockPhase(): void {
@@ -3049,7 +3612,7 @@ export class BattleScene extends Phaser.Scene implements BattleSceneCallbacks {
         }
 
         // Apply remaining damage
-        this.applyDamageToPlayer(finalDamage);
+        if (!this.applyDamageToPlayer(finalDamage)) return;
 
         // Resume the attack sequence (continue movement, play attack anim, return enemy)
         if (this.blockPhaseResumeCallback) {
@@ -3058,29 +3621,57 @@ export class BattleScene extends Phaser.Scene implements BattleSceneCallbacks {
         }
     }
 
-    private applyDamageToPlayer(damage: number): void {
-        if (damage <= 0) return;
-        sfx(this, 'combat.hit');
-
+    private applyDamageToPlayer(damage: number): boolean {
         const isTargetB = this.isCoopMode && this.currentEnemyAttackTarget === 'B';
-
-        if (isTargetB && this.heroBHpBar && this.heroB) {
-            // Damage Player B
-            this.battleState.playerBHp = (this.battleState.playerBHp ?? 0) - damage;
-            const maxHp = this.battleState.playerBMaxHp ?? this.gameState.getPlayer().maxHp;
-            this.updateHpBar(this.heroBHpBar, Math.max(0, this.battleState.playerBHp), maxHp);
-
-            this.heroB.setTint(0xff0000);
-            this.time.delayedCall(100, () => this.heroB?.clearTint());
+        this.foxEnemyHitCommitted = true;
+        if (this.foxSession) {
+            const result = this.foxSession.applyIncomingDamage(isTargetB ? 'B' : 'A', Math.max(0, damage));
+            if (!result.ok) {
+                this.foxEnemyHitCommitted = false;
+                this.showFoxSaveRetry(() => this.applyDamageToPlayer(damage), () => {
+                    const resume = this.blockPhaseResumeCallback; this.blockPhaseResumeCallback = undefined; resume?.();
+                });
+                return false;
+            }
+            this.applyFoxCombat(result.combat);
+            damage = result.damage;
+            if (result.preparedBlock > 0) { this.showPreparationEffect('shield', result.preparedBlock); sfx(this, 'prep.consume'); }
+            if (result.foxBlocked > 0) {
+                this.syncFoxShields();
+                this.foxEffects.block(isTargetB ? 'B' : 'A', isTargetB ? this.heroB! : this.hero);
+                sfx(this, 'combat.block');
+            }
+        } else if (isTargetB) {
+            this.battleState.playerBHp = Math.max(0, (this.battleState.playerBHp ?? 0) - damage);
+            this.updateHpBar(this.heroBHpBar!, this.battleState.playerBHp, this.battleState.playerBMaxHp ?? this.gameState.getPlayer().maxHp);
         } else {
-            // Damage Player A
-            this.battleState.playerHp -= damage;
-            const player = this.gameState.getPlayer();
-            this.updateHpBar(this.heroHpBar, this.battleState.playerHp, player.maxHp);
-
-            this.hero.setTint(0xff0000);
-            this.time.delayedCall(100, () => this.hero.clearTint());
+            this.battleState.playerHp = Math.max(0, this.battleState.playerHp - damage);
+            this.updateHpBar(this.heroHpBar, this.battleState.playerHp, this.gameState.getPlayer().maxHp);
         }
+        if (damage <= 0) return true;
+        sfx(this, 'combat.hit');
+        const hero = isTargetB ? this.heroB! : this.hero;
+        hero.setTint(0xff0000); this.time.delayedCall(100, () => hero.clearTint());
+        return true;
+    }
+
+    private showFoxSaveRetry(retry: () => boolean, done: () => void): void {
+        if (this.foxSaveRetry) return;
+        this.foxBusy = true; this.mathBoard.suspend('save-retry'); this.renderBattleActionDock();
+        const host = this.foxTargetLayout.retry;
+        const root = this.add.container(0, 0).setDepth(host.depth).setName('foxSaveRetry');
+        this.foxSaveRetry = root;
+        root.add(this.add.rectangle(640, 360, 1280, 720, 0x031522, .6).setInteractive());
+        const button = new BattleDockControl(this, host, 'foxRetrySave', 'battle-dock-round-v3', 'battle-dock-gem-v3', 'battle-dock-gem-v3', () => {
+            if (!retry()) { button.setEnabled(true); return; }
+            root.destroy(true); this.foxSaveRetry = null; this.foxBusy = false;
+            this.mathBoard.resume('save-retry'); this.renderBattleActionDock();
+            done();
+        });
+        button.normalIcon.setVisible(false); button.activeIcon.setVisible(false);
+        button.surface.add(this.add.graphics().lineStyle(6, 0xffe5a2).beginPath().arc(0, 0, 24, .3, Math.PI * 1.9).strokePath()
+            .fillStyle(0xffe5a2).fillTriangle(22, -17, 35, -6, 15, -3));
+        button.setEnabled(true); root.add(button.root);
     }
 
     // Helper to get current target enemy index (first alive enemy)
@@ -3205,6 +3796,8 @@ export class BattleScene extends Phaser.Scene implements BattleSceneCallbacks {
         const player = this.gameState.getPlayer();
         const healAmount = healPercent > 0 ? Math.floor(player.maxHp * (healPercent / 100)) : 0;
 
+        // A reload during this visual transition must enter this phase exactly once.
+        this.foxBossTransition = { healAmount, healPercent, applied: false };
         // Advance to next phase
         this.currentBossPhase++;
         this.tidalAttacks = { A: 0, B: 0 };
@@ -3213,6 +3806,8 @@ export class BattleScene extends Phaser.Scene implements BattleSceneCallbacks {
         // Setup ability tracking for the new phase
         this.currentPhaseAbility = nextPhase.ability || null;
         this.lastStandTriggered = false; // Reset for new phase
+        this.checkpointFoxCombat();
+        this.renderBattleActionDock();
 
         console.log(`[BattleScene] Boss phase transition! Phase ${this.currentBossPhase + 1}: ${nextPhase.nameCs}, ability: ${this.currentPhaseAbility}, heal: ${healAmount} (${healPercent}%), transitionAnim: ${nextPhase.transitionAnim || 'none'}`);
 
@@ -3259,8 +3854,11 @@ export class BattleScene extends Phaser.Scene implements BattleSceneCallbacks {
                 this.updateHpBar(this.enemyHpBars[0], boss.hp, boss.maxHp);
                 this.applyBossPhaseOverrides(nextPhase);
                 this.enemies[0].play(this.getBossAnimKey(0, 'idle'));
+                if (this.foxBossTransition) this.foxBossTransition.applied = true;
+                this.checkpointFoxCombat();
                 this.refreshDepthBossHud();
                 this.targetIndicator.setVisible(true); this.updateTargetIndicator();
+                this.foxBossTransition = null;
                 this.setPhase('enemy_turn');
             });
             return;
@@ -3390,6 +3988,8 @@ export class BattleScene extends Phaser.Scene implements BattleSceneCallbacks {
                 this.enemies[0].setScale(compensatedScale);
             }
 
+            if (this.foxBossTransition) this.foxBossTransition.applied = true;
+            this.checkpointFoxCombat();
             // Fade out overlay
             this.tweens.add({
                 targets: [overlay, phaseText, healText, abilityText].filter(Boolean),
@@ -3404,7 +4004,8 @@ export class BattleScene extends Phaser.Scene implements BattleSceneCallbacks {
                     // Continue battle - enemy turn (boss attacks first in new phase)
                     this.targetIndicator.setVisible(true);
                     this.updateTargetIndicator();
-                    this.setPhase('enemy_turn');
+                    this.foxBossTransition = null;
+                this.setPhase('enemy_turn');
                 }
             });
         });
@@ -3467,6 +4068,7 @@ export class BattleScene extends Phaser.Scene implements BattleSceneCallbacks {
                 const nextEnemyIdx = this.findNextAliveEnemy(idx);
                 if (nextEnemyIdx >= 0) {
                     this.currentAttackingEnemyIndex = nextEnemyIdx;
+                    this.foxEnemyHitCommitted = false; this.checkpointFoxCombat();
                     this.time.delayedCall(300, () => this.playEnemyAttack());
                 } else {
                     this.battleState.turnCount++;
@@ -3547,7 +4149,7 @@ export class BattleScene extends Phaser.Scene implements BattleSceneCallbacks {
                 this.battleState.damageDealt,
                 enemy.defense,
             ).damage;
-            enemy.hp -= damage;
+            enemy.hp = Math.max(0, enemy.hp - damage);
         if (damage > 0) sfx(this, 'combat.hit');
 
             // Check for Last Stand ability (boss survives with 1 HP once)
@@ -3558,6 +4160,7 @@ export class BattleScene extends Phaser.Scene implements BattleSceneCallbacks {
                 this.showAbilityText('🛡️ Last Stand! Survived with 1 HP!');
             }
 
+            this.foxActionHitCommitted = true; this.checkpointFoxCombat();
             this.updateHpBar(enemyHpBar, enemy.hp, enemy.maxHp);
 
             // Show damage number (use container position for world coords)
@@ -3815,8 +4418,9 @@ export class BattleScene extends Phaser.Scene implements BattleSceneCallbacks {
                 this.battleState.damageDealt,
                 enemy.defense,
             ).damage;
-            enemy.hp -= damage;
+            enemy.hp = Math.max(0, enemy.hp - damage);
         if (damage > 0) sfx(this, 'combat.hit');
+            this.foxActionHitCommitted = true; this.checkpointFoxCombat();
             this.updateHpBar(this.enemyHpBars[idx], Math.max(0, enemy.hp), enemy.maxHp);
 
             // Show damage number
@@ -3947,6 +4551,7 @@ export class BattleScene extends Phaser.Scene implements BattleSceneCallbacks {
     }
 
     private playEnemyAttack(): void {
+        this.foxEnemyHitCommitted = false; this.checkpointFoxCombat();
         sfx(this, 'combat.swing');
         const idx = this.currentAttackingEnemyIndex;
         const enemyContainer = this.enemyContainers[idx];
@@ -4191,6 +4796,7 @@ export class BattleScene extends Phaser.Scene implements BattleSceneCallbacks {
                 const nextEnemyIdx = this.findNextAliveEnemy(idx);
                 if (nextEnemyIdx >= 0) {
                     this.currentAttackingEnemyIndex = nextEnemyIdx;
+                    this.foxEnemyHitCommitted = false; this.checkpointFoxCombat();
                     this.time.delayedCall(300, () => this.playEnemyAttack());
                 } else {
                     // All enemies have attacked — next round
@@ -4386,14 +4992,20 @@ export class BattleScene extends Phaser.Scene implements BattleSceneCallbacks {
     }
 
     /** Shared story exit, after the solo or both co-op profiles receive rewards. */
-    private finishForestCrystalVictory(goldReward: number): boolean {
+    private finishForestCrystalVictory(rewards: Omit<VictoryData, 'returnScene' | 'returnData'>): boolean {
         if (this.storyVictory !== 'forest-crystal') return false;
-        this.completeForestGuardianJourney();
-        this.scene.start('ForestCrystalRewardScene', { testMode: false, goldReward });
+        const story = { testMode: false, goldReward: rewards.goldReward };
+        if (rewards.practiceReward?.journey || rewards.practiceRewardA?.journey || rewards.practiceRewardB?.journey) {
+            this.scene.start('VictoryScene', { ...rewards, returnScene: 'ForestCrystalRewardScene', returnData: story });
+        } else {
+            this.scene.start('ForestCrystalRewardScene', story);
+        }
         return true;
     }
 
     private onVictory(): void {
+        if (this.victoryHandled) return;
+        this.victoryHandled = true;
         if(!this.mockMode)finishEncounter(this,'victory');
         if (this.mockMode) {
             this.finishMockBattle('victory');
@@ -4439,7 +5051,10 @@ export class BattleScene extends Phaser.Scene implements BattleSceneCallbacks {
         const totalCoins = this.rollBattleCoinReward();
 
         // Update player state - award coins
+        const coinsBefore = ProgressionSystem.getTotalCoinValue(player.coins);
         ProgressionSystem.awardBattleCoin(player, totalCoins);  // Award coins from all enemies
+        const practiceReward = this.claimPracticeReward();
+        const manaBeforeArena = ManaSystem.getMana(player);
         player.hp = this.battleState.playerHp; // Persist HP loss
 
         // === CRYSTAL DROPS (arena + non-arena) ===
@@ -4592,9 +5207,28 @@ export class BattleScene extends Phaser.Scene implements BattleSceneCallbacks {
         if (this.returnScene === 'UnderwaterRoomScene' && this.encounterId) {
             completeUnderwaterEncounter(player, this.encounterId);
         }
+        if (this.fromArena && this.isArenaCompletionWave()) {
+            player.arena.completedArenaLevels ??= [];
+            if (!player.arena.completedArenaLevels.includes(this.arenaLevel)) player.arena.completedArenaLevels.push(this.arenaLevel);
+            const unlock = `arena_level_${this.arenaLevel}`;
+            if (!player.unlockedPets.includes(unlock)) player.unlockedPets.push(unlock);
+            if (this.arenaStory === 'silverpond-lake-fairy' && this.arenaDefinition?.cityId === 'silverpond'
+                && this.arenaDefinition.cityArenaLevel === 3 && isFirstArenaCompletion) StorySystem.getInstance().completeLakeFairyQuest();
+        }
+        this.completeForestGuardianJourney();
         // Save game
         this.gameState.save();
 
+        const rewards = {
+            goldReward: ProgressionSystem.getTotalCoinValue(player.coins) - coinsBefore,
+            arenaMana: ManaSystem.getMana(player) - manaBeforeArena,
+            practiceReward: this.practiceVictoryResult('A', practiceReward),
+            ...this.victoryEncounter(), playerACharacterType: player.characterType,
+            completedWaves: this.completedVictoryWaves(player), firstArenaCompletion: isFirstArenaCompletion,
+            isFirstDefeat, isPerfectDefeat, wasPerfectBefore, unlockedPet: unlockedPetData,
+            enemySpriteKey: primaryEnemy.spriteKey, enemyAnimPrefix: primaryEnemy.animPrefix,
+            crystalDrops, crystalLabels, crystalOverflow,
+        };
         this.time.delayedCall(2000, () => {
             console.log('[BattleScene] Victory transition:', {
                 fromArena: this.fromArena,
@@ -4603,50 +5237,15 @@ export class BattleScene extends Phaser.Scene implements BattleSceneCallbacks {
                 arenaLevel: this.arenaLevel,
                 arenaWave: this.arenaWave
             });
-            if (this.finishForestCrystalVictory(totalCoins)) return;
+            if (this.finishForestCrystalVictory(rewards)) return;
 
             if (this.fromArena) {
                 // Completion is identified by encounter metadata, not a hardcoded array index.
                 if (this.isArenaCompletionWave()) {
-                    // Track arena level completion
-                    if (!player.arena.completedArenaLevels) {
-                        player.arena.completedArenaLevels = [];
-                    }
-                    if (!player.arena.completedArenaLevels.includes(this.arenaLevel)) {
-                        player.arena.completedArenaLevels.push(this.arenaLevel);
-
-                        // Always add arena_level_X unlock key when completing arena X
-                        const arenaUnlockKey = `arena_level_${this.arenaLevel}`;
-                        if (!player.unlockedPets.includes(arenaUnlockKey)) {
-                            player.unlockedPets.push(arenaUnlockKey);
-                        }
-
-                        // Check for pet unlocks by arena level completion
-                        petsData.forEach(pet => {
-                            if (pet.unlockedByArenaLevel === this.arenaLevel) {
-                                newPetUnlocks.push(pet.name);
-                            }
-                            if (pet.unlockedByArenaLevels) {
-                                const allLevelsCompleted = pet.unlockedByArenaLevels.every(
-                                    level => player.unlockedPets.includes(`arena_level_${level}`)
-                                );
-                                if (allLevelsCompleted && pet.unlockedByArenaLevels.includes(this.arenaLevel)) {
-                                    newPetUnlocks.push(pet.name);
-                                }
-                            }
-                        });
-
-                        this.gameState.save();
-                    }
-
                     const grantsLakeFairyReward = this.arenaStory === 'silverpond-lake-fairy'
                         && this.arenaDefinition?.cityId === 'silverpond'
                         && this.arenaDefinition.cityArenaLevel === 3
                         && isFirstArenaCompletion;
-                    if (grantsLakeFairyReward) {
-                        StorySystem.getInstance().completeLakeFairyQuest();
-                    }
-
                     // Arena completed! Go to VictoryScene, then show the story
                     // reward before returning to the Silverpond hub.
                     this.scene.start('VictoryScene', {
@@ -4656,16 +5255,7 @@ export class BattleScene extends Phaser.Scene implements BattleSceneCallbacks {
                         returnData: grantsLakeFairyReward
                             ? { returnScene: this.arenaExitScene }
                             : {},
-                        goldReward: totalCoins,
-                        isFirstDefeat,
-                        isPerfectDefeat,
-                        wasPerfectBefore,
-                        unlockedPet: unlockedPetData,
-                        enemySpriteKey: primaryEnemy.spriteKey,
-                        enemyAnimPrefix: primaryEnemy.animPrefix,
-                        crystalDrops,
-                        crystalLabels,
-                        crystalOverflow,
+                        ...rewards,
                         arenaCompleted: true,
                         arenaLevel: this.arenaLevel,
                         cityArenaLevel: this.arenaDefinition.cityArenaLevel,
@@ -4686,16 +5276,7 @@ export class BattleScene extends Phaser.Scene implements BattleSceneCallbacks {
                                 arenaChoiceId: this.arenaChoiceId,
                                 fromBattle: true
                             },
-                            goldReward: totalCoins,
-                            isFirstDefeat,
-                            isPerfectDefeat,
-                            wasPerfectBefore,
-                            unlockedPet: unlockedPetData,
-                            enemySpriteKey: primaryEnemy.spriteKey,
-                            enemyAnimPrefix: primaryEnemy.animPrefix,
-                            crystalDrops,
-                            crystalLabels,
-                            crystalOverflow
+                            ...rewards,
                         });
                     } else {
                         // The selected progression/practice goal is done; do not force other waves.
@@ -4703,16 +5284,7 @@ export class BattleScene extends Phaser.Scene implements BattleSceneCallbacks {
                         this.scene.start('VictoryScene', {
                             returnScene: this.arenaExitScene,
                             returnData: {},
-                            goldReward: totalCoins,
-                            isFirstDefeat,
-                            isPerfectDefeat,
-                            wasPerfectBefore,
-                            unlockedPet: unlockedPetData,
-                            enemySpriteKey: primaryEnemy.spriteKey,
-                            enemyAnimPrefix: primaryEnemy.animPrefix,
-                            crystalDrops,
-                            crystalLabels,
-                            crystalOverflow
+                            ...rewards,
                         });
                     }
                 }
@@ -4721,17 +5293,8 @@ export class BattleScene extends Phaser.Scene implements BattleSceneCallbacks {
                 this.scene.start('VictoryScene', {
                     returnScene: this.returnScene,
                     returnData: { battleWon: true, ...this.returnData },
-                    goldReward: totalCoins,
+                    ...rewards,
                     enemyName: primaryEnemy.name,
-                    isFirstDefeat,
-                    isPerfectDefeat,
-                    wasPerfectBefore,
-                    unlockedPet: unlockedPetData,
-                    enemySpriteKey: primaryEnemy.spriteKey,
-                    enemyAnimPrefix: primaryEnemy.animPrefix,
-                    crystalDrops,
-                    crystalLabels,
-                    crystalOverflow
                 });
             }
         });
@@ -4761,7 +5324,7 @@ export class BattleScene extends Phaser.Scene implements BattleSceneCallbacks {
         this.tweens.add({ targets: victoryText, alpha: 1, scale: 1, duration: 500, ease: 'Back.out' });
 
         // Helper: apply rewards for a single player (called in their context)
-        const applyPlayerRewards = (): { crystalDrops: Crystal[]; crystalLabels: string[]; crystalOverflow: boolean; unlockedPet: any } => {
+        const applyPlayerRewards = (): VictoryLoot & { goldReward: number; practiceReward?: PracticeImprovementReward } => {
             const player = this.gameState.getPlayer();
             const crystalDrops: Crystal[] = [];
             const crystalLabels: string[] = [];
@@ -4775,7 +5338,10 @@ export class BattleScene extends Phaser.Scene implements BattleSceneCallbacks {
                 && !player.arena.completedArenaLevels?.includes(this.arenaLevel);
 
             // Award coins
+            const coinsBefore = ProgressionSystem.getTotalCoinValue(player.coins);
             ProgressionSystem.awardBattleCoin(player, totalCoins);
+            const practiceReward = this.claimPracticeReward();
+            const manaBeforeArena = ManaSystem.getMana(player);
 
             // Persist HP (use co-op tracked HP)
             if (coop.getActivePlayer() === 'A') {
@@ -4899,32 +5465,34 @@ export class BattleScene extends Phaser.Scene implements BattleSceneCallbacks {
             this.getCoopSafeMasterySystem().recordFightEnd();
             this.gameState.save();
 
-            return { crystalDrops, crystalLabels, crystalOverflow, unlockedPet: unlockedPetData };
+            return { crystalDrops, crystalLabels, crystalOverflow, unlockedPet: unlockedPetData, practiceReward,
+                completedWaves: this.completedVictoryWaves(player), firstArenaCompletion: isFirstArenaCompletion,
+                goldReward: ProgressionSystem.getTotalCoinValue(player.coins) - coinsBefore,
+                arenaMana: ManaSystem.getMana(player) - manaBeforeArena };
         };
 
+        // Persist both profiles before the visual victory tail or closing the battle.
+        coop.activatePlayerA();
+        const rewardsA = applyPlayerRewards();
+
+        coop.activatePlayerB();
+        const rewardsB = applyPlayerRewards();
+
+        // Advance and save both players' learning tracks.
+        this.applyCoopSessionPromotions();
+
+        // Switch back to A for VictoryScene display.
+        coop.activatePlayerA();
+
+        this.completeForestGuardianJourney();
         this.time.delayedCall(2000, () => {
-            // Apply rewards for Player A
-            coop.activatePlayerA();
-            const rewardsA = applyPlayerRewards();
-
-            // Apply rewards for Player B
-            coop.activatePlayerB();
-            const rewardsB = applyPlayerRewards();
-
-            // Advance and save both players' learning tracks.
-            this.applyCoopSessionPromotions();
-
-            // Switch back to A for VictoryScene display
-            coop.activatePlayerA();
-
-            // A story boss must not fall through to the generic return-to-room
-            // path, which would recreate the guardian instead of its crystal.
-            if (this.finishForestCrystalVictory(totalCoins)) return;
-
             // Build combined VictoryScene data
             const arenaCompleted = this.fromArena && this.isArenaCompletionWave();
-            const playerAName = (() => { coop.activatePlayerA(); return this.gameState.getPlayer().name; })();
-            const playerBName = (() => { coop.activatePlayerB(); const n = this.gameState.getPlayer().name; coop.activatePlayerA(); return n; })();
+            const playerA = this.gameState.getPlayer();
+            coop.activatePlayerB();
+            const playerB = this.gameState.getPlayer();
+            coop.activatePlayerA();
+            const playerAName = playerA.name, playerBName = playerB.name;
             const nextArenaWave = this.fromArena && !arenaCompleted
                 ? this.getNextArenaWaveForCurrentChoice(this.getArenaProgressPlayers())
                 : null;
@@ -4932,7 +5500,12 @@ export class BattleScene extends Phaser.Scene implements BattleSceneCallbacks {
                 this.finishArenaRunWithoutCompletion();
             }
 
-            const victoryData: any = {
+            const victoryData: VictoryData = {
+                practiceRewardA: this.practiceVictoryResult('A', rewardsA.practiceReward),
+                practiceRewardB: this.practiceVictoryResult('B', rewardsB.practiceReward),
+                ...this.victoryEncounter(), personalLoot: [rewardsA, rewardsB],
+                playerACharacterType: playerA.characterType,
+                playerBCharacterType: playerB.characterType,
                 returnScene: arenaCompleted || (this.fromArena && nextArenaWave === null)
                     ? this.arenaExitScene
                     : this.returnScene,
@@ -4957,8 +5530,8 @@ export class BattleScene extends Phaser.Scene implements BattleSceneCallbacks {
                 coopMode: true,
                 playerAName,
                 playerBName,
-                goldRewardA: totalCoins,
-                goldRewardB: totalCoins,
+                goldRewardA: rewardsA.goldReward,
+                goldRewardB: rewardsB.goldReward,
             };
 
             // Handle arena completion / next wave routing
@@ -4972,8 +5545,36 @@ export class BattleScene extends Phaser.Scene implements BattleSceneCallbacks {
                 victoryData.returnData = {};
             }
 
-            this.scene.start('VictoryScene', victoryData);
+            if (!this.finishForestCrystalVictory(victoryData)) this.scene.start('VictoryScene', victoryData);
         });
+    }
+
+    private victoryEncounter() {
+        return {
+            foes: this.enemyDefs.map(({ id, name, nameCs, spriteKey }) => ({ id, name: nameCs ?? name, spriteKey })),
+            arenaWave: this.fromArena ? this.arenaWave : undefined,
+            arenaCity: this.fromArena ? this.arenaDefinition?.cityId : undefined,
+            battleBackground: this.backgroundKey ?? (this.fromArena ? `arena-${this.arenaLevel}-bg` : 'bg-battle'),
+        };
+    }
+
+    private completedVictoryWaves(player: PlayerState): boolean[] | undefined {
+        return this.arenaDefinition?.waves.map((wave, index) =>
+            Boolean(getArenaEncounterResult(player, this.arenaLevel, index, wave.id)?.completed));
+    }
+
+    private practiceVictoryResult(owner: 'A' | 'B', reward?: PracticeImprovementReward): PracticeVictoryResult | undefined {
+        if (!reward?.targetId) return reward;
+        const mastery = this.isCoopMode ? (owner === 'B' ? this.coopMasteryB : this.coopMasteryA) : this.gameState.getMasteryData();
+        return mastery ? this.personalBonuses[owner]?.victoryResult(reward, mastery,
+            CoopSessionManager.getInstance().getFoxProgressForMastery(mastery)) : reward;
+    }
+
+    private claimPracticeReward(): PracticeImprovementReward | undefined {
+        const owner = this.isCoopMode ? this.coopSession!.getActivePlayer() : 'A';
+        const player = this.gameState.getPlayer();
+        return this.personalBonuses[owner]?.claim(player, this.personalBonusBattleId, true,
+            amount => ManaSystem.add(player, amount));
     }
 
     /**

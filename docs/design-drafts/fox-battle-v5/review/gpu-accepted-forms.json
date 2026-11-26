@@ -1,0 +1,78 @@
+{
+  "checked": [
+    {
+      "name": "01/idle",
+      "width": 2048,
+      "height": 1536,
+      "uploadError": 0,
+      "error": 0,
+      "coloredPixels": 1122
+    },
+    {
+      "name": "01/attack",
+      "width": 2048,
+      "height": 1024,
+      "uploadError": 0,
+      "error": 0,
+      "coloredPixels": 1162
+    },
+    {
+      "name": "01/cast",
+      "width": 2048,
+      "height": 1536,
+      "uploadError": 0,
+      "error": 0,
+      "coloredPixels": 993
+    },
+    {
+      "name": "04/idle",
+      "width": 2048,
+      "height": 2048,
+      "uploadError": 0,
+      "error": 0,
+      "coloredPixels": 778
+    },
+    {
+      "name": "04/attack",
+      "width": 2048,
+      "height": 1024,
+      "uploadError": 0,
+      "error": 0,
+      "coloredPixels": 689
+    },
+    {
+      "name": "04/cast",
+      "width": 2048,
+      "height": 1536,
+      "uploadError": 0,
+      "error": 0,
+      "coloredPixels": 823
+    },
+    {
+      "name": "02/new-rest",
+      "width": 1254,
+      "height": 1254,
+      "uploadError": 0,
+      "error": 0,
+      "coloredPixels": 1369
+    },
+    {
+      "name": "03/new-rest",
+      "width": 1254,
+      "height": 1254,
+      "uploadError": 0,
+      "error": 0,
+      "coloredPixels": 1474
+    },
+    {
+      "name": "05/new-rest",
+      "width": 1254,
+      "height": 1254,
+      "uploadError": 0,
+      "error": 0,
+      "coloredPixels": 1549
+    }
+  ],
+  "device": "local browser, not physical Samsung tablet",
+  "constraint": 2048
+}

@@ -1,0 +1,188 @@
+{
+  "checks": [
+    {
+      "name": "21 distinct nodes",
+      "pass": true
+    },
+    {
+      "name": "Fresh profile starts in form 1",
+      "pass": true
+    },
+    {
+      "name": "New rune I adds one unique contribution",
+      "pass": true
+    },
+    {
+      "name": "New rune II contributes once more",
+      "pass": true
+    },
+    {
+      "name": "A completed node cannot award again",
+      "pass": true
+    },
+    {
+      "name": "First evolution requires two distinct nodes",
+      "pass": true
+    },
+    {
+      "name": "Changing selected node preserves acquired form",
+      "pass": true
+    },
+    {
+      "name": "Fifth form requires at least 16 unique nodes",
+      "pass": true
+    },
+    {
+      "name": "Player stage prose can be hidden",
+      "pass": true
+    },
+    {
+      "name": "Shorter path creates a separate fresh preview",
+      "pass": true
+    },
+    {
+      "name": "Short path has fixed illustrative milestones",
+      "pass": true
+    },
+    {
+      "name": "All short-path forms remain reachable",
+      "pass": true
+    },
+    {
+      "name": "Exactly six choices, two per family",
+      "pass": true
+    },
+    {
+      "name": "No third rune level",
+      "pass": true
+    },
+    {
+      "name": "Independent rune combination",
+      "pass": true
+    },
+    {
+      "name": "Actual frame scale is 128 / 1280",
+      "pass": true
+    },
+    {
+      "name": "All three powers blocked in defense",
+      "pass": true
+    },
+    {
+      "name": "Defense spends no use",
+      "pass": true
+    },
+    {
+      "name": "Hover keeps root hit area stable",
+      "pass": true
+    },
+    {
+      "name": "Pointer-out does not spend a power",
+      "pass": true
+    },
+    {
+      "name": "First-node strike I removes 1 HP",
+      "pass": true
+    },
+    {
+      "name": "Only strike use is spent",
+      "pass": true
+    },
+    {
+      "name": "Spent strike is disabled",
+      "pass": true
+    },
+    {
+      "name": "Shield has its own use",
+      "pass": true
+    },
+    {
+      "name": "Healing has its own use",
+      "pass": true
+    },
+    {
+      "name": "Reset cancels stale damage",
+      "pass": true
+    },
+    {
+      "name": "First-node strike II removes 2 HP",
+      "pass": true
+    },
+    {
+      "name": "Battle touch targets at least 44 CSS px",
+      "pass": true
+    },
+    {
+      "name": "Reduced motion still communicates and spends shield",
+      "pass": true
+    },
+    {
+      "name": "Module touch targets at least 44 CSS px",
+      "pass": true
+    },
+    {
+      "name": "Static growth hosts remain inside stage",
+      "pass": true
+    },
+    {
+      "name": "Every bitmap loaded",
+      "pass": true
+    },
+    {
+      "name": "No page runtime errors",
+      "pass": true
+    },
+    {
+      "name": "No write requests",
+      "pass": true
+    }
+  ],
+  "errors": [],
+  "writes": [],
+  "shots": [
+    "review/growth-first-evolution-tablet.png",
+    "review/growth-complete-tablet.png",
+    "review/growth-no-words-tablet.png",
+    "review/growth-short-path-tablet.png",
+    "review/battle-defense-tablet.png",
+    "review/battle-hover-tablet.png",
+    "review/battle-pressed-tablet.png",
+    "review/battle-pointer-out-tablet.png",
+    "review/battle-spent-tablet.png",
+    "review/battle-shield-effect-tablet.png",
+    "review/battle-heal-effect-tablet.png",
+    "review/battle-portrait.png",
+    "review/actual-size-five-forms.png",
+    "review/battle-no-words-portrait.png",
+    "review/battle-reduced-motion.png",
+    "review/growth-portrait.png",
+    "review/forms-portrait.png",
+    "review/expressions-portrait.png",
+    "review/abilities-portrait.png"
+  ],
+  "battleScale": {
+    "frame": 96.1953125,
+    "stage": 962
+  },
+  "battleTargetsAt768": [
+    {
+      "w": 69.171875,
+      "h": 71.5234375
+    },
+    {
+      "w": 69.171875,
+      "h": 71.5234375
+    },
+    {
+      "w": 69.171875,
+      "h": 71.5234375
+    }
+  ],
+  "moduleTargetsAt768": [
+    {
+      "w": 91.4296875,
+      "h": 53.46875
+    }
+  ],
+  "migrationDependency": "None: standalone in-memory concept page, no production save or database access."
+}

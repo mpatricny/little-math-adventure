@@ -1,0 +1,521 @@
+{
+  "version": 1,
+  "scenes": {
+    "MathBoardVariants": {
+      "viewport": {
+        "width": 1326,
+        "height": 941
+      },
+      "safeContent": {
+        "power": {
+          "left": 417,
+          "top": 100,
+          "right": 904,
+          "bottom": 209
+        },
+        "question": {
+          "left": 295,
+          "top": 262,
+          "right": 1015,
+          "bottom": 386
+        },
+        "answers": {
+          "left": 319,
+          "top": 442,
+          "right": 1007,
+          "bottom": 556
+        },
+        "hints": {
+          "left": 319,
+          "top": 397,
+          "right": 1007,
+          "bottom": 442
+        },
+        "feedback": {
+          "left": 465,
+          "top": 558,
+          "right": 1005,
+          "bottom": 622
+        },
+        "impact": {
+          "left": 344,
+          "top": 200,
+          "right": 982,
+          "bottom": 360
+        }
+      },
+      "elements": [
+        {
+          "id": "board",
+          "asset": "ui.containers.empty",
+          "x": 663,
+          "y": 470.5,
+          "width": 1326,
+          "height": 941,
+          "depth": 100,
+          "visible": false
+        },
+        {
+          "id": "backdrop",
+          "asset": "ui.containers.empty",
+          "x": 663,
+          "y": 470.5,
+          "width": 1672,
+          "height": 941,
+          "depth": 0,
+          "visible": false
+        },
+        {
+          "id": "parchment",
+          "asset": "ui.containers.empty",
+          "x": 663,
+          "y": 333,
+          "width": 1144,
+          "height": 612,
+          "depth": 100,
+          "visible": false
+        },
+        {
+          "id": "question",
+          "asset": "ui.containers.empty",
+          "x": 655,
+          "y": 323,
+          "width": 700,
+          "height": 140,
+          "depth": 102,
+          "visible": false
+        },
+        {
+          "id": "left",
+          "asset": "ui.containers.empty",
+          "x": 482,
+          "y": 323,
+          "width": 160,
+          "height": 125,
+          "depth": 102,
+          "visible": false
+        },
+        {
+          "id": "right",
+          "asset": "ui.containers.empty",
+          "x": 828,
+          "y": 323,
+          "width": 160,
+          "height": 125,
+          "depth": 102,
+          "visible": false
+        },
+        {
+          "id": "relation",
+          "asset": "ui.containers.empty",
+          "x": 655,
+          "y": 323,
+          "width": 100,
+          "height": 88,
+          "depth": 102,
+          "visible": false
+        },
+        {
+          "id": "answer0",
+          "asset": "ui.containers.empty",
+          "x": 423,
+          "y": 499,
+          "width": 208,
+          "height": 114,
+          "depth": 103,
+          "visible": false
+        },
+        {
+          "id": "answer1",
+          "asset": "ui.containers.empty",
+          "x": 663,
+          "y": 499,
+          "width": 208,
+          "height": 114,
+          "depth": 103,
+          "visible": false
+        },
+        {
+          "id": "answer2",
+          "asset": "ui.containers.empty",
+          "x": 903,
+          "y": 499,
+          "width": 208,
+          "height": 114,
+          "depth": 103,
+          "visible": false
+        },
+        {
+          "id": "hint0",
+          "asset": "ui.containers.empty",
+          "x": 423,
+          "y": 417,
+          "width": 72,
+          "height": 36,
+          "depth": 102,
+          "visible": false
+        },
+        {
+          "id": "hint1",
+          "asset": "ui.containers.empty",
+          "x": 663,
+          "y": 417,
+          "width": 72,
+          "height": 36,
+          "depth": 102,
+          "visible": false
+        },
+        {
+          "id": "hint2",
+          "asset": "ui.containers.empty",
+          "x": 903,
+          "y": 417,
+          "width": 72,
+          "height": 36,
+          "depth": 102,
+          "visible": false
+        },
+        {
+          "id": "source",
+          "asset": "ui.containers.empty",
+          "x": 480,
+          "y": 153,
+          "width": 132,
+          "height": 132,
+          "depth": 102,
+          "visible": false
+        },
+        {
+          "id": "counter",
+          "asset": "ui.containers.empty",
+          "x": 600,
+          "y": 153,
+          "width": 105,
+          "height": 100,
+          "depth": 102,
+          "visible": false
+        },
+        {
+          "id": "increment",
+          "asset": "ui.containers.empty",
+          "x": 770,
+          "y": 153,
+          "width": 192,
+          "height": 100,
+          "depth": 102,
+          "visible": false
+        },
+        {
+          "id": "feedback",
+          "asset": "ui.containers.empty",
+          "x": 735,
+          "y": 590,
+          "width": 540,
+          "height": 64,
+          "depth": 103,
+          "visible": false
+        },
+        {
+          "id": "progress",
+          "asset": "ui.containers.empty",
+          "x": 212,
+          "y": 583,
+          "width": 247,
+          "height": 34,
+          "depth": 103,
+          "visible": false
+        },
+        {
+          "id": "next",
+          "asset": "ui.containers.empty",
+          "x": 1076,
+          "y": 548,
+          "width": 102,
+          "height": 102,
+          "depth": 104,
+          "visible": false
+        },
+        {
+          "id": "demo",
+          "asset": "ui.containers.empty",
+          "x": 1094,
+          "y": 328,
+          "width": 84,
+          "height": 84,
+          "depth": 104,
+          "visible": false
+        },
+        {
+          "id": "owner",
+          "asset": "ui.containers.empty",
+          "x": 220,
+          "y": 129,
+          "width": 86,
+          "height": 190,
+          "depth": 103,
+          "visible": false
+        },
+        {
+          "id": "incoming",
+          "asset": "ui.containers.empty",
+          "x": 1050,
+          "y": 158,
+          "width": 128,
+          "height": 86,
+          "depth": 102,
+          "visible": false
+        },
+        {
+          "id": "timer",
+          "asset": "ui.containers.empty",
+          "x": 655,
+          "y": 235,
+          "width": 500,
+          "height": 8,
+          "depth": 103,
+          "visible": false
+        },
+        {
+          "id": "hud",
+          "asset": "ui.containers.empty",
+          "x": 0,
+          "y": 0,
+          "width": 1326,
+          "height": 941,
+          "depth": 90,
+          "visible": false
+        },
+        {
+          "id": "enemyHealth",
+          "asset": "ui.containers.empty",
+          "x": 1120,
+          "y": 873,
+          "width": 260,
+          "height": 74,
+          "depth": 90,
+          "visible": false
+        },
+        {
+          "id": "enemyShield",
+          "asset": "ui.containers.empty",
+          "x": 933,
+          "y": 873,
+          "width": 78,
+          "height": 78,
+          "depth": 90,
+          "visible": false
+        },
+        {
+          "id": "heroHealth",
+          "asset": "ui.containers.empty",
+          "x": 156,
+          "y": 873,
+          "width": 250,
+          "height": 71,
+          "depth": 90,
+          "visible": false
+        },
+        {
+          "id": "impact",
+          "asset": "ui.containers.empty",
+          "x": 0,
+          "y": 0,
+          "width": 1326,
+          "height": 941,
+          "depth": 105,
+          "visible": false
+        },
+        {
+          "id": "impactCard",
+          "asset": "ui.containers.empty",
+          "x": 663,
+          "y": 280,
+          "width": 840,
+          "height": 239,
+          "depth": 105,
+          "visible": false
+        },
+        {
+          "id": "rawDamage",
+          "asset": "ui.containers.empty",
+          "x": 442,
+          "y": 280,
+          "width": 130,
+          "height": 150,
+          "depth": 106,
+          "visible": false
+        },
+        {
+          "id": "blockedDamage",
+          "asset": "ui.containers.empty",
+          "x": 663,
+          "y": 280,
+          "width": 130,
+          "height": 150,
+          "depth": 106,
+          "visible": false
+        },
+        {
+          "id": "finalDamage",
+          "asset": "ui.containers.empty",
+          "x": 884,
+          "y": 280,
+          "width": 130,
+          "height": 150,
+          "depth": 106,
+          "visible": false
+        },
+        {
+          "id": "minus",
+          "asset": "ui.containers.empty",
+          "x": 552,
+          "y": 305,
+          "width": 70,
+          "height": 80,
+          "depth": 106,
+          "visible": false
+        },
+        {
+          "id": "equals",
+          "asset": "ui.containers.empty",
+          "x": 773,
+          "y": 305,
+          "width": 70,
+          "height": 80,
+          "depth": 106,
+          "visible": false
+        },
+        {
+          "id": "impactReplay",
+          "asset": "ui.containers.empty",
+          "x": 663,
+          "y": 510,
+          "width": 92,
+          "height": 92,
+          "depth": 107,
+          "visible": false
+        },
+        {
+          "id": "heroLaunch",
+          "asset": "ui.containers.empty",
+          "x": 320,
+          "y": 601,
+          "width": 230,
+          "height": 76,
+          "depth": 107,
+          "visible": false
+        },
+        {
+          "id": "enemyLaunch",
+          "asset": "ui.containers.empty",
+          "x": 1020,
+          "y": 601,
+          "width": 230,
+          "height": 76,
+          "depth": 107,
+          "visible": false
+        },
+        {
+          "id": "enemyBarrier",
+          "asset": "ui.containers.empty",
+          "x": 936,
+          "y": 601,
+          "width": 160,
+          "height": 180,
+          "depth": 107,
+          "visible": false
+        },
+        {
+          "id": "heroBarrier",
+          "asset": "ui.containers.empty",
+          "x": 340,
+          "y": 601,
+          "width": 160,
+          "height": 180,
+          "depth": 107,
+          "visible": false
+        },
+        {
+          "id": "enemyHit",
+          "asset": "ui.containers.empty",
+          "x": 1110,
+          "y": 728,
+          "width": 100,
+          "height": 110,
+          "depth": 107,
+          "visible": false
+        },
+        {
+          "id": "heroHit",
+          "asset": "ui.containers.empty",
+          "x": 154,
+          "y": 723,
+          "width": 100,
+          "height": 110,
+          "depth": 107,
+          "visible": false
+        },
+        {
+          "id": "context",
+          "asset": "ui.containers.empty",
+          "x": 0,
+          "y": 0,
+          "width": 1326,
+          "height": 941,
+          "depth": 91,
+          "visible": false
+        },
+        {
+          "id": "contextPanel",
+          "asset": "ui.containers.empty",
+          "x": 663,
+          "y": 790,
+          "width": 680,
+          "height": 196,
+          "depth": 91,
+          "visible": false
+        },
+        {
+          "id": "contextItem",
+          "asset": "ui.containers.empty",
+          "x": 457,
+          "y": 786,
+          "width": 205,
+          "height": 205,
+          "depth": 92,
+          "visible": false
+        },
+        {
+          "id": "contextOwner",
+          "asset": "ui.containers.empty",
+          "x": 242,
+          "y": 790,
+          "width": 96,
+          "height": 96,
+          "depth": 92,
+          "visible": false
+        },
+        {
+          "id": "contextTokens",
+          "asset": "ui.containers.empty",
+          "x": 740,
+          "y": 790,
+          "width": 350,
+          "height": 80,
+          "depth": 92,
+          "visible": false
+        },
+        {
+          "id": "contextDone",
+          "asset": "ui.containers.empty",
+          "x": 919,
+          "y": 790,
+          "width": 60,
+          "height": 60,
+          "depth": 92,
+          "visible": false
+        }
+      ]
+    }
+  }
+}

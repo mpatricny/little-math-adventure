@@ -1,7 +1,8 @@
 import Phaser from 'phaser';
 import { MathProblem } from '../types';
 import { PREPARATION_CONFIG } from '../systems/PreparationSystem';
-import { MathBoard } from './MathBoard';
+import { MathBoard, type NumberIntroductionProvider } from './MathBoard';
+import { createMathBoardView } from './mathboard/MathBoardView';
 import { MedievalActionButton } from './MedievalActionButton';
 import { PreparationChargeIndicator, PreparationKind } from './PreparationChargeIndicator';
 
@@ -18,6 +19,10 @@ export interface PreparationTrainingOverlayLayout {
     title: LayoutPoint;
     charges: LayoutPoint;
     mathBoard: LayoutPoint;
+    result: LayoutPoint;
+    resultTitle: LayoutPoint;
+    resultCharges: LayoutPoint;
+    resultDetail: LayoutPoint;
     attempts: LayoutPoint;
     message: LayoutPoint;
     cancelButton: LayoutPoint;
@@ -35,6 +40,7 @@ export interface PreparationTrainingAttempt {
     problem: MathProblem;
     correct: boolean;
     responseTimeMs: number;
+    assisted: boolean;
     attemptNumber: number;
 }
 
@@ -42,6 +48,8 @@ export interface PreparationTrainingOverlayOptions {
     root: Phaser.GameObjects.Container;
     layout: PreparationTrainingOverlayLayout;
     problemProvider: () => MathProblem[];
+    nextAdaptiveProblem?: () => MathProblem | undefined;
+    numberIntroduction?: NumberIntroductionProvider;
     onAttempt: (attempt: PreparationTrainingAttempt) => void;
     onComplete: (result: PreparationTrainingResult) => void;
 }
@@ -87,6 +95,7 @@ export class PreparationTrainingOverlay {
     private readonly layout: PreparationTrainingOverlayLayout;
     private sampleProblems: MathProblem[] = [];
     private readonly problemProvider: () => MathProblem[];
+    private readonly nextAdaptiveProblem?: () => MathProblem | undefined;
     private readonly onAttempt: (attempt: PreparationTrainingAttempt) => void;
     private readonly onComplete: (result: PreparationTrainingResult) => void;
     private readonly headerButtons: Record<PreparationKind, MedievalActionButton>;
@@ -98,6 +107,7 @@ export class PreparationTrainingOverlay {
     private readonly resultPanel: Phaser.GameObjects.Container;
     private readonly resultTitle: Phaser.GameObjects.Text;
     private readonly resultDetail: Phaser.GameObjects.Text;
+    private readonly resultChargeIndicator: PreparationChargeIndicator;
     private readonly cancelButton: MedievalActionButton;
     private readonly doneButton: MedievalActionButton;
     private readonly mathBoard: MathBoard;
@@ -116,6 +126,7 @@ export class PreparationTrainingOverlay {
         this.root = options.root;
         this.layout = options.layout;
         this.problemProvider = options.problemProvider;
+        this.nextAdaptiveProblem = options.nextAdaptiveProblem;
         this.onAttempt = options.onAttempt;
         this.onComplete = options.onComplete;
 
@@ -144,18 +155,24 @@ export class PreparationTrainingOverlay {
             name: 'preparationRewardCharges',
         });
 
-        this.mathBoard = new MathBoard(scene, () => undefined);
+        this.mathBoard = new MathBoard(scene, () => undefined,
+            (owner, onDemo) => createMathBoardView(owner, onDemo, () => ({
+                mode: this.kind === 'sword' ? 'prep-sword' : 'prep-shield',
+                progress:{index:this.attemptsCompleted,total:this.plannedAttempts,
+                    results:this.attemptStates.slice(0,this.attemptsCompleted).map(state=>state==='clean')},
+            })));
+        this.mathBoard.setNumberIntroductionProvider(options.numberIntroduction);
         this.mathBoard.setDamageDisplayEnabled(false);
         this.mathBoard.getContainer().setPosition(this.layout.mathBoard.x, this.layout.mathBoard.y);
         this.root.add(this.mathBoard.getContainer());
 
         this.attemptsContainer = scene.add.container(this.layout.attempts.x, this.layout.attempts.y);
         this.attemptLabel = scene.add.text(0, -22, '', {
-            fontFamily: 'Palatino Linotype, Book Antiqua, Georgia, serif',
+            resolution: 2, fontFamily: 'Palatino Linotype, Book Antiqua, Georgia, serif',
             fontSize: '18px',
             fontStyle: 'bold',
             color: '#f3ddb4',
-        }).setOrigin(0.5).setResolution(2);
+        }).setOrigin(0.5);
         this.attemptsContainer.add(this.attemptLabel);
         for (let index = 0; index < MAX_ATTEMPTS; index++) {
             const x = (index - 2) * 46;
@@ -163,11 +180,11 @@ export class PreparationTrainingOverlay {
             const plate = scene.add.circle(0, 0, 15, 0x18120d, 0.94)
                 .setStrokeStyle(2, 0x8b6234, 0.82);
             const text = scene.add.text(0, -1, String(index + 1), {
-                fontFamily: 'Arial, sans-serif',
+                resolution: 2, fontFamily: 'Arial, sans-serif',
                 fontSize: '15px',
                 fontStyle: 'bold',
                 color: '#c5ab82',
-            }).setOrigin(0.5).setResolution(2);
+            }).setOrigin(0.5);
             container.add([plate, text]);
             this.attemptsContainer.add(container);
             this.attemptMarkers.push({ container, plate, text });
@@ -175,30 +192,43 @@ export class PreparationTrainingOverlay {
         this.root.add(this.attemptsContainer);
 
         this.messageText = scene.add.text(this.layout.message.x, this.layout.message.y, '', {
-            fontFamily: 'Arial, sans-serif',
+            resolution: 2, fontFamily: 'Arial, sans-serif',
             fontSize: '19px',
             fontStyle: 'bold',
             align: 'center',
             color: '#f0dfbe',
             wordWrap: { width: 820 },
-        }).setOrigin(0.5).setResolution(2);
+        }).setOrigin(0.5);
         this.root.add(this.messageText);
 
-        this.resultPanel = scene.add.container(this.layout.mathBoard.x, this.layout.mathBoard.y);
-        const resultBoard = scene.add.image(0, 0, 'ui-math-board').setDisplaySize(650, 210);
-        this.resultTitle = scene.add.text(0, -28, '', {
-            fontFamily: 'Palatino Linotype, Book Antiqua, Georgia, serif',
+        this.resultPanel = scene.add.container(this.layout.result.x, this.layout.result.y);
+        const resultBoard = scene.add.image(0, 0, 'ui-math-board');
+        resultBoard.setScale(Math.min(850 / resultBoard.width, 458 / resultBoard.height));
+        const relative = (point: LayoutPoint) => ({ x: point.x - this.layout.result.x, y: point.y - this.layout.result.y });
+        const title = relative(this.layout.resultTitle);
+        const detail = relative(this.layout.resultDetail);
+        this.resultTitle = scene.add.text(title.x, title.y, '', {
+            resolution: 2, fontFamily: 'Palatino Linotype, Book Antiqua, Georgia, serif',
             fontSize: '34px',
             fontStyle: 'bold',
             color: '#4a2a12',
-        }).setOrigin(0.5).setResolution(2);
-        this.resultDetail = scene.add.text(0, 28, '', {
-            fontFamily: 'Arial, sans-serif',
+        }).setOrigin(0.5);
+        this.resultDetail = scene.add.text(detail.x, detail.y, '', {
+            resolution: 2, fontFamily: 'Arial, sans-serif',
             fontSize: '22px',
             fontStyle: 'bold',
             color: '#6a3d1d',
-        }).setOrigin(0.5).setResolution(2);
+        }).setOrigin(0.5);
         this.resultPanel.add([resultBoard, this.resultTitle, this.resultDetail]);
+        this.resultChargeIndicator = new PreparationChargeIndicator(scene, {
+            parent: this.resultPanel,
+            ...relative(this.layout.resultCharges),
+            kind: this.kind,
+            iconSize: 100,
+            spacing: 112,
+            showEmptySlots: true,
+            name: 'preparationResultCharges',
+        });
         this.resultPanel.setVisible(false);
         this.root.add(this.resultPanel);
 
@@ -208,8 +238,8 @@ export class PreparationTrainingOverlay {
             y: this.layout.cancelButton.y,
             depth: 0,
             width: 150,
-            label: 'ZRUŠIT',
-            labelFontSize: 19,
+            label: '×',
+            labelFontSize: 32,
             accent: 0xd68a45,
             layout: 'text',
             onClick: () => this.close(false),
@@ -220,8 +250,8 @@ export class PreparationTrainingOverlay {
             y: this.layout.doneButton.y,
             depth: 0,
             width: 270,
-            label: 'ZPĚT DO OBCHODU',
-            labelFontSize: 19,
+            label: '↩ ZPĚT',
+            labelFontSize: 28,
             accent: 0xf5bd45,
             layout: 'text',
             onClick: () => this.close(true),
@@ -253,8 +283,9 @@ export class PreparationTrainingOverlay {
 
     open(kind: PreparationKind): void {
         this.cancelPendingTransition();
-        this.sampleProblems = this.problemProvider().slice(0, MAX_ATTEMPTS);
-        if (this.sampleProblems.length < MAX_ATTEMPTS) {
+        const first = this.nextAdaptiveProblem?.();
+        this.sampleProblems = first ? [first] : this.problemProvider().slice(0, MAX_ATTEMPTS);
+        if (!first && this.sampleProblems.length < MAX_ATTEMPTS) {
             throw new Error(`PreparationTrainingOverlay requires ${MAX_ATTEMPTS} adaptive problems`);
         }
         this.kind = kind;
@@ -265,11 +296,12 @@ export class PreparationTrainingOverlay {
         this.attemptStates = Array.from({ length: MAX_ATTEMPTS }, () => 'pending' as AttemptState);
         this.isOpen = true;
 
-        this.headerButtons.sword.root.setVisible(kind === 'sword');
-        this.headerButtons.shield.root.setVisible(kind === 'shield');
-        this.chargeIndicator.setKind(kind).setCount(0, false);
+        this.headerButtons.sword.root.setVisible(false);
+        this.headerButtons.shield.root.setVisible(false);
+        this.chargeIndicator.setKind(kind).setCount(0, false).setVisible(true);
+        this.resultChargeIndicator.setKind(kind).setCount(0, false);
         this.attemptsContainer.setVisible(true);
-        this.messageText.setVisible(true).setColor('#f0dfbe');
+        this.messageText.setVisible(false);
         this.resultPanel.setVisible(false);
         this.cancelButton.root.setVisible(true);
         this.doneButton.root.setVisible(false);
@@ -295,21 +327,25 @@ export class PreparationTrainingOverlay {
     }
 
     private showNextProblem(): void {
-        if (!this.isOpen || this.attemptsCompleted >= this.sampleProblems.length) return;
+        if (!this.isOpen || this.attemptsCompleted >= this.plannedAttempts) return;
 
         const index = this.attemptsCompleted;
+        if (!this.sampleProblems[index]) {
+            const next = this.nextAdaptiveProblem?.() ?? this.problemProvider()[0];
+            this.sampleProblems.push(next);
+        }
         this.attemptStates[index] = 'active';
-        this.messageText.setText('KAŽDÁ SPRÁVNÁ ODPOVĚĎ\nNABÍJÍ JEDNU RUNU')
+        this.messageText.setText('')
             .setColor('#f0dfbe');
         this.renderAttemptMarkers();
         this.root.setData('activeProblemIndex', index);
         this.root.setData('activeAnswer', this.sampleProblems[index].answer);
-        this.mathBoard.showSingle(this.sampleProblems[index], (isCorrect, responseTimeMs) => {
-            this.handleAnswer(isCorrect, responseTimeMs);
+        this.mathBoard.showSingle(this.sampleProblems[index], (isCorrect, responseTimeMs, assisted) => {
+            this.handleAnswer(isCorrect, responseTimeMs, assisted);
         },{telemetryContext:this.kind==='sword'?'shop_prep_sword':'shop_prep_shield'});
     }
 
-    private handleAnswer(isCorrect: boolean, responseTimeMs: number): void {
+    private handleAnswer(isCorrect: boolean, responseTimeMs: number, assisted: boolean): void {
         if (!this.isOpen) return;
 
         const index = this.attemptsCompleted;
@@ -321,6 +357,7 @@ export class PreparationTrainingOverlay {
             problem,
             correct: isCorrect,
             responseTimeMs,
+            assisted,
             attemptNumber: this.attemptsCompleted,
         });
 
@@ -347,8 +384,7 @@ export class PreparationTrainingOverlay {
         this.mathBoard.hide();
 
         const finished = this.earnedCharges >= PREPARATION_CONFIG.maxCharges
-            || this.attemptsCompleted >= this.plannedAttempts
-            || this.attemptsCompleted >= this.sampleProblems.length;
+            || this.attemptsCompleted >= this.plannedAttempts;
         this.nextProblemTimer = this.scene.time.delayedCall(finished ? 450 : 650, () => {
             this.nextProblemTimer = null;
             if (finished) this.finish();
@@ -359,17 +395,13 @@ export class PreparationTrainingOverlay {
     private finish(): void {
         this.resultCharges = this.earnedCharges;
         const style = KIND_STYLE[this.kind];
-        const roundLabel = this.resultCharges === 1 ? 'KOLO' : this.resultCharges < 5 ? 'KOLA' : 'KOL';
 
-        this.chargeIndicator.setCount(this.resultCharges);
+        this.chargeIndicator.setVisible(false);
+        this.resultChargeIndicator.setCount(this.resultCharges);
         this.attemptsContainer.setVisible(false);
         this.messageText.setVisible(false);
         this.resultTitle.setText(this.resultCharges > 0 ? style.completeTitle : 'ZKUS TO ZNOVU');
-        this.resultDetail.setText(
-            this.resultCharges > 0
-                ? `BONUS NA ${this.resultCharges} ${roundLabel}`
-                : 'TENTOKRÁT ŽÁDNÁ RUNA',
-        );
+        this.resultDetail.setText(String(this.resultCharges));
         this.resultPanel.setVisible(true).setAlpha(0).setScale(0.88);
         this.cancelButton.root.setVisible(false);
         this.doneButton.root.setVisible(true);

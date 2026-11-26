@@ -9,6 +9,26 @@ function localTime(daysFromToday: number, hour: number = 12): number {
 }
 
 describe('DailyProgressSystem', () => {
+    it('includes real comparison answers on their own days and keeps each profile separate', () => {
+        const data = (attempts: unknown[], records = {}) => ({ masteryData: {
+            problemRecords: records, comparisonChapter: { attempts },
+        } } as unknown as MathStats);
+        const a = data([
+            { timestamp: localTime(-1), correct: false, responseTimeMs: 3000 },
+            { timestamp: localTime(0), correct: true, responseTimeMs: 4200 },
+            { timestamp: localTime(0), correct: true, responseTimeMs: 1000, diagnosticMode: true },
+        ], { imported: { subAtomId: 'A1', form: 'result_unknown', attempts: [
+            { timestamp: localTime(0), correct: true, responseTimeMs: 5000, synthetic: true },
+        ] } });
+        const b = data([{ timestamp: localTime(0), correct: false, responseTimeMs: 6000 }]);
+        const first = DailyProgressSystem.getRecentDays({} as PlayerState, a, 3, localTime(0));
+        const second = DailyProgressSystem.getRecentDays({} as PlayerState, b, 3, localTime(0));
+        expect(first.map(day => [day.attempts, day.correct, day.comparisonAttempts])).toEqual([[0, 0, 0], [1, 0, 1], [1, 1, 1]]);
+        expect(second.map(day => [day.attempts, day.correct])).toEqual([[0, 0], [0, 0], [1, 0]]);
+        expect(first[2].averageResponseTimeMs).toBe(4200);
+        expect(second[2].averageResponseTimeMs).toBe(0);
+    });
+
     it('groups timestamped mastery attempts and merges the reward ledger', () => {
         const player = {} as PlayerState;
         const stats = {

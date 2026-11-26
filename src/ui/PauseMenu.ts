@@ -3,6 +3,7 @@ import { gameAudio } from '../audio/AudioDirector';
 import Phaser from 'phaser';
 import { GameStateManager } from '../systems/GameStateManager';
 import { CoopSessionManager } from '../systems/CoopSessionManager';
+import { checkpointLocalPlayTime } from '../systems/LocalPlayTimeBridge';
 import { TvFullscreenController, TvFullscreenState } from '../remote/TvFullscreenController';
 import { requestLandscapeLock } from '../utils/mobileSetup';
 
@@ -47,6 +48,7 @@ export class PauseMenu {
     private readonly resumeLabel: string;
     private readonly quitLabel: string;
     private readonly onQuitToMenu?: () => void;
+    private readonly onPauseChange?: (paused: boolean) => void;
     private readonly layout: PauseMenuLayout;
     private fullscreen: TvFullscreenController | null = null;
     private fullscreenButton: PauseMenuButton | null = null;
@@ -64,6 +66,7 @@ export class PauseMenu {
             resumeLabel?: string;
             quitLabel?: string;
             onQuitToMenu?: () => void;
+            onPauseChange?: (paused: boolean) => void;
         } = {},
     ) {
         this.scene = scene;
@@ -75,6 +78,7 @@ export class PauseMenu {
         this.resumeLabel = options.resumeLabel ?? 'POKRAČOVAT';
         this.quitLabel = options.quitLabel ?? 'ODEJÍT DO MENU';
         this.onQuitToMenu = options.onQuitToMenu;
+        this.onPauseChange = options.onPauseChange;
         this.layout = options.layout ?? this.createDefaultLayout();
         this.createUI();
         this.setupInput();
@@ -301,11 +305,13 @@ export class PauseMenu {
      */
     public show(): void {
         this.isVisible = true;
+        this.onPauseChange?.(true);
         gameAudio().setPaused(this.scene, true);
         this.container.setVisible(true);
 
         // Pause game time
         this.scene.time.paused = true;
+        checkpointLocalPlayTime();
 
         // Pause physics if active
         if (this.scene.physics && this.scene.physics.world) {
@@ -326,6 +332,7 @@ export class PauseMenu {
 
         // Resume game time
         this.scene.time.paused = false;
+        checkpointLocalPlayTime();
 
         // Resume physics if it was paused
         if (this.scene.physics && this.scene.physics.world) {
@@ -335,6 +342,7 @@ export class PauseMenu {
         // Resume all tweens
         this.scene.tweens.resumeAll();
 
+        this.onPauseChange?.(false);
         // Call resume callback if provided
         this.onResumeCallback?.();
     }
@@ -383,6 +391,7 @@ export class PauseMenu {
             this.scene.physics.resume();
         }
         this.scene.tweens.resumeAll();
+        this.onPauseChange?.(false);
     }
 
     /**

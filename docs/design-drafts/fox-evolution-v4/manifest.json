@@ -1,0 +1,57 @@
+[
+  {
+    "id": 1,
+    "name": "Základní",
+    "feature": "Schválený základ",
+    "pose": "Zvednutá tlapka",
+    "status": "accepted-baseline",
+    "alt": "Původní oranžová liška s vlídným výrazem, jemnými tyrkysovými runami a zvednutou tlapkou.",
+    "asset": "assets/fox-01.webp",
+    "master": "assets/fox-01.png",
+    "source": "/Users/datamole/little-math-adventure/docs/design-drafts/fox-expression-v3/assets/fox-friendly.png"
+  },
+  {
+    "id": 2,
+    "name": "Runová",
+    "feature": "První zlatá linka",
+    "pose": "Zvědavé naklonění",
+    "status": "proposal",
+    "alt": "Liška stojí na čtyřech tlapkách, naklání hlavu a má bílé přední ponožky a jednu zlatem lemovanou runu na ocase.",
+    "asset": "assets/fox-02.webp",
+    "master": "assets/fox-02.png",
+    "source": "/Users/datamole/.codex/generated_images/01a1bfe3-6721-7d33-b884-18d02e756092/exec-1efbcc0b-d12e-4149-813a-b585326018d8.png"
+  },
+  {
+    "id": 3,
+    "name": "Stříbrná",
+    "feature": "Stříbrný ocas",
+    "pose": "Hravá poklona",
+    "status": "proposal",
+    "alt": "Liška se hravě uklání, ocas drží vysoko; jeho stříbrná špička nese dvě zlatem lemované tyrkysové linky.",
+    "asset": "assets/fox-03.webp",
+    "master": "assets/fox-03.png",
+    "source": "/Users/datamole/.codex/generated_images/01a1bfe3-6721-7d33-b884-18d02e756092/exec-d82e0a67-7984-40ef-9c87-3afd1cabed85.png"
+  },
+  {
+    "id": 4,
+    "name": "Zářivá",
+    "feature": "Propojené runy",
+    "pose": "Lehký krok",
+    "status": "proposal",
+    "alt": "Liška kráčí doprava, má bohatou bílou hřívu, bílé tlapky a propojené tyrkysové runy se zlatými okraji.",
+    "asset": "assets/fox-04.webp",
+    "master": "assets/fox-04.png",
+    "source": "/Users/datamole/.codex/generated_images/01a1bfe3-6721-7d33-b884-18d02e756092/exec-812574bd-7b76-4f09-9417-bca6fff12bae.png"
+  },
+  {
+    "id": 5,
+    "name": "Hvězdná",
+    "feature": "Hvězdný znak",
+    "pose": "Hrdý sed",
+    "status": "proposal",
+    "alt": "Liška sedí vzpřímeně, širokou stříbrnou hřívu a ocas zdobí tyrkysové hvězdné runy se zlatým lemem.",
+    "asset": "assets/fox-05.webp",
+    "master": "assets/fox-05.png",
+    "source": "/Users/datamole/.codex/generated_images/01a1bfe3-6721-7d33-b884-18d02e756092/exec-6654f19d-f4ca-4319-982f-32bbc5b41c4d.png"
+  }
+]

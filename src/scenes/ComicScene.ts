@@ -1,5 +1,8 @@
 import { sfx } from '../audio/AudioDirector';
 import Phaser from 'phaser';
+import { SceneBuilder } from '../systems/SceneBuilder';
+import { waterHost } from '../ui/SceneLayoutHost';
+import { GuideConfirmButton } from '../ui/GuideConfirmButton';
 
 /**
  * Scene initialization data
@@ -18,8 +21,7 @@ interface ComicSceneData {
  * Features:
  * - Full-screen panels (1280x720) displayed one at a time
  * - Cross-fade transitions between panels
- * - Click/tap anywhere to advance to next panel
- * - Skip button (top-right corner) to jump to CrashSiteScene
+ * - One large OK/checkmark control advances each illustrated panel
  * - Auto-transitions to CrashSiteScene after final panel
  *
  * Panel Content (from GAME_DESIGN_DOCUMENT):
@@ -62,9 +64,9 @@ export class ComicScene extends Phaser.Scene {
 
     private currentPanelIndex = 0;
     private currentPanel: Phaser.GameObjects.Image | null = null;
-    private nextPanel: Phaser.GameObjects.Image | null = null;
     private isTransitioning = false;
-    private skipButton: Phaser.GameObjects.Container | null = null;
+    private confirmButton?: GuideConfirmButton;
+    private sceneBuilder!: SceneBuilder;
     private panelIndicators: Phaser.GameObjects.Container | null = null;
     private autoAdvanceTimer: Phaser.Time.TimerEvent | null = null;
 
@@ -76,30 +78,35 @@ export class ComicScene extends Phaser.Scene {
         this.currentPanelIndex = data.skipToPanel ?? 0;
         this.isTransitioning = false;
         this.currentPanel = null;
-        this.nextPanel = null;
+        this.panelIndicators = null;
+        this.confirmButton = undefined;
+        this.autoAdvanceTimer = null;
+        this.input.enabled = true;
     }
 
     create(): void {
+        this.sceneBuilder = new SceneBuilder(this);
+        this.sceneBuilder.buildScene('ComicScene');
         // Black background
         this.add.rectangle(640, 360, 1280, 720, 0x000000).setDepth(-10);
 
         // Display first panel
         this.showPanel(this.currentPanelIndex);
 
-        // Create skip button
-        this.createSkipButton();
+        this.createConfirmButton();
 
         // Create panel progress indicators
         this.createPanelIndicators();
-
-        // Setup input for advancing panels
-        this.setupInput();
 
         // Fade in from black
         this.cameras.main.fadeIn(500, 0, 0, 0);
 
         // Start auto-advance timer
         this.startAutoAdvanceTimer();
+        this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+            this.autoAdvanceTimer?.remove();
+            this.confirmButton?.destroy();
+        });
     }
 
     /**
@@ -172,52 +179,10 @@ export class ComicScene extends Phaser.Scene {
         panel.setScale(scale);
     }
 
-    /**
-     * Create the skip button in the top-right corner
-     */
-    private createSkipButton(): void {
-        const container = this.add.container(1200, 50).setDepth(100);
-
-        // Button background
-        const bg = this.add.rectangle(0, 0, 120, 40, 0x444444, 0.8)
-            .setStrokeStyle(2, 0x666666);
-
-        // Button text
-        const text = this.add.text(0, 0, 'Přeskočit ▸', {
-            fontSize: '16px',
-            fontFamily: 'Arial, sans-serif',
-            color: '#ffffff',
-        }).setOrigin(0.5);
-
-        container.add([bg, text]);
-        container.setSize(120, 40);
-        container.setInteractive({ useHandCursor: true });
-
-        // Hover effects
-        container.on('pointerover', () => {
-            bg.setFillStyle(0x555555);
-            text.setColor('#ffff88');
-        });
-
-        container.on('pointerout', () => {
-            bg.setFillStyle(0x444444);
-            text.setColor('#ffffff');
-        });
-
-        // Click to skip
-        container.on('pointerdown', () => {
-            this.skipToGame();
-        });
-
-        this.skipButton = container;
-
-        // Start slightly transparent, fade in
-        container.setAlpha(0.6);
-        this.tweens.add({
-            targets: container,
-            alpha: 1,
-            delay: 1000,
-            duration: 500,
+    private createConfirmButton(): void {
+        this.confirmButton = new GuideConfirmButton(this, {
+            ...waterHost(this.sceneBuilder, 'comicConfirmHost'), name: 'comicConfirm',
+            onConfirm: () => this.advancePanel(),
         });
     }
 
@@ -225,7 +190,8 @@ export class ComicScene extends Phaser.Scene {
      * Create panel progress indicators (dots at bottom)
      */
     private createPanelIndicators(): void {
-        const container = this.add.container(640, 680).setDepth(100);
+        const host = waterHost(this.sceneBuilder, 'comicProgressHost');
+        const container = this.add.container(host.x, host.y).setDepth(host.depth);
         const totalPanels = ComicScene.PANEL_KEYS.length;
         const dotSpacing = 20;
         const startX = -((totalPanels - 1) * dotSpacing) / 2;
@@ -259,31 +225,11 @@ export class ComicScene extends Phaser.Scene {
     }
 
     /**
-     * Setup input for advancing panels
-     */
-    private setupInput(): void {
-        // Click/tap anywhere (except skip button) advances to next panel
-        this.input.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
-            // Check if click is on skip button area
-            if (pointer.x > 1140 && pointer.y < 90) {
-                return; // Let skip button handle it
-            }
-
-            this.advancePanel();
-        });
-
-        // Keyboard support
-        this.input.keyboard?.on('keydown-SPACE', () => this.advancePanel());
-        this.input.keyboard?.on('keydown-ENTER', () => this.advancePanel());
-        this.input.keyboard?.on('keydown-RIGHT', () => this.advancePanel());
-        this.input.keyboard?.on('keydown-ESC', () => this.skipToGame());
-    }
-
-    /**
      * Advance to the next panel
      */
     private advancePanel(): void {
         if (this.isTransitioning) return;
+        this.confirmButton?.setEnabled(false);
 
         // Stop current auto-advance timer (will be restarted after transition)
         this.autoAdvanceTimer?.destroy();
@@ -320,7 +266,6 @@ export class ComicScene extends Phaser.Scene {
             .setAlpha(0);
 
         this.fitPanelToScreen(newPanel);
-        this.nextPanel = newPanel;
 
         // Set up motion effect starting position BEFORE cross-fade (no visible jump)
         this.preparePanelEffect(newPanel, newIndex);
@@ -347,8 +292,8 @@ export class ComicScene extends Phaser.Scene {
             onComplete: () => {
                 this.currentPanelIndex = newIndex;
                 this.currentPanel = newPanel;
-                this.nextPanel = null;
                 this.isTransitioning = false;
+                this.confirmButton?.setEnabled(true);
 
                 // Update depth so new panel is on top
                 newPanel.setDepth(0);
@@ -469,14 +414,6 @@ export class ComicScene extends Phaser.Scene {
                 },
             });
         }
-    }
-
-    /**
-     * Skip directly to the game (CrashSiteScene)
-     */
-    private skipToGame(): void {
-        if (this.isTransitioning) return;
-        this.transitionToGame();
     }
 
     /**

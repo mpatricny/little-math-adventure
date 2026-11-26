@@ -1,3 +1,5 @@
+import { getCatacombReadiness } from '../systems/PracticeProgress';
+import { ADVANCED_NODES, isAdvancedNode } from '../systems/AdvancedCurriculum';
 import Phaser from 'phaser';
 import { OverlayBase } from './OverlayBase';
 import { ScrollablePanel } from './ScrollablePanel';
@@ -18,7 +20,7 @@ const SUB_ATOM_NAMES: Record<string, string> = {
 };
 
 const BAND_RANGES: Record<string, string> = {
-    A: '0-5', B: '6-8', C: '0-10', D: '11-20', E: '0-20',
+    A: '0-5', B: '6-8', C: '0-10', D: '11-20', E: '0-20', F: '5 a 10', G: '0–30', H: '0–100',
 };
 
 const STATE_COLORS: Record<MasteryState, number> = {
@@ -133,7 +135,7 @@ export class ExamsOverlay extends OverlayBase {
         yOffset: number,
         _width: number,
     ): number {
-        const name = SUB_ATOM_NAMES[saId] || saId;
+        const name = isAdvancedNode(saId) ? ADVANCED_NODES[saId].label : SUB_ATOM_NAMES[saId] || saId;
         const stateColor = STATE_COLORS[sa.state as MasteryState] || 0x555555;
 
         // Sub-atom header
@@ -384,11 +386,24 @@ export class ExamsOverlay extends OverlayBase {
         return [
             { label: 'Úlohy:', current: progress.successfulSolves, target: progress.requiredSuccessfulSolves, valueStr: `${progress.successfulSolves}/${progress.requiredSuccessfulSolves}`, met: progress.successfulSolves >= progress.requiredSuccessfulSolves, stateColor: 'training' },
             { label: 'Přesnost:', current: progress.accuracy * 100, target: progress.requiredAccuracy * 100, valueStr: `${Math.round(progress.accuracy * 100)}%/${Math.round(progress.requiredAccuracy * 100)}%`, met: progress.accuracy >= progress.requiredAccuracy, stateColor: 'training' },
-            { label: 'Formy:', current: progress.qualifyingForms, target: progress.requiredQualifyingForms, valueStr: `${progress.qualifyingForms}/${progress.requiredQualifyingForms}`, met: progress.qualifyingForms >= progress.requiredQualifyingForms, stateColor: 'training' },
+            { label: isAdvancedNode(saId) ? 'Skupiny:' : 'Formy:', current: progress.qualifyingForms, target: progress.requiredQualifyingForms, valueStr: `${progress.qualifyingForms}/${progress.requiredQualifyingForms}`, met: progress.qualifyingForms >= progress.requiredQualifyingForms, stateColor: 'training' },
         ];
     }
 
+    private getAdvancedChallengeProgress(saId: SubAtomId, stage: 'secure' | 'fluent'): ProgressItem[] {
+        const data = GameStateManager.getInstance().getMasteryData();
+        const r = getCatacombReadiness(data, saId, stage === 'secure' ? 'fluency_challenge' : 'mastery_challenge');
+        return [
+            { label: 'Úlohy:', measure: r.solves, format: String },
+            { label: 'Přesnost:', measure: r.accuracy, format: (n: number) => `${Math.round(100 * n)} %` },
+            { label: 'Čas:', measure: r.speed, format: (n: number) => `${(n / 1000).toLocaleString('cs')} s` },
+            { label: 'Skupiny:', measure: r.forms, format: String },
+        ].map(({ label, measure, format }) => ({ label, current: measure.progress, target: 1,
+            valueStr: `${measure.value === null ? '—' : format(measure.value)}/${format(measure.target)}`, met: measure.met, stateColor: stage }));
+    }
+
     private getFluencyProgress(saId: SubAtomId, sa: any, mastery: MasterySystem): ProgressItem[] {
+        if (isAdvancedNode(saId)) return this.getAdvancedChallengeProgress(saId, 'secure');
         const solves = sa.successfulSolves;
         const accuracy = mastery.getLast20Accuracy(saId);
         const medianRT = mastery.getMedianRT(saId);
@@ -404,6 +419,7 @@ export class ExamsOverlay extends OverlayBase {
     }
 
     private getMasteryProgress(saId: SubAtomId, sa: any, mastery: MasterySystem): ProgressItem[] {
+        if (isAdvancedNode(saId)) return this.getAdvancedChallengeProgress(saId, 'fluent');
         const solves = sa.successfulSolves;
         const accuracy = mastery.getLast20Accuracy(saId);
         const medianRT = mastery.getMedianRT(saId);

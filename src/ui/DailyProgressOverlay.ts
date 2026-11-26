@@ -1,303 +1,152 @@
+import { isAdvancedNode } from '../systems/AdvancedCurriculum';
+import { getExamPresentation } from './ExamPresentation';
 import Phaser from 'phaser';
-import { DailyProgressDay, DailyProgressProfile, DailyProgressSystem } from '../systems/DailyProgressSystem';
-import { CoopSessionManager } from '../systems/CoopSessionManager';
-import { GameStateManager } from '../systems/GameStateManager';
-import { SaveSystem } from '../systems/SaveSystem';
-import { ALL_PROBLEM_FORMS, ProblemForm, SubAtomId } from '../types';
-import { OverlayBase } from './OverlayBase';
+import { DailyProgressDay, DailyProgressSystem } from '../systems/DailyProgressSystem';
+import { LearningProfileOptions, SKILL_LABELS, SKILL_SYMBOLS } from '../systems/LearningProfileView';
+import { getLearningBand, getLearningFrontier } from '../systems/LearningProgress';
+import { BAND_RANGES } from '../systems/MathSkillRules';
+import { SceneBuilder } from '../systems/SceneBuilder';
+import { LearningOverlay } from './LearningOverlay';
+import { destroyLearningLayout, LearningButton, learningCard, learningHost, learningText, LEARNING_MUTED, LEARNING_TEAL } from './LearningUi';
 
-const FORM_COLORS: Record<ProblemForm, number> = {
-    result_unknown: 0x58c8f4,
-    missing_part: 0xc884ff,
-    compare_equation_vs_number: 0xf0b44d,
-    compare_equation_vs_equation: 0x67d58a,
-};
+/** Personal dated history. Browsing never switches the player who is playing. */
+export class DailyProgressOverlay extends LearningOverlay {
+    private readonly dailyLayout: SceneBuilder;
+    private readonly contentRoot: Phaser.GameObjects.Container;
+    private selectedDate: string | null = null;
+    private weekStart: string | null = null;
 
-const FORM_SHORT: Record<ProblemForm, string> = {
-    result_unknown: 'VÝSLEDEK',
-    missing_part: 'CHYBÍ ČÁST',
-    compare_equation_vs_number: 'POROVNÁNÍ',
-    compare_equation_vs_equation: '2 ROVNICE',
-};
-
-/** Today's learning is prominent; the lower strip preserves seven-day context. */
-export class DailyProgressOverlay extends OverlayBase {
-    private contentRoot!: Phaser.GameObjects.Container;
-
-    constructor(scene: Phaser.Scene) {
-        super(scene, 'DENNÍ POKROK', 1160, 620);
+    constructor(scene: Phaser.Scene, options: LearningProfileOptions = {}) {
+        super(scene, 'DENNÍ POKROK', options);
+        this.dailyLayout = new SceneBuilder(scene); this.dailyLayout.buildScene('DailyProgressLayout');
+        this.contentRoot = scene.add.container(); this.container.add(this.contentRoot);
     }
 
-    protected buildContent(area: { x: number; y: number; width: number; height: number }): void {
-        this.contentRoot = this.scene.add.container(area.x, area.y);
-        this.container.add(this.contentRoot);
-    }
-
-    protected onShow(): void {
-        this.rebuildContent();
-    }
-
-    private rebuildContent(): void {
+    protected renderProfile(): void {
+        if (!this.profile) return;
+        const today = DailyProgressSystem.dateKey(Date.now());
+        this.selectedDate ??= today;
+        this.weekStart ??= this.startOfWeek(this.selectedDate);
         this.contentRoot.removeAll(true);
-        const state = GameStateManager.getInstance();
-        const coop = CoopSessionManager.getInstance();
-        const profiles: DailyProgressProfile[] = [];
-        const levels: number[] = [];
+        const weekEnd = this.shiftDate(this.weekStart, 6);
+        const days = DailyProgressSystem.getRecentDays(this.profile.player, this.profile.stats, 7, this.date(weekEnd).getTime());
+        const day = days.find(entry => entry.date === this.selectedDate)!;
+        const summary = DailyProgressSystem.getSummary(this.profile.player, this.profile.stats);
+        const training = this.currentTraining();
+        this.contentRoot.setData({ profileSlot: this.profile.slotIndex, day, summary, training, weekStart: this.weekStart });
 
-        if (coop.isCoopActive()) {
-            const entries = [
-                {
-                    slot: coop.getPlayerASlotIndex(),
-                    masteryData: coop.getPlayerAMasteryData(),
-                },
-                {
-                    slot: coop.getPlayerBSlotIndex(),
-                    masteryData: coop.getPlayerBMasteryData(),
-                },
-            ];
+        const total = learningHost(this.dailyLayout, 'summary');
+        learningCard(this.scene, this.contentRoot, total.x, total.y, total.width, total.height);
+        this.textAt('summaryLabel', 'CELKEM', 18, LEARNING_MUTED, 'left');
+        this.textAt('summaryAttempts', `✎ ${summary.attempts}`, 26);
+        this.textAt('summaryCorrect', `✓ ${summary.correct}`, 26);
+        this.textAt('summaryAccuracy', summary.accuracy === null ? '—' : `${Math.round(summary.accuracy * 100)} %`, 26);
+        this.textAt('date', `${day.date === today ? 'DNES' : 'DEN'} · ${this.fullDate(day.date)}`, 23);
 
-            for (const entry of entries) {
-                const save = entry.slot >= 0 ? SaveSystem.load(entry.slot) : null;
-                if (!save) continue;
-                profiles.push({
-                    player: save.player,
-                    stats: {
-                        ...save.mathStats,
-                        masteryData: entry.masteryData ?? save.mathStats.masteryData,
-                    },
-                });
-                levels.push(save.player.level);
-            }
+        this.renderMetric(1, '◷', 'Čas hry', this.playTime(day.playTimeMs), day.playTimeMs === null ? 27 : 35);
+        this.renderMetric(2, '✎', 'Příklady', `${day.attempts}`, 42);
+        this.renderMetric(3, '✓', 'Úspěšnost', day.attempts ? `${Math.round(day.correct / day.attempts * 100)} %` : '—', 38);
+        const accuracy = learningHost(this.dailyLayout, 'metric3');
+        learningText(this.scene, this.contentRoot, accuracy.x, accuracy.y + 40, `✓ ${day.correct}   ✕ ${day.wrong}`, 17, LEARNING_MUTED);
+
+        const h = learningHost(this.dailyLayout, 'metric4');
+        learningCard(this.scene, this.contentRoot, h.x, h.y, h.width, h.height);
+        learningText(this.scene, this.contentRoot, h.x, h.y - 37, 'Trénuje teď', 18);
+        learningText(this.scene, this.contentRoot, h.x - 48, h.y - 1, training.range, 29);
+        learningText(this.scene, this.contentRoot, h.x + 45, h.y - 1, training.symbol,
+            training.symbol === '< = >' ? 40 : training.symbol.length > 3 ? 24 : 38);
+        learningText(this.scene, this.contentRoot, h.x, h.y + 40, training.label, 18, LEARNING_MUTED);
+
+        const average = learningHost(this.dailyLayout, 'average');
+        learningCard(this.scene, this.contentRoot, average.x, average.y, average.width, average.height);
+        this.textAt('averageLabel', '◷ ✓ Průměr správně', 18, LEARNING_MUTED);
+        this.textAt('averageValue', day.averageResponseTimeMs > 0
+            ? `${new Intl.NumberFormat('cs-CZ', { minimumFractionDigits: 1, maximumFractionDigits: 1 }).format(day.averageResponseTimeMs / 1000)} s`
+            : '—', 25);
+
+        const available = DailyProgressSystem.getAvailableDateRange(this.profile.player, this.profile.stats);
+        const firstWeek = this.startOfWeek(available.firstDate);
+        const currentWeek = this.startOfWeek(today);
+        new LearningButton(this.scene, this.contentRoot, learningHost(this.dailyLayout, 'historyPrevious'),
+            'dailyWeekPrevious', '', '‹', () => this.changeWeek(-1)).setEnabled(this.weekStart > firstWeek);
+        new LearningButton(this.scene, this.contentRoot, learningHost(this.dailyLayout, 'historyNext'),
+            'dailyWeekNext', '', '›', () => this.changeWeek(1)).setEnabled(this.weekStart < currentWeek);
+        new LearningButton(this.scene, this.contentRoot, learningHost(this.dailyLayout, 'historyToday'),
+            'dailyToday', 'DNES', '↶', () => {
+                this.selectedDate = DailyProgressSystem.dateKey(Date.now());
+                this.weekStart = this.startOfWeek(this.selectedDate); this.renderProfile();
+            }).setEnabled(this.selectedDate !== today || this.weekStart !== currentWeek);
+        this.textAt('historyTitle', `${this.shortDate(this.weekStart)} – ${this.fullDate(weekEnd)}`, 19, LEARNING_MUTED);
+        const max = Math.max(1, ...days.map(entry => entry.attempts));
+        days.forEach((entry, index) => this.renderHistoryDay(entry, index, max, today));
+    }
+
+    private renderMetric(index: number, symbol: string, label: string, value: string, valueSize: number): void {
+        const h = learningHost(this.dailyLayout, `metric${index}`);
+        learningCard(this.scene, this.contentRoot, h.x, h.y, h.width, h.height, index === 2);
+        learningText(this.scene, this.contentRoot, h.x - 76, h.y - 37, symbol, 28);
+        learningText(this.scene, this.contentRoot, h.x + 14, h.y - 37, label, 18);
+        learningText(this.scene, this.contentRoot, h.x, h.y + 2, value, valueSize)
+            .setName(index === 1 ? 'dailyPlayTime' : index === 2 ? 'dailyAttempts' : 'dailyAccuracy');
+    }
+
+    private currentTraining(): { range: string; symbol: string; label: string } {
+        const data = this.profile.stats.masteryData;
+        const comparison = data.comparisonChapter?.status === 'training' || data.comparisonChapter?.status === 'exam_ready';
+        const band = comparison ? 'A' : getLearningBand(data);
+        const domain = BAND_RANGES[band];
+        const skill = getLearningFrontier(data);
+        if (!comparison && isAdvancedNode(skill)) {
+            const presentation = getExamPresentation(skill);
+            return { range: presentation.range, symbol: presentation.compact, label: presentation.title };
         }
-
-        const isCoopSummary = profiles.length === 2;
-        if (!isCoopSummary) {
-            profiles.length = 0;
-            profiles.push({ player: state.getPlayer(), stats: state.getMathStats() });
-            levels.length = 0;
-            levels.push(state.getPlayer().level);
-        }
-
-        const days = DailyProgressSystem.getRecentDaysForProfiles(profiles, 7);
-        const today = days[days.length - 1];
-
-        this.renderTodayCard(today, 0, 0, 710, 228, levels, isCoopSummary);
-        this.renderFocusCard(today, 728, 0, 388, 228);
-        this.renderHistory(days, 0, 244, 1116, 282);
+        const ordinal = Number(skill[1]) - 1;
+        return {
+            range: `${domain.minResult}–${domain.maxResult}`,
+            symbol: comparison ? '< = >' : SKILL_SYMBOLS[ordinal],
+            label: comparison ? 'Porovnávání' : band === 'E' ? 'Přes 10' : SKILL_LABELS[ordinal],
+        };
     }
 
-    private renderTodayCard(
-        day: DailyProgressDay,
-        x: number,
-        y: number,
-        width: number,
-        height: number,
-        levels: number[],
-        isCoop: boolean,
-    ): void {
-        this.addPanel(x, y, width, height, 0x111c2d, 0xd7a849);
-        this.addText(x + 22, y + 16, isCoop ? 'DNES · CO-OP' : 'DNES', isCoop ? 19 : 22, '#ffe29b', true);
-        this.addText(x + (isCoop ? 200 : 91), y + 21, this.formatFullDate(day.date), 12, '#8999ad');
-
-        const accuracy = day.attempts > 0 ? `${Math.round(day.correct / day.attempts * 100)} %` : '—';
-        this.addText(x + 24, y + 52, `${day.attempts}`, 52, '#ffffff', true);
-        this.addText(x + 25, y + 108, 'VYPOČÍTANÝCH\nPŘÍKLADŮ', 10, '#91a5bd', true);
-        this.addMetric(x + 180, y + 58, 'SPRÁVNĚ', accuracy, '#7ee59a');
-        this.addMetric(
-            x + 180,
-            y + 112,
-            'RYCHLOST',
-            day.averageResponseTimeMs > 0 ? `${(day.averageResponseTimeMs / 1000).toFixed(1)} s` : '—',
-            '#7fdcf5',
-        );
-
-        this.addRewardTile(x + 330, y + 48, 112, 86, 'MINCE', day.coinsEarned, 0xf4c95d);
-        this.addRewardTile(x + 452, y + 48, 112, 86, 'MANA', day.manaEarned, 0x63e7f2);
-        this.addRewardTile(x + 574, y + 48, 112, 86, 'KRYSTALY', day.crystalsEarned, 0xc985ff);
-
-        const milestoneY = y + 153;
-        const milestoneBg = this.scene.add.rectangle(x + 18, milestoneY, width - 36, 56, 0x0b1220, 0.95)
-            .setOrigin(0, 0)
-            .setStrokeStyle(1, day.milestones.length > 0 ? 0xd7a849 : 0x34455e, 0.8);
-        this.contentRoot.add(milestoneBg);
-        this.addText(x + 32, milestoneY + 9, 'CO SE DNES NAUČILO', 10, '#91a5bd', true);
-        const milestone = day.milestones.length > 0
-            ? day.milestones.slice(0, 2).join('  •  ')
-            : isCoop
-                ? `Bez nové úrovně · hrdinové na úrovních ${levels.join(' a ')}`
-                : `Bez nové úrovně · aktuální úroveň hrdiny ${levels[0]}`;
-        this.addText(x + 32, milestoneY + 27, milestone, 15, day.milestones.length > 0 ? '#ffe29b' : '#c6cfda', true);
+    private renderHistoryDay(day: DailyProgressDay, index: number, max: number, today: string): void {
+        const h = learningHost(this.dailyLayout, `historyDay${index + 1}`);
+        const button = new LearningButton(this.scene, this.contentRoot, h, `dailyHistory:${index}`, '', '', () => {
+            this.selectedDate = day.date; this.renderProfile();
+        }, this.selectedDate === day.date).setEnabled(day.date <= today);
+        button.root.setData('date', day.date);
+        const weekday = new Intl.DateTimeFormat('cs-CZ', { weekday: 'short' }).format(this.date(day.date)).replace('.', '').toUpperCase();
+        learningText(this.scene, button.surface, 0, -37, weekday, 16);
+        learningText(this.scene, button.surface, 0, -16, this.shortDate(day.date), 14, LEARNING_MUTED);
+        const height = day.attempts ? Math.max(4, 20 * day.attempts / max) : 2;
+        button.surface.add(this.scene.add.rectangle(0, 17 - height / 2, 32, height, day.attempts ? LEARNING_TEAL : 0xcbb987));
+        learningText(this.scene, button.surface, 0, 34, day.date <= today ? `${day.attempts}` : '—', 23);
     }
 
-    private renderFocusCard(day: DailyProgressDay, x: number, y: number, width: number, height: number): void {
-        this.addPanel(x, y, width, height, 0x101a2a, 0x4a6fa5);
-        this.addText(x + 18, y + 16, 'DNEŠNÍ TRÉNINK', 16, '#dbe8f5', true);
-        this.addText(x + 18, y + 39, 'Nejčastěji procvičované atomy', 10, '#7f91a8');
-
-        const topAtoms = Object.entries(day.subAtoms)
-            .sort((a, b) => b[1] - a[1])
-            .slice(0, 4) as Array<[SubAtomId, number]>;
-        const maxCount = Math.max(1, ...topAtoms.map(([, count]) => count));
-
-        if (topAtoms.length === 0) {
-            this.addText(x + width / 2, y + 101, 'Dnes zatím bez příkladů', 15, '#66768b', true, 0.5);
-        } else {
-            topAtoms.forEach(([id, count], index) => {
-                const rowY = y + 68 + index * 31;
-                const dot = this.scene.add.circle(x + 29, rowY + 7, 12, 0x17283f)
-                    .setStrokeStyle(2, 0x58c8f4, 0.9);
-                this.contentRoot.add(dot);
-                this.addText(x + 29, rowY + 7, id, 10, '#ffffff', true, 0.5, 0.5);
-                this.addText(x + 51, rowY, `${count} příkladů`, 11, '#d3dce7', true);
-                const barBg = this.scene.add.rectangle(x + 142, rowY + 5, width - 174, 7, 0x26364b)
-                    .setOrigin(0, 0);
-                const bar = this.scene.add.rectangle(x + 142, rowY + 5, (width - 174) * count / maxCount, 7, 0x58c8f4)
-                    .setOrigin(0, 0);
-                this.contentRoot.add([barBg, bar]);
-            });
-        }
-
-        let legendX = x + 18;
-        const legendY = y + height - 25;
-        for (const form of ALL_PROBLEM_FORMS) {
-            if (day.forms[form] <= 0) continue;
-            const dot = this.scene.add.circle(legendX + 4, legendY + 5, 4, FORM_COLORS[form]);
-            this.contentRoot.add(dot);
-            this.addText(legendX + 12, legendY, `${FORM_SHORT[form]} ${day.forms[form]}`, 8, '#8fa0b4', true);
-            legendX += 88;
-        }
+    private changeWeek(direction: -1 | 1): void {
+        this.weekStart = this.shiftDate(this.weekStart!, direction * 7);
+        const today = DailyProgressSystem.dateKey(Date.now());
+        this.selectedDate = [this.shiftDate(this.selectedDate!, direction * 7), today].sort()[0];
+        this.renderProfile();
     }
-
-    private renderHistory(days: DailyProgressDay[], x: number, y: number, width: number, height: number): void {
-        this.addPanel(x, y, width, height, 0x0d1625, 0x344d68);
-        this.addText(x + 20, y + 15, 'POSLEDNÍCH 7 DNÍ', 16, '#dbe8f5', true);
-        this.addText(x + 196, y + 19, 'aktivita · přesnost · procvičované formy', 10, '#71849a');
-
-        const gap = 10;
-        const cardWidth = (width - 40 - gap * 6) / 7;
-        const cardTop = y + 50;
-        const cardHeight = height - 68;
-        const maxAttempts = Math.max(1, ...days.map(day => day.attempts));
-
-        days.forEach((day, index) => {
-            const cardX = x + 20 + index * (cardWidth + gap);
-            const isToday = index === days.length - 1;
-            const card = this.scene.add.rectangle(cardX, cardTop, cardWidth, cardHeight, isToday ? 0x182a42 : 0x111d2d, 0.98)
-                .setOrigin(0, 0)
-                .setStrokeStyle(isToday ? 2 : 1, isToday ? 0xd7a849 : 0x2b4058, isToday ? 1 : 0.7);
-            this.contentRoot.add(card);
-
-            this.addText(cardX + cardWidth / 2, cardTop + 13, this.formatWeekday(day.date), 11, isToday ? '#ffe29b' : '#9aacbf', true, 0.5);
-            this.addText(cardX + cardWidth / 2, cardTop + 31, this.formatShortDate(day.date), 9, '#687b91', false, 0.5);
-
-            const barMaxHeight = 68;
-            const barHeight = day.attempts > 0 ? Math.max(5, barMaxHeight * day.attempts / maxAttempts) : 2;
-            const barY = cardTop + 124;
-            const activityBar = this.scene.add.rectangle(
-                cardX + cardWidth / 2,
-                barY - barHeight / 2,
-                25,
-                barHeight,
-                day.attempts > 0 ? 0x58c8f4 : 0x26374a,
-                day.attempts > 0 ? 0.95 : 0.55,
-            );
-            this.contentRoot.add(activityBar);
-            this.addText(cardX + cardWidth / 2, cardTop + 134, `${day.attempts}`, 18, '#f1f6fb', true, 0.5);
-            const accuracy = day.attempts > 0 ? Math.round(day.correct / day.attempts * 100) : 0;
-            this.addText(cardX + cardWidth / 2, cardTop + 157, day.attempts > 0 ? `${accuracy} % správně` : 'bez hry', 9, day.attempts > 0 ? '#7ee59a' : '#5c6b7e', true, 0.5);
-
-            const previousActiveDay = days.slice(0, index).reverse().find(candidate => candidate.attempts > 0);
-            if (day.attempts > 0 && previousActiveDay) {
-                const previousAccuracy = Math.round(previousActiveDay.correct / previousActiveDay.attempts * 100);
-                const change = accuracy - previousAccuracy;
-                const trend = change === 0 ? 'beze změny' : `${change > 0 ? '+' : ''}${change} bodů`;
-                this.addText(
-                    cardX + cardWidth / 2,
-                    cardTop + 174,
-                    trend,
-                    8,
-                    change > 0 ? '#ffe29b' : change < 0 ? '#dc8791' : '#75869a',
-                    true,
-                    0.5,
-                );
-            }
-
-            const formTotal = Math.max(1, day.attempts);
-            let segmentX = cardX + 12;
-            const segmentY = cardTop + cardHeight - 18;
-            for (const form of ALL_PROBLEM_FORMS) {
-                const segmentWidth = (cardWidth - 24) * day.forms[form] / formTotal;
-                if (segmentWidth <= 0) continue;
-                const segment = this.scene.add.rectangle(segmentX, segmentY, segmentWidth, 5, FORM_COLORS[form])
-                    .setOrigin(0, 0);
-                this.contentRoot.add(segment);
-                segmentX += segmentWidth;
-            }
-            if (day.milestones.length > 0) {
-                this.addText(cardX + cardWidth - 14, cardTop + 13, '★', 13, '#ffe29b', true, 0.5);
-            }
-        });
+    private textAt(id: string, text: string, size: number, color = '#244944', align: 'left' | 'center' = 'center'): void {
+        const host = learningHost(this.dailyLayout, id);
+        learningText(this.scene, this.contentRoot, host.x, host.y, text, size, color, align).setName(`daily:${id}`);
     }
-
-    private addPanel(x: number, y: number, width: number, height: number, fill: number, stroke: number): void {
-        const panel = this.scene.add.rectangle(x, y, width, height, fill, 0.97)
-            .setOrigin(0, 0)
-            .setStrokeStyle(1, stroke, 0.8);
-        this.contentRoot.add(panel);
+    private playTime(ms: number | null): string {
+        if (ms === null) return 'Neměřeno';
+        if (ms > 0 && ms < 60000) return `${Math.floor(ms / 1000)} s`;
+        const minutes = Math.floor(ms / 60000);
+        return minutes < 60 ? `${minutes} min` : `${Math.floor(minutes / 60)} h ${minutes % 60} min`;
     }
-
-    private addMetric(x: number, y: number, label: string, value: string, color: string): void {
-        this.addText(x, y, label, 9, '#7f91a8', true);
-        this.addText(x, y + 16, value, 19, color, true);
+    private date(key: string): Date { const [y, m, d] = key.split('-').map(Number); return new Date(y, m - 1, d, 12); }
+    private shiftDate(key: string, days: number): string {
+        const date = this.date(key); date.setDate(date.getDate() + days); return DailyProgressSystem.dateKey(date.getTime());
     }
-
-    private addRewardTile(x: number, y: number, width: number, height: number, label: string, value: number, color: number): void {
-        const tile = this.scene.add.rectangle(x, y, width, height, 0x0b1321, 0.96)
-            .setOrigin(0, 0)
-            .setStrokeStyle(1, color, 0.7);
-        this.contentRoot.add(tile);
-        this.addText(x + width / 2, y + 14, label, 9, `#${color.toString(16).padStart(6, '0')}`, true, 0.5);
-        this.addText(x + width / 2, y + 41, `+${value}`, 25, '#ffffff', true, 0.5);
-    }
-
-    private addText(
-        x: number,
-        y: number,
-        value: string,
-        size: number,
-        color: string,
-        bold: boolean = false,
-        originX: number = 0,
-        originY: number = 0,
-    ): Phaser.GameObjects.Text {
-        const text = this.scene.add.text(x, y, value, {
-            resolution: 2,
-            fontFamily: bold ? 'Palatino Linotype, Book Antiqua, Georgia, serif' : 'Arial, sans-serif',
-            fontSize: `${size}px`,
-            fontStyle: bold ? 'bold' : 'normal',
-            color,
-        }).setOrigin(originX, originY);
-        this.contentRoot.add(text);
-        return text;
-    }
-
-    private formatWeekday(dateKey: string): string {
-        return new Intl.DateTimeFormat('cs-CZ', { weekday: 'short' })
-            .format(this.dateFromKey(dateKey))
-            .replace('.', '')
-            .toUpperCase();
-    }
-
-    private formatShortDate(dateKey: string): string {
-        return new Intl.DateTimeFormat('cs-CZ', { day: 'numeric', month: 'numeric' }).format(this.dateFromKey(dateKey));
-    }
-
-    private formatFullDate(dateKey: string): string {
-        return new Intl.DateTimeFormat('cs-CZ', { day: 'numeric', month: 'long' }).format(this.dateFromKey(dateKey));
-    }
-
-    private dateFromKey(dateKey: string): Date {
-        const [year, month, day] = dateKey.split('-').map(Number);
-        return new Date(year, month - 1, day, 12);
+    private startOfWeek(key: string): string { return this.shiftDate(key, -((this.date(key).getDay() + 6) % 7)); }
+    private shortDate(key: string): string { return new Intl.DateTimeFormat('cs-CZ', { day: 'numeric', month: 'numeric' }).format(this.date(key)); }
+    private fullDate(key: string): string { return new Intl.DateTimeFormat('cs-CZ', { day: 'numeric', month: 'numeric', year: 'numeric' }).format(this.date(key)); }
+    public destroy(): void {
+        if (this.dailyLayout) destroyLearningLayout(this.scene, this.dailyLayout, 'DailyProgressLayout');
+        super.destroy();
     }
 }

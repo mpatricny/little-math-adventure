@@ -1,0 +1,24 @@
+{
+ "battle":{"width":1280,"height":720,"safeInset":{"left":24,"right":1256,"top":24,"bottom":696},"elements":[
+  {"id":"battleTitle","x":440,"y":32,"width":400,"height":115,"depth":3},
+  {"id":"combatFox","x":307,"y":545,"width":128,"height":128,"depth":2},
+  {"id":"abilityDock","x":432,"y":175,"width":416,"height":125,"depth":4},
+  {"id":"enemyHealth","x":940,"y":466,"width":118,"height":58,"depth":3},
+  {"id":"effectHost","x":320,"y":526,"width":150,"height":130,"depth":5},
+  {"id":"heroEffect","x":180,"y":500,"width":160,"height":150,"depth":5},
+  {"id":"enemyEffect","x":916,"y":514,"width":180,"height":160,"depth":5}
+ ]},
+ "growth":{"width":1280,"height":940,"safeInset":{"left":40,"right":1240,"top":24,"bottom":900},"elements":[
+  {"id":"growthTitle","x":400,"y":24,"width":480,"height":110,"depth":3},
+  {"id":"currentPortrait","x":52,"y":145,"width":290,"height":396,"depth":2},
+  {"id":"nextPortrait","x":938,"y":145,"width":290,"height":396,"depth":2},
+  {"id":"growthMilestones","x":382,"y":166,"width":516,"height":120,"depth":3},
+  {"id":"progressTrack","x":404,"y":311,"width":472,"height":24,"depth":3},
+  {"id":"selectedReward","x":456,"y":372,"width":368,"height":128,"depth":3},
+  {"id":"moduleGrid","x":52,"y":576,"width":1176,"height":300,"depth":3},
+  {"id":"growthEffect","x":398,"y":140,"width":484,"height":360,"depth":5}
+ ]},
+ "moduleLayout":{"columns":7,"rows":3,"gap":10,"safeInset":8,"shortPath":{"x":52,"y":620,"width":1176,"height":140,"columns":4,"rows":1}},
+ "formCards":{"safeInset":{"left":10,"right":90,"top":11,"bottom":83},"labelInset":{"left":10,"right":90,"top":88,"bottom":96}},
+ "runeControl":{"safeInset":{"left":13,"right":87,"top":18,"bottom":82},"minimumTouchTargetCss":44}
+}

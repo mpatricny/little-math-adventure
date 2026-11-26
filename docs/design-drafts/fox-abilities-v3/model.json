@@ -1,0 +1,15 @@
+{
+  "status": "Illustrative model only; not production tuning or module assignment.",
+  "rankContribution": [0, 1, 2],
+  "families": [
+    {"id":"shield","label":"Štít","modules":["A1","A4","B3","C2","D1","D4","E3"]},
+    {"id":"heal","label":"Léčení","modules":["A2","B1","B4","C3","D2","E1","E4"]},
+    {"id":"strike","label":"Zásah","modules":["A3","B2","C1","C4","D3","E2","comparison_symbols"]}
+  ],
+  "presets": {
+    "locked": [[0,0,0,0,0,0,0],[0,0,0,0,0,0,0],[0,0,0,0,0,0,0]],
+    "mixed": [[2,1,0,0,0,0,0],[1,0,0,0,0,0,0],[2,2,1,0,0,0,0]],
+    "late": [[2,2,2,2,2,2,1],[2,2,2,2,2,1,0],[2,2,2,2,2,2,0]],
+    "complete": [[2,2,2,2,2,2,2],[2,2,2,2,2,2,2],[2,2,2,2,2,2,2]]
+  }
+}

@@ -3,10 +3,13 @@ import type { PuzzleProfile } from '../../types/puzzles';
 import { BAND_RANGES, crossesTen } from '../MathSkillRules';
 const bands: BandId[] = ['A', 'B', 'C', 'D', 'E'];
 export function bandProfile(band: BandId, tier: 1 | 2 | 3 = 2): PuzzleProfile {
-    return { band, max: BAND_RANGES[band].maxResult, subtraction: true, crossing: band === 'E', tier };
+    // Regional puzzle families have authored domains through E. Completing E
+    // keeps that domain available alongside the advanced arithmetic curriculum.
+    const authored = bands.includes(band) ? band : 'E';
+    return { band: authored, max: BAND_RANGES[authored].maxResult, subtraction: true, crossing: authored === 'E', tier };
 }
 export function masteryPuzzleProfile(data: MasteryData, tier: 1 | 2 | 3 = 1): PuzzleProfile {
-    const unlocked = bands.filter(b => data.bands[b]?.state !== 'locked');
+    const unlocked = bands.filter(b => data.bands[b] && data.bands[b].state !== 'locked');
     const band = [...unlocked].reverse().find(b => data.bands[b]?.state === 'training')
         ?? [...unlocked].reverse().find(b => data.bands[b]?.state !== 'mastery') ?? unlocked.at(-1) ?? 'A';
     const subtraction = unlocked.some(b => ['2', '3', '4'].some(n => {

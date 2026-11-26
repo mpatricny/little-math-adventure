@@ -5,6 +5,30 @@ export interface DamageResolution {
     blockedDamage: number;
 }
 
+/** Fox rune strikes are explicit direct damage, independent of ordinary attack defense. */
+export function resolveDirectDamage(rawDamage: number): DamageResolution {
+    return resolveDamageAfterDefense(Number.isFinite(rawDamage) ? Math.max(0, rawDamage) : 0, 0);
+}
+
+/** One order for residual incoming damage: fox protection, then one useful shop rune. */
+export function resolveProtectionAfterBlock(
+    damageAfterBlock: number, foxShield: number,
+    preparation: { charges: number; blockPerCharge: number } | null,
+) {
+    const nonNegative = (value: number) => Number.isFinite(value) ? Math.max(0, value) : 0;
+    const incoming = nonNegative(damageAfterBlock);
+    const protection = nonNegative(foxShield);
+    const foxBlocked = Math.min(incoming, protection);
+    const remaining = incoming - foxBlocked;
+    const charges = Math.floor(nonNegative(preparation?.charges ?? 0));
+    const preparedBlock = charges > 0 ? Math.min(remaining, nonNegative(preparation?.blockPerCharge ?? 0)) : 0;
+    return {
+        damage: remaining - preparedBlock, foxBlocked, preparedBlock,
+        shieldRemaining: protection - foxBlocked,
+        preparationCharges: charges - Number(preparedBlock > 0),
+    };
+}
+
 /**
  * Resolve one complete attack against enemy defense.
  *

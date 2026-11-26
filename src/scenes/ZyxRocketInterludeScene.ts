@@ -5,7 +5,8 @@ import { SceneBuilder } from '../systems/SceneBuilder';
 import { GameStateManager } from '../systems/GameStateManager';
 import { StorySystem } from '../systems/StorySystem';
 import { getPlayerSpriteConfig } from '../utils/characterUtils';
-import { MedievalActionButton } from '../ui/MedievalActionButton';
+import { GuideConfirmButton } from '../ui/GuideConfirmButton';
+import { createZyxDialogPortrait } from '../ui/ZyxDialogPortrait';
 import { ForestDirectionPrompt } from '../ui/ForestDirectionPrompt';
 import { CoopSessionManager } from '../systems/CoopSessionManager';
 import { getUnderwaterProgress } from '../systems/UnderwaterProgressSystem';
@@ -31,19 +32,16 @@ const DIALOGUE_PAGES = [
         text: 'MŮJ KRYSTAL',
         iconTexture: 'story-icon-crystal-fell',
         iconSize: 150,
-        button: 'DÁLE',
     },
     {
         text: 'PRVNÍ KRYSTAL',
         iconTexture: 'story-icon-machine',
         iconSize: 150,
-        button: 'DÁLE',
     },
     {
         text: 'KE STROJI',
         iconTexture: 'forest-crystal-story',
         iconSize: 126,
-        button: 'JDEME',
     },
 ];
 
@@ -57,7 +55,7 @@ export class ZyxRocketInterludeScene extends Phaser.Scene {
     private dialoguePanel!: Phaser.GameObjects.Container;
     private dialogueText!: Phaser.GameObjects.Text;
     private dialogueIcon!: Phaser.GameObjects.Image;
-    private actionButton!: MedievalActionButton;
+    private actionButton!: GuideConfirmButton;
 
     constructor() {
         super({ key: 'ZyxRocketInterludeScene' });
@@ -120,7 +118,7 @@ export class ZyxRocketInterludeScene extends Phaser.Scene {
 
         if (this.depthCrystal) {
             if (!this.textures.exists('underwater-depth-crystal')) {
-                new UnderwaterUI(this).dialog('Krystal se nenačetl', 'Zkontroluj připojení. Postup je uložený.',
+                new UnderwaterUI(this).dialog('SPOJENÍ', '📶 ↻',
                     'ZKUSIT ZNOVU', () => this.scene.restart({ crystal: 'depth' }));
                 return;
             }
@@ -194,8 +192,8 @@ export class ZyxRocketInterludeScene extends Phaser.Scene {
         const message = waterArtwork(this, 'silverpond-fairy-title-frame', host('depthShipMessageFrame'));
         const textHost = host('depthShipMessageText');
         const text = this.add.text(textHost.x, textHost.y, this.machineCompleted
-            ? 'Dva krystaly září.\nCesta dál je otevřená!'
-            : 'Druhý krystal!\nPojďme ho zapojit.', {
+            ? 'DVA KRYSTALY'
+            : 'KE STROJI', {
             resolution: 2, fontFamily: 'Georgia, serif', fontSize: '25px', color: '#effcfa',
             align: 'center', lineSpacing: 4,
         }).setOrigin(.5).setDepth(textHost.depth).setName('depthShipMessage');
@@ -213,8 +211,7 @@ export class ZyxRocketInterludeScene extends Phaser.Scene {
             new UnderwaterButton(this, { ...host('depthShipNextCityHost'), name: 'depthShipNextCity',
                 label: 'NOVÉ MĚSTO', fontSize: 22, onClick: () => {
                     if (ui.modal) return;
-                    ui.dialog('Cesta je otevřená!', 'Nové město nás čeká v další kapitole.\nTato část se ještě připravuje.',
-                        'ZPĚT K LODI', () => undefined);
+                    ui.explain('NOVÉ MĚSTO', '🏰  ⏳', () => undefined);
                 } });
             new UnderwaterButton(this, { ...host('depthShipReturnHost'), name: 'depthShipReturn',
                 label: 'SILVERPOND', fontSize: 22, onClick: () => {
@@ -256,15 +253,15 @@ export class ZyxRocketInterludeScene extends Phaser.Scene {
     }
 
     private createDialogue(): void {
-        const host = this.getHost('zyxDialogueHost', { x: 640, y: 570, depth: 100 });
-        this.dialoguePanel = this.add.container(host.x, host.y).setDepth(host.depth);
-        const frame = this.add.image(0, 0, 'zyx-dialog-frame-story');
-        frame.setScale(Math.min(1180 / frame.width, 315 / frame.height));
-        const portrait = this.add.sprite(-423, 0, 'spritesheet-zyx-transparent2-sheet')
-            .setScale(0.35)
-            .setOrigin(0.5, 0.5);
-        if (this.anims.exists('zyx-idle')) portrait.play('zyx-idle');
-        const speaker = this.add.text(-294, -80, 'ZYX', {
+        const host = (id: string) => waterHost(this.sceneBuilder, id);
+        const panel = host('zyxDialogueHost');
+        this.dialoguePanel = this.add.container(0, 0).setDepth(panel.depth)
+            .setData('safeArea', host('zyxDialogueSafeHost'));
+        const frame = waterArtwork(this, 'zyx-dialog-frame-story', panel).setName('zyxDialogFrame');
+        const portrait = createZyxDialogPortrait(this, host('zyxDialoguePortraitHost'));
+        const speakerHost = host('zyxDialogueSpeakerHost');
+        const speaker = this.add.text(speakerHost.x, speakerHost.y, 'ZYX', {
+            resolution: 2,
             fontFamily: 'Palatino Linotype, Book Antiqua, Georgia, serif',
             fontSize: '27px',
             fontStyle: 'bold',
@@ -272,28 +269,25 @@ export class ZyxRocketInterludeScene extends Phaser.Scene {
             stroke: '#1a1010',
             strokeThickness: 4,
             letterSpacing: 2,
-        }).setOrigin(0, 0.5);
-        const iconFrame = this.add.graphics();
+        }).setOrigin(0.5).setDepth(speakerHost.depth);
+        const iconFrameHost = host('zyxDialogueIllustrationFrameHost');
+        const iconFrame = this.add.graphics().setDepth(iconFrameHost.depth);
         iconFrame.fillStyle(0x14231c, 0.98);
         iconFrame.lineStyle(3, 0x8b6837, 1);
-        iconFrame.fillRoundedRect(-280, -57, 160, 137, 17);
-        iconFrame.strokeRoundedRect(-280, -57, 160, 137, 17);
-        this.dialogueIcon = this.add.image(
-            -200,
-            20,
-            DIALOGUE_PAGES[0].iconTexture
-        ).setDisplaySize(DIALOGUE_PAGES[0].iconSize, DIALOGUE_PAGES[0].iconSize);
-        this.dialogueText = this.add.text(-88, -32, DIALOGUE_PAGES[0].text, {
+        const { x, y, width, height } = iconFrameHost;
+        iconFrame.fillRoundedRect(x - width / 2, y - height / 2, width, height, 17);
+        iconFrame.strokeRoundedRect(x - width / 2, y - height / 2, width, height, 17);
+        this.dialogueIcon = waterArtwork(this, DIALOGUE_PAGES[0].iconTexture, host('zyxDialogueIllustrationHost'));
+        const title = host('zyxDialogueTitleHost');
+        this.dialogueText = this.add.text(title.x, title.y, DIALOGUE_PAGES[0].text, {
+            resolution: 2,
             fontFamily: 'Georgia, serif',
             fontSize: '30px',
             color: '#f5edd8',
             stroke: '#160e0b',
             strokeThickness: 2,
-            wordWrap: { width: 520 },
-            lineSpacing: 12,
-        }).setOrigin(0, 0);
-        const crystal = this.add.image(375, -72, 'forest-crystal-story')
-            .setDisplaySize(66, 66);
+        }).setOrigin(0.5).setDepth(title.depth);
+        const crystal = waterArtwork(this, 'forest-crystal-story', host('zyxDialogueCrystalHost'));
         this.dialoguePanel.add([
             frame,
             portrait,
@@ -303,23 +297,25 @@ export class ZyxRocketInterludeScene extends Phaser.Scene {
             this.dialogueText,
             crystal,
         ]);
+        this.dialoguePanel.sort('depth');
 
         const buttonHost = this.getHost('zyxDialogueButtonHost', { x: 1035, y: 664, depth: 110 });
-        this.actionButton = new MedievalActionButton(this, {
+        const buttonDef = this.sceneBuilder.getElementDef('zyxDialogueButtonHost');
+        this.actionButton = new GuideConfirmButton(this, {
             name: 'zyxDialogueActionButton',
             x: buttonHost.x,
             y: buttonHost.y,
             depth: buttonHost.depth,
-            width: 320,
-            height: 74,
-            label: DIALOGUE_PAGES[0].button,
-            labelFontSize: 18,
-            accent: 0x70dce8,
-            layout: 'text',
-            frameTexture: 'zyx-dialog-action-frame-story',
-            onClick: () => this.advanceDialogue(),
+            width: buttonDef?.width ?? 260,
+            height: buttonDef?.height ?? 104,
+            onConfirm: () => this.advanceDialogue(),
         });
-        this.actionButton.label.setColor('#fff1b5').setStroke('#1b1008', 4);
+    }
+
+    private fitDialogueIcon(size: number): void {
+        const box = waterHost(this.sceneBuilder, 'zyxDialogueIllustrationHost');
+        this.dialogueIcon.setScale(Math.min(size / this.dialogueIcon.width, size / this.dialogueIcon.height,
+            box.width / this.dialogueIcon.width, box.height / this.dialogueIcon.height));
     }
 
     private advanceDialogue(): void {
@@ -351,10 +347,8 @@ export class ZyxRocketInterludeScene extends Phaser.Scene {
             onComplete: () => {
                 this.dialogueText.setText(nextPage.text);
                 voice(this, `vo.rocket.${this.dialoguePage + 1}`);
-                this.dialogueIcon
-                    .setTexture(nextPage.iconTexture)
-                    .setDisplaySize(nextPage.iconSize, nextPage.iconSize);
-                this.actionButton.setLabel(nextPage.button);
+                this.dialogueIcon.setTexture(nextPage.iconTexture);
+                this.fitDialogueIcon(nextPage.iconSize);
                 this.tweens.add({
                     targets: [this.dialogueText, this.dialogueIcon],
                     alpha: 1,
@@ -372,8 +366,8 @@ export class ZyxRocketInterludeScene extends Phaser.Scene {
         if (!SILVERPOND_ENABLED) {
             this.createDialogue();
             this.dialogueText.setText('MATHORIA ČEKÁ');
-            this.dialogueIcon.setTexture('forest-crystal-story').setDisplaySize(126, 126);
-            this.actionButton.setLabel('ZPĚT DO MATHORIE');
+            this.dialogueIcon.setTexture('forest-crystal-story');
+            this.fitDialogueIcon(126);
             return;
         }
 

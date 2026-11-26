@@ -1,5 +1,7 @@
 import Phaser from 'phaser';
 import { SpeedChargeBar } from './SpeedChargeBar';
+import { DOCK_OWNER_COLORS, dockBadge, dockText, setDockName, type DockHost } from './BattleDockArt';
+import { battleBodyBounds, captureBattleBody } from './BattleActorGeometry';
 
 export type BattleActorStatusKind = 'player' | 'enemy';
 
@@ -23,6 +25,9 @@ export interface BattleActorStatusHudOptions {
     frameHeight?: number;
     trackWidth?: number;
     trackHeight?: number;
+    ownerIndex?: 1 | 2;
+    identity?: { name: string; label: DockHost; number: DockHost };
+    anchorToBody?: boolean;
 }
 
 /**
@@ -51,6 +56,8 @@ export class BattleActorStatusHud {
     private readonly fill: Phaser.GameObjects.Graphics;
     private readonly value: Phaser.GameObjects.Text;
     private requestedVisible = true;
+    private readonly identity: Phaser.GameObjects.Container | null;
+    private readonly anchorToBody: boolean;
 
     constructor(scene: Phaser.Scene, options: BattleActorStatusHudOptions) {
         this.scene = scene;
@@ -59,6 +66,8 @@ export class BattleActorStatusHud {
         this.offsetX = options.offsetX;
         this.offsetY = options.offsetY;
         this.referenceDisplayHeight = options.referenceDisplayHeight;
+        this.anchorToBody = options.anchorToBody ?? false;
+        if (this.anchorToBody) captureBattleBody(options.sprite);
         this.frameWidth = options.frameWidth ?? (options.kind === 'player' ? 150 : 118);
         this.frameHeight = options.frameHeight ?? (options.kind === 'player' ? 34 : 28);
         this.trackWidth = options.trackWidth ?? (options.kind === 'player' ? 115 : 86);
@@ -85,7 +94,28 @@ export class BattleActorStatusHud {
             strokeThickness: 3,
         }).setOrigin(0.5);
 
+        this.identity = options.identity ? scene.add.container(0, 0).setName('battleActorIdentity').setVisible(false) : null;
+        if (this.identity) this.root.add(this.identity);
         this.root.add([this.background, this.fill, frame, this.selection, this.value]);
+        if (options.identity && options.ownerIndex) {
+            const color = DOCK_OWNER_COLORS[options.ownerIndex === 2 ? 'B' : 'A'];
+            const h = options.identity.label;
+            const x = h.x - options.x, y = h.y - options.y;
+            const label = dockText(scene, options.identity.name, { x, y, width: h.width, height: h.height }, 18, 'battleActorOwnerName');
+            setDockName(label, options.identity.name);
+            const rise = Math.max(0, (label.height - 24) / 2);
+            label.setY(y - rise);
+            const plate = scene.add.graphics().fillStyle(0x061b2d, .86).lineStyle(1, color, .85);
+            const top = label.y - label.height / 2 - 5;
+            // One backing connects the name row to the existing gold HP frame.
+            plate.fillRoundedRect(-this.frameWidth / 2 + 3, top, this.frameWidth - 6, -top + 8, 9)
+                .strokeRoundedRect(-this.frameWidth / 2 + 3, top, this.frameWidth - 6, -top + 8, 9);
+            const number = dockBadge(scene, options.identity.number.width, options.ownerIndex === 2 ? 0x50255b : 0x124b50);
+            number.text.setText(String(options.ownerIndex));
+            number.root.setPosition(options.identity.number.x - options.x, options.identity.number.y - options.y - rise).setName('battleActorOwnerNumber');
+            this.identity!.add([plate, label, number.root]);
+            this.root.setData({ ownerName: options.identity.name, ownerNumber: options.ownerIndex });
+        }
 
         this.speedChargeBar = options.showSpeed
             ? new SpeedChargeBar(scene, 0, 25, {
@@ -121,6 +151,8 @@ export class BattleActorStatusHud {
         this.fill.clear();
         if (innerWidth > 0) {
             const bright = Phaser.Display.Color.ValueToColor(this.color).brighten(24).color;
+            // Canvas ignores gradient commands; keep the HP amount visible there too.
+            this.fill.fillStyle(this.color, 1);
             this.fill.fillGradientStyle(bright, bright, this.color, this.color, 1);
             this.fill.fillRoundedRect(
                 -this.trackWidth / 2 + 2,
@@ -144,10 +176,12 @@ export class BattleActorStatusHud {
         return this;
     }
 
-    setSelected(selected: boolean): this {
+    setSelected(selected: boolean, color = 0xffd36a): this {
+        this.identity?.setVisible(selected);
+        this.root.setData('active', selected);
         this.selection.clear();
         if (selected) {
-            this.selection.lineStyle(3, 0xffd36a, 0.92);
+            this.selection.lineStyle(3, color, 0.92);
             this.selection.strokeRoundedRect(
                 -this.frameWidth / 2 + 4,
                 -this.frameHeight / 2 + 4,
@@ -187,10 +221,10 @@ export class BattleActorStatusHud {
         // is intrinsic artwork geometry, not extra visible height above the head.
         const topInset = Number(this.sprite.getData('frameTopInset') ?? 0) * Math.abs(this.sprite.scaleY);
         const heightCorrection = (this.sprite.displayHeight - this.referenceDisplayHeight) / 2 - topInset;
-        this.root.setPosition(
-            this.anchor.x + this.offsetX,
-            this.anchor.y + this.offsetY - heightCorrection,
-        );
+        const y = this.anchorToBody
+            ? battleBodyBounds(this.sprite).top + this.offsetY + this.referenceDisplayHeight / 2
+            : this.anchor.y + this.offsetY - heightCorrection;
+        this.root.setPosition(this.anchor.x + this.offsetX, y);
         this.root.setAlpha(this.anchor.alpha);
         this.root.setVisible(this.requestedVisible && this.anchor.visible);
     }

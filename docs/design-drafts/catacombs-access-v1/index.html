@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="cs"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Katakomby — společná cesta k lišce</title><link rel="stylesheet" href="style.css"></head><body>
+<header class="review-tools"><strong>Katakomby · propojený návrh</strong><nav>
+<button data-view="entrance">Vstup v cechu</button><button data-view="overview">Moduly</button>
+<button id="beforeBattle">Před bojem</button><button id="demoWin">Ukázka lepšího výsledku</button>
+<button id="demoSame">Výhra bez zrychlení</button><button id="demoExam">Simulovat splnění zkoušky</button>
+<button id="demoTrial">Simulovat výhru ve výzvě</button><button id="demoBind">Simulovat spoutání</button>
+<button id="reset">Obnovit ukázku</button><button id="words">Skrýt slova</button></nav>
+<p>Fiktivní profily · skutečná současná pravidla výzvy a lišky · žádné ukládání do hry.</p>
+<p>Nové vyšší stupně a odměna za udržení rychlosti jsou zatím <a href="/docs/PRACTICE_JOURNEY_PROPOSAL.md">návrh pravidel</a>. Hlas je pracovní ukázka Zuzana.</p></header>
+<main id="fit"><section id="stage" aria-label="Návrh hry">
+<div id="entrance" hidden><img class="backdrop" src="entrance-art.png" alt="Cech s runovou branou"><button id="door" class="clear" aria-label="Prohlédnout katakomby"></button><div class="entrance-progress"><i></i></div></div>
+<div id="overview"><img class="backdrop" src="detail-clean.webp" alt="Runová brána, liška a tři moduly">
+<div id="firstFrameReset" aria-hidden="true"></div>
+<h1 class="words">Katakomby</h1><button id="close" class="clear" aria-label="Zpět">×</button>
+<div id="owners"></div><div id="rows"></div><button id="mainDoor" class="clear" aria-label="Stav vybrané výzvy"><span id="mainOpenLock" class="bitmap-lock"></span></button>
+<button id="foxPath" class="clear" aria-label="Cesta k lišce"><span class="words"></span></button>
+<button id="confirm" class="clear"><span aria-hidden="true">✓</span><span class="words">Hotovo</span></button>
+</div>
+<div id="guide" hidden role="dialog" aria-modal="true" aria-label="Další krok"><div class="guide-panel">
+<img class="panel-frame" src="../training-flow-v5/assets/modal-frame.webp" alt="">
+<button id="guideBack" class="clear" aria-label="Zpět">×</button><h2 id="guideTitle" class="words"></h2>
+<div id="guidePictures"></div><button id="guideAction" class="action"><span></span></button>
+</div></div>
+</section></main>
+<div id="flowHost" hidden><iframe id="flow" title="Před bojem, výhra a liška"></iframe></div>
+<div id="boardHost" hidden><button id="boardBack" aria-label="Zpět">← <span class="words">Zpět</span></button><iframe id="board" title="Ukázka zkoušky"></iframe></div>
+<footer class="review-notes" id="reviewStatus"></footer>
+<script type="module" src="main.js"></script></body></html>

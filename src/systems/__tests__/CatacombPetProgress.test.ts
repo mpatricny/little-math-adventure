@@ -21,7 +21,8 @@ describe('canonical fox and forest wolf',()=>{
   expect(enemies.filter(e=>e.animPrefix==='wolf').map(e=>e.id)).toEqual(['forest_wolf']);
   for(const config of Object.values(CATACOMB_BANDS)){
    expect(enemies.find(e=>e.id===config.enemyId)?.animPrefix).toBe('rune-fox');
-   expect(pets.find(p=>p.id===config.petId)?.animPrefix).toBe('rune-fox');
+   expect(config.petId).toBe(CATACOMB_FOX_PET);
+   expect(pets.find(p=>p.id===config.petId)?.unlockedByEnemy).toBe(CATACOMB_FOX_ENEMY);
   }
  });
 });

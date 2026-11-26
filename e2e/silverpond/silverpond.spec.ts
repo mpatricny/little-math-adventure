@@ -337,7 +337,7 @@ test('Silverpond skips familiar explanations with an empty guide history and ret
         .children.getByName('guide:forge.createPrism.v1').getData('ready') === true, KEY);
     await shot(page, info.project.name, 'prism-only-guide');
     await withoutWords(page, info.project.name, 'prism-only-guide');
-    await hostTap(page, FORGE, 'guideCloseHost');
+    await hostTap(page, FORGE, 'guideConfirmHost');
     expect((await player(page)).seenGuides).toEqual([FORGE_GUIDES.createPrism.id]);
     await start(page, FORGE); await waitGuideDelay(page, FORGE);
     expect(await visibleGuides(page, FORGE)).toEqual([]);

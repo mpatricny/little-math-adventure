@@ -1,0 +1,55 @@
+{
+  "date": "2026-11-17",
+  "reference": "../training-modes-v1/03-mathboard-power-art.png",
+  "tool": "image_gen.imagegen",
+  "assets": [
+    {
+      "output": "assets/arena-parchment.webp",
+      "source": "/Users/datamole/.codex/generated_images/01a1bfe3-6721-7d33-b884-18d02e756092/exec-19f721bb-8d10-4cda-ba7d-32a528829132.png",
+      "reference": "../training-modes-v1/03-mathboard-power-art.png",
+      "transparent": false,
+      "prompt": "Edit this existing game UI artwork. Preserve the original image, composition, framing, camera, dimensions/aspect ratio, parchment, black leather and gold jeweled power plaques, sword icons, wooden posts, circular lightning socket, three progress dots, scenery and all three characters EXACTLY. This is a surgical removal: remove ONLY the three empty rectangular wooden answer buttons in the middle-lower area of the parchment (around x=30%-70%, y=45%-57%). Reconstruct the warm naturally textured golden parchment behind these three buttons so this entire row is blank clean parchment. Do not remove or alter the large recessed question well above the buttons. Do not add anything. Do not modify the large top plaque or bottom plaque. Do not move or resize any element. Do not restyle the art. No text, lettering, numbers, new UI, no glow. Result must be visually identical to the provided reference except the three wooden answer buttons are gone. The game is for small children: this is only a static structural artwork layer, all labels and interactive controls are composed separately in code.",
+      "normalization": "Full 1672x941 bitmap, uniform geometry, WebP quality 96"
+    },
+    {
+      "output": null,
+      "source": "/Users/datamole/.codex/generated_images/01a1bfe3-6721-7d33-b884-18d02e756092/exec-eb79292b-3895-4d78-af56-4219a72fc992.png",
+      "status": "Not selected: frame aspect ratio too wide (2.09 instead of about 1.82)"
+    },
+    {
+      "output": "assets/answer-wood.webp",
+      "source": "/Users/datamole/.codex/generated_images/01a1bfe3-6721-7d33-b884-18d02e756092/exec-548599f0-45ad-4daf-96cc-52e4b7965fc0.png",
+      "reference": "assets/answer-original-crop.png",
+      "transparent": true,
+      "prompt": "Remove ONLY the pale parchment background around this exact wooden button and upscale the button faithfully as a clean transparent cutout. Preserve the complete button's exact shape and proportions: width-to-height 1.82, almost rectangular small rounded corners, thin dark brown outer stroke, fine gold top rim, shallow dark lower bevel, subtle horizontal wood grain from this reference. Do not redesign, do not add thicker rounded bevels, do not change material, lighting, color, corner radius, silhouette or orientation. Do not add any icon, text, numbers or ornament. One single centered empty wood answer frame, full artwork with clear transparent padding on all four sides. It will be used as the one canonical reusable frame for all normal/hover/pressed/correct states, animated in code with runtime numerals. This is for small children, all interaction feedback will be composed separately. Transparent background, no scenery.",
+      "normalization": {
+        "referenceCrop": {
+          "left": 732,
+          "top": 417,
+          "width": 212,
+          "height": 122
+        },
+        "alphaThreshold": 12,
+        "sharedBounds": {
+          "left": 31,
+          "top": 37,
+          "width": 1628,
+          "height": 864
+        },
+        "fitWidth": 616,
+        "padding": 4,
+        "canvas": {
+          "width": 624,
+          "height": 335
+        },
+        "export": "Lossless WebP; one frame shared across all states; no nonuniform scaling"
+      }
+    },
+    {
+      "output": "assets/Gelasio.ttf",
+      "source": "https://raw.githubusercontent.com/google/fonts/main/ofl/gelasio/Gelasio%5Bwght%5D.ttf",
+      "license": "assets/Gelasio-OFL.txt",
+      "transform": "none"
+    }
+  ]
+}

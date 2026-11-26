@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="cs">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Trénovat / Dál · společná cesta</title><link rel="stylesheet" href="style.css"><link rel="stylesheet" href="journey.css">
+</head>
+<body>
+  <header><div><b>Trénovat / Dál</b><span>Živé návrhy · 1, 2, 4, 5</span></div><a href="../mathboard-variants-v4/index.html">MathBoard ↗</a></header>
+  <nav id="screens" aria-label="Obrazovky">
+    <button data-screen="zyx">1 · Zyx</button><button data-screen="coop">2 · Před bojem</button>
+    <button data-screen="victory">4 · Výhra</button><button data-screen="pet">5 · Parťák</button>
+  </nav>
+  <section id="review" aria-label="Stavy pro kontrolu">
+    <button id="reset">↻ Reset návrhu</button>
+    <label>Majitel <select id="owner"><option value="A">Hráč 1</option><option value="B">Hráč 2</option></select></label>
+    <label id="solo-control"><input type="checkbox" id="solo">Jeden hráč</label>
+    <button id="catacombs">Vybrat modul ↗</button>
+    <button id="words" aria-pressed="false">Bez slov</button><button id="full" aria-label="Zvětšit náhled">⛶</button>
+  </section>
+  <section id="simulation" aria-label="Výslovné simulace výsledků">
+    <span>Simulace výsledku:</span>
+    <button id="simulate-win">Rychlejší souboj</button><button id="simulate-steady">Stejná rychlost</button>
+    <button id="simulate-exam">Základní zkouška</button><button id="simulate-trial">Vyhraná výzva</button>
+    <button id="simulate-bind">Spoutání u Pythie</button>
+  </section>
+  <main id="stage" aria-label="Herní návrh">
+    <div id="content"></div>
+    <section id="external" hidden><button id="externalBack" aria-label="Zpět do návrhu">←</button></section>
+  </main>
+  <footer><span id="review-status" aria-live="polite"></span><span>Současná pravidla · data jen v paměti</span></footer>
+  <script type="module" src="main.js"></script>
+</body>
+</html>

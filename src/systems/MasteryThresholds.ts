@@ -1,3 +1,5 @@
+import { ADVANCED_NODES, isAdvancedNode } from './AdvancedCurriculum';
+
 /**
  * Per-sub-atom mastery RT thresholds (milliseconds).
  * Harder bands/sub-atoms get more time to account for problem complexity.
@@ -16,7 +18,8 @@ export const DEFAULT_MASTERY_RT_MS = 5000;
 
 /** Derive all thresholds from the per-sub-atom mastery RT (preserves existing ratios) */
 export function getThresholdsForSubAtom(subAtomId?: string) {
-    const mastery = (subAtomId && MASTERY_RT_BY_SUBATOM[subAtomId]) || DEFAULT_MASTERY_RT_MS;
+    const mastery = subAtomId && isAdvancedNode(subAtomId) ? ADVANCED_NODES[subAtomId].masteryMs
+        : (subAtomId && MASTERY_RT_BY_SUBATOM[subAtomId]) || DEFAULT_MASTERY_RT_MS;
     return {
         masteryRT: mastery,
         swiftHitRT: mastery,                        // 1.0×

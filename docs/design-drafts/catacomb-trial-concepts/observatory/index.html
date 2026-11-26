@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="cs">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#091126">
+  <title>Liščí hvězdárna · Číslokraj</title>
+  <link rel="icon" type="image/webp" href="/assets/ui/catacomb-crafted-v3/paw-normal.webp">
+  <link rel="stylesheet" href="./observatory.css">
+  <link rel="stylesheet" href="./stage.css">
+  <link rel="stylesheet" href="./mural.css">
+</head>
+<body>
+  <main id="observatory" aria-label="Liščí hvězdárna" aria-busy="true">
+    <div id="stage" aria-hidden="true"></div>
+    <div id="mural"></div>
+    <div class="top-tools">
+      <button id="settings" type="button" aria-label="Nastavit zkoušku"><span class="tool-face"><svg viewBox="0 0 32 32" aria-hidden="true"><path d="M5 8h11m7 0h4M5 16h4m7 0h11M5 24h12m7 0h3"/><circle cx="19" cy="8" r="3"/><circle cx="13" cy="16" r="3"/><circle cx="21" cy="24" r="3"/></svg></span></button>
+      <button id="pause" type="button" aria-label="Pozastavit" hidden><span class="tool-face"><svg viewBox="0 0 32 32" aria-hidden="true"><path d="M11 8v16m10-16v16" stroke-width="5"/></svg></span></button>
+    </div>
+    <div class="floor-shade" aria-hidden="true"></div>
+    <section id="lobby" class="dock" aria-label="Výběr souhvězdí">
+      <div id="reward-choices" role="group" aria-label="Souhvězdí"></div>
+      <div class="launch"><span id="goal"></span><button type="button" id="start" class="plaque-button" disabled><span class="surface"><span class="play-mark" aria-hidden="true">▶</span> Začít</span></button></div>
+    </section>
+    <section id="arithmetic" class="dock" aria-label="Příklad" hidden>
+      <div class="prompt-column">
+        <div id="attempts" role="img"></div>
+        <div class="question-face"><strong id="question"></strong></div>
+      </div>
+      <div id="answers" role="group" aria-label="Odpovědi"></div>
+    </section>
+    <section id="result" class="dock" aria-live="polite" hidden>
+      <div class="result-copy"><img id="prize" alt=""><div><strong id="result-title"></strong><div class="star-score"><span id="score"></span><span id="gift-count" role="img" hidden><img src="./art/stage-planet.webp" alt=""><span id="gift-number"></span></span></div></div></div>
+      <button id="back" class="plaque-button" type="button"><span class="surface">← Zpět</span></button>
+      <button id="again" class="plaque-button" type="button"><span class="surface">↻ Znovu</span></button>
+    </section>
+    <dialog id="configuration" class="sheet" aria-labelledby="settings-title">
+      <form method="dialog" id="settings-form">
+        <h1 id="settings-title">Nastavit zkoušku</h1>
+        <label for="preset">Zkouška</label><select id="preset"></select>
+        <label for="length">Počet příkladů</label><input id="length" type="number" min="1" max="40" step="1" required inputmode="numeric">
+        <label for="threshold">Správně k cíli</label><input id="threshold" type="number" min="1" max="40" step="1" required inputmode="numeric">
+        <label for="pace">Čas na příklad</label><div class="seconds"><input id="pace" type="number" min="1" max="30" step="0.1" required inputmode="decimal"><span>s</span></div>
+        <div class="actions"><button value="cancel" formnovalidate class="sheet-button">Zpět</button><button value="save" class="sheet-button">Použít</button></div>
+      </form>
+    </dialog>
+    <dialog id="pause-dialog" class="sheet" aria-label="Pauza"><h1>Pauza</h1><button id="resume" class="sheet-button">▶ Pokračovat</button></dialog>
+    <div id="loading-note" role="status">✦</div>
+  </main>
+  <script type="module" src="./observatory.js"></script>
+</body>
+</html>

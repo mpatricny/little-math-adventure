@@ -1,0 +1,44 @@
+{
+  "sourceSize": [
+    1254,
+    1254
+  ],
+  "boxes": {
+    "module": {
+      "left": 45,
+      "top": 94,
+      "width": 1011,
+      "height": 311
+    },
+    "pin": {
+      "left": 47,
+      "top": 509,
+      "width": 1011,
+      "height": 204
+    },
+    "footer": {
+      "left": 40,
+      "top": 816,
+      "width": 1018,
+      "height": 181
+    },
+    "divider": {
+      "left": 1127,
+      "top": 79,
+      "width": 66,
+      "height": 919
+    },
+    "previous": {
+      "left": 452,
+      "top": 1065,
+      "width": 108,
+      "height": 121
+    }
+  },
+  "divider": {
+    "width": 12,
+    "height": 580,
+    "capSource": 70,
+    "capHeight": 13
+  }
+}

@@ -2,6 +2,8 @@ import { PlayerState, MathStats, SaveSlotMeta, SaveSlotData } from '../types';
 import { gameplayId } from '../telemetry/gameplayData';
 import { notifyGameplaySave } from '../telemetry/gameplayBridge';
 import { analytics } from '../telemetry/AnalyticsClient';
+import { addPlayTimeDays, preservePlayTime, type PlayTimeDays } from './LocalPlayTime';
+import { checkpointLocalPlayTime } from './LocalPlayTimeBridge';
 
 // Storage keys
 const SAVE_DATA_PREFIX = 'littleMathAdventure_slot_';       // Per-slot: slot_0, slot_1...
@@ -29,8 +31,10 @@ export type SaveBundleImportResult =
     | { ok: true; importedSlots: number[]; activeSlot: number | null }
     | { ok: false; error: string };
 
+export type SaveChange = 'progress' | 'slots';
+
 export class SaveSystem {
-    private static changeListeners = new Set<() => void>();
+    private static changeListeners = new Set<(change: SaveChange) => void>();
     private static writeGuards = new Set<() => boolean>();
 
     static guardWrites(guard: () => boolean): () => void {
@@ -42,14 +46,14 @@ export class SaveSystem {
         return [...this.writeGuards].every(guard => guard());
     }
 
-    static observeChanges(listener: () => void): () => void {
+    static observeChanges(listener: (change: SaveChange) => void): () => void {
         this.changeListeners.add(listener);
         return () => { this.changeListeners.delete(listener); };
     }
 
-    private static notifyChanges(): void {
+    private static notifyChanges(change: SaveChange = 'slots'): void {
         for (const listener of this.changeListeners) {
-            try { listener(); } catch (error) { console.warn('[SaveSystem] Save observer failed', error); }
+            try { listener(change); } catch (error) { console.warn('[SaveSystem] Save observer failed', error); }
         }
     }
 
@@ -134,7 +138,10 @@ export class SaveSystem {
             return;
         }
 
+        checkpointLocalPlayTime();
         player.gameplayProfileId ??= gameplayId();
+        const previousPlayer = this.readSnapshot(slotIndex)?.player;
+        preservePlayTime(player, previousPlayer);
         const saveData: SaveSlotData = {
             player,
             mathStats,
@@ -145,12 +152,57 @@ export class SaveSystem {
             const key = `${SAVE_DATA_PREFIX}${slotIndex}`;
             localStorage.setItem(key, JSON.stringify(saveData));
             notifyGameplaySave(slotIndex, saveData);
-            this.notifyChanges();
+            this.notifyChanges(previousPlayer?.gameplayProfileId === player.gameplayProfileId ? 'progress' : 'slots');
             console.log(`[SaveSystem] Game saved to slot ${slotIndex}`);
         } catch (error) {
             console.error('[SaveSystem] Failed to save:', error);
             analytics()?.emit('save_error',{code:'local_save',scene:analytics()?.contextSnapshot()?.scene??'SaveSystem',fingerprint:'save',count:1});
         }
+    }
+
+    /** Atomic host record: pair special-use consumption with combat HP and resume state. */
+    static writeFoxAbilityCheckpoint(
+        slotIndex: number,
+        profileId: string,
+        checkpoint: import('../types/foxBattleSession').BattleFoxAbilityCheckpoint,
+        expected: import('../types/foxBattleSession').BattleFoxCheckpointToken | null,
+        liveSave?: SaveSlotData,
+    ): boolean {
+        if (!this.mayWrite()) return false;
+        const stored = this.readSnapshot(slotIndex);
+        if (!stored || !profileId || stored.player.gameplayProfileId !== profileId
+            || (liveSave && liveSave.player.gameplayProfileId !== profileId)) return false;
+        const previous = stored.player.foxAbilityBattle;
+        if (expected ? previous?.battleId !== expected.battleId || previous?.revision !== expected.revision : previous !== undefined) return false;
+        if (!Object.values(checkpoint.ledger.owners).some(owner => owner?.profileId === profileId)) return false;
+        const source = liveSave ?? stored;
+        const player = { ...source.player, foxAbilityBattle: structuredClone(checkpoint) };
+        this.save(slotIndex, player, source.mathStats);
+        const written = this.readSnapshot(slotIndex);
+        if (written?.player.gameplayProfileId !== profileId
+            || JSON.stringify(written.player.foxAbilityBattle) !== JSON.stringify(checkpoint)) return false;
+        // A later singleton save must retain the newly committed host checkpoint.
+        if (liveSave) liveSave.player.foxAbilityBattle = structuredClone(checkpoint);
+        return true;
+    }
+
+    /** Patch only time on a fresh snapshot; never save the singleton's possibly stale lane stats. */
+    static addLocalPlayTime(slotIndex: number, profileId: string, days: PlayTimeDays): boolean {
+        if (!this.mayWrite()) return false;
+        const save = this.readSnapshot(slotIndex);
+        // A slot can be deleted/replaced between samples. Old time must never follow its index.
+        if (!save || save.player.gameplayProfileId !== profileId) return true;
+        addPlayTimeDays(save.player, days);
+        save.timestamp = Date.now();
+        try {
+            localStorage.setItem(`${SAVE_DATA_PREFIX}${slotIndex}`, JSON.stringify(save));
+        } catch (error) {
+            console.warn('[SaveSystem] Could not persist local play time', error);
+            return false;
+        }
+        notifyGameplaySave(slotIndex, save);
+        this.notifyChanges('progress');
+        return true;
     }
 
     /**
@@ -285,6 +337,19 @@ export class SaveSystem {
             return saveData;
         } catch (error) {
             console.error('[SaveSystem] Failed to load:', error);
+            return null;
+        }
+    }
+
+    /** Read-only profile inspection: never hydrates identity, activates or saves a slot. */
+    static readSnapshot(slotIndex: number): SaveSlotData | null {
+        if (slotIndex < 0 || slotIndex >= MAX_SLOTS) return null;
+        try {
+            const stored = localStorage.getItem(`${SAVE_DATA_PREFIX}${slotIndex}`);
+            if (!stored) return null;
+            const data = JSON.parse(stored) as SaveSlotData;
+            return data.player && data.mathStats ? data : null;
+        } catch {
             return null;
         }
     }

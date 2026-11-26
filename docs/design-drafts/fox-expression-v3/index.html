@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="cs">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <link rel="icon" href="data:,">
+  <title>Runová liška · úprava výrazu</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header>
+    <div><p class="eyebrow">VÝTVARNÉ SROVNÁNÍ · V3</p><h1>Stejná liška, vlídnější tvář</h1></div>
+    <a href="../catacombs-access-v1/index.html">← Katakomby</a>
+  </header>
+  <main>
+    <div class="toolbar" aria-label="Zobrazení srovnání">
+      <div class="view-controls" role="group" aria-label="Měřítko">
+        <button type="button" data-view="full" aria-pressed="true">Celá liška</button>
+        <button type="button" data-view="face" aria-pressed="false">Detail tváře</button>
+      </div>
+      <button type="button" id="background" aria-pressed="false">Světlé pozadí</button>
+    </div>
+    <section class="comparison" aria-label="Původní a vlídnější výraz" data-view="full">
+      <figure>
+        <figcaption><span class="label">PŘEDLOHA</span><h2>Původní</h2></figcaption>
+        <div class="art-window"><img src="../training-flow-v5/assets/fox-reward.webp" width="900" height="738" alt="Původní detailní runová liška s přísným výrazem"></div>
+      </figure>
+      <figure>
+        <figcaption><span class="label">ÚPRAVA VÝRAZU</span><h2>Vlídnější</h2></figcaption>
+        <div class="art-window"><img src="assets/fox-friendly.png" width="1386" height="1135" alt="Stejná předloha lišky s uvolněným obočím, otevřeným pohledem a jemným úsměvem"></div>
+      </figure>
+    </section>
+    <p class="note">Základ pro další podoby. Oči, obočí a úsměv jsou vlídnější; zachováváme původní propracovaný styl. Nové animace počkají na schválení všech podob.</p>
+  </main>
+  <footer><a href="../fox-poses-v3/index.html">Různé pózy</a><a href="assets/fox-friendly.png">Otevřít ilustraci</a><a href="assets/prompt.json">Zadání generování</a></footer>
+  <script type="module" src="main.js"></script>
+</body>
+</html>

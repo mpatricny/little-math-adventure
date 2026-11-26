@@ -14,6 +14,7 @@ describe('scene forecast', () => {
         expect(upcomingScenes('TownScene', available)).not.toContain('UnderwaterRoomScene');
         expect(canPrepareTextures('BattleScene')).toBe(false);
         expect(canPrepareTextures('CatacombTrialScene')).toBe(false);
+        expect(canPrepareTextures('FoxLessonScene')).toBe(false);
         expect(canPrepareTextures('TownScene')).toBe(true);
     });
     it('current/near scenes win and shared URLs are deduplicated', () => {

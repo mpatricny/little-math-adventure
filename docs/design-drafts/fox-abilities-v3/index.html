@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="cs">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="icon" href="data:,"><title>Schopnosti lišky · tři cesty</title><link rel="stylesheet" href="style.css"></head>
+<body>
+<header><div><p class="eyebrow">PROKLIKNUTELNÝ NÁVRH · V3</p><h1>Tři schopnosti, tři cesty</h1></div><a href="../fox-poses-v3/index.html">Pózy lišky →</a></header>
+<main>
+ <div class="toolbar" aria-label="Ovládání návrhářské ukázky">
+  <label>Stav <select id="preset"><option value="mixed">Část získaná</option><option value="locked">Zamčeno</option><option value="late">Téměř hotovo</option><option value="complete">Vše získané</option></select></label>
+  <button id="award" type="button">Ukázat odměnu</button><button id="words" aria-pressed="false">Skrýt slova</button><button id="restart">Obnovit stav</button>
+ </div>
+ <section id="fit"><div id="stage" class="game-stage" aria-label="Schopnosti lišky">
+  <img class="outer-frame" src="../training-flow-v5/assets/modal-frame.webp" alt="">
+  <img id="fox" class="placed" src="../fox-expression-v3/assets/fox-friendly.png" alt="Runová liška">
+  <div id="heading" class="placed"><h2 class="word">Schopnosti lišky</h2></div>
+  <div id="owners" class="placed" role="group" aria-label="Hráči"></div>
+  <div id="rows" class="placed"></div>
+  <div id="completion" class="placed" aria-live="polite"></div>
+  <div id="effects" aria-hidden="true"></div>
+  <div id="detail" hidden role="dialog" aria-modal="true" aria-labelledby="detailTitle">
+   <div id="detailPanel" class="placed">
+    <img class="outer-frame" src="../training-flow-v5/assets/modal-frame.webp" alt="">
+    <button id="detailClose" class="detail-close" aria-label="Zavřít detail">×</button>
+    <h3 id="detailTitle" class="word"></h3>
+    <div id="detailOwner"></div><div id="detailExample"></div><div id="detailRunes"></div><div id="detailPower"></div>
+   </div>
+  </div>
+ </div></section>
+ <p id="reviewStatus" class="note" aria-live="polite"></p>
+ <p class="note">Návrhářská ukázka: vyber dvojici kamenů a použij „Ukázat odměnu“. Každý modul má vlastní I a II; II nahradí I. Čísla účinků i přiřazení modulů jsou pracovní model. Získané kameny jsou trvalý postup, počet použití v boji se nemění.</p>
+</main>
+<footer><a href="../catacombs-access-v1/index.html">Katakomby</a><a href="../fox-expression-v3/index.html">Výraz lišky</a><a href="HANDOFF.md">Podklady</a></footer>
+<script type="module" src="main.js"></script>
+</body></html>

@@ -1,9 +1,11 @@
+export type AnswerChoiceIndex = 0 | 1 | 2 | 3;
+
 export type RemoteRole = 'host' | 'controller';
 
 export type RemoteCommand =
     | { type: 'startTrainingBattle' }
     | { type: 'attack' }
-    | { type: 'answerChoice'; index: 0 | 1 | 2 }
+    | { type: 'answerChoice'; index: AnswerChoiceIndex }
     | { type: 'selectEnemy'; index: number }
     | { type: 'usePotion' }
     | { type: 'continue' }
@@ -17,7 +19,7 @@ export interface RemoteAction {
 }
 
 export interface RemoteAnswerChoice {
-    index: 0 | 1 | 2;
+    index: AnswerChoiceIndex;
     label: string;
 }
 

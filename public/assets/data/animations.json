@@ -1,5 +1,17 @@
 {
     "version": "1.0",
+    "catacombLessonArt": {
+        "catacomb-heal-light": {
+            "texture": "catacomb-heal-light-sheet",
+            "frames": { "start": 0, "end": 23 },
+            "frameRate": 11, "repeat": -1
+        },
+        "catacomb-strike-light": {
+            "texture": "catacomb-strike-light-sheet",
+            "frames": { "start": 0, "end": 23 },
+            "frameRate": 13, "repeat": -1
+        }
+    },
     "player": {
         "knight-idle": {
             "texture": "knight-idle-sheet",
@@ -1841,6 +1853,113 @@
                         2,
                         1
                     ]
+                },
+                "frameRate": 6,
+                "repeat": -1
+            }
+        },
+        "companion-fox-01": {
+            "companion-fox-01-idle": {
+                "texture": "companion-fox-01-idle-sheet",
+                "frames": {
+                    "sequence": [
+                        0,
+                        1,
+                        2,
+                        3,
+                        4,
+                        5,
+                        6,
+                        7,
+                        8,
+                        9
+                    ]
+                },
+                "frameRate": 6,
+                "repeat": -1
+            },
+            "companion-fox-01-attack": {
+                "texture": "companion-fox-01-attack-sheet",
+                "frames": {
+                    "sequence": [
+                        0,
+                        1,
+                        2,
+                        3,
+                        4,
+                        5,
+                        6
+                    ]
+                },
+                "frameRate": 6,
+                "repeat": 0,
+                "movement": {
+                    "duration": 700,
+                    "ease": "Quad.easeOut",
+                    "waitForComplete": true
+                }
+            },
+            "companion-fox-01-attack-anim": {
+                "texture": "companion-fox-01-attack-sheet",
+                "frames": {
+                    "sequence": [
+                        0,
+                        1,
+                        2,
+                        3,
+                        4,
+                        5,
+                        6
+                    ]
+                },
+                "frameRate": 6,
+                "repeat": 0,
+                "movement": {
+                    "duration": 700,
+                    "ease": "Quad.easeOut",
+                    "waitForComplete": true
+                }
+            }
+        },
+        "companion-fox-02": {
+            "companion-fox-02-idle": {
+                "texture": "companion-fox-02-idle-sheet",
+                "frames": {
+                    "start": 0,
+                    "end": 11
+                },
+                "frameRate": 6,
+                "repeat": -1
+            }
+        },
+        "companion-fox-03": {
+            "companion-fox-03-idle": {
+                "texture": "companion-fox-03-idle-sheet",
+                "frames": {
+                    "start": 0,
+                    "end": 11
+                },
+                "frameRate": 6,
+                "repeat": -1
+            }
+        },
+        "companion-fox-04": {
+            "companion-fox-04-idle": {
+                "texture": "companion-fox-04-idle-sheet",
+                "frames": {
+                    "start": 0,
+                    "end": 12
+                },
+                "frameRate": 6,
+                "repeat": -1
+            }
+        },
+        "companion-fox-05": {
+            "companion-fox-05-idle": {
+                "texture": "companion-fox-05-idle-sheet",
+                "frames": {
+                    "start": 0,
+                    "end": 11
                 },
                 "frameRate": 6,
                 "repeat": -1

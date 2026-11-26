@@ -1,0 +1,46 @@
+{
+  "date": "2026-11-18",
+  "scope": "Shared journey proposal in training-flow-v5; no production changes",
+  "reviewedImages": [
+    "overview.png",
+    "final-victory.png",
+    "final-pet.png",
+    "journey-hover.png",
+    "journey-pressed.png",
+    "journey-rescue.png",
+    "journey-upgrade.png",
+    "journey-768-victory.png",
+    "journey-no-words-pet.png",
+    "journey-large-gate-768.png"
+  ],
+  "changesAfterReview": [
+    "Shortened the rescue heading so text remains within the plaque's safe inset.",
+    "Moved the journey heading away from the card's raised surface and left a gap above the footer action.",
+    "Kept current and target times clear of the lock, including a two-digit previous time.",
+    "Used a door pictogram for navigation to the next challenge.",
+    "Final captures wait for the time-bar animation to complete.",
+    "Victory card now uses generated gold/navy art and aligned bitmap lock states; latest card measurements and visual review are in journey-polish-review.json."
+  ],
+  "verified": {
+    "interactionReport": "journey-verification.json",
+    "checks": 50,
+    "screenshots": 21,
+    "runtimeErrors": 0,
+    "storageOrApiWrites": 0,
+    "tabletViewports": [
+      "1024x768",
+      "768x1024"
+    ],
+    "minimumPlayerHitTargetCssPx": 44,
+    "extraMcpCheck": "No-words mode, owner B and the same session identity carry into the standalone catacomb iframe.",
+    "expandedView": "Aspect ratio preserved; Escape exits."
+  },
+  "limits": [
+    "Reviewed in browsers with touch emulation; no physical-tablet or child playtest.",
+    "MathBoard preview does not generate a battle receipt. Review controls explicitly simulate outcomes.",
+    "Current runtime rules are evaluated over synthetic profiles. Higher tiers and new rewards remain proposals.",
+    "Training after mastery is selectable in the proposal; its production reward behavior is not implemented here.",
+    "The Pythia preview explains the next step; actual production binding and its inventory transaction are not executed."
+  ],
+  "latestVictoryVisualReview": "journey-polish-review.json"
+}

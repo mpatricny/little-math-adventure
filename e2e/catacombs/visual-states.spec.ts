@@ -1,33 +1,28 @@
-import {test,expect,openSeededGame,waitForScene} from '../arena/helpers/arena-harness';
+import { test, expect } from '../arena/helpers/arena-harness';
+import { openModule } from './helpers/observatory';
 
-for(const renderer of ['canvas','webgl'])test(`button geometry and text bounds ${renderer}`,async({page})=>{
-    if(renderer==='canvas')await page.addInitScript(()=>{const old=HTMLCanvasElement.prototype.getContext;HTMLCanvasElement.prototype.getContext=function(type:string,...args:any[]){if(type.includes('webgl'))return null;return(old as any).call(this,type,...args);}as typeof old;});
-    await openSeededGame(page);
-    await page.evaluate(()=>(window as any).__LITTLE_MATH_GAME__.scene.keys.MenuScene.scene.start('CatacombTrialScene',{examType:'mastery_challenge',subAtomId:'E1'}));
-    await waitForScene(page,'CatacombTrialScene');
-    for(const width of [1280,1024]){
-        await page.setViewportSize({width,height:width===1280?720:768});await page.waitForTimeout(200);
-        const box=(await page.locator('canvas').boundingBox())!;
-        const x=box.x+797*box.width/1280,y=box.y+573*box.height/720;
-        for(const state of ['normal','hover','pressed','pointer-out']){
-            if(state==='hover')await page.mouse.move(x,y);
-            if(state==='pressed')await page.mouse.down();
-            if(state==='pointer-out'){await page.mouse.move(0,0);await page.mouse.up();}
-            await page.waitForTimeout(200);
-            await page.screenshot({path:`artifacts/catacombs/${renderer}-${width}-${state}.png`});
-            const issues=await page.evaluate(()=>{
-                const s=(window as any).__LITTLE_MATH_GAME__.scene.keys.CatacombTrialScene;
-                const host=s.sceneBuilder.getElementDef('catacombPrimary');
-                const button=s.mathBoard.modal.list.at(-2);
-                const issues:string[]=[];
-                if(button.x!==host.x||button.y!==host.y||button.scaleX!==1||button.scaleY!==1)issues.push('Button root moved');
-                for(const id of ['catacombTitle','catacombSubtitle','catacombBody','catacombStats']){
-                    const t=s.mathBoard.modal.list.find((o:any)=>o.name===id),h=s.sceneBuilder.getElementDef(id),b=t.getBounds();
-                    if(b.width>h.width||b.height>h.height||t.frame.source.resolution!==2)issues.push(id);
-                }
-                return issues;
+for (const renderer of ['canvas', 'webgl']) test('observatory dock geometry and touch states in ' + renderer, async ({ page }) => {
+    await openModule(page, renderer);
+    for (const width of [1280, 1024]) {
+        await page.setViewportSize({ width, height: width === 1280 ? 720 : 768 });
+        const layout = () => page.evaluate(() => {
+            const r = (window as any).__LITTLE_MATH_GAME__.scene.keys.CatacombTrialScene.round;
+            const view = r.board.sequentialView;
+            return view.controls.map((b: any) => {
+                const m = b.root.getWorldTransformMatrix();
+                return { x: m.tx, y: m.ty, width: b.root.width, height: b.root.height,
+                    surfaceY: b.surface.y, scaleX: b.root.scaleX, scaleY: b.root.scaleY };
             });
-            expect(issues).toEqual([]);
-        }
+        });
+        const initial = await layout();
+        const rect = (await page.locator('canvas').first().boundingBox())!;
+        expect(initial.every((b: any) => b.height * rect.height / 720 >= 44 && b.y - b.height / 2 > 565)).toBeTruthy();
+        initial.forEach((b: any, i: number) => { if (i) expect(b.x - b.width / 2).toBeGreaterThan(initial[i-1].x + initial[i-1].width / 2); });
+        await page.mouse.move(rect.x + initial[0].x / 1280 * rect.width, rect.y + initial[0].y / 720 * rect.height);
+        await page.mouse.down();
+        await page.mouse.move(rect.x + rect.width / 2, rect.y + 40);
+        await page.mouse.up();
+        expect((await layout()).map((b: any) => [b.x, b.y, b.scaleX, b.scaleY])).toEqual(initial.map((b: any) => [b.x,b.y,1,1]));
+        expect(await page.evaluate(() => (window as any).__LITTLE_MATH_GAME__.scene.keys.CatacombTrialScene.round.batch.answers.length)).toBe(0);
     }
 });

@@ -77,7 +77,7 @@ export class AssetLoaderScene extends Phaser.Scene {
         }
 
         // Load UI templates, then go to menu or TV pairing mode
-        uiTemplateLoader.load().then(() => {
+        Promise.all([uiTemplateLoader.load(), document.fonts.load('bold 24px Gelasio').catch(() => undefined)]).then(() => {
             this.scene.start(isTvMode() ? 'TvPairingScene' : 'MenuScene');
         });
     }

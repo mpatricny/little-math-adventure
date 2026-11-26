@@ -357,6 +357,14 @@
       "text": "Štít je připravený. Runy ti pomohou zachytit zásah.",
       "voice": "Zyx"
     },
+    "vo.catacomb.exam-first": {
+      "url": "/assets/audio/voice/cs/vo.catacomb.exam-first.wav",
+      "kind": "voice",
+      "gain": 0.85,
+      "duration": 1.784898,
+      "text": "Nejdřív splň zkoušku.",
+      "voice": "Zuzana"
+    },
     "vo.pythia.welcome": {
       "url": "/assets/audio/voice/cs/vo.pythia.welcome.wav",
       "kind": "voice",

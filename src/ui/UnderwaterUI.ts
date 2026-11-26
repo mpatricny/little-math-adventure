@@ -8,12 +8,15 @@ import { CoopSessionManager } from '../systems/CoopSessionManager';
 import { ProgressionSystem } from '../systems/ProgressionSystem';
 import { buyUnderwaterHint, UNDERWATER_HINT } from '../systems/UnderwaterHintPolicy';
 import { waterHost } from './SceneLayoutHost';
+import { GuideConfirmButton, blockGuidePointer } from './GuideConfirmButton';
+import { createZyxDialogPortrait } from './ZyxDialogPortrait';
 export { waterHost, type WaterHost } from './SceneLayoutHost';
 
 export class UnderwaterUI {
     readonly builder: SceneBuilder;
     modal: Phaser.GameObjects.Container | null = null;
     private buttons: UnderwaterButton[] = [];
+    private confirmation?: GuideConfirmButton;
     private toast?: Phaser.GameObjects.Text;
     private captions: (Phaser.GameObjects.Text | Phaser.GameObjects.Graphics)[] = [];
     private roomControls: UnderwaterButton[] = [];
@@ -69,8 +72,7 @@ export class UnderwaterUI {
         const panel = waterHost(this.builder, 'modalPanelHost');
         this.modal = this.scene.add.container(0, 0).setDepth(shade.depth).setName('underwaterModal');
         this.modal.setData('waterModalSafeArea', waterHost(this.builder, 'modalSafeAreaHost'));
-        const blocker = this.scene.add.rectangle(shade.x, shade.y, shade.width, shade.height, 0x021820, 0.82)
-            .setInteractive();
+        const blocker = blockGuidePointer(this.scene.add.rectangle(shade.x, shade.y, shade.width, shade.height, 0x021820, 0.82));
         const frame = waterArtwork(this.scene, 'silverpond-fairy-reward-frame', panel).setName('waterModalFrame');
         this.modal.add([blocker, frame]);
         this.text('modalTitleHost', title, 30, true);
@@ -126,15 +128,27 @@ export class UnderwaterUI {
 
     dialog(title: string, text: string, button: string, next: () => void, cancel?: () => void, cancelLabel = 'PŘESKOČIT ŘEČ'): void {
         this.open(title);
-        const host = waterHost(this.builder, 'modalPortraitHost');
-        const portrait = this.scene.add.sprite(host.x, host.y, 'spritesheet-zyx-transparent2-sheet', 0);
-        if (this.scene.anims.exists('zyx-idle')) portrait.play('zyx-idle');
-        portrait.setScale(Math.min(host.width / portrait.width, host.height / portrait.height));
+        const portrait = createZyxDialogPortrait(this.scene, waterHost(this.builder, 'modalPortraitHost'));
         portrait.setData('waterArtwork', true);
         this.modal!.add(portrait);
         this.text('modalTextHost', text, 27, true);
         this.button(this.builder, 'modalNextHost', button, () => { this.close(); next(); }, true);
         if (cancel) this.button(this.builder, 'modalCloseHost', cancelLabel, () => { this.close(); cancel(); }, true);
+    }
+
+    /** Guidance has one acknowledgement; meaningful retry/travel choices use dialog(). */
+    explain(title: string, symbol: string, next: () => void): void {
+        this.open(title);
+        this.text('modalTextHost', symbol, 80, true);
+        this.confirmExplanation(next);
+    }
+
+    confirmExplanation(next: () => void): void {
+        this.confirmation = new GuideConfirmButton(this.scene, {
+            ...waterHost(this.builder, 'modalConfirmHost'), theme: 'water', name: 'underwaterGuideConfirm',
+            onConfirm: () => { this.close(); next(); },
+        });
+        this.modal?.add(this.confirmation.root);
     }
 
     notice(message: string): void {
@@ -151,6 +165,7 @@ export class UnderwaterUI {
         if (this.modal) sfx(this.scene, 'ui.back');
         this.buttons.forEach(button => button.destroy());
         this.buttons = [];
+        this.confirmation?.destroy(); this.confirmation = undefined;
         this.modal?.destroy(true);
         this.modal = null;
         this.captions.forEach(caption => { if (caption.active) caption.setVisible(true); });

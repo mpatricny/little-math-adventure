@@ -1,0 +1,138 @@
+{
+  "round": {
+    "sourceCell": {
+      "left": 0,
+      "top": 0,
+      "width": 768,
+      "height": 580
+    },
+    "crop": {
+      "left": 210,
+      "top": 72,
+      "width": 456,
+      "height": 458
+    },
+    "size": [
+      256,
+      256
+    ]
+  },
+  "square": {
+    "sourceCell": {
+      "left": 840,
+      "top": 0,
+      "width": 696,
+      "height": 580
+    },
+    "crop": {
+      "left": 85,
+      "top": 83,
+      "width": 435,
+      "height": 428
+    },
+    "size": [
+      256,
+      256
+    ]
+  },
+  "tab": {
+    "sourceCell": {
+      "left": 0,
+      "top": 580,
+      "width": 900,
+      "height": 444
+    },
+    "crop": {
+      "left": 79,
+      "top": 62,
+      "width": 742,
+      "height": 260
+    },
+    "size": [
+      600,
+      208
+    ]
+  },
+  "gem": {
+    "sourceCell": {
+      "left": 900,
+      "top": 580,
+      "width": 636,
+      "height": 444
+    },
+    "crop": {
+      "left": 159,
+      "top": 91,
+      "width": 194,
+      "height": 198
+    },
+    "size": [
+      96,
+      96
+    ]
+  },
+  "shield": {
+    "crop": {
+      "left": 92,
+      "top": 98,
+      "width": 280,
+      "height": 324
+    },
+    "size": [
+      256,
+      256
+    ],
+    "sharedPairTransform": true
+  },
+  "heal": {
+    "crop": {
+      "left": 47,
+      "top": 89,
+      "width": 365,
+      "height": 300
+    },
+    "size": [
+      256,
+      256
+    ],
+    "sharedPairTransform": true
+  },
+  "strike": {
+    "crop": {
+      "left": 70,
+      "top": 27,
+      "width": 297,
+      "height": 412
+    },
+    "size": [
+      256,
+      256
+    ],
+    "sharedPairTransform": true
+  },
+  "lock": {
+    "crop": {
+      "left": 493,
+      "top": 190,
+      "width": 546,
+      "height": 634
+    },
+    "size": [
+      128,
+      128
+    ]
+  },
+  "foxHead": {
+    "source": "public/assets/sprites/companions/companion-fox-01-portrait.webp",
+    "crop": {
+      "left": 18,
+      "top": 26,
+      "width": 90,
+      "height": 90
+    },
+    "size": [
+      192,
+      192
+    ]
+  }
+}

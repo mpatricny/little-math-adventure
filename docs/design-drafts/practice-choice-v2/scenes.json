@@ -1,0 +1,21 @@
+{
+  "viewport": { "width": 1280, "height": 720 },
+  "hosts": {
+    "guildPanel": { "x": 790, "y": 350, "width": 900, "height": 482, "depth": 1 },
+    "zyx": { "x": 180, "y": 385, "width": 300, "height": 300, "depth": 2 },
+    "guildTitle": { "x": 790, "y": 170, "width": 600, "height": 54, "depth": 3 },
+    "guildChoices": { "x": 790, "y": 325, "width": 768, "height": 228, "depth": 3 },
+    "modules": { "x": 790, "y": 488, "width": 650, "height": 88, "depth": 3 },
+    "guildConfirm": { "x": 790, "y": 641, "width": 176, "height": 80, "depth": 3 },
+    "arenaHeading": { "x": 640, "y": 85, "width": 620, "height": 70, "depth": 3 },
+    "enemies": { "x": 640, "y": 330, "width": 660, "height": 180, "depth": 3 },
+    "battlePanel": { "x": 640, "y": 315, "width": 780, "height": 418, "depth": 1 },
+    "battleHeading": { "x": 640, "y": 235, "width": 600, "height": 70, "depth": 3 },
+    "battlePicture": { "x": 640, "y": 365, "width": 350, "height": 130, "depth": 3 },
+    "soloChoice": { "x": 640, "y": 591, "width": 870, "height": 98, "depth": 4 },
+    "coopChoiceA": { "x": 640, "y": 482, "width": 870, "height": 98, "depth": 4 },
+    "coopChoiceB": { "x": 640, "y": 598, "width": 870, "height": 98, "depth": 4 },
+    "selectedBadge": { "x": 225, "y": 76, "width": 340, "height": 76, "depth": 4 },
+    "ready": { "x": 640, "y": 610, "width": 600, "height": 90, "depth": 5 }
+  }
+}

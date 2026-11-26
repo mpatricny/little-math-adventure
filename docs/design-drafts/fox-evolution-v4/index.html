@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="cs">
+<head>
+ <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+ <link rel="icon" href="data:,"><title>Liška · pět podob</title>
+ <link rel="stylesheet" href="style.css">
+</head>
+<body>
+ <header>
+  <div><p class="eyebrow">VÝTVARNÉ NÁVRHY · V4</p><h1>Liška roste</h1></div>
+  <nav aria-label="Související návrhy"><a href="../fox-expression-v3/index.html">Schválený základ</a><a href="../fox-journey-v4/index.html">Společná cesta ↗</a></nav>
+ </header>
+ <main>
+  <div class="intro"><p>Stejná liška. Bohatší srst, výraznější runy a pokaždé jiný postoj.</p><button id="background" aria-pressed="false">Světlé pozadí</button></div>
+  <section class="lineup" aria-label="Pět postupných podob lišky" id="lineup"></section>
+  <div class="legend"><span class="accepted">1 · schválený základ</span><span>2–5 · nové návrhy</span><span class="zoom-hint">Kliknutím zvětšíš</span></div>
+  <section id="comparison" class="comparison" aria-label="Srovnání nové podoby se základem" hidden>
+   <div class="comparison-bar"><h2>Vedle sebe</h2><button id="close-comparison" aria-label="Skrýt srovnání">Zavřít ×</button></div>
+   <div class="pair">
+    <figure><figcaption><span class="tag">ZÁKLAD</span><h3>Základní</h3></figcaption><div class="art"><img src="assets/fox-01.webp" width="1200" height="1200" alt="Schválená základní liška" class="comparison-art"></div></figure>
+    <figure class="selected-figure"><figcaption><span class="tag" id="detail-tag">NÁVRH</span><h3 id="detail-name"></h3><a id="full-size" target="_blank" rel="noopener">PNG ↗</a></figcaption><div class="art"><img id="detail-image" width="1200" height="1200" alt="" class="comparison-art"></div></figure>
+   </div>
+   <div class="compare-navigation"><button id="previous" aria-label="Předchozí podoba">←</button><span id="detail-count" aria-live="polite"></span><button id="next" aria-label="Další podoba">→</button></div>
+  </section>
+ </main>
+ <footer><span>Statické návrhy k posouzení</span><a href="assets/prompts.json">Zadání generování</a><a href="HANDOFF.md">Podklady</a></footer>
+ <script type="module" src="main.js"></script>
+</body>
+</html>

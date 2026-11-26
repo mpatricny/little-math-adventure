@@ -1,6 +1,7 @@
-import { EnemyDefinition, ExamType, MasteryData, MasteryTargetId } from '../types';
+import { EnemyDefinition, ExamType, MasteryData, MasteryTargetId, type PlayerState } from '../types';
 import { GameStateManager } from './GameStateManager';
 import { MasterySystem } from './MasterySystem';
+import { checkpointLocalPlayTime } from './LocalPlayTimeBridge';
 
 
 /**
@@ -21,6 +22,9 @@ export class CoopSessionManager {
     private _activePlayer: 'A' | 'B' = 'A';
     private _playerAMasteryData: MasteryData | null = null;
     private _playerBMasteryData: MasteryData | null = null;
+    // Legend awards live on the player. Catacomb trials are solo, so the
+    // earned runes captured at co-op entry remain current throughout the session.
+    private readonly foxProgress = new WeakMap<MasteryData, Pick<PlayerState, 'catacombFoxJourney'>>();
 
     // Battle-scoped state (reset each battle via resetBattleState)
     private _playerABattleHp: number = 0;
@@ -76,10 +80,12 @@ export class CoopSessionManager {
         gameState.save();
         gameState.loadSlot(slotA);
 
+        checkpointLocalPlayTime();
         this.playerASlotIndex = slotA;
         this.playerBSlotIndex = slotB;
         this._activePlayer = 'A';
         this._isActive = true;
+        checkpointLocalPlayTime();
 
         console.log(`[CoopSession] Started: Player A = slot ${slotA}, Player B = slot ${slotB}`);
         return true;
@@ -95,6 +101,7 @@ export class CoopSessionManager {
         // outside the normal victory/defeat flow.
         this.persistMasteryProgress();
 
+        checkpointLocalPlayTime();
         this._isActive = false;
         this._activePlayer = 'A';
         this.playerASlotIndex = -1;
@@ -102,6 +109,7 @@ export class CoopSessionManager {
         this._playerAMasteryData = null;
         this._playerBMasteryData = null;
         this.resetBattleState();
+        checkpointLocalPlayTime();
 
         console.log('[CoopSession] Session ended');
     }
@@ -171,6 +179,10 @@ export class CoopSessionManager {
         return this._playerBMasteryData;
     }
 
+    getFoxProgressForMastery(data: MasteryData): Pick<PlayerState, 'catacombFoxJourney'> {
+        return this.foxProgress.get(data) ?? GameStateManager.getInstance().getPlayer();
+    }
+
     /**
      * Evaluate co-op learning thresholds and persist both players' mastery,
      * rewards and derived levels to their own save slots.
@@ -194,6 +206,7 @@ export class CoopSessionManager {
         const data = this._activePlayer === 'A' ? this._playerAMasteryData : this._playerBMasteryData;
         if (!data) return;
         const gameState = GameStateManager.getInstance();
+        this.foxProgress.set(data, { catacombFoxJourney: gameState.getPlayer().catacombFoxJourney });
         gameState.getMathStats().masteryData = this.cloneMasteryData(data);
         gameState.save();
     }
@@ -276,7 +289,9 @@ export class CoopSessionManager {
     private createSessionMastery(source: MasteryData): MasteryData {
         // Each player needs an isolated object during hotseat turns, but it must
         // start from (and later return to) that player's real learning progress.
-        return this.cloneMasteryData(source);
+        const mastery = this.cloneMasteryData(source);
+        this.foxProgress.set(mastery, { catacombFoxJourney: GameStateManager.getInstance().getPlayer().catacombFoxJourney });
+        return mastery;
     }
 
     private cloneMasteryData(source: MasteryData): MasteryData {

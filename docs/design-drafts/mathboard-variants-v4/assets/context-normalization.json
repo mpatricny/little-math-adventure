@@ -1,0 +1,15 @@
+{
+  "fist": {
+    "sharedCrop": {
+      "minX": 233,
+      "minY": 147,
+      "maxX": 702,
+      "maxY": 716
+    },
+    "canvas": [
+      384,
+      384
+    ]
+  },
+  "frames": "Uniform resize only; alpha retained."
+}

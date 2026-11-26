@@ -1,0 +1,1094 @@
+[
+  {
+    "name": "guideFrameSource",
+    "type": "Image",
+    "x": -1000,
+    "y": -1000,
+    "texture": "Select_hero_frame-cropped",
+    "visible": false
+  },
+  {
+    "name": "bg",
+    "type": "Image",
+    "x": 640,
+    "y": 360,
+    "texture": "bg-arena",
+    "visible": true
+  },
+  {
+    "name": "",
+    "type": "Container",
+    "x": 872,
+    "y": 446,
+    "visible": true,
+    "children": [
+      {
+        "name": "",
+        "type": "Sprite",
+        "x": 0,
+        "y": 0,
+        "texture": "slime-sheet",
+        "visible": true
+      },
+      {
+        "name": "",
+        "type": "Text",
+        "x": 0,
+        "y": -90,
+        "text": "ZELENÝ SLIZ",
+        "texture": "38c327a4-db5d-4f0a-9da5-fda8a61ced01",
+        "visible": true
+      }
+    ]
+  },
+  {
+    "name": "",
+    "type": "Sprite",
+    "x": 216,
+    "y": 563,
+    "texture": "knight-idle-sheet",
+    "visible": true
+  },
+  {
+    "name": "waveText",
+    "type": "Text",
+    "x": 889,
+    "y": 204,
+    "text": "KOLO 1/5",
+    "texture": "02fb5647-7a9f-4ec1-9efb-961eb2ba199e",
+    "visible": true
+  },
+  {
+    "name": "arenaOptionStatus",
+    "type": "Text",
+    "x": 889,
+    "y": 155,
+    "text": "POKRAČOVAT V PŘÍBĚHU  •  1/1",
+    "texture": "df045f60-9f27-4779-ba67-45b23800c458",
+    "visible": true
+  },
+  {
+    "name": "arenaCompletionText",
+    "type": "Text",
+    "x": 640,
+    "y": 400,
+    "text": "DOKONČENO",
+    "texture": "0c9acd55-2b5d-4faa-b05e-db225bd1fa1f",
+    "visible": false
+  },
+  {
+    "name": "",
+    "type": "Container",
+    "x": 227,
+    "y": 238,
+    "visible": true,
+    "children": [
+      {
+        "name": "",
+        "type": "NineSlice",
+        "x": -200,
+        "y": -210,
+        "texture": "991bb46f-0417-4c22-8e3e-04cea0a3079a",
+        "visible": true
+      },
+      {
+        "name": "",
+        "type": "Image",
+        "x": -200,
+        "y": 118,
+        "texture": "725a75ec-1e3a-4ec5-925c-838ab3d6302e",
+        "visible": true
+      },
+      {
+        "name": "",
+        "type": "Text",
+        "x": -1.5,
+        "y": 169,
+        "text": "ARÉNA 1",
+        "texture": "e1e44da7-2db7-4588-837a-e6f984131930",
+        "visible": true
+      }
+    ]
+  },
+  {
+    "name": "",
+    "type": "Container",
+    "x": 227,
+    "y": 238,
+    "visible": true,
+    "children": [
+      {
+        "name": "",
+        "type": "Container",
+        "x": 0,
+        "y": -141,
+        "visible": true,
+        "children": [
+          {
+            "name": "",
+            "type": "Rectangle",
+            "x": 0,
+            "y": 0,
+            "visible": true
+          },
+          {
+            "name": "",
+            "type": "Text",
+            "x": -165,
+            "y": 0,
+            "text": "»",
+            "texture": "4d92a089-fc61-4aa4-8320-570d14843804",
+            "visible": true
+          },
+          {
+            "name": "",
+            "type": "Text",
+            "x": -140,
+            "y": 0,
+            "text": "1",
+            "texture": "0fde5d89-8bba-4b56-84bb-d07d43848c31",
+            "visible": true
+          },
+          {
+            "name": "",
+            "type": "Image",
+            "x": -100,
+            "y": 0,
+            "texture": "slime-sheet-portrait",
+            "visible": true
+          },
+          {
+            "name": "",
+            "type": "Text",
+            "x": 80,
+            "y": 0,
+            "text": "○",
+            "texture": "8a610dcc-704e-460a-a370-31d803a7f3df",
+            "visible": true
+          },
+          {
+            "name": "",
+            "type": "Text",
+            "x": 120,
+            "y": 0,
+            "text": "☆",
+            "texture": "3820eddf-41cb-4967-b499-b4315c25b71b",
+            "visible": true
+          }
+        ]
+      },
+      {
+        "name": "",
+        "type": "Container",
+        "x": 0,
+        "y": -81,
+        "visible": true,
+        "children": [
+          {
+            "name": "",
+            "type": "Text",
+            "x": -140,
+            "y": 0,
+            "text": "2",
+            "texture": "c0cb25e8-4b7d-4f62-a527-516c640f7d00",
+            "visible": true
+          },
+          {
+            "name": "",
+            "type": "Image",
+            "x": -100,
+            "y": 0,
+            "texture": "purple-attack-sheet-portrait",
+            "visible": true
+          },
+          {
+            "name": "",
+            "type": "Text",
+            "x": 80,
+            "y": 0,
+            "text": "○",
+            "texture": "6a91e03b-4ab9-4ac7-9999-2fb1ef10fc53",
+            "visible": true
+          },
+          {
+            "name": "",
+            "type": "Text",
+            "x": 120,
+            "y": 0,
+            "text": "☆",
+            "texture": "c33025f7-0e69-4641-9531-300295801848",
+            "visible": true
+          }
+        ]
+      },
+      {
+        "name": "",
+        "type": "Container",
+        "x": 0,
+        "y": -21,
+        "visible": true,
+        "children": [
+          {
+            "name": "",
+            "type": "Text",
+            "x": -140,
+            "y": 0,
+            "text": "3",
+            "texture": "b5d36399-d8aa-4487-be01-60dbee7873e8",
+            "visible": true
+          },
+          {
+            "name": "",
+            "type": "Image",
+            "x": -100,
+            "y": 0,
+            "texture": "slime-sheet-portrait",
+            "visible": true
+          },
+          {
+            "name": "",
+            "type": "Image",
+            "x": -65,
+            "y": 0,
+            "texture": "slime-sheet-portrait",
+            "visible": true
+          },
+          {
+            "name": "",
+            "type": "Text",
+            "x": 80,
+            "y": 0,
+            "text": "○",
+            "texture": "d5edf1f2-7fe7-4e8c-a28b-139a429eff6d",
+            "visible": true
+          },
+          {
+            "name": "",
+            "type": "Text",
+            "x": 120,
+            "y": 0,
+            "text": "☆",
+            "texture": "7422a264-6cff-48df-b9e4-319d9cb19459",
+            "visible": true
+          }
+        ]
+      },
+      {
+        "name": "",
+        "type": "Container",
+        "x": 0,
+        "y": 39,
+        "visible": true,
+        "children": [
+          {
+            "name": "",
+            "type": "Text",
+            "x": -140,
+            "y": 0,
+            "text": "4",
+            "texture": "015cd9ff-99f2-4a56-90db-6392264bc1fa",
+            "visible": true
+          },
+          {
+            "name": "",
+            "type": "Image",
+            "x": -100,
+            "y": 0,
+            "texture": "purple-attack-sheet-portrait",
+            "visible": true
+          },
+          {
+            "name": "",
+            "type": "Image",
+            "x": -65,
+            "y": 0,
+            "texture": "slime-sheet-portrait",
+            "visible": true
+          },
+          {
+            "name": "",
+            "type": "Text",
+            "x": 80,
+            "y": 0,
+            "text": "○",
+            "texture": "ca2a18cc-6f18-413d-98d7-adcd7a0ef98e",
+            "visible": true
+          },
+          {
+            "name": "",
+            "type": "Text",
+            "x": 120,
+            "y": 0,
+            "text": "☆",
+            "texture": "abe26053-0898-4292-990e-ee57197a4d77",
+            "visible": true
+          }
+        ]
+      },
+      {
+        "name": "",
+        "type": "Container",
+        "x": 0,
+        "y": 99,
+        "visible": true,
+        "children": [
+          {
+            "name": "",
+            "type": "Text",
+            "x": -140,
+            "y": 0,
+            "text": "5",
+            "texture": "820fbaea-0c50-49a6-8120-0052b94fed1c",
+            "visible": true
+          },
+          {
+            "name": "",
+            "type": "Image",
+            "x": -100,
+            "y": 0,
+            "texture": "purple-attack-sheet-portrait",
+            "visible": true
+          },
+          {
+            "name": "",
+            "type": "Image",
+            "x": -65,
+            "y": 0,
+            "texture": "purple-attack-sheet-portrait",
+            "visible": true
+          },
+          {
+            "name": "",
+            "type": "Text",
+            "x": 80,
+            "y": 0,
+            "text": "○",
+            "texture": "ddd8cccf-f142-474e-9f0e-9203c2082445",
+            "visible": true
+          },
+          {
+            "name": "",
+            "type": "Text",
+            "x": 120,
+            "y": 0,
+            "text": "☆",
+            "texture": "d96fc7bd-57b5-4b9c-9980-13064bd7d716",
+            "visible": true
+          }
+        ]
+      },
+      {
+        "name": "",
+        "type": "Text",
+        "x": 80,
+        "y": -176,
+        "text": "✓",
+        "texture": "063e1596-41ee-483d-b4b4-9757d1253482",
+        "visible": true
+      },
+      {
+        "name": "",
+        "type": "Text",
+        "x": 120,
+        "y": -176,
+        "text": "★",
+        "texture": "0f4fb7f5-8046-42ae-8a1c-87cd793317b3",
+        "visible": true
+      }
+    ]
+  },
+  {
+    "name": "",
+    "type": "Container",
+    "x": 700,
+    "y": 180,
+    "visible": false,
+    "children": [
+      {
+        "name": "",
+        "type": "Image",
+        "x": -90,
+        "y": -90,
+        "texture": "3f955692-2c14-49d8-94ce-77b6e5bc2d9c",
+        "visible": true
+      }
+    ]
+  },
+  {
+    "name": "",
+    "type": "Container",
+    "x": 1078,
+    "y": 180,
+    "visible": false,
+    "children": [
+      {
+        "name": "",
+        "type": "Image",
+        "x": -90,
+        "y": -90,
+        "texture": "3f955692-2c14-49d8-94ce-77b6e5bc2d9c",
+        "visible": true
+      }
+    ]
+  },
+  {
+    "name": "arenaResourceHudHost",
+    "type": "Container",
+    "x": 1120,
+    "y": 42,
+    "visible": true,
+    "children": []
+  },
+  {
+    "name": "arenaPlayerASinglePodHost",
+    "type": "Container",
+    "x": 368,
+    "y": 547,
+    "visible": true,
+    "children": []
+  },
+  {
+    "name": "arenaPlayerACoopPodHost",
+    "type": "Container",
+    "x": 470,
+    "y": 500,
+    "visible": true,
+    "children": []
+  },
+  {
+    "name": "arenaPlayerBPodHost",
+    "type": "Container",
+    "x": 89,
+    "y": 630,
+    "visible": true,
+    "children": []
+  },
+  {
+    "name": "",
+    "type": "Container",
+    "x": 1120,
+    "y": 42,
+    "visible": true,
+    "children": [
+      {
+        "name": "",
+        "type": "Image",
+        "x": 0,
+        "y": 0,
+        "texture": "__town-hud-a-resources-clean",
+        "visible": true
+      },
+      {
+        "name": "",
+        "type": "Text",
+        "x": -34,
+        "y": 0,
+        "text": "0",
+        "texture": "a8c3f839-d109-4fda-b66b-d25908d3b47f",
+        "visible": true
+      },
+      {
+        "name": "",
+        "type": "Text",
+        "x": 24,
+        "y": 0,
+        "text": "0",
+        "texture": "05cd31d0-8a0d-4f38-80d1-17cbec341410",
+        "visible": true
+      }
+    ]
+  },
+  {
+    "name": "arena-player-a-status",
+    "type": "Container",
+    "x": 368,
+    "y": 547,
+    "visible": true,
+    "children": [
+      {
+        "name": "",
+        "type": "Image",
+        "x": 0,
+        "y": 0,
+        "texture": "arena-player-status-pod-v1",
+        "visible": true
+      },
+      {
+        "name": "",
+        "type": "Graphics",
+        "x": 0,
+        "y": 0,
+        "visible": true
+      },
+      {
+        "name": "",
+        "type": "Text",
+        "x": 13.35,
+        "y": -17.16,
+        "text": "20/20",
+        "texture": "2ddd6dff-78e4-467c-bf80-aa3e454b9878",
+        "visible": true
+      },
+      {
+        "name": "",
+        "type": "Text",
+        "x": 68.53,
+        "y": -17.16,
+        "text": "A",
+        "texture": "56b74129-c6cc-42be-a1d9-a3c06e6a49c1",
+        "visible": true
+      },
+      {
+        "name": "",
+        "type": "Image",
+        "x": -47.17,
+        "y": 15.99,
+        "texture": "character-book-red-potion",
+        "visible": true
+      },
+      {
+        "name": "",
+        "type": "Arc",
+        "x": -33.13,
+        "y": 27.3,
+        "visible": true
+      },
+      {
+        "name": "",
+        "type": "Text",
+        "x": -33.13,
+        "y": 27.3,
+        "text": "0",
+        "texture": "6badf803-af73-4e46-9829-8213da20a056",
+        "visible": true
+      },
+      {
+        "name": "",
+        "type": "Image",
+        "x": -10.68,
+        "y": 17.16,
+        "texture": "prep-shield-active-v2",
+        "visible": false
+      },
+      {
+        "name": "",
+        "type": "Image",
+        "x": 23.14,
+        "y": 17.16,
+        "texture": "battle-hud-rune-empty-v1",
+        "visible": true
+      },
+      {
+        "name": "",
+        "type": "Image",
+        "x": 40.940000000000005,
+        "y": 17.16,
+        "texture": "battle-hud-rune-empty-v1",
+        "visible": true
+      },
+      {
+        "name": "",
+        "type": "Image",
+        "x": 58.74,
+        "y": 17.16,
+        "texture": "battle-hud-rune-empty-v1",
+        "visible": true
+      }
+    ]
+  },
+  {
+    "name": "startBattleButton",
+    "type": "Container",
+    "x": 980,
+    "y": 654,
+    "visible": true,
+    "children": []
+  },
+  {
+    "name": "",
+    "type": "Container",
+    "x": 1188,
+    "y": 650,
+    "visible": true,
+    "children": [
+      {
+        "name": "",
+        "type": "Image",
+        "x": -75,
+        "y": -75,
+        "texture": "12aef62b-ac16-4077-af64-14f2a40cbff6",
+        "visible": true
+      },
+      {
+        "name": "",
+        "type": "Text",
+        "x": 8.5,
+        "y": 4,
+        "text": "ZPĚT",
+        "texture": "171dbe72-feaf-4c58-b558-533902f7d33b",
+        "visible": true
+      }
+    ]
+  },
+  {
+    "name": "arena-start-battle-button",
+    "type": "Container",
+    "x": 980,
+    "y": 654,
+    "visible": true,
+    "children": [
+      {
+        "name": "",
+        "type": "Container",
+        "x": 0,
+        "y": 4.4,
+        "visible": true,
+        "children": [
+          {
+            "name": "",
+            "type": "Image",
+            "x": 0,
+            "y": 0,
+            "texture": "arena-entry-start-v1",
+            "visible": true
+          }
+        ]
+      },
+      {
+        "name": "",
+        "type": "Container",
+        "x": 0,
+        "y": 0,
+        "visible": true,
+        "children": [
+          {
+            "name": "",
+            "type": "Container",
+            "x": 0,
+            "y": 0,
+            "visible": true,
+            "children": [
+              {
+                "name": "",
+                "type": "Image",
+                "x": 0,
+                "y": 0,
+                "texture": "arena-entry-start-v1",
+                "visible": true
+              }
+            ]
+          },
+          {
+            "name": "",
+            "type": "Container",
+            "x": 0,
+            "y": 0,
+            "visible": true,
+            "children": [
+              {
+                "name": "",
+                "type": "Image",
+                "x": 0,
+                "y": 0,
+                "texture": "arena-entry-start-v1",
+                "visible": true
+              }
+            ]
+          },
+          {
+            "name": "",
+            "type": "Graphics",
+            "x": -19.320000000000007,
+            "y": 0,
+            "visible": true
+          },
+          {
+            "name": "",
+            "type": "Image",
+            "x": -85.56,
+            "y": 0,
+            "texture": "arena-entry-crossed-swords-normal-v1",
+            "visible": true
+          },
+          {
+            "name": "",
+            "type": "Image",
+            "x": -85.56,
+            "y": 0,
+            "texture": "arena-entry-crossed-swords-active-v1",
+            "visible": true
+          },
+          {
+            "name": "",
+            "type": "Text",
+            "x": 41.400000000000006,
+            "y": 1,
+            "text": "ZAČÍT BOJ",
+            "texture": "976a5b05-9376-450c-82f4-25a0ed6113ca",
+            "visible": true
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "guidePanelHost",
+    "type": "Container",
+    "x": 640,
+    "y": 484,
+    "visible": true,
+    "children": []
+  },
+  {
+    "name": "guideTitleHost",
+    "type": "Container",
+    "x": 640,
+    "y": 344,
+    "visible": true,
+    "children": []
+  },
+  {
+    "name": "guideBeforeHost",
+    "type": "Container",
+    "x": 393,
+    "y": 410,
+    "visible": true,
+    "children": []
+  },
+  {
+    "name": "guideAfterHost",
+    "type": "Container",
+    "x": 887,
+    "y": 410,
+    "visible": true,
+    "children": []
+  },
+  {
+    "name": "guideArrowHost",
+    "type": "Container",
+    "x": 640,
+    "y": 410,
+    "visible": true,
+    "children": []
+  },
+  {
+    "name": "guideEquationHost",
+    "type": "Container",
+    "x": 640,
+    "y": 520,
+    "visible": true,
+    "children": []
+  },
+  {
+    "name": "guideShieldHost",
+    "type": "Container",
+    "x": 640,
+    "y": 360,
+    "visible": true,
+    "children": []
+  },
+  {
+    "name": "guideSafeAreaHost",
+    "type": "Container",
+    "x": 640,
+    "y": 484,
+    "visible": true,
+    "children": []
+  },
+  {
+    "name": "guideConfirmHost",
+    "type": "Container",
+    "x": 640,
+    "y": 596,
+    "visible": true,
+    "children": []
+  },
+  {
+    "name": "",
+    "type": "Rectangle",
+    "x": 0,
+    "y": 0,
+    "visible": false
+  },
+  {
+    "name": "",
+    "type": "Container",
+    "x": 0,
+    "y": 0,
+    "visible": false,
+    "children": [
+      {
+        "name": "",
+        "type": "Rectangle",
+        "x": 640,
+        "y": 360,
+        "visible": true
+      },
+      {
+        "name": "",
+        "type": "Rectangle",
+        "x": 640,
+        "y": 360,
+        "visible": true
+      },
+      {
+        "name": "",
+        "type": "Text",
+        "x": 640,
+        "y": 260,
+        "text": "PAUZA",
+        "texture": "0387198c-026d-4592-b643-01f62f0d123d",
+        "visible": true
+      },
+      {
+        "name": "",
+        "type": "Container",
+        "x": 640,
+        "y": 340,
+        "visible": true,
+        "children": [
+          {
+            "name": "",
+            "type": "Rectangle",
+            "x": 0,
+            "y": 0,
+            "visible": true
+          },
+          {
+            "name": "",
+            "type": "Text",
+            "x": 0,
+            "y": 0,
+            "text": "POKRAČOVAT",
+            "texture": "8b6a046e-b8e5-48f7-ab21-3dcc654de9db",
+            "visible": true
+          }
+        ]
+      },
+      {
+        "name": "",
+        "type": "Container",
+        "x": 640,
+        "y": 410,
+        "visible": true,
+        "children": [
+          {
+            "name": "",
+            "type": "Rectangle",
+            "x": 0,
+            "y": 0,
+            "visible": true
+          },
+          {
+            "name": "",
+            "type": "Text",
+            "x": 0,
+            "y": 0,
+            "text": "ODEJÍT DO MENU",
+            "texture": "44c364b9-d0cc-47ee-983c-ed4f724c7250",
+            "visible": true
+          }
+        ]
+      },
+      {
+        "name": "audioOpen",
+        "type": "Container",
+        "x": 640,
+        "y": 640,
+        "visible": true,
+        "children": [
+          {
+            "name": "",
+            "type": "Container",
+            "x": 0,
+            "y": 2.08,
+            "visible": true,
+            "children": [
+              {
+                "name": "",
+                "type": "Image",
+                "x": 0,
+                "y": 0,
+                "texture": "prep-frame-rail-v2",
+                "visible": true
+              },
+              {
+                "name": "",
+                "type": "Image",
+                "x": -86.81,
+                "y": 0,
+                "texture": "prep-frame-rail-v2",
+                "visible": true
+              },
+              {
+                "name": "",
+                "type": "Image",
+                "x": 86.81,
+                "y": 0,
+                "texture": "prep-frame-rail-v2",
+                "visible": true
+              }
+            ]
+          },
+          {
+            "name": "",
+            "type": "Container",
+            "x": 0,
+            "y": 0,
+            "visible": true,
+            "children": [
+              {
+                "name": "",
+                "type": "Container",
+                "x": 0,
+                "y": 0,
+                "visible": true,
+                "children": [
+                  {
+                    "name": "",
+                    "type": "Image",
+                    "x": 0,
+                    "y": 0,
+                    "texture": "prep-frame-rail-v2",
+                    "visible": true
+                  },
+                  {
+                    "name": "",
+                    "type": "Image",
+                    "x": -86.81,
+                    "y": 0,
+                    "texture": "prep-frame-rail-v2",
+                    "visible": true
+                  },
+                  {
+                    "name": "",
+                    "type": "Image",
+                    "x": 86.81,
+                    "y": 0,
+                    "texture": "prep-frame-rail-v2",
+                    "visible": true
+                  }
+                ]
+              },
+              {
+                "name": "",
+                "type": "Container",
+                "x": 0,
+                "y": 0,
+                "visible": true,
+                "children": [
+                  {
+                    "name": "",
+                    "type": "Image",
+                    "x": 0,
+                    "y": 0,
+                    "texture": "prep-frame-rail-v2",
+                    "visible": true
+                  },
+                  {
+                    "name": "",
+                    "type": "Image",
+                    "x": -86.81,
+                    "y": 0,
+                    "texture": "prep-frame-rail-v2",
+                    "visible": true
+                  },
+                  {
+                    "name": "",
+                    "type": "Image",
+                    "x": 86.81,
+                    "y": 0,
+                    "texture": "prep-frame-rail-v2",
+                    "visible": true
+                  }
+                ]
+              },
+              {
+                "name": "",
+                "type": "Graphics",
+                "x": -13.299999999999997,
+                "y": 0,
+                "visible": true
+              },
+              {
+                "name": "",
+                "type": "Text",
+                "x": 0,
+                "y": 1,
+                "text": "ZVUK",
+                "texture": "3c8d1bcd-4cca-498c-b663-40e5c6d7723c",
+                "visible": true
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "",
+    "type": "Container",
+    "x": 0,
+    "y": 0,
+    "visible": false,
+    "children": [
+      {
+        "name": "",
+        "type": "Rectangle",
+        "x": 10,
+        "y": 10,
+        "visible": true
+      },
+      {
+        "name": "",
+        "type": "Text",
+        "x": 20,
+        "y": 20,
+        "text": "",
+        "texture": "b0312c2a-d347-451f-bea5-dc4afd9cd75c",
+        "visible": true
+      }
+    ]
+  },
+  {
+    "name": "audioOpen",
+    "type": "Container",
+    "x": 115,
+    "y": 60,
+    "visible": true,
+    "children": []
+  },
+  {
+    "name": "audioPauseOpen",
+    "type": "Container",
+    "x": 640,
+    "y": 640,
+    "visible": true,
+    "children": []
+  },
+  {
+    "name": "",
+    "type": "Container",
+    "x": 0,
+    "y": 0,
+    "visible": false,
+    "children": [
+      {
+        "name": "",
+        "type": "Rectangle",
+        "x": 1270,
+        "y": 10,
+        "visible": true
+      },
+      {
+        "name": "",
+        "type": "Text",
+        "x": 1260,
+        "y": 20,
+        "text": "",
+        "texture": "1121f17a-71d7-4c47-ba33-0afb14ab60db",
+        "visible": true
+      }
+    ]
+  }
+]

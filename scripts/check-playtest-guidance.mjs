@@ -24,7 +24,7 @@ async function finish(id, name = id) {
     await page.screenshot({ path: `${output}advanced-${name}.png` });
     const next = await page.evaluate(() => {
         const current = window.__LITTLE_MATH_GAME__.scene.getScenes(true).at(-1);
-        const host = current.sceneBuilder.get('guideNextHost'); return {x:host.x,y:host.y};
+        const host = current.sceneBuilder.get('guideConfirmHost'); return {x:host.x,y:host.y};
     });
     await tap(next.x,next.y);
     await page.waitForFunction(id => !window.__LITTLE_MATH_GAME__.scene.getScenes(true).flatMap(s => s.children.list).some(o => o.getData?.('guideId') === id),id);
@@ -42,14 +42,8 @@ try {
     const before = await page.evaluate(async () => { const state=(await import('/src/systems/GameStateManager.ts')).GameStateManager.getInstance();return {crystals:state.getPlayer().crystals,attempts:state.getMathStats().totalAttempts}; });
     await scene('CrystalForgeScene'); await waitGuide('forge.createFragment.v1');
     await page.waitForFunction(async () => (await import('/src/audio/AudioDirector.ts')).gameAudio().snapshot().voiceCount === 1);
-    await tap(270,620); // Replay owns and replaces its previous speech.
+    await finish('forge.createFragment.v1');
     assert.ok((await audio()).voiceCount <= 1);
-    await tap(1080,329);
-    await page.waitForTimeout(200); assert.equal((await audio()).voiceCount,0);
-    const dismissedGuides = await page.evaluate(async ()=>(await import('/src/systems/GameStateManager.ts')).GameStateManager.getInstance().getPlayer().seenGuides);
-    assert.ok(dismissedGuides.includes('forge.createFragment.v1'), 'explicit close acknowledges the displayed guide');
-    assert.ok(!dismissedGuides.includes('forge.splitFragment.v1'), 'close must not acknowledge unseen pages');
-    await scene('TownScene'); await scene('CrystalForgeScene');
     await finish('forge.splitFragment.v1');
     assert.equal(await guide(),undefined);
     await page.screenshot({path:`${output}advanced-crystal-values.png`});
@@ -68,7 +62,8 @@ try {
     await scene('TownScene');
     await page.evaluate(async()=>{const state=(await import('/src/systems/GameStateManager.ts')).GameStateManager.getInstance();state.reset('boy_knight','Filip',1);state.setActiveSlotIndex(1);});
     await scene('CrystalForgeScene'); await waitGuide('forge.merge.v1');
-    await tap(1080,329);
+    await finish('forge.merge.v1');
+    await finish('forge.split.v1');
     await page.evaluate(async()=>{const state=(await import('/src/systems/GameStateManager.ts')).GameStateManager.getInstance();state.getPlayer().seenGuides=['shop.intro.v1'];state.save();});
     await scene('ShopScene');await page.waitForTimeout(650);assert.equal(await guide(),undefined);
     await page.evaluate(async()=>{
@@ -88,6 +83,6 @@ try {
     const hero = await page.evaluate(()=>{const s=window.__LITTLE_MATH_GAME__.scene.keys.TownScene;const h=s.sceneBuilder.get('playerAHudHost');return h?{x:h.x,y:h.y}:null;});
     if(hero){await tap(hero.x,hero.y);await page.screenshot({path:`${output}advanced-character-book.png`});}
     assert.deepEqual(errors,[]);
-    writeFileSync(`${output}guidance-results.json`,JSON.stringify({passed:['incremental unlocks','replay replaces speech','dismiss cancels speech','dismiss acknowledges only the current guide','muted visual example','no reward or currency mutation','persistence after reload','per-hero independence','purchase triggers matching preparation','no free preparation'],errors},null,2));
+    writeFileSync(`${output}guidance-results.json`,JSON.stringify({passed:['incremental unlocks','one acknowledgement per completed page','acknowledgement cancels speech','shutdown cancels unseen pages','muted visual example','no reward or currency mutation','persistence after reload','per-hero independence','purchase triggers matching preparation','no free preparation'],errors},null,2));
     console.log('Advanced guidance checks passed');
 } finally { await browser.close(); }

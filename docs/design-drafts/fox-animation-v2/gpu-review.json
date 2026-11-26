@@ -1,0 +1,276 @@
+{
+  "date": "2026-11-21T14:06:42.571Z",
+  "source": "Actual WebGL texture upload + framebuffer readback, gallery screenshots",
+  "results": [
+    {
+      "id": "02",
+      "motion": "idle",
+      "gpu": {
+        "width": 2048,
+        "height": 1536,
+        "opaque": 867907,
+        "error": 0
+      },
+      "frames": 12,
+      "playback": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11
+      ]
+    },
+    {
+      "id": "02",
+      "motion": "attack",
+      "gpu": {
+        "width": 2048,
+        "height": 1024,
+        "opaque": 549628,
+        "error": 0
+      },
+      "frames": 7,
+      "playback": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6
+      ]
+    },
+    {
+      "id": "02",
+      "motion": "cast",
+      "gpu": {
+        "width": 2048,
+        "height": 1536,
+        "opaque": 763540,
+        "error": 0
+      },
+      "frames": 10,
+      "playback": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9
+      ]
+    },
+    {
+      "id": "03",
+      "motion": "idle",
+      "gpu": {
+        "width": 2048,
+        "height": 1536,
+        "opaque": 1082970,
+        "error": 0
+      },
+      "frames": 12,
+      "playback": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11
+      ]
+    },
+    {
+      "id": "03",
+      "motion": "attack",
+      "gpu": {
+        "width": 2048,
+        "height": 1024,
+        "opaque": 547667,
+        "error": 0
+      },
+      "frames": 8,
+      "playback": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ]
+    },
+    {
+      "id": "03",
+      "motion": "cast",
+      "gpu": {
+        "width": 2048,
+        "height": 1536,
+        "opaque": 1036861,
+        "error": 0
+      },
+      "frames": 10,
+      "playback": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9
+      ]
+    },
+    {
+      "id": "05",
+      "motion": "idle",
+      "gpu": {
+        "width": 2048,
+        "height": 1536,
+        "opaque": 1036787,
+        "error": 0
+      },
+      "frames": 12,
+      "playback": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11
+      ]
+    },
+    {
+      "id": "05",
+      "motion": "attack",
+      "gpu": {
+        "width": 2048,
+        "height": 1024,
+        "opaque": 576859,
+        "error": 0
+      },
+      "frames": 8,
+      "playback": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ]
+    },
+    {
+      "id": "05",
+      "motion": "cast",
+      "gpu": {
+        "width": 2048,
+        "height": 1536,
+        "opaque": 845716,
+        "error": 0
+      },
+      "frames": 9,
+      "playback": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8
+      ]
+    }
+  ],
+  "layout": {
+    "overflow": false,
+    "controls": [
+      {
+        "label": "1",
+        "width": 181.3125,
+        "height": 88
+      },
+      {
+        "label": "2",
+        "width": 181.3125,
+        "height": 88
+      },
+      {
+        "label": "3",
+        "width": 181.3125,
+        "height": 88
+      },
+      {
+        "label": "4",
+        "width": 181.3125,
+        "height": 88
+      },
+      {
+        "label": "5",
+        "width": 181.3125,
+        "height": 88
+      },
+      {
+        "label": "V klidu",
+        "width": 92,
+        "height": 46
+      },
+      {
+        "label": "Útok",
+        "width": 92,
+        "height": 46
+      },
+      {
+        "label": "Schopnost",
+        "width": 107.53125,
+        "height": 46
+      },
+      {
+        "label": "Přehrát",
+        "width": 81.3515625,
+        "height": 46
+      },
+      {
+        "label": "Světlé pozadí",
+        "width": 120.7890625,
+        "height": 46
+      },
+      {
+        "label": "Ve hře →",
+        "width": 91.46875,
+        "height": 46
+      },
+      {
+        "label": "Světelný efekt",
+        "width": 125.53125,
+        "height": 46
+      }
+    ]
+  }
+}

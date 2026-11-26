@@ -1,0 +1,103 @@
+{
+  "generator": "Built-in image_gen",
+  "sources": [
+    {
+      "file": "source/frames.png",
+      "sha256": "70869510767610054b603e2c674c16b91d9a4a489de833442532d681a8ea946f"
+    },
+    {
+      "file": "source/abilities.png",
+      "sha256": "36656952d77678b4c0dc7f2e8461e2728315811dd9aa457f8651505db9c47156"
+    },
+    {
+      "file": "source/progress.png",
+      "sha256": "d28d7f1daa78c2f32b86fe9637b5899ec1483dbb36c7ede2395e7d56b85de972"
+    }
+  ],
+  "normalizationScript": "scripts/build-catacomb-crafted-assets.mjs",
+  "exports": [
+    {
+      "file": "public/assets/ui/catacomb-crafted-v3/action.webp",
+      "sha256": "b1826ce23c237994e8cea67670a120f7872b09c35ba2370204280c88f7311efe"
+    },
+    {
+      "file": "public/assets/ui/catacomb-crafted-v3/heal-active.webp",
+      "sha256": "b8c19cf4ef56aad95e41e2a019efde9b0fc97f92261cccdc2530d556e837e937"
+    },
+    {
+      "file": "public/assets/ui/catacomb-crafted-v3/heal-normal.webp",
+      "sha256": "2e3a4aaadd2709571242b447bb9765b2f33b3775f626dfd90f955dab34a3e245"
+    },
+    {
+      "file": "public/assets/ui/catacomb-crafted-v3/label.webp",
+      "sha256": "7089a8924d914bff69508b31e336fad629d8bd9b45754a088aeb5987736f3aa2"
+    },
+    {
+      "file": "public/assets/ui/catacomb-crafted-v3/lock-active.webp",
+      "sha256": "94115fec04683fbea1e60b8a5c512b67356cbfe8a645151cc565b38af94ac1b8"
+    },
+    {
+      "file": "public/assets/ui/catacomb-crafted-v3/lock-normal.webp",
+      "sha256": "24b812343e165747960c9aaea4026732316deefc7ffcaa146a36d1e843baa044"
+    },
+    {
+      "file": "public/assets/ui/catacomb-crafted-v3/module.webp",
+      "sha256": "fac1137ddf97457406679da6fb4c857f1397def4be5edaaa8adbef49ab571fec"
+    },
+    {
+      "file": "public/assets/ui/catacomb-crafted-v3/paw-active.webp",
+      "sha256": "376abdd9296f17263d28b019ccc6708f993d5f8f0e93cba5a76b61d645c77d6d"
+    },
+    {
+      "file": "public/assets/ui/catacomb-crafted-v3/paw-normal.webp",
+      "sha256": "863758f003efe90efeb910a5c74ac13bfb1a5484414a1b4d589376dbee15f0fc"
+    },
+    {
+      "file": "public/assets/ui/catacomb-crafted-v3/shield-active.webp",
+      "sha256": "6787f88275eec415a57d6653047235e783045c065c7cf8d38c8252fa290d1a62"
+    },
+    {
+      "file": "public/assets/ui/catacomb-crafted-v3/shield-normal.webp",
+      "sha256": "9b6e0949420e0c59ba5a0888c8e787ab17e553e626f341055f8275f447bae90f"
+    },
+    {
+      "file": "public/assets/ui/catacomb-crafted-v3/skill.webp",
+      "sha256": "38f04dfecac8fee699c12df202642ee27e6625e6b16f68310488bf460555fca9"
+    },
+    {
+      "file": "public/assets/ui/catacomb-crafted-v3/socket.webp",
+      "sha256": "d8ab15c99fdd5647c6cbfdd4015fcac84a41e6a090c49f98004c993f48d19974"
+    },
+    {
+      "file": "public/assets/ui/catacomb-crafted-v3/strike-active.webp",
+      "sha256": "be7c7ad134126171a0d97449f5791d444905f5280d48248ebe44b7c573a22de2"
+    },
+    {
+      "file": "public/assets/ui/catacomb-crafted-v3/strike-normal.webp",
+      "sha256": "71d07a6025a111d3725c92a8f014e79cc4b05488f45b0e55302ec6a922a3ca79"
+    },
+    {
+      "file": "public/assets/ui/catacomb-crafted-v3/swords-active.webp",
+      "sha256": "be9073929a75488addf49e319a30b215640b3a926fb7a40e47bff633f075108f"
+    },
+    {
+      "file": "public/assets/ui/catacomb-crafted-v3/swords-normal.webp",
+      "sha256": "de59a8b14b205ce6548a143dbfc68a1a3ab39d9e04c83786a50f535ad9960b63"
+    },
+    {
+      "file": "public/assets/ui/catacomb-crafted-v3/title.webp",
+      "sha256": "a192b536fc8bf627331d5e34620638afcf0da9e7db3cb8e64597d0ce38a2e57d"
+    },
+    {
+      "file": "public/assets/ui/catacomb-crafted-v3/module-focus.webp",
+      "sha256": "1249a8b58e1b8590aeab322b6e8facf15c09a4c94d58abd1afa9a07db267e961"
+    }
+  ],
+  "notes": [
+    "Six canonical structural shapes; never stretch complete bitmaps.",
+    "Each normal/active icon pair was generated together and normalized with one shared bounding box and one identical 256×256 canvas.",
+    "Runtime currently uses the neutral shield/heal/strike images; controls animate one stable surface.",
+    "No generated text is used in player-facing UI.",
+    "module-focus.webp is the turquoise outside edge derived from the canonical module frame in the same normalization script."
+  ]
+}

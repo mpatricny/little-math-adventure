@@ -1,6 +1,9 @@
 import type { Page } from 'playwright/test';
 import { test, expect, openSeededGame, activateCoopSession, waitForScene } from '../arena/helpers/arena-harness';
 import { tap, solveChest, answerPearl } from './hands-on-helpers';
+import { tapPracticeControl } from '../practice/controls';
+import rooms from '../../public/assets/data/underwater-rooms.json';
+import type { UnderwaterProgress } from '../../src/types/underwater';
 
 const WORLD = '__LITTLE_MATH_GAME__';
 
@@ -92,6 +95,52 @@ test('menu preview: touch, real combat, puzzle, chest idempotence and unchanged 
 });
 
 const story = { hasCompletedIntro: true, hasUnlockedSilverpond: true, hasWaterBreathingScale: true };
+
+test('a tablet on HTTP can enter the garden fight, use its fox shield and resume it after reload', async ({ page }) => {
+    // Localhost is a secure context in Chromium; the tablet's plain LAN origin is not.
+    await page.addInitScript(() => {
+        if (typeof crypto.randomUUID === 'function') {
+            Object.defineProperty(crypto, 'randomUUID', { configurable: true, value: undefined });
+        }
+    });
+    const roomId = 'sp_reed_garden';
+    await openSeededGame(page, false, {}, {}, {
+        storyProgress: story, activePet: 'pet_catacomb_A', ownedPets: ['pet_catacomb_A'], unlockedPets: ['catacomb_creature_A'],
+        catacombFoxBonus: 1, catacombFoxJourney: { version: 1, awards: {}, lessons: { shield: { evidenceId: 'garden-shield', targetId: 'A1', earnedAt: 1 } } },
+        underwaterProgress: {
+            schemaVersion: 1, active: true, introSeen: true, roomId, entryId: 'canal',
+            visitedRooms: [roomId], defeatedEncounters: [], openedChests: [], bellNotes: 0, puzzleAttempts: 0,
+        } satisfies UnderwaterProgress,
+    });
+    const enterFight = async () => {
+        await page.evaluate(name => (globalThis as any)[name].scene.keys.MenuScene.scene.start('UnderwaterRoomScene'), WORLD);
+        await waterReady(page, roomId);
+        const target = await page.evaluate(host => {
+            const scene = (window as any).__LITTLE_MATH_GAME__.scene.keys.UnderwaterRoomScene;
+            const { x, y } = scene.builder.get(host);
+            return { x, y };
+        }, rooms.rooms[roomId].encounter.host);
+        await tap(page, target.x, target.y);
+        // Report the actual game error immediately when a scene fails during creation.
+        await expect.poll(async () => page.evaluate(() => document.getElementById('boot-error')?.textContent ||
+            ((window as any).__LITTLE_MATH_GAME__.scene.keys.BattleScene.foxSession ? 'ready' : 'loading')),
+            { timeout: 15_000 }).not.toBe('loading');
+        await expect(page.locator('#boot-error')).toBeHidden();
+    };
+    const checkpoint = () => page.evaluate(() => JSON.parse(localStorage.getItem('littleMathAdventure_slot_0')!).player.foxAbilityBattle);
+    await enterFight();
+    await page.waitForFunction(() => (window as any).__LITTLE_MATH_GAME__.scene.keys.BattleScene.battleState.phase === 'player_turn');
+    const first = await checkpoint();
+    expect(first.battleId).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i);
+    expect(first.encounterKey).toContain(rooms.rooms[roomId].encounter.id);
+    await tapPracticeControl(page, 'battleFoxshield');
+    await expect.poll(checkpoint).toMatchObject({ battleId: first.battleId, ledger: { owners: { A: { used: { shield: true } } } } });
+    await page.evaluate(() => sessionStorage.setItem('lma-e2e-preserve-saves', 'true'));
+    await page.reload(); await waitForScene(page, 'MenuScene');
+    await enterFight();
+    expect(await page.evaluate(() => (window as any).__LITTLE_MATH_GAME__.scene.keys.BattleScene.foxSession.snapshot()))
+        .toMatchObject({ battleId: first.battleId, ledger: { owners: { A: { used: { shield: true } } } } });
+});
 
 test('production co-op: guest protection, per-player learning and persistent room/chest/puzzle progress', async ({ page }) => {
     await openSeededGame(page, true, {}, {}, { storyProgress: story }, { storyProgress: { ...story, hasWaterBreathingScale: false } });

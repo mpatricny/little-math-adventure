@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { applyComparisonExamResult, createInitialComparisonChapterState, generateComparisonTrainingProblems, recordComparisonAttempt } from '../ComparisonLearningSystem';
 import { getLearningBand, getLearningFrontier, requireIncompleteLearningBand } from '../LearningProgress';
+import { seededRandom } from '../puzzles/PuzzleRandom';
 import { applyAttackPowerDistribution } from '../CombatAttackSystem';
 import {
     ALL_BANDS,
@@ -684,10 +685,139 @@ describe('CoopSessionManager per-player progression', () => {
         expect(poolB.every(problem => !hasZero(problem))).toBe(true);
     });
 
+    it('takes a solo saved hero from the E gate through all twelve advanced Guild exams and all three gates', async () => {
+        const rng = vi.spyOn(Math, 'random').mockImplementation(seededRandom(16582026));
+        try {
+            const game = GameStateManager.getInstance();
+            game.reset('girl_knight', 'Číselná cesta', 0);
+            const initial = createMasteryData();
+            setCurrentBand(initial, 'E', 4);
+            completeComparisonLesson(initial);
+            initial.subAtoms.E4.state = 'secure';
+            game.getMathStats().masteryData = initial;
+            const registry = createRegistryStub({ playerLevel: 5 }) as any;
+            let system = MasterySystem.getInstance();
+            let engine = new MathEngine(registry);
+
+            expect(system.getBandGateEligibility('E')).toBe(true);
+            // The starting save has finished the preceding band before F existed.
+            expect(system.applyBandGateResult('E', 10).stateChanged).toBe(true);
+            game.save();
+
+            const answer = (key: string, context: 'battle' | 'exam') => {
+                const problem = engine.generateProblemFromKey(key)!;
+                expect(problem.choices).toHaveLength(4);
+                expect(problem.masteryKey).toBe(key);
+                if (context === 'battle') system.getNumberIntroduction(problem, () => game.save())?.complete();
+                const signed = (a: number, op: string, b: number) => op === '+' ? a + b : a - b;
+                const first = signed(problem.operand1, problem.operator, problem.operand2);
+                const computed = problem.problemType === 'missing_operand'
+                    ? (problem.operator === '+' ? problem.operand2 - problem.operand1 : problem.operand1 - problem.operand2)
+                    : problem.operator2 ? signed(first, problem.operator2, problem.operand3!) : first;
+                expect(problem.choices).toContain(computed);
+                const correct = computed === problem.answer;
+                engine.recordResultForProblem(problem.id, correct);
+                system.recordSolve(key, correct, 4200, context);
+                return Number(correct);
+            };
+            const reload = async () => {
+                const before = structuredClone(game.getMasteryData());
+                game.save();
+                expect(game.loadSlot(0)).toBe(true);
+                await new Promise(resolve => setTimeout(resolve, 0));
+                system = MasterySystem.getInstance();
+                engine = new MathEngine(registry);
+                const after = game.getMasteryData();
+                expect(after.advancedStages).toEqual(before.advancedStages);
+                expect(after.globalSolveSequence).toBe(before.globalSolveSequence);
+                expect(after.bands).toEqual(before.bands);
+            };
+            await reload();
+
+            for (const band of ['F', 'G', 'H'] as const) {
+                for (const index of ALL_SUB_ATOM_NUMBERS) {
+                    const node = `${band}${index}` as SubAtomId;
+                    expect(system.getFrontierSubAtom()).toBe(node);
+                    let turns = 0;
+                    while (!system.checkExamEligibility(node) && turns < 90) {
+                        const keys = system.drawFromPool(system.getProblemsPerTurn());
+                        expect(keys.length).toBeGreaterThan(0);
+                        for (const key of keys) {
+                            expect(key.startsWith(node + ':')).toBe(true);
+                            expect(answer(key, 'battle')).toBe(1);
+                        }
+                        turns++;
+                        if (node === 'F2' && turns === 3) await reload();
+                    }
+                    expect(system.checkExamEligibility(node), node + ' did not reach the Guild exam after ' + turns + ' turns').toBe(true);
+                    const exam = system.generateSubAtomExamProblems(node);
+                    expect(exam).toHaveLength(8);
+                    const score = exam.reduce((sum, key) => sum + answer(key, 'exam'), 0);
+                    expect(system.applyExamResult(node, score)).toMatchObject({ tier: 'gold', stateChanged: true });
+                }
+                expect(system.getBandGateEligibility(band)).toBe(true);
+                const gate = system.generateBandGateProblems(band);
+                expect(gate).toHaveLength(12);
+                const score = gate.reduce((sum, key) => sum + answer(key, 'exam'), 0);
+                expect(system.applyBandGateResult(band, score)).toMatchObject({ tier: 'gold', stateChanged: true });
+                await reload();
+            }
+            for (const band of ['F', 'G', 'H'] as const) {
+                const data = game.getMasteryData();
+                expect(data.bands[band].gateExamBestMedal).toBe('gold');
+                expect(ALL_SUB_ATOM_NUMBERS.every(n => data.subAtoms[`${band}${n}`].examBestMedal === 'gold')).toBe(true);
+            }
+            expect(system.getCurrentBand()).toBe('H');
+        } finally {
+            rng.mockRestore();
+        }
+    }, 20000);
+
+    it('draws a known first F1 shield task without consuming the new lesson, then reuses an independently solved fact', () => {
+        const data = createMasteryData();
+        setCurrentBand(data, 'F', 1);
+        const system = MasterySystem.getInstance();
+        system.setActiveData(data);
+        const first = system.drawKnownAdvancedBlockKeys(1)!;
+        expect(first).toHaveLength(1);
+        expect(first[0]).toMatch(/^E4:/);
+        expect(data.advancedStages?.F1).toBeUndefined();
+        data.practice = { mode: 'practice', pinnedTargetId: 'F1' };
+        expect(system.drawKnownAdvancedBlockKeys(1)).toEqual(['F1:add-tens:bridge:10+10']);
+        expect(data.advancedStages?.F1).toBeUndefined();
+        data.practice = { mode: 'progress' };
+        expect(system.drawFromPool(2)).toEqual(['F1:add-tens:bridge:10+10','F1:add-tens:bridge:30+10']);
+        const solved = system.drawFromPool(1)[0];
+        system.recordSolve(solved, true, 2700, 'battle');
+        const snapshot = structuredClone(data.advancedStages);
+        expect(system.drawKnownAdvancedBlockKeys(1)).toEqual([solved]);
+        expect(data.advancedStages).toEqual(snapshot);
+        const engine = new MathEngine(createRegistryStub({playerLevel: 5}) as any, {
+            fixedLevel: 5, initialStats: createMathStats(data), autoPersist: false,
+        });
+        const mana = ManaPlayerLane.buildManaPool(engine, data);
+        expect(mana).toHaveLength(20);
+        expect(mana.every(p => p.masteryKey?.startsWith('F1:add-tens:target:'))).toBe(true);
+        expect(new Set(mana.map(p => p.masteryKey)).size).toBeGreaterThan(2);
+        expect(data.advancedStages).toEqual(snapshot);
+    });
+
+    it('retains the fourth answer on the falling mana floors', () => {
+        const text = { setOrigin: () => text, setDepth: () => text };
+        const lane = Object.assign(Object.create(ManaPlayerLane.prototype), {
+            fontScale: 1, rowHeight: 25, config: { channelTop: 0, leftNumX: 0, rightNumX: 20 },
+            scene: { add: { text: () => text } }, answerSlots: [],
+        });
+        lane.createAnswerSlots(40, [10,20,30,40]);
+        expect(new Set(lane.answerSlots.map((slot: {value:number}) => slot.value))).toEqual(new Set([10,20,30,40]));
+        expect(lane.answerSlots.filter((slot: {isCorrect:boolean}) => slot.isCorrect)).toHaveLength(4);
+    });
+
     it('keeps completed E learning and old retry queues away from A in combat and mana', () => {
         const data = createMasteryData();
         setCurrentBand(data, 'E', 4);
-        for (const band of ALL_BANDS) {
+        // This profile completed the original A–E curriculum.
+        for (const band of ALL_BANDS.slice(0, ALL_BANDS.indexOf('E') + 1)) {
             data.bands[band].state = 'mastery';
             for (const num of ALL_SUB_ATOM_NUMBERS) data.subAtoms[`${band}${num}` as SubAtomId].state = 'mastery';
         }

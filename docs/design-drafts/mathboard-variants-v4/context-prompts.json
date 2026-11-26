@@ -1,0 +1,38 @@
+{
+  "date": "2026-11-18",
+  "tool": "image_gen.imagegen",
+  "assets": [
+    {
+      "name": "shop-frame",
+      "prompt": "Match the supplied game UI reference and preserve one shared visual system. Players are small children who cannot read: no lettering, labels or numerals. Runtime text, hit areas and animation stay in code. This is one structural frame, not a finished screenshot. Preserve the exact reference silhouette, 1.857:1 aspect ratio and the positions and sizes of its upper empty plaque, middle empty light parchment question well, empty lower answer region and lower-right round socket. Keep all safe content regions empty; leave room for large comparison signs. Preserve a light cream parchment center and dark upper plaque for readable runtime content. No buttons, icons or characters baked into this frame. Transparent background, generous clear padding, no clipped ornament. Do not add panels or subdivide content. Related controls reuse this canonical frame; no hover variant or root geometry change. Re-theme only the structural border and material details for the weapon shop reference: sturdy warm oak, iron corner braces and small brass rivets, amber top plaque trim. The original two tall posts become workbench side rails. No blue gems: small amber gems. Keep the original parchment and question recess unchanged.",
+      "refs": [
+        "/Users/datamole/little-math-adventure/docs/design-drafts/mathboard-variants-v4/assets/parchment.webp",
+        "/Users/datamole/little-math-adventure/public/assets/images/shop/original-shop-interior-counter-85.webp"
+      ],
+      "source": "/Users/datamole/.codex/generated_images/01a1bfe3-6721-7d33-b884-18d02e756092/exec-1ab2c6e2-8cad-43fe-9229-584ae9110ade.png"
+    },
+    {
+      "name": "catacomb-frame",
+      "prompt": "Match the supplied game UI reference and preserve one shared visual system. Players are small children who cannot read: no lettering, labels or numerals. Runtime text, hit areas and animation stay in code. This is one structural frame, not a finished screenshot. Preserve the exact reference silhouette, 1.857:1 aspect ratio and the positions and sizes of its upper empty plaque, middle empty light parchment question well, empty lower answer region and lower-right round socket. Keep all safe content regions empty; leave room for large comparison signs. Preserve a light cream parchment center and dark upper plaque for readable runtime content. No buttons, icons or characters baked into this frame. Transparent background, generous clear padding, no clipped ornament. Do not add panels or subdivide content. Related controls reuse this canonical frame; no hover variant or root geometry change. Re-theme only the structural border and material details for the supplied catacomb: narrow weathered dark slate pillars, fine antique bronze trim, tiny turquoise crystal inlays. Retain the identical light parchment center, question recess, layout and socket geometry. The top plaque is deep midnight blue enamel with bronze edges. Evoke a friendly ancient rune trial, no skulls, no threat.",
+      "refs": [
+        "/Users/datamole/little-math-adventure/docs/design-drafts/mathboard-variants-v4/assets/parchment.webp",
+        "/Users/datamole/little-math-adventure/public/assets/images/backgrounds/catacomb-rune-chamber.webp"
+      ],
+      "source": "/Users/datamole/.codex/generated_images/01a1bfe3-6721-7d33-b884-18d02e756092/exec-bd734c4e-db08-4b50-83c4-b43b1d552304.png"
+    },
+    {
+      "name": "exam-frame",
+      "prompt": "Match the supplied game UI reference and preserve one shared visual system. Players are small children who cannot read: no lettering, labels or numerals. Runtime text, hit areas and animation stay in code. This is one structural frame, not a finished screenshot. Preserve the exact reference silhouette, 1.857:1 aspect ratio and the positions and sizes of its upper empty plaque, middle empty light parchment question well, empty lower answer region and lower-right round socket. Keep all safe content regions empty; leave room for large comparison signs. Preserve a light cream parchment center and dark upper plaque for readable runtime content. No buttons, icons or characters baked into this frame. Transparent background, generous clear padding, no clipped ornament. Do not add panels or subdivide content. Related controls reuse this canonical frame; no hover variant or root geometry change. Re-theme only the structural border and material details for a formal guild examination in the supplied guild interior. Polished dark oak end posts, fine gold edging with small crimson gems, burgundy leather upper plaque and tiny gold laurel ornaments only on external corners. Retain the original parchment, question recess and empty content geometry. No weapon decoration.",
+      "refs": [
+        "/Users/datamole/little-math-adventure/docs/design-drafts/mathboard-variants-v4/assets/parchment.webp",
+        "/Users/datamole/little-math-adventure/public/assets/images/guild/mathoria-guild-interior.webp"
+      ],
+      "source": "/Users/datamole/.codex/generated_images/01a1bfe3-6721-7d33-b884-18d02e756092/exec-0c84cb46-a378-4be3-98a9-bc0b9afe0ce8.png"
+    },
+    {
+      "name": "fist-pair",
+      "prompt": "Use case: stylized-concept. Create a sprite sheet containing exactly TWO aligned states of ONE friendly fantasy game fist icon, matching the polished painted storybook RPG sword reference. A compact brown leather adventurer glove clenched into a fist, side/front three-quarter view with knuckles visibly curled, simple golden wrist cuff, no weapon, no forearm, no aggression or face. LEFT neutral; RIGHT the identical object with only warm gold edge light and a few compact sparks. Identical silhouette, pose, scale and placement in equal square cells, both states generated together. Transparent background, generous clear padding, no clipped glow, no cast shadow, no ambient scene. No lettering or numerals. Players are small children: the silhouette must immediately read as a fist. Only the icons: no complete button, no frame or labels. Runtime frame, text, hit area, disabled state and animation will be separate stable layers. Canonical frame will be reused, not generated per button. States will be normalized with one shared crop to identical transparent canvases and cross-faded without moving the root.",
+      "source": "/Users/datamole/.codex/generated_images/01a1bfe3-6721-7d33-b884-18d02e756092/exec-88d982e3-20cc-49df-a287-fcb34778a073.png"
+    }
+  ]
+}

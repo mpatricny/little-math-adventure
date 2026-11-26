@@ -1,0 +1,198 @@
+{
+  "wave": {
+    "id": "arena-1-wave-1",
+    "wave": 0,
+    "level": 1,
+    "foes": [
+      {
+        "id": "slime_green",
+        "name": "Zelený Sliz",
+        "portrait": "slime-sheet-portrait"
+      }
+    ],
+    "backdrop": "arena-1-bg",
+    "destination": "ArenaScene",
+    "nextWave": 1,
+    "nextArena": null,
+    "shares": [
+      {
+        "hero": "girl_knight",
+        "coins": 2,
+        "mana": 3,
+        "crystals": [
+          {
+            "tier": "shard",
+            "value": 1
+          },
+          {
+            "tier": "shard",
+            "value": 1
+          }
+        ],
+        "newFriend": "Slizáček",
+        "completed": [
+          true,
+          false,
+          false,
+          false,
+          false
+        ]
+      }
+    ],
+    "nextFoe": {
+      "name": "Fialový démon",
+      "portrait": "purple-attack-sheet-portrait"
+    }
+  },
+  "coop": {
+    "id": "arena-1-wave-1",
+    "wave": 0,
+    "level": 1,
+    "foes": [
+      {
+        "id": "slime_green",
+        "name": "Zelený Sliz",
+        "portrait": "slime-sheet-portrait"
+      },
+      {
+        "id": "slime_green",
+        "name": "Zelený Sliz",
+        "portrait": "slime-sheet-portrait"
+      }
+    ],
+    "backdrop": "arena-1-bg",
+    "destination": "ArenaScene",
+    "nextWave": 1,
+    "nextArena": null,
+    "shares": [
+      {
+        "hero": "girl_knight",
+        "coins": 4,
+        "mana": 3,
+        "crystals": [
+          {
+            "tier": "shard",
+            "value": 1
+          },
+          {
+            "tier": "shard",
+            "value": 1
+          }
+        ],
+        "newFriend": "Slizáček",
+        "completed": [
+          true,
+          false,
+          false,
+          false,
+          false
+        ]
+      },
+      {
+        "hero": "boy_knight",
+        "coins": 4,
+        "mana": 0,
+        "crystals": [],
+        "newFriend": null,
+        "completed": [
+          true,
+          false,
+          false,
+          false,
+          false
+        ]
+      }
+    ],
+    "nextFoe": {
+      "name": "Fialový démon",
+      "portrait": "purple-attack-sheet-portrait"
+    }
+  },
+  "final": {
+    "id": "arena-1-wave-5",
+    "wave": 4,
+    "level": 1,
+    "foes": [
+      {
+        "id": "purple_demon",
+        "name": "Fialový démon",
+        "portrait": "purple-attack-sheet-portrait"
+      },
+      {
+        "id": "purple_demon",
+        "name": "Fialový démon",
+        "portrait": "purple-attack-sheet-portrait"
+      }
+    ],
+    "backdrop": "arena-1-bg",
+    "destination": "TownScene",
+    "nextWave": null,
+    "nextArena": 2,
+    "shares": [
+      {
+        "hero": "girl_knight",
+        "coins": 21,
+        "mana": 3,
+        "crystals": [
+          {
+            "tier": "shard",
+            "value": 1
+          },
+          {
+            "tier": "shard",
+            "value": 1
+          },
+          {
+            "tier": "shard",
+            "value": 5
+          }
+        ],
+        "newFriend": null,
+        "completed": [
+          true,
+          true,
+          true,
+          true,
+          true
+        ]
+      }
+    ],
+    "nextFoe": null
+  },
+  "forest": {
+    "id": "forest-room-edge-wolf",
+    "wave": null,
+    "level": null,
+    "foes": [
+      {
+        "id": "forest_wolf",
+        "name": "Lesní vlk",
+        "portrait": "wolves-only-transparent-sheet-portrait"
+      }
+    ],
+    "backdrop": "forest-edge-battleground",
+    "destination": "ForestRoomScene",
+    "nextWave": null,
+    "nextArena": null,
+    "shares": [
+      {
+        "hero": "girl_knight",
+        "coins": 7,
+        "mana": 0,
+        "crystals": [
+          {
+            "tier": "shard",
+            "value": 1
+          },
+          {
+            "tier": "shard",
+            "value": 1
+          }
+        ],
+        "newFriend": "Lesní vlk",
+        "completed": []
+      }
+    ],
+    "nextFoe": null
+  }
+}

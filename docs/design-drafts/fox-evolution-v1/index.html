@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="cs">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="icon" href="data:,"><title>Runová liška · vývoj vzhledu</title><link rel="stylesheet" href="style.css"></head>
+<body>
+<header><div><p class="eyebrow">VÝTVARNÝ NÁVRH · 18. 11. 2026</p><h1>Runová liška</h1></div><a href="../catacombs-access-v1/index.html">← Katakomby</a></header>
+<nav aria-label="Náhledy"><button data-tab="forms" aria-pressed="true">Podoby</button><button data-tab="abilities" aria-pressed="false">Schopnosti</button><button data-tab="battle" aria-pressed="false">Ve hře</button><button data-tab="layers" aria-pressed="false">Vrstvy</button></nav>
+<main>
+<section id="forms" data-panel>
+ <div class="section-heading"><h2>Stejná liška. Silnější runy.</h2><p>Vzhled roste s novými stupni rychlosti. Dosavadní útok +1 zůstává u původních výzev.</p></div>
+ <div class="form-grid" id="formGrid"></div>
+ <div class="reference"><img src="assets/source-idle.png" alt="Současná produkční liška"><div><strong>Současný zdroj</strong><p>Porovnání s původním snímkem. Návrhy zachovávají charakter; před výrobou animací ještě vyžadují přesné sjednocení proporcí.</p></div></div>
+</section>
+<section id="abilities" data-panel hidden>
+ <div class="section-heading"><h2>Tři schopnosti, tři stupně</h2><p>Stupeň mění účinek. Každá schopnost má stále jedno použití za souboj. Klepnutím si vyber kombinaci pro náhled.</p></div>
+ <div class="ability-grid" id="abilityGrid"></div>
+ <div class="review-actions"><button id="showCombination">Prohlédnout kombinaci →</button></div>
+</section>
+<section id="battle" data-panel hidden>
+ <div class="section-heading"><h2>V bojovém měřítku</h2><p>Buňka 512 px × škála 0,25 = 128 herních pixelů. Náhled se přizpůsobí šířce tabletu. Pohyb lišky zde není simulovaný.</p></div>
+ <div class="review-controls"><label>Podoba <select id="bodySelect"><option value="0">Základ</option><option value="1">Blesk</option><option value="2" selected>Jako blesk</option><option value="source">Současná produkce</option></select></label><button id="resetBattle">Obnovit použití</button><button id="defense" aria-pressed="false">Ukázat obranu</button><button id="hideWords" aria-pressed="false">Skrýt slova</button></div>
+ <div class="stage-fit"><div id="battleStage" class="game-stage" aria-label="Výtvarná ukázka boje">
+  <img class="arena" src="assets/arena-clean.webp" alt="">
+  <div id="battleTitle" class="placed title-plaque"><img src="../mathboard-variants-v4/assets/plaque.webp" alt=""><span class="word">Runová liška</span></div>
+  <img id="combatFox" class="placed" src="assets/body-2.webp" alt="Runová liška">
+  <div id="abilityDock" class="placed" role="group" aria-label="Schopnosti lišky"></div>
+  <div id="enemyHealth" class="placed health"><span aria-hidden="true">♥</span><strong>12</strong></div>
+  <div id="effectHost" class="placed" aria-live="off"></div>
+  <div id="heroEffect" class="placed"></div>
+  <div id="enemyEffect" class="placed"></div>
+ </div></div>
+ <div class="small-comparison"><h3>Stejné měřítko vedle sebe</h3><div id="smallBodies"></div></div>
+</section>
+<section id="layers" data-panel hidden>
+ <div class="section-heading"><h2>Jedno tělo, kombinovatelné schopnosti</h2><p>Ukázka: štít II + léčení I + runový útok III. Vypni jednotlivé vrstvy nebo klepni na symbol.</p></div>
+ <div class="review-controls"><label><input id="showBody" type="checkbox" checked> Tělo</label><label><input id="showRunes" type="checkbox" checked> Runy</label><label><input id="showEffects" type="checkbox" checked> Krátké efekty</label><button id="combinationPreset">Štít II · Léčení I · Útok III</button></div>
+ <div class="layer-fit"><div id="layerStage" class="game-stage" aria-label="Vrstvy vzhledu lišky">
+  <img id="layerFox" class="placed" src="assets/body-2.webp" alt="Runová liška">
+  <div id="layerRunes" class="placed"></div>
+  <div id="layerEffect" class="placed"></div>
+ </div></div>
+ <div class="layer-notes"><div><h3>Tělo</h3><p>Tři podoby srsti a velkých run. Stejná postava pro všechny kombinace.</p></div><div><h3>Runy</h3><p>Štít, srdce a blesk. Vlastní obrázek každého stupně, společné rámy a světlo.</p></div><div><h3>Krátký efekt</h3><p>Ochrana, srdce k hrdinovi, zásah nepřítele. Efekt se přidá až při použití.</p></div></div>
+</section>
+</main>
+<footer>Návrh k posouzení. Žádné změny produkčních animací, odměn ani uložených her. <a href="HANDOFF.md">Podklady k předání</a></footer>
+<script type="module" src="main.js"></script>
+</body></html>

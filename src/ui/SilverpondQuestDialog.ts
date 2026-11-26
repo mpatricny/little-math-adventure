@@ -3,9 +3,10 @@ import { SceneBuilder } from '../systems/SceneBuilder';
 import { StorySystem } from '../systems/StorySystem';
 import { GameStateManager } from '../systems/GameStateManager';
 import { getSilverpondQuestStage, hasUnseenSilverpondQuest, type SilverpondQuestStage } from '../systems/SilverpondQuestProgress';
-import { gameAudio, voice } from '../audio/AudioDirector';
-import { MedievalActionButton } from './MedievalActionButton';
+import { gameAudio } from '../audio/AudioDirector';
+import { GuideConfirmButton, blockGuidePointer } from './GuideConfirmButton';
 import { waterArtwork, type WaterBox } from './WaterArtwork';
+import { createZyxDialogPortrait } from './ZyxDialogPortrait';
 
 type HostLayout = WaterBox & { depth: number };
 type QuestSymbol = 'lake-crystal' | 'confused-fairy' | 'water-scale' | 'saved-crystal';
@@ -27,32 +28,31 @@ export class SilverpondQuestDialog {
     private readonly root: Phaser.GameObjects.Container;
     private readonly symbolRoot: Phaser.GameObjects.Container;
     private readonly title: Phaser.GameObjects.Text;
-    private readonly actionButton: MedievalActionButton;
+    private readonly actionButton: GuideConfirmButton;
     private readonly marker: Phaser.GameObjects.Text;
     private pages: QuestPage[] = PAGES.fairy;
     private displayedStage: SilverpondQuestStage = 'fairy';
     private pageIndex = 0;
+    private readyTimer?: Phaser.Time.TimerEvent;
+    private openTimer?: Phaser.Time.TimerEvent;
+    private destroyed = false;
 
-    constructor(private readonly scene: Phaser.Scene, private readonly sceneBuilder: SceneBuilder) {
+    constructor(private readonly scene: Phaser.Scene, private readonly sceneBuilder: SceneBuilder, openPaths?: () => void,
+        mayAutoOpen: () => boolean = () => true) {
         const overlay = this.host('silverpondQuestOverlayHost');
         this.root = scene.add.container(0, 0).setName('silverpondQuestDialog').setDepth(overlay.depth).setVisible(false);
         this.root.setData('dialog', this);
-        const veil = scene.add.rectangle(overlay.x, overlay.y, overlay.width, overlay.height, 0x041218, 0.76).setInteractive();
-        const frame = waterArtwork(scene, 'zyx-dialog-frame-story', this.host('silverpondQuestDialogHost'));
-        const portrait = this.host('silverpondQuestPortraitHost');
-        const zyx = scene.add.sprite(portrait.x, portrait.y, 'spritesheet-zyx-transparent2-sheet').setDepth(portrait.depth);
-        zyx.setScale(Math.min(portrait.width / zyx.width, portrait.height / zyx.height));
-        if (scene.anims.exists('zyx-idle')) zyx.play('zyx-idle');
+        const veil = blockGuidePointer(scene.add.rectangle(overlay.x, overlay.y, overlay.width, overlay.height, 0x041218, 0.76));
+        const frame = waterArtwork(scene, 'zyx-dialog-frame-story', this.host('silverpondQuestDialogHost')).setName('zyxDialogFrame');
+        const zyx = createZyxDialogPortrait(scene, this.host('silverpondQuestPortraitHost'));
         const speaker = this.label('silverpondQuestSpeakerHost', 'ZYX', 25);
         this.title = this.label('silverpondQuestTextHost', '', 30);
         this.symbolRoot = scene.add.container(0, 0).setDepth(this.host('silverpondQuestSymbolHost').depth);
         const button = this.host('silverpondQuestButtonHost');
-        this.actionButton = new MedievalActionButton(scene, {
-            name: 'silverpondQuestAction', ...button, label: 'DÁLE  →', labelFontSize: 23,
-            accent: 0x57ddf2, layout: 'text', frameTexture: 'zyx-dialog-action-frame-story',
-            onClick: () => this.advance(),
+        this.actionButton = new GuideConfirmButton(scene, {
+            name: 'silverpondQuestAction', ...button, theme: 'water', enabled: false,
+            onConfirm: () => this.advance(),
         });
-        this.actionButton.label.setColor('#fff1b5').setStroke('#1b1008', 2);
         this.root.add([veil, frame, zyx, speaker, this.title, this.symbolRoot, this.actionButton.root]);
         this.root.sort('depth');
 
@@ -63,27 +63,40 @@ export class SilverpondQuestDialog {
         }).setName('silverpondQuestMarker').setOrigin(0.5).setDepth(marker.depth);
         const hit = this.host('silverpondQuestZyxHitHost');
         scene.add.zone(hit.x, hit.y, hit.width, hit.height).setName('silverpondQuestZyx')
-            .setDepth(hit.depth).setInteractive({ useHandCursor: true }).on('pointerup', () => this.show());
+            .setDepth(hit.depth).setInteractive({ useHandCursor: true }).on('pointerup', () => {
+                if (openPaths && !this.marker.visible) openPaths();
+                else this.show();
+            });
+        if (openPaths) {
+            const replay = this.host('zyxQuestReplayHost');
+            const button = scene.add.container(replay.x, replay.y).setDepth(replay.depth).setName('zyxQuestReplay')
+                .setSize(replay.width, replay.height).setInteractive({ useHandCursor: true });
+            button.add(waterArtwork(scene, 'silverpond-water-breathing-scale',
+                { ...replay, x: 0, y: 0, width: replay.width * .78, height: replay.height * .78 }));
+            button.on('pointerup', () => this.show());
+        }
         scene.tweens.add({ targets: this.marker, y: marker.y - 7, alpha: 0.62,
             duration: 760, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
         this.refreshAttention();
-        if (this.marker.visible) scene.time.delayedCall(430, () => this.show());
-        scene.events.once(Phaser.Scenes.Events.SHUTDOWN, () => gameAudio().cancel(scene));
+        if (this.marker.visible) this.openTimer = scene.time.delayedCall(430, () => { if (mayAutoOpen()) this.show(); });
+        scene.events.once(Phaser.Scenes.Events.SHUTDOWN, this.destroy, this);
     }
 
     show(): void {
-        if (this.root.visible) return;
+        if (this.destroyed || this.root.visible) return;
         this.displayedStage = getSilverpondQuestStage(GameStateManager.getInstance().getPlayer());
         this.pages = PAGES[this.displayedStage];
         this.pageIndex = 0;
-        this.actionButton.setEnabled(true);
+        this.actionButton.setEnabled(false);
         this.renderPage();
         this.root.setVisible(true).setAlpha(0);
         this.scene.tweens.add({ targets: this.root, alpha: 1, duration: 220, ease: 'Sine.easeOut' });
     }
 
     private advance(): void {
-        gameAudio().cancel(this.scene);
+        if (this.destroyed || !this.root.visible) return;
+        gameAudio().cancel(this);
+        this.readyTimer?.remove();
         this.actionButton.setEnabled(false);
         if (this.pageIndex >= this.pages.length - 1) {
             // Capture the stage shown when opened: later progress must retain its new alert.
@@ -98,7 +111,7 @@ export class SilverpondQuestDialog {
             onComplete: () => {
                 this.renderPage();
                 this.scene.tweens.add({ targets: [this.title, this.symbolRoot], alpha: 1, duration: 180,
-                    onComplete: () => this.actionButton.setEnabled(true) });
+                });
             } });
     }
 
@@ -109,9 +122,25 @@ export class SilverpondQuestDialog {
     private renderPage(): void {
         const page = this.pages[this.pageIndex];
         this.title.setText(page.title).setAlpha(1);
-        this.actionButton.setLabel(this.pageIndex === this.pages.length - 1 ? 'HOTOVO  ✓' : 'DÁLE  →');
+        this.actionButton.setEnabled(false);
         this.drawSymbol(page.symbol);
-        voice(this.scene, page.voice);
+        void gameAudio().speak(page.voice, this);
+        this.readyTimer?.remove();
+        this.readyTimer = this.scene.time.delayedCall(1200, () => {
+            if (!this.destroyed && this.root.visible) this.actionButton.setEnabled(true);
+        });
+    }
+
+    destroy(): void {
+        if (this.destroyed) return;
+        this.destroyed = true;
+        this.openTimer?.remove(); this.readyTimer?.remove();
+        gameAudio().cancel(this);
+        this.scene.tweens.killTweensOf([this.root, this.title, this.symbolRoot, this.marker]);
+        this.symbolRoot.each((child: Phaser.GameObjects.GameObject) => this.scene.tweens.killTweensOf(child));
+        this.actionButton.destroy();
+        this.root.destroy(true); this.marker.destroy();
+        this.scene.events.off(Phaser.Scenes.Events.SHUTDOWN, this.destroy, this);
     }
 
     private drawSymbol(symbol: QuestSymbol): void {

@@ -1,0 +1,204 @@
+{
+  "formats": [
+    {
+      "id": "addition",
+      "correct": true,
+      "wrong": true,
+      "completionOnce": true
+    },
+    {
+      "id": "subtraction",
+      "correct": true,
+      "wrong": true,
+      "completionOnce": true
+    },
+    {
+      "id": "multiplication",
+      "correct": true,
+      "wrong": true,
+      "completionOnce": true
+    },
+    {
+      "id": "three",
+      "correct": true,
+      "wrong": true,
+      "completionOnce": true
+    },
+    {
+      "id": "missing",
+      "correct": true,
+      "wrong": true,
+      "completionOnce": true
+    },
+    {
+      "id": "missing-three",
+      "correct": true,
+      "wrong": true,
+      "completionOnce": true
+    },
+    {
+      "id": "expression-number",
+      "correct": true,
+      "wrong": true,
+      "completionOnce": true
+    },
+    {
+      "id": "expression-expression",
+      "correct": true,
+      "wrong": true,
+      "completionOnce": true
+    },
+    {
+      "id": "long-expression",
+      "correct": true,
+      "wrong": true,
+      "completionOnce": true
+    },
+    {
+      "id": "size",
+      "correct": true,
+      "wrong": true,
+      "completionOnce": true
+    },
+    {
+      "id": "count",
+      "correct": true,
+      "wrong": true,
+      "completionOnce": true
+    },
+    {
+      "id": "numbered",
+      "correct": true,
+      "wrong": true,
+      "completionOnce": true
+    },
+    {
+      "id": "symbols",
+      "correct": true,
+      "wrong": true,
+      "completionOnce": true
+    },
+    {
+      "id": "guided",
+      "correct": true,
+      "wrong": true,
+      "completionOnce": true
+    },
+    {
+      "id": "independent",
+      "correct": true,
+      "wrong": true,
+      "completionOnce": true
+    }
+  ],
+  "modes": [
+    "attack",
+    "sword",
+    "pet",
+    "defense",
+    "practice",
+    "prep-sword",
+    "prep-shield",
+    "exam",
+    "catacomb",
+    "coop"
+  ],
+  "batch": {
+    "completions": 1,
+    "results": [
+      true,
+      false,
+      true
+    ],
+    "timings": [
+      166.63000000000173,
+      166.4300000000003,
+      166.65000000000143
+    ],
+    "damage": 9,
+    "charges": 0,
+    "mode": "attack",
+    "problem": "addition-2",
+    "accepting": false,
+    "pendingNext": true,
+    "teaching": false,
+    "generation": 89
+  },
+  "hover": {
+    "hover": -4,
+    "press": 1,
+    "out": {
+      "y": 0,
+      "n": 0
+    }
+  },
+  "tablet": [
+    {
+      "viewport": {
+        "width": 1024,
+        "height": 768
+      },
+      "targets": [
+        {
+          "w": 160.57099609375,
+          "h": 95.99457465277777
+        },
+        {
+          "w": 160.57099609375,
+          "h": 95.99457465277777
+        },
+        {
+          "w": 160.57099609375,
+          "h": 95.99457465277777
+        },
+        {
+          "w": 76.79482421875,
+          "h": 69.81423611111111
+        },
+        {
+          "w": 76.79482421875,
+          "h": 69.81423611111111
+        }
+      ]
+    },
+    {
+      "viewport": {
+        "width": 768,
+        "height": 1024
+      },
+      "targets": [
+        {
+          "w": 160.57099609375,
+          "h": 95.99457465277777
+        },
+        {
+          "w": 160.57099609375,
+          "h": 95.99457465277777
+        },
+        {
+          "w": 160.57099609375,
+          "h": 95.99457465277777
+        },
+        {
+          "w": 76.79482421875,
+          "h": 69.81423611111111
+        },
+        {
+          "w": 76.79482421875,
+          "h": 69.81423611111111
+        }
+      ]
+    }
+  ],
+  "canvas": [
+    "addition",
+    "missing-three",
+    "expression-expression",
+    "size",
+    "numbered",
+    "symbols"
+  ],
+  "errors": [],
+  "demo": true,
+  "timeout": true
+}

@@ -1,0 +1,15 @@
+.obs-stage-paint {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  user-select: none;
+}
+.obs-stage-paint > img,
+.obs-stage-paint > canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+}

@@ -49,6 +49,11 @@ background:
    produces a 6 FPS game animation. The crab uses 13 unique idle frames and seven
    frames for each one-shot combat action. A non-matching idle endpoint may use a
    forward-then-reverse playback sequence; do not duplicate the two turning frames.
+   **Fox companion exception (author correction, 19 November 2026): idle must be
+   a true forward-only loop. Do not use reversed frames or ping-pong. Forms 01 and
+   04 of the fox V1 motion are accepted; 02, 03 and 05 are being rebuilt from a
+   natural standing posture. A paw lift or stretch may be an occasional idle
+   variation, never the mandatory base of every action.**
 6. Use AutoSprite V3 CorridorKey to estimate alpha, but retain the source video's
    RGB. Protect the high-confidence creature core, apply conservative chroma alpha
    and local despill, and remove only tiny disconnected alpha components. Do not

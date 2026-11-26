@@ -1,0 +1,46 @@
+{
+  "scenes": {
+    "NormalVictoryPreview": {
+      "viewport": { "width": 1280, "height": 720 },
+      "elements": [
+        { "id": "creatureHalo", "asset": "ui.containers.empty", "x": 413, "y": 284, "width": 322, "height": 258, "depth": 103 },
+        { "id": "creatureRing", "asset": "ui.containers.empty", "x": 413, "y": 283, "width": 195, "height": 195, "depth": 104 },
+        { "id": "creatureLaurels", "asset": "ui.containers.empty", "x": 413, "y": 322, "width": 323, "height": 93, "depth": 105 },
+        { "id": "creature", "asset": "ui.containers.empty", "x": 413, "y": 282, "width": 180, "height": 150, "depth": 106,
+          "data": { "regions": {
+            "left": { "x": -44, "y": 0, "width": 77, "height": 112 },
+            "right": { "x": 44, "y": 0, "width": 77, "height": 112 }
+          } } },
+        { "id": "creatureName", "asset": "ui.containers.empty", "x": 413, "y": 398, "width": 322, "height": 42, "depth": 105 },
+        { "id": "friend", "asset": "ui.containers.empty", "x": 413, "y": 431, "width": 230, "height": 31, "depth": 105,
+          "data": { "regions": { "paw": { "x": -69, "y": 0, "width": 27, "height": 27 }, "label": { "x": 17, "y": 0, "width": 150, "height": 30 } } } },
+        { "id": "seam", "asset": "ui.containers.empty", "x": 590, "y": 318, "width": 2, "height": 225, "depth": 104 },
+        { "id": "rewardTitle", "asset": "ui.containers.empty", "x": 731, "y": 232, "width": 201, "height": 46, "depth": 105 },
+        { "id": "ownerA", "asset": "ui.containers.empty", "x": 897, "y": 229, "width": 82, "height": 82, "depth": 108 },
+        { "id": "ownerB", "asset": "ui.containers.empty", "x": 988, "y": 229, "width": 82, "height": 82, "depth": 108 },
+        { "id": "rewardRule", "asset": "ui.containers.empty", "x": 823, "y": 279, "width": 384, "height": 1, "depth": 104 },
+        { "id": "rewards", "asset": "ui.containers.empty", "x": 824, "y": 347, "width": 408, "height": 156, "depth": 106,
+          "data": { "regions": {
+            "picture": { "x": 0, "y": -16, "width": 77, "height": 77 },
+            "value": { "x": 0, "y": 47, "width": 104, "height": 60 }
+          } } },
+        { "id": "journeyTitle", "asset": "ui.containers.empty", "x": 640, "y": 446, "width": 420, "height": 38, "depth": 105 },
+        { "id": "route", "asset": "ui.containers.empty", "x": 640, "y": 536, "width": 828, "height": 136, "depth": 105,
+          "data": { "safeContentInset": { "left": 42, "right": 42, "top": 15, "bottom": 15 }, "regions": {
+            "landmark": { "x": -296, "y": 0, "width": 109, "height": 91 },
+            "openedLandmark": { "x": -312, "y": 0, "width": 96, "height": 85 },
+            "openedLock": { "x": -237, "y": -11, "width": 44, "height": 44 },
+            "openedNumber": { "x": -237, "y": 24, "width": 46, "height": 30 },
+            "divider": { "x": -201, "y": 0, "width": 1, "height": 70 },
+            "steps": { "x": 86, "y": 0, "width": 489, "height": 68 },
+            "walker": { "x": -291, "y": 0, "width": 74, "height": 74 },
+            "trail": { "x": -114, "y": 0, "width": 170, "height": 50 },
+            "forestName": { "x": 73, "y": 0, "width": 180, "height": 50 },
+            "woods": { "x": 259, "y": 0, "width": 164, "height": 90 }
+          } } },
+        { "id": "destinationSign", "asset": "ui.containers.empty", "x": 640, "y": 345, "width": 312, "height": 264, "depth": 105 },
+        { "id": "destinationName", "asset": "ui.containers.empty", "x": 640, "y": 524, "width": 600, "height": 52, "depth": 105 }
+      ]
+    }
+  }
+}

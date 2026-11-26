@@ -1,0 +1,4 @@
+{
+  "tool": "built-in image_gen",
+  "prompt": "Use case: precise-object-edit. Isolate ONLY the complete catacomb doorway illustration at the left of this supplied fantasy game image. Keep its beautiful carved fox face on the closed doors, complete grey stone arch with cyan runes, glowing cyan outline, both warm gold lanterns, a small full-width stone doorstep. Keep the exact approved art style and architecture. Remove absolutely everything else: all outer gold UI frames, labels, panels, apples, fox medallion, the gold trail and surrounding room. No lock on the doorway. Do not add any gold UI border fragment above the arch. Full complete arch in a transparent square canvas with generous clear padding; no cropped ornament. This is one isolated environment illustration, not a new interface. No writing, letters or numerals. Children who cannot read will recognize the doorway as the location to rescue a fox. No text or numbers. Genuine transparent background."
+}

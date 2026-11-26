@@ -1,0 +1,378 @@
+{
+  "date": "2026-11-19T20:57:51.139Z",
+  "checks": [
+    {
+      "name": "01/idle forward",
+      "pass": true,
+      "detail": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9
+      ]
+    },
+    {
+      "name": "01/idle bounded atlas",
+      "pass": true,
+      "detail": {
+        "width": 2048,
+        "height": 1536
+      }
+    },
+    {
+      "name": "01/idle visible, clear edges",
+      "pass": true,
+      "detail": {
+        "visible": 91762,
+        "edge": 0
+      }
+    },
+    {
+      "name": "01/attack forward",
+      "pass": true,
+      "detail": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6
+      ]
+    },
+    {
+      "name": "01/attack bounded atlas",
+      "pass": true,
+      "detail": {
+        "width": 2048,
+        "height": 1024
+      }
+    },
+    {
+      "name": "01/attack visible, clear edges",
+      "pass": true,
+      "detail": {
+        "visible": 89494,
+        "edge": 0
+      }
+    },
+    {
+      "name": "01/cast forward",
+      "pass": true,
+      "detail": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8
+      ]
+    },
+    {
+      "name": "01/cast bounded atlas",
+      "pass": true,
+      "detail": {
+        "width": 2048,
+        "height": 1536
+      }
+    },
+    {
+      "name": "01/cast visible, clear edges",
+      "pass": true,
+      "detail": {
+        "visible": 90084,
+        "edge": 0
+      }
+    },
+    {
+      "name": "02/idle forward",
+      "pass": true,
+      "detail": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12
+      ]
+    },
+    {
+      "name": "02/idle bounded atlas",
+      "pass": true,
+      "detail": {
+        "width": 2048,
+        "height": 2048
+      }
+    },
+    {
+      "name": "02/idle visible, clear edges",
+      "pass": true,
+      "detail": {
+        "visible": 67462,
+        "edge": 0
+      }
+    },
+    {
+      "name": "02/attack forward",
+      "pass": true,
+      "detail": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6
+      ]
+    },
+    {
+      "name": "02/attack bounded atlas",
+      "pass": true,
+      "detail": {
+        "width": 2048,
+        "height": 1024
+      }
+    },
+    {
+      "name": "02/attack visible, clear edges",
+      "pass": true,
+      "detail": {
+        "visible": 60778,
+        "edge": 0
+      }
+    },
+    {
+      "name": "02/cast forward",
+      "pass": true,
+      "detail": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8
+      ]
+    },
+    {
+      "name": "02/cast bounded atlas",
+      "pass": true,
+      "detail": {
+        "width": 2048,
+        "height": 1536
+      }
+    },
+    {
+      "name": "02/cast visible, clear edges",
+      "pass": true,
+      "detail": {
+        "visible": 64357,
+        "edge": 0
+      }
+    },
+    {
+      "name": "04/idle forward",
+      "pass": true,
+      "detail": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12
+      ]
+    },
+    {
+      "name": "04/idle bounded atlas",
+      "pass": true,
+      "detail": {
+        "width": 2048,
+        "height": 2048
+      }
+    },
+    {
+      "name": "04/idle visible, clear edges",
+      "pass": true,
+      "detail": {
+        "visible": 57213,
+        "edge": 0
+      }
+    },
+    {
+      "name": "04/attack forward",
+      "pass": true,
+      "detail": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6
+      ]
+    },
+    {
+      "name": "04/attack bounded atlas",
+      "pass": true,
+      "detail": {
+        "width": 2048,
+        "height": 1024
+      }
+    },
+    {
+      "name": "04/attack visible, clear edges",
+      "pass": true,
+      "detail": {
+        "visible": 50251,
+        "edge": 0
+      }
+    },
+    {
+      "name": "04/cast forward",
+      "pass": true,
+      "detail": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11
+      ]
+    },
+    {
+      "name": "04/cast bounded atlas",
+      "pass": true,
+      "detail": {
+        "width": 2048,
+        "height": 1536
+      }
+    },
+    {
+      "name": "04/cast visible, clear edges",
+      "pass": true,
+      "detail": {
+        "visible": 52369,
+        "edge": 0
+      }
+    },
+    {
+      "name": "tablet touch targets",
+      "pass": true,
+      "detail": [
+        {
+          "text": "1",
+          "w": 181.3125,
+          "h": 88
+        },
+        {
+          "text": "2",
+          "w": 181.3125,
+          "h": 88
+        },
+        {
+          "text": "3",
+          "w": 181.3125,
+          "h": 88
+        },
+        {
+          "text": "4",
+          "w": 181.3125,
+          "h": 88
+        },
+        {
+          "text": "5",
+          "w": 181.3125,
+          "h": 88
+        },
+        {
+          "text": "V klidu",
+          "w": 92,
+          "h": 46
+        },
+        {
+          "text": "Útok",
+          "w": 92,
+          "h": 46
+        },
+        {
+          "text": "Schopnost",
+          "w": 107.53125,
+          "h": 46
+        },
+        {
+          "text": "Přehrát",
+          "w": 81.3515625,
+          "h": 46
+        },
+        {
+          "text": "Tmavé pozadí",
+          "w": 122.8671875,
+          "h": 46
+        },
+        {
+          "text": "Ve hře →",
+          "w": 91.46875,
+          "h": 46
+        },
+        {
+          "text": "Světelný efekt",
+          "w": 125.53125,
+          "h": 46
+        }
+      ]
+    },
+    {
+      "name": "no horizontal overflow",
+      "pass": true,
+      "detail": false
+    },
+    {
+      "name": "reduced motion starts paused",
+      "pass": true
+    },
+    {
+      "name": "no runtime errors",
+      "pass": true,
+      "detail": []
+    }
+  ],
+  "passed": 31,
+  "forms": [
+    "01",
+    "02",
+    "04"
+  ],
+  "errors": [],
+  "output": "/Users/datamole/little-math-adventure/docs/design-drafts/fox-animation-v1/review"
+}

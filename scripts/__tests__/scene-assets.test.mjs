@@ -2,10 +2,39 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { fileURLToPath } from 'node:url';
 import { readFileSync } from 'node:fs';
-import { collectSceneAssets } from '../scene-assets.mjs';
+import { EventEmitter } from 'node:events';
+import { collectSceneAssets, sceneAssetsPlugin } from '../scene-assets.mjs';
 
 const root = fileURLToPath(new URL('../../', import.meta.url));
 const manifest = collectSceneAssets(root);
+
+test('catacomb entry and trial preload their shared frames and illustrated locks', () => {
+    for (const key of ['mathboard-plaque-v4', 'mathboard-answer-v4', 'catacomb-painted-door-closed', 'catacomb-crafted-paw-active', 'catacomb-crafted-module']) {
+        assert.ok(manifest.CatacombTrialScene.includes(key), key);
+    }
+    for (const key of ['catacomb-painted-door-open', 'catacomb-painted-door-closed', 'catacomb-progress-journey-lock-closed']) {
+        assert.ok(manifest.GuildScene.includes(key), key);
+    }
+    for (const key of ['mathboard-plaque-v4', 'mathboard-answer-v4', 'catacomb-rune-chamber', 'battle-dock-shield-normal-v3']) {
+        assert.ok(manifest.FoxLessonScene.includes(key), key);
+    }
+});
+
+test('source changes invalidate the next page load even when HMR is disabled', () => {
+    const watcher = new EventEmitter(), httpServer = new EventEmitter();
+    const module = { id: '\0virtual:scene-assets' }, invalidated = [];
+    sceneAssetsPlugin(root).configureServer({ watcher, httpServer, config: { server: { hmr: false } },
+        moduleGraph: { getModuleById: id => id === module.id ? module : undefined,
+            invalidateModule: value => invalidated.push(value) } });
+    watcher.emit('change', '/src/ui/CatacombTrialUI.ts');
+    watcher.emit('add', '/src/data/fox-speed-levels.json');
+    watcher.emit('unlink', '/src/ui/RemovedPanel.ts');
+    watcher.emit('change', '/unrelated.png');
+    assert.deepEqual(invalidated, [module, module, module]);
+    httpServer.emit('close');
+    watcher.emit('change', '/src/ui/CatacombTrialUI.ts');
+    assert.equal(invalidated.length, 3);
+});
 
 test('menu loads its artwork without combat and later-region assets', () => {
     assert.ok(manifest.MenuScene.includes('bg-menu-mathoria'));
@@ -34,7 +63,7 @@ test('progress checks do not pull the forest boss or catacomb fox into walking H
             assert.ok(!manifest[scene].includes(key), `${scene}: ${key}`);
         }
     }
-    assert.ok(manifest.CatacombTrialScene.includes('rune-fox-sheet'));
+    assert.ok(!manifest.CatacombTrialScene.includes('rune-fox-sheet'));
     assert.ok(manifest.GuardianLairScene.includes('spritesheet--38--sheet'));
 });
 
@@ -58,11 +87,11 @@ test('pet availability checks do not preload underwater combat sheets in either 
     }
 });
 
-test('Zyx quest illustrations use portraits without importing the alternate hero animation bundle', () => {
+test('guild portraits and fox previews avoid importing the alternate hero combat animation bundle', () => {
     for (const scene of ['GuildScene', 'SilverpondGuildMockScene']) {
-        // The original guild already uses the default heroine. Quest diagrams need
-        // only static portraits, including when the chosen hero is the boy knight.
-        assert.deepEqual(manifest[scene].filter(key => /^boy-knight-(?:idle|attack|walk)-sheet$/.test(key)), [], scene);
+        // Quest diagrams use portraits; the new practical fox preview additionally
+        // needs idle, but never the boy's attack/walk/defend animation bundle.
+        assert.deepEqual(manifest[scene].filter(key => /^boy-knight-(?:attack|walk|defend)-sheet$/.test(key)), [], scene);
         assert.ok(manifest[scene].includes('town-hud-hero-portrait'), scene);
         assert.ok(manifest[scene].includes('town-hud-heroine-portrait'), scene);
     }
@@ -87,4 +116,15 @@ test('navigation targets do not load town buildings inside the shop or battle', 
     assert.ok(manifest.SilverpondShopMockScene.includes('shop-coins-sheet'));
     assert.ok(!manifest.BattleScene.includes('spritesheet-zyx-transparent2-sheet'));
     assert.ok(manifest.GuildScene.includes('spritesheet-zyx-transparent2-sheet'));
+});
+
+test('every guide entry point preloads the shared confirmation and picture frame', () => {
+    for (const scene of ['ShopScene', 'ArenaScene', 'PythiaWorkshopScene', 'CrystalForgeScene',
+        'CrashSiteScene', 'ComicScene', 'GuildScene', 'ZyxRocketInterludeScene']) {
+        assert.ok(manifest[scene].includes('guide-confirm-frame-v1'), scene);
+    }
+    assert.ok(manifest.CrashSiteScene.includes('991bb46f-0417-4c22-8e3e-04cea0a3079a'));
+    for (const scene of ['SilverpondGuildMockScene', 'SilverpondFairyRewardScene', 'UnderwaterRoomScene']) {
+        assert.ok(manifest[scene].includes('silverpond-fairy-action-normal'), scene);
+    }
 });

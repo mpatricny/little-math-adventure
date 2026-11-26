@@ -1,0 +1,66 @@
+{
+  "tool": "image_gen.imagegen",
+  "date": "2026-11-18",
+  "assets": [
+    {
+      "name": "modal-frame",
+      "ref": "02-coop-choice-art.png",
+      "prompt": "Match this approved painted fantasy RPG reference precisely: deep navy enamel, warm polished gold and blue crystals. Children cannot rely on reading. No lettering, numerals, labels, UI prose or watermarks. These are separate production layers: all text, controls, hit targets and animations will be runtime. Generous transparent padding, nothing clipped; do not include scenery unless requested. One canonical source is reused for related controls, no independent button states. Extract only the large outer navy panel with golden border and top blue gem. Remove ALL inner contents: title frame, portraits, divider, choice cards, bottom button, all icons and any decoration within the interior. Reconstruct a continuous clean dark navy enamel interior. Preserve exact 1.36:1 width-to-height proportion, subtle blue shading and the complete outer frame; transparent outside.",
+      "source": "/Users/datamole/.codex/generated_images/01a1bfe3-6721-7d33-b884-18d02e756092/exec-e51366f0-ae31-4777-8ba2-d68c2d837928.png"
+    },
+    {
+      "name": "choice-frame",
+      "ref": "02-coop-choice-art.png",
+      "prompt": "Match this approved painted fantasy RPG reference precisely: deep navy enamel, warm polished gold and blue crystals. Children cannot rely on reading. No lettering, numerals, labels, UI prose or watermarks. These are separate production layers: all text, controls, hit targets and animations will be runtime. Generous transparent padding, nothing clipped; do not include scenery unless requested. One canonical source is reused for related controls, no independent button states. Extract a single unselected choice card frame from the upper right card, with its gold border and bottom dark navy label band. Empty the entire top illustration area and reconstruct calm blue enamel. Remove every illustration, selection check, glow and fox portrait. One frame only, rectangular landscape aspect 1.65:1. Preserve narrow double gold edges, bevels and the dark label band occupying bottom quarter. Transparent outside. No tiny gems in interior.",
+      "source": "/Users/datamole/.codex/generated_images/01a1bfe3-6721-7d33-b884-18d02e756092/exec-b103b611-6086-432b-8fee-00d044640a02.png"
+    },
+    {
+      "name": "training-picture",
+      "ref": "01-zyx-choice-art.png",
+      "prompt": "Match this approved painted fantasy RPG reference precisely: deep navy enamel, warm polished gold and blue crystals. Children cannot rely on reading. No lettering, numerals, labels, UI prose or watermarks. These are separate production layers: all text, controls, hit targets and animations will be runtime. Generous transparent padding, nothing clipped; do not include scenery unless requested. One canonical source is reused for related controls, no independent button states. Extract the narrative illustration from the left training card WITHOUT its frame: parchment with familiar apples and a gold circular repeat arrow at top, stepping footprints leading toward a small catacomb door at bottom left, friendly orange rune fox at bottom right. Keep the exact approved style and storytelling. No outer panel, no label band, no unrelated Zyx portrait. Arrange as a compact landscape pictogram fitting a 1.7:1 area. Transparent outside the little illustrated objects, preserve complete fox and door, no ground extending outside the vignette.",
+      "source": "/Users/datamole/.codex/generated_images/01a1bfe3-6721-7d33-b884-18d02e756092/exec-f0574611-7def-4820-9029-783a2b31b4fd.png"
+    },
+    {
+      "name": "progress-picture",
+      "ref": "01-zyx-choice-art.png",
+      "prompt": "Match this approved painted fantasy RPG reference precisely: deep navy enamel, warm polished gold and blue crystals. Children cannot rely on reading. No lettering, numerals, labels, UI prose or watermarks. These are separate production layers: all text, controls, hit targets and animations will be runtime. Generous transparent padding, nothing clipped; do not include scenery unless requested. One canonical source is reused for related controls, no independent button states. Extract the narrative illustration from the right progress card WITHOUT its frame: a short rising stone stair path with distant castle, bright steel sword above the top step and a red heart gaining one additional heart. Keep warm hopeful fantasy art, compact clear silhouette and the approved reference style. No outer panel, no label band, no player character needed. Arrange as a compact landscape pictogram fitting a 1.7:1 area. Transparent outside the vignette. Runtime hover will move the entire framed surface, no alternate pose.",
+      "source": "/Users/datamole/.codex/generated_images/01a1bfe3-6721-7d33-b884-18d02e756092/exec-5c8c7693-36e0-4b4b-b203-dbdf6f514d94.png"
+    },
+    {
+      "name": "zyx-portrait",
+      "ref": "01-zyx-choice-art.png",
+      "prompt": "Match this approved painted fantasy RPG reference precisely: deep navy enamel, warm polished gold and blue crystals. Children cannot rely on reading. No lettering, numerals, labels, UI prose or watermarks. These are separate production layers: all text, controls, hit targets and animations will be runtime. Generous transparent padding, nothing clipped; do not include scenery unless requested. One canonical source is reused for related controls, no independent button states. Extract ONLY the left framed portrait of Zyx, the friendly purple crystal mentor with spectacles and pointing hand. Keep his exact face, anatomy and complete round gold/blue-gem frame. Remove exclamation mark, background and every other object. Transparent outside including around pointing hand. Do not animate or change pose.",
+      "source": "/Users/datamole/.codex/generated_images/01a1bfe3-6721-7d33-b884-18d02e756092/exec-b7a3be87-d06f-4ebc-94bd-66d22c9537c6.png"
+    },
+    {
+      "name": "fox-reward",
+      "ref": "05-personal-fox-art.png",
+      "prompt": "Match this approved painted fantasy RPG reference precisely: deep navy enamel, warm polished gold and blue crystals. Children cannot rely on reading. No lettering, numerals, labels, UI prose or watermarks. These are separate production layers: all text, controls, hit targets and animations will be runtime. Generous transparent padding, nothing clipped; do not include scenery unless requested. One canonical source is reused for related controls, no independent button states. Extract ONLY the large orange rune fox standing in the lower left of the panel. Preserve its exact full-body pose, face, blue glowing markings, single raised paw, fluffy tail, and small ground patch below all paws. Remove the dotted magic trail, portraits, frames, rune stones, text areas, panels and background. One full-body creature on transparent background with generous padding. Do not alter anatomy or pose.",
+      "source": "/Users/datamole/.codex/generated_images/01a1bfe3-6721-7d33-b884-18d02e756092/exec-d7405f83-c105-47e0-abf4-4cf6cd8f7779.png"
+    },
+    {
+      "name": "tall-frame",
+      "prompt": "Use case: background-extraction. Extract exactly one EMPTY tall choice-card frame from the approved reference, using the left card. Preserve its polished gold border, blue diamond crest at top, deep navy enamel interior, and the separate-but-attached navy label band at bottom. Remove all apples, parchment, arrows, footprints, door, fox and text; reconstruct a completely empty dark navy interior. Preserve exact proportions (approximately 0.77 width-to-height including label band). Transparent outside; generous padding; no environment or cast shadow; no clipped ornaments. Match the existing game UI, for small children who cannot rely on reading; no lettering, labels or numerals. This is a single canonical structural layer reused for both choices. Illustration, text, hover/press highlights and hit area will be separate code layers with stable geometry; do not create hover variants. Keep safe content inset unobstructed.",
+      "ref": "01-zyx-choice-art.png",
+      "source": "/Users/datamole/.codex/generated_images/01a1bfe3-6721-7d33-b884-18d02e756092/exec-71d37ae7-046e-45bf-a21f-a433b8cc3e19.png"
+    },
+    {
+      "name": "training-compact",
+      "prompt": "Use case: background-extraction. Extract only the compact practice illustration from the upper middle choice card: wide little parchment with three apples on left, two apples on right, large curved circular gold repeat arrow between them, and the small framed fox head peeking above the middle. Remove the outer card, label band, selection check, glow, background, portrait, every other object. Match exact approved painted fantasy game style. Arrange the whole isolated pictogram as a WIDE shallow strip, 2.6:1 aspect, readable at 220 by 85 pixels. Transparent background. No text or numerals. Small children cannot read: apples, repeat arrow and fox must be large and unmistakable. This is one static illustration layer reused for both players; a shared frame, labels, hit area and animations are added in code. No baked hover states or button.",
+      "ref": "02-coop-choice-art.png",
+      "source": "/Users/datamole/.codex/generated_images/01a1bfe3-6721-7d33-b884-18d02e756092/exec-95a7211b-3bba-4bf2-ab08-8ca0190073b6.png"
+    },
+    {
+      "name": "progress-compact",
+      "prompt": "Use case: background-extraction. Extract only the compact progress illustration from the upper right choice card: short stone stairs rise left to right toward a shining silver sword and ONE large red heart, with small distant castle and path. Remove outer card, label band, check, selection glow, portraits, and other objects. Match exact approved painted fantasy game style. Arrange the complete isolated pictogram as a WIDE shallow strip, 2.6:1 aspect, readable at 220 by 85 pixels. Transparent background outside vignette. No text or numerals. Small children cannot read: stairs, sword and heart must be large and unmistakable. This is one static illustration layer reused for both players; shared frame, labels, hit area and animations are added in code. No baked hover states or button.",
+      "ref": "02-coop-choice-art.png",
+      "source": "/Users/datamole/.codex/generated_images/01a1bfe3-6721-7d33-b884-18d02e756092/exec-918500f8-8cbc-4ddf-86f5-a33c8cc3b479.png"
+    },
+    {
+      "name": "rune-pair",
+      "prompt": "Use case: stylized-concept. Create TWO states of the same single rune stone, side by side in equal square cells, matching the rune stones in supplied fantasy UI reference. Left neutral dark blue slate stone, right EXACTLY identical shape, same engraved angular diamond rune, same pose/scale/position, only rune and rim glow cyan with compact sparks. Short standing stone with chamfered angular edges and a tiny moss base, painted polished storybook RPG style. One object per cell, whole object safely within frame with ample transparent padding. Truly transparent background, no panel, no environment, no shadows beyond tiny moss base, no lettering or numerals. Players are small children: clear lit/unlit difference. Paired states generated together with identical silhouette and geometry, no separate trimming. Runtime text, interaction, labels and animation are separate code layers, one common frame reused, hit area never moves.",
+      "ref": "04-victory-improvement-art.png",
+      "source": "/Users/datamole/.codex/generated_images/01a1bfe3-6721-7d33-b884-18d02e756092/exec-24e5696c-e28c-4784-af14-fe0739c461b1.png"
+    }
+  ]
+}

@@ -2,7 +2,7 @@ import { getRelayUrlFromLocation, getRoomFromLocation } from './remoteMode';
 import { RemoteInputService } from './RemoteInputService';
 import { CONTROLLER_STYLES } from './controllerStyles';
 import { comparisonObjectScale } from '../ui/ComparisonPresentation';
-import { RemoteAction, RemoteCommand, RemoteControllerState, RemoteEnemyTarget, RemoteComparisonPrompt } from './types';
+import { RemoteAction, RemoteAnswerChoice, RemoteCommand, RemoteControllerState, RemoteEnemyTarget, RemoteComparisonPrompt } from './types';
 
 const service = RemoteInputService.getInstance();
 const COMMAND_TIMEOUT_MS = 1800;
@@ -203,11 +203,12 @@ function createComparisonCard(prompt: RemoteComparisonPrompt): HTMLElement {
 
 function createAnswerGrid(
     root: HTMLElement,
-    choices: { index: 0 | 1 | 2; label: string }[],
+    choices: RemoteAnswerChoice[],
     comparison?: RemoteComparisonPrompt,
 ): HTMLElement {
     const grid = createGrid('answers');
     if (comparison) grid.classList.add('remote-comparison-answers');
+    else if (choices.length === 4) grid.classList.add('remote-four-answers');
     choices.forEach((choice) => {
         const button = createButton(choice.label, (button) => {
             sendCommand(root, button, { type: 'answerChoice', index: choice.index });
@@ -291,8 +292,8 @@ function sendCommand(root: HTMLElement, source: HTMLButtonElement, command: Remo
     root.dataset.pending = 'true';
     source.dataset.pending = 'true';
     source.dataset.originalLabel = source.textContent ?? '';
-    const pictureChoice = source.querySelector('img') !== null;
-    if (!pictureChoice) source.textContent = 'Odesláno';
+    const keepAnswerVisible = source.querySelector('img') !== null || !!source.closest('.remote-four-answers');
+    if (!keepAnswerVisible) source.textContent = 'Odesláno';
 
     root.querySelectorAll<HTMLButtonElement>('button[data-command="true"]').forEach((button) => {
         button.dataset.disabledBeforePending = String(button.disabled);
@@ -313,7 +314,7 @@ function sendCommand(root: HTMLElement, source: HTMLButtonElement, command: Remo
             delete button.dataset.disabledBeforePending;
         });
         source.dataset.pending = 'false';
-        if (!pictureChoice) source.textContent = source.dataset.originalLabel ?? source.textContent;
+        if (!keepAnswerVisible) source.textContent = source.dataset.originalLabel ?? source.textContent;
         if (status) status.textContent = 'Zkus znovu';
     }, COMMAND_TIMEOUT_MS);
 }

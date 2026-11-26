@@ -1,0 +1,14 @@
+{
+  "errors": [],
+  "full": {
+    "expanded": true,
+    "ratio": 1.7768523338538955,
+    "exits": true
+  },
+  "screens": [
+    "docs/design-drafts/training-flow-v5/review/final-zyx.png",
+    "docs/design-drafts/training-flow-v5/review/final-coop.png",
+    "docs/design-drafts/training-flow-v5/review/final-victory.png",
+    "docs/design-drafts/training-flow-v5/review/final-pet.png"
+  ]
+}

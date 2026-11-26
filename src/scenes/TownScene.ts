@@ -21,6 +21,7 @@ import {
 import { getArenaChoiceOptions } from '../systems/ArenaChoiceSystem';
 import { WalkingSceneHud } from '../ui/WalkingSceneHud';
 import { recoverTownPlayers } from '../systems/TownRecoverySystem';
+import { hasGuildNews } from '../systems/GuildNotices';
 
 /** Building unlock order — condition checked against player state */
 const BUILDING_UNLOCK_CONFIG: {
@@ -135,12 +136,10 @@ export class TownScene extends Phaser.Scene {
             onMenu: () => this.quitToMenu(),
         });
 
-        // Show guild notification if mastery exams are available AND guild is unlocked
         const guildNotification = this.sceneBuilder.get<Phaser.GameObjects.Container>('guild-notification');
         if (guildNotification) {
             const isGuildRevealed = player.townProgress!.revealedBuildings.includes('guild');
-            const hasAvailableExams = MasterySystem.getInstance().getAvailableExams().length > 0;
-            guildNotification.setVisible(hasAvailableExams && isGuildRevealed);
+            guildNotification.setVisible(isGuildRevealed && hasGuildNews());
         }
 
         // Show forest exit if Arena Level 2 is complete

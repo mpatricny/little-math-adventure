@@ -1,0 +1,16 @@
+{
+ "battle":{"width":1280,"height":720,"safeInset":{"left":32,"right":1248,"top":24,"bottom":695},"elements":[
+  {"id":"battleTitle","x":440,"y":32,"width":400,"height":115,"depth":3},
+  {"id":"combatFox","x":307,"y":545,"width":128,"height":128,"depth":2},
+  {"id":"abilityDock","x":440,"y":167,"width":400,"height":118,"depth":4},
+  {"id":"enemyHealth","x":940,"y":466,"width":118,"height":58,"depth":3},
+  {"id":"effectHost","x":320,"y":526,"width":150,"height":130,"depth":5},
+  {"id":"heroEffect","x":180,"y":500,"width":160,"height":150,"depth":5},
+  {"id":"enemyEffect","x":916,"y":514,"width":180,"height":160,"depth":5}
+ ]},
+ "layers":{"width":960,"height":520,"safeInset":{"left":70,"right":890,"top":40,"bottom":480},"elements":[
+  {"id":"layerFox","x":110,"y":0,"width":512,"height":512,"depth":2},
+  {"id":"layerRunes","x":625,"y":54,"width":176,"height":410,"depth":3},
+  {"id":"layerEffect","x":145,"y":85,"width":385,"height":340,"depth":4}
+ ]}
+}

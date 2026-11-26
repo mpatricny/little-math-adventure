@@ -1,0 +1,45 @@
+/* The room owns the mosaic's actual position. The painting and its inlays share this coordinate system. */
+.fox-mural { width:100%;height:100%;display:block;overflow:visible;pointer-events:none; }
+.mural-etch { opacity:.72; }
+[data-constellation="rune"] .mural-etch { filter:grayscale(1) sepia(.45) hue-rotate(173deg) saturate(1.45);opacity:.44; }
+.mural-awakened { opacity:0;transition:opacity 650ms ease-in; }
+.mural-local-color { opacity:.92; }
+.mural-pool { opacity:0;transition:opacity 480ms ease-out; }
+.mural-pool.is-lit { opacity:1; }
+.mural-groove { fill:none;stroke:#b5c4ec;stroke-width:.9;opacity:.34; }
+.mural-wire { fill:none;stroke:#ffdf92;stroke-width:1.5;stroke-linecap:round;stroke-dasharray:1;stroke-dashoffset:1;opacity:0;filter:drop-shadow(0 0 2px #ff9e38); }
+.mural-wire.is-lit { opacity:1;stroke-dashoffset:0;transition:stroke-dashoffset 350ms ease-out; }
+.mural-seat { fill:#131d3a;stroke:#acbfd4;stroke-width:1;filter:drop-shadow(0 1px 1px #061024); }
+.mural-cold { opacity:1;filter:brightness(1.34);transition:opacity 220ms; }
+.mural-gem.is-lit .mural-seat { stroke:#cf9349; }
+.mural-hot { opacity:0;transform-origin:0 0; }
+.mural-gem.is-lit .mural-cold { opacity:0; }
+.mural-gem.is-lit .mural-hot { opacity:1;animation:mural-gem-kindles 720ms ease-out both; }
+.mural-planet-star { opacity:0; }
+.mural-gem[data-state="assisted"] .mural-planet-star { opacity:1; }
+.mural-orbit-shadow { stroke:#0d2d49;stroke-width:4;fill:none; }
+.mural-orbit { stroke:#ffdf89;stroke-width:1.7;fill:none; }
+.mural-orbit-core { fill:#83f0ef;stroke:#154664;stroke-width:1.75; }
+.mural-orbit-front { fill:none;stroke:#fff1ad;stroke-width:2.1;stroke-linecap:round; }
+.mural-corona { opacity:0;transform-origin:0 0; }
+.mural-fleck { fill:none;stroke-width:1.35;stroke-linecap:round;stroke:#fff1c3; }
+.mural-gem.is-lit .mural-corona { animation:mural-crown 550ms ease-out both; }
+.fox-mural.is-complete .mural-awakened { opacity:1; }
+.fox-mural.is-complete .mural-etch { opacity:.23;transition:opacity .6s; }
+.fox-mural.is-complete .mural-gem { opacity:.88;transition:opacity .7s; }
+.fox-mural.is-complete .mural-wire.is-lit { opacity:.83; }
+@keyframes mural-gem-kindles {
+  0% { opacity:.18;transform:scale(.65); }
+  24% { opacity:1;transform:scale(1.52);filter:drop-shadow(0 0 7px var(--mural-hue)); }
+  64% { transform:scale(.97);filter:drop-shadow(0 0 2px #ffc86c); }
+  100% { transform:scale(1);filter:drop-shadow(0 0 1.5px #ffd478); }
+}
+@keyframes mural-crown {
+  0% { opacity:0;transform:scale(.35); }
+  22% { opacity:1; }
+  100% { opacity:0;transform:scale(1.7); }
+}
+@media (prefers-reduced-motion:reduce) {
+  .fox-mural *, .fox-mural.is-complete * { animation:none!important;transition:none!important; }
+  .mural-gem.is-lit .mural-corona { opacity:0; }
+}

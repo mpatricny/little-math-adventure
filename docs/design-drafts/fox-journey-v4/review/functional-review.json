@@ -1,0 +1,101 @@
+{
+  "date": "2026-11-19",
+  "checks": [
+    {
+      "name": "One screen retains both fox portraits, five milestones and all three ability rows",
+      "pass": true
+    },
+    {
+      "name": "Ability rows sit below both portraits",
+      "pass": true
+    },
+    {
+      "name": "Three locks and zero appearance progress initially",
+      "pass": true
+    },
+    {
+      "name": "One reward unlocks shield and adds one shared contribution",
+      "pass": true
+    },
+    {
+      "name": "I to II replaces its value and adds only one new contribution",
+      "pass": true
+    },
+    {
+      "name": "Completed module cannot award again",
+      "pass": true
+    },
+    {
+      "name": "Fourth contribution advances appearance and ability together",
+      "pass": true
+    },
+    {
+      "name": "Current and next portraits advance consistently",
+      "pass": true
+    },
+    {
+      "name": "Changing module preserves earned appearance",
+      "pass": true
+    },
+    {
+      "name": "Player B has its own empty top and bottom progress",
+      "pass": true
+    },
+    {
+      "name": "B reward leaves A progress intact",
+      "pass": true
+    },
+    {
+      "name": "Tenth contribution advances to the third appearance",
+      "pass": true
+    },
+    {
+      "name": "Last appearance completes at 32 while some abilities still grow",
+      "pass": true
+    },
+    {
+      "name": "Final appearance has full bar and no nonexistent next goal",
+      "pass": true
+    },
+    {
+      "name": "All contributions remain unique at completion",
+      "pass": true
+    },
+    {
+      "name": "Hover preserves root hit area",
+      "pass": true
+    },
+    {
+      "name": "Pointer-out restores the whole surface",
+      "pass": true
+    },
+    {
+      "name": "Central reward opens the same module and owner as lower selection",
+      "pass": true
+    },
+    {
+      "name": "Tablet touch targets remain at least 44 CSS pixels",
+      "pass": true
+    },
+    {
+      "name": "Portrait has no horizontal page overflow",
+      "pass": true
+    },
+    {
+      "name": "Reduced motion retains both effects of the reward",
+      "pass": true
+    },
+    {
+      "name": "All images loaded",
+      "pass": true
+    },
+    {
+      "name": "No page errors or data writes",
+      "pass": true
+    }
+  ],
+  "errors": [],
+  "writes": [],
+  "passed": true,
+  "migrationDependency": "None: standalone in-memory prototype."
+}

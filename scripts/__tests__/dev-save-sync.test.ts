@@ -23,6 +23,13 @@ function save(id = 'profile-ada', attempts = 42): SaveSlotData {
     mathStats: { totalAttempts: attempts, correctAnswers: 38, recentResults: [true, false], problemStats: { a: { correct: 3 } } }, timestamp: attempts } as unknown as SaveSlotData;
 }
 const put = (data: SaveSlotData, slot = 0) => localStorage.setItem('littleMathAdventure_slot_' + slot, JSON.stringify(data));
+function evidencedSave(id: string, name: string, count: number): SaveSlotData {
+    const data = save(id, count); data.player.name = name; data.mathStats.correctAnswers = count;
+    data.mathStats.masteryData = { problemRecords: {}, learningHistory: { version: 1,
+        attempts: Array.from({ length: count }, (_, i) => ({ source: 'mastery', problemKey: name + ':' + i,
+            timestamp: 1788000000000 + i, correct: true, responseTimeMs: 3500, subAtomId: 'A1', form: 'result_unknown' })) } } as any;
+    return data;
+}
 let directory: string, store: any, fetcher: typeof fetch;
 beforeEach(async () => {
     storage(); directory = await mkdtemp(path.join(tmpdir(), 'dev-save-client-')); store = new DevSaveStore(directory);
@@ -37,6 +44,27 @@ beforeEach(async () => {
 afterEach(async () => { vi.restoreAllMocks(); await rm(directory, { recursive: true, force: true }); });
 
 describe('development saves across origins', () => {
+    it('persists answers immediately and backs up the latest answer without scanning slots on each tap', async () => {
+        put(save());
+        const sync = new DevSaveSync(fetcher);
+        await sync.initialize();
+        const unsubscribe = SaveSystem.observeChanges(change => sync.changed(change));
+        const loads = vi.spyOn(SaveSystem, 'load');
+        try {
+            for (const attempts of [43, 44]) {
+                const next = save('profile-ada', attempts);
+                SaveSystem.save(0, next.player, next.mathStats);
+                expect(SaveSystem.readSnapshot(0)?.mathStats.totalAttempts).toBe(attempts);
+            }
+            expect(loads).not.toHaveBeenCalled();
+            expect((await store.catalog()).records[0].save.mathStats.totalAttempts).toBe(42);
+            await sync.flush();
+            const backedUp = (await store.catalog()).records[0];
+            expect(backedUp.save.mathStats.totalAttempts).toBe(44);
+            expect(backedUp.revision).toBe(2);
+        } finally { unsubscribe(); }
+    });
+
     it('restores a new address, uploads more play, then updates the unchanged old address without duplicate heroes', async () => {
         const home = localStorage; put(save()); await new DevSaveSync(fetcher).initialize();
         storage(); await new DevSaveSync(fetcher).initialize();
@@ -144,5 +172,72 @@ describe('development saves across origins', () => {
         storage(); const old = save('profile-ada', 80); old.timestamp = Date.now(); put(old);
         await restoreDevSaves(catalog.records, catalog.serverId, fetcher);
         expect(SaveSystem.load(0)).toEqual(recovered);
+    });
+
+    it('explicitly replaces two verified legacy identities in full slots, archives originals and keeps other heroes', async () => {
+        put(evidencedSave('canonical-kitten', 'Kitten', 8), 1); put(evidencedSave('canonical-eli', 'Eli', 12), 6);
+        const catalog = await captureDevSaves(readDevSaves(), await fetchDevCatalog(fetcher), fetcher);
+        storage(); for (let slot = 0; slot < 8; slot++) put(save('unrelated-' + slot), slot);
+        put(evidencedSave('legacy-kitten', 'Kitten', 3), 1); put(evidencedSave('legacy-eli', 'Eli', 4), 6);
+        localStorage.setItem('littleMathAdventure_activeSlot', '6');
+        const replacements = [{ profileId: 'canonical-kitten', sourceSlot: 1, replacedProfileId: 'legacy-kitten' },
+            { profileId: 'canonical-eli', sourceSlot: 6, replacedProfileId: 'legacy-eli' }];
+        await expect(restoreDevSaves(catalog.records, catalog.serverId, fetcher, true)).rejects.toThrow('Není volné místo');
+        expect(await restoreDevSaves(catalog.records, catalog.serverId, fetcher, true, replacements)).toEqual([1, 6]);
+        expect(readDevSaves()).toHaveLength(8);
+        expect(SaveSystem.load(1)).toEqual(catalog.records[0].save); expect(SaveSystem.load(6)).toEqual(catalog.records[1].save);
+        expect(SaveSystem.load(2)).toEqual(save('unrelated-2'));
+        expect(localStorage.getItem('littleMathAdventure_activeSlot')).toBe('6');
+        const sync = JSON.parse(localStorage.getItem('littleMathAdventure_devSync_v1')!);
+        expect(sync.deleted).toEqual(expect.arrayContaining(['legacy-kitten', 'legacy-eli']));
+        const files = await readdir(path.join(directory, 'history'));
+        const archives = await Promise.all(files.filter(file => file.startsWith('browser-')).map(async file =>
+            JSON.parse(gunzipSync(await readFile(path.join(directory, 'history', file))).toString())));
+        expect(archives.some(archive => archive.writes.some((entry: any) => entry.save.player.gameplayProfileId === 'legacy-eli'))).toBe(true);
+    });
+
+    it('refuses an identity replacement if an old answer, time or newer progress would disappear', async () => {
+        put(evidencedSave('canonical-eli', 'Eli', 4));
+        const catalog = await captureDevSaves(readDevSaves(), await fetchDevCatalog(fetcher), fetcher);
+        storage(); const old = evidencedSave('legacy-eli', 'Eli', 3);
+        const replacement = [{ profileId: 'canonical-eli', sourceSlot: 0, replacedProfileId: 'legacy-eli' }];
+        old.mathStats.masteryData!.learningHistory!.attempts[0].problemKey = 'unique-local-answer'; put(old);
+        await expect(restoreDevSaves(catalog.records, catalog.serverId, fetcher, true, replacement)).rejects.toThrow('Chybí místní odpovědi');
+        expect(SaveSystem.load(0)).toEqual(old);
+        const timed = evidencedSave('legacy-eli', 'Eli', 3); timed.player.playTime = { version: 1, days: { '2026-11-17': 5000 } }; put(timed);
+        await expect(restoreDevSaves(catalog.records, catalog.serverId, fetcher, true, replacement)).rejects.toThrow('Chybí místní čas');
+        const advanced = evidencedSave('legacy-eli', 'Eli', 3); advanced.player.level = 8; put(advanced);
+        await expect(restoreDevSaves(catalog.records, catalog.serverId, fetcher, true, replacement)).rejects.toThrow('Starší uložená hra');
+        expect(SaveSystem.load(0)).toEqual(advanced);
+    });
+
+    it('rolls back explicit replacements on storage failure and rejects a changed target identity', async () => {
+        put(evidencedSave('canonical-kitten', 'Kitten', 8), 1); put(evidencedSave('canonical-eli', 'Eli', 12), 6);
+        const catalog = await captureDevSaves(readDevSaves(), await fetchDevCatalog(fetcher), fetcher);
+        const browser = storage(); const kitten = evidencedSave('legacy-kitten', 'Kitten', 3), eli = evidencedSave('legacy-eli', 'Eli', 4);
+        put(kitten, 1); put(eli, 6);
+        const replacements = [{ profileId: 'canonical-kitten', sourceSlot: 1, replacedProfileId: 'legacy-kitten' },
+            { profileId: 'canonical-eli', sourceSlot: 6, replacedProfileId: 'legacy-eli' }];
+        const original = browser.setItem; let failed = false;
+        vi.spyOn(browser, 'setItem').mockImplementation((key, value) => { if (key.endsWith('_6') && !failed) { failed = true; throw new Error('quota'); } original(key, value); });
+        await expect(restoreDevSaves(catalog.records, catalog.serverId, fetcher, true, replacements)).rejects.toThrow('quota');
+        expect(SaveSystem.load(1)).toEqual(kitten); expect(SaveSystem.load(6)).toEqual(eli);
+        put(evidencedSave('someone-else', 'Eli', 4), 6);
+        await expect(restoreDevSaves(catalog.records, catalog.serverId, fetcher, true, replacements)).rejects.toThrow('Profil se změnil');
+        expect(SaveSystem.load(1)).toEqual(kitten);
+    });
+
+    it('updates known heroes even when the archive contains more profiles than a full device can hold', async () => {
+        put(save('known-hero', 42)); const sync = new DevSaveSync(fetcher); await sync.initialize();
+        let catalog = await store.catalog();
+        await store.commit([{ sourceSlot: 0, baseRevision: 1, save: save('known-hero', 80) }], 'other-device', catalog.serverId);
+        for (let slot = 1; slot < 8; slot++) put(save('local-hero-' + slot), slot);
+        catalog = await store.catalog();
+        await store.commit([{ sourceSlot: 3, baseRevision: 0, save: save('extra-archived-hero', 20) }], 'other-device', catalog.serverId);
+        await new DevSaveSync(fetcher).initialize();
+        expect(SaveSystem.load(0)).toEqual(save('known-hero', 80));
+        expect(readDevSaves()).toHaveLength(8); expect(SaveSystem.load(3)).toEqual(save('local-hero-3'));
+        storage(); await new DevSaveSync(fetcher).initialize();
+        expect(readDevSaves()).toHaveLength(8); expect(SaveSystem.load(0)).toEqual(save('known-hero', 80));
     });
 });

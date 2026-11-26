@@ -1,0 +1,8 @@
+import {chromium} from 'playwright';import sharp from 'sharp';import fs from 'node:fs';
+const dir='docs/design-drafts/training-flow-v5/review',browser=await chromium.launch({headless:true}),page=await browser.newPage({viewport:{width:1440,height:1080}});
+const errors=[];page.on('pageerror',e=>errors.push(e.message));await page.goto('http://localhost:8013/docs/design-drafts/training-flow-v5/index.html');await page.waitForSelector('#ui-practice');
+const names=[];
+for(const screen of ['zyx','coop','victory','pet']){await page.click(`[data-screen="${screen}"]`);if(screen==='coop'){await page.click('#ui-practice0');await page.click('#ui-progress1');}if(screen==='victory')await page.click('#simulate-win');if(screen==='pet')await page.click('#simulate-trial');await page.waitForTimeout(1800);const file=`${dir}/final-${screen}.png`;await page.locator('#stage').screenshot({path:file});names.push(file);}
+await page.click('#full');const full=await page.evaluate(()=>{const r=document.querySelector('#content').getBoundingClientRect();return {expanded:document.body.classList.contains('theater'),ratio:r.width/r.height};});await page.keyboard.press('Escape');full.exits=await page.evaluate(()=>!document.body.classList.contains('theater'));await browser.close();
+const tiles=await Promise.all(names.map(p=>sharp(p).resize(670,377,{fit:'contain',background:'#101922'}).png().toBuffer()));await sharp({create:{width:1356,height:770,channels:4,background:'#101922'}}).composite(tiles.map((input,i)=>({input,left:(i%2)*686,top:Math.floor(i/2)*393}))).png().toFile(dir+'/overview.png');
+fs.writeFileSync(dir+'/final-presentation.json',JSON.stringify({errors,full,screens:names},null,2));console.log(JSON.stringify({errors,full,screens:names}));

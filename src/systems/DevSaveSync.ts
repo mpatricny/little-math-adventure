@@ -1,6 +1,7 @@
 import type { SaveSlotData } from '../types';
-import { SaveSystem } from './SaveSystem';
+import { SaveSystem, type SaveChange } from './SaveSystem';
 import { devSaveRollbackReasons } from './devSaveProgress.mjs';
+import { collectLearningAttempts, learningAttemptKey } from './LearningHistory';
 
 const endpoint = '/__dev-saves/api';
 const prefix = 'littleMathAdventure_slot_';
@@ -10,6 +11,8 @@ export type DevSaveRecord = Entry & { profileId: string; revision: number; recei
 export type DevSaveCatalog = { version: 1; serverId: string | null; records: DevSaveRecord[] };
 type SyncState = { serverId: string | null; profiles: Record<string, { revision: number; fingerprint: string }>; deleted: string[]; restoreEpoch?: string };
 type Write = Entry & { baseRevision: number };
+/** Explicit, reviewed old-identity replacement; never inferred from a player's name. */
+export type DevSaveReplacement = { profileId: string; sourceSlot: number; replacedProfileId: string };
 
 // Dirty detection only; server revision checks protect writes independently of this hash.
 function fingerprint(save: SaveSlotData): string {
@@ -103,7 +106,7 @@ export async function captureDevSaves(entries: Entry[], catalog: DevSaveCatalog,
 
 /** Explicit restore by identity. Archive the browser before any replacement; roll back failed writes. */
 export async function restoreDevSaves(records: DevSaveRecord[], serverId: string | null,
-    fetcher: typeof fetch = fetch, preserveActive = false): Promise<number[]> {
+    fetcher: typeof fetch = fetch, preserveActive = false, replacements: DevSaveReplacement[] = []): Promise<number[]> {
     validateCatalog({ version: 1, serverId, records });
     if (!records.length || records.length > 8) throw new Error('Vyber uložené hry');
     const originals = Array.from({ length: 8 }, (_, slot) => localStorage.getItem(prefix + slot));
@@ -112,15 +115,48 @@ export async function restoreDevSaves(records: DevSaveRecord[], serverId: string
     // Identity backfill during a read must be included in the rollback and concurrency check.
     originals.forEach((_, slot) => { originals[slot] = localStorage.getItem(prefix + slot); });
     const reserved = new Set(originals.flatMap((raw, slot) => raw !== null ? [slot] : []));
+    if (new Set(replacements.map(entry => entry.profileId)).size !== replacements.length
+        || new Set(replacements.map(entry => entry.sourceSlot)).size !== replacements.length
+        || replacements.some(entry => !records.some(record => record.profileId === entry.profileId))) {
+        throw new Error('Neplatné přiřazení profilů');
+    }
+    const assigned = new Set<number>();
     const assignments = records.map(remote => {
         const matching = local.filter(entry => entry.save.player.gameplayProfileId === remote.profileId);
         if (matching.length > 1) throw new Error('Duplicitní profil');
         if (matching[0] && devSaveRollbackReasons(matching[0].save, remote.save).length) throw new Error('Starší uložená hra');
         let target = matching[0]?.sourceSlot;
+        const replacement = replacements.find(entry => entry.profileId === remote.profileId);
+        if (replacement) {
+            const previous = local.find(entry => entry.sourceSlot === replacement.sourceSlot);
+            if (matching.length || !previous || previous.save.player.gameplayProfileId !== replacement.replacedProfileId
+                || previous.save.player.name !== remote.save.player.name
+                || previous.save.player.characterType !== remote.save.player.characterType) throw new Error('Profil se změnil');
+            // A changed identity must not disable the normal progress-loss guard.
+            const sameIdentity = { ...previous.save, player: { ...previous.save.player, gameplayProfileId: remote.profileId } };
+            if (devSaveRollbackReasons(sameIdentity, remote.save).length) throw new Error('Starší uložená hra');
+            const previousAnswers = collectLearningAttempts(previous.save.mathStats.masteryData);
+            const available = new Map<string, number>();
+            for (const attempt of collectLearningAttempts(remote.save.mathStats.masteryData)) {
+                const key = learningAttemptKey(attempt); available.set(key, (available.get(key) ?? 0) + 1);
+            }
+            if (!previousAnswers.length) throw new Error('Chybí ověření profilu');
+            for (const attempt of previousAnswers) {
+                const key = learningAttemptKey(attempt), count = available.get(key) ?? 0;
+                if (!count) throw new Error('Chybí místní odpovědi');
+                available.set(key, count - 1);
+            }
+            for (const [day, time] of Object.entries(previous.save.player.playTime?.days ?? {})) {
+                if (time > (remote.save.player.playTime?.days[day] ?? 0)) throw new Error('Chybí místní čas');
+            }
+            target = replacement.sourceSlot;
+        }
         if (target === undefined) {
             target = !reserved.has(remote.sourceSlot) ? remote.sourceSlot : originals.findIndex((raw, slot) => raw === null && !reserved.has(slot));
             if (target < 0) throw new Error('Není volné místo');
         }
+        if (assigned.has(target)) throw new Error('Duplicitní pozice');
+        assigned.add(target);
         reserved.add(target);
         return { sourceSlot: target, save: remote.save };
     });
@@ -134,6 +170,10 @@ export async function restoreDevSaves(records: DevSaveRecord[], serverId: string
         for (const entry of assignments) localStorage.setItem(prefix + entry.sourceSlot, JSON.stringify(entry.save));
         acknowledge({ version: 1, serverId, records }, assignments);
         const restoredState = state();
+        for (const replacement of replacements) {
+            delete restoredState.profiles[replacement.replacedProfileId];
+            if (!restoredState.deleted.includes(replacement.replacedProfileId)) restoredState.deleted.push(replacement.replacedProfileId);
+        }
         restoredState.restoreEpoch = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`;
         localStorage.setItem(stateKey, JSON.stringify(restoredState));
         if (!preserveActive || oldActive === null) localStorage.setItem('littleMathAdventure_activeSlot', String(assignments[0].sourceSlot));
@@ -182,7 +222,20 @@ export class DevSaveSync {
                 // Only a known, unchanged local copy can be replaced automatically.
                 return !!known && known.revision <= remote.revision && known.fingerprint === fingerprint(entry.save);
             });
-            if (updates.length) await restoreDevSaves(updates, catalog.serverId, this.fetcher, true);
+            // The archive can contain more identities than this device has slots.
+            // A full device must still receive updates for its existing heroes.
+            const existingUpdates = updates.filter(remote => local.some(entry => entry.save.player.gameplayProfileId === remote.profileId));
+            const missing = updates.filter(remote => !local.some(entry => entry.save.player.gameplayProfileId === remote.profileId));
+            const occupied = Array.from({ length: 8 }, (_, slot) => localStorage.getItem(prefix + slot)).filter(raw => raw !== null).length;
+            const free = 8 - occupied;
+            // On an established device, leave an oversized set for explicit selection.
+            // A new device receives a bounded initial set, keeping catalog order.
+            const additions = occupied === 0 ? missing.slice(0, free) : missing.length <= free ? missing : [];
+            const restorable = [...existingUpdates, ...additions];
+            if (restorable.length) {
+                await restoreDevSaves(restorable, catalog.serverId, this.fetcher, true);
+                this.restoreEpoch = state().restoreEpoch;
+            }
             await this.flush();
         } catch (error) { console.warn('[DevSaveSync] Local saves remain available; backup will retry.', error); }
         finally {
@@ -193,8 +246,10 @@ export class DevSaveSync {
 
     acceptsWrites(): boolean { return state().restoreEpoch === this.restoreEpoch; }
 
-    changed(): void {
-        if (!this.acceptsWrites()) return;
+    changed(change: SaveChange = 'slots'): void {
+        // Ordinary answers are already durable locally. The background flush batches
+        // those writes; additions, replacements and deletions need immediate identity tracking.
+        if (change === 'progress' || !this.acceptsWrites()) return;
         const ids = new Set(readDevSaves().map(entry => entry.save.player.gameplayProfileId!)), next = state();
         for (const id of this.knownIds) if (!ids.has(id) && !next.deleted.includes(id)) next.deleted.push(id);
         localStorage.setItem(stateKey, JSON.stringify(next));
@@ -234,7 +289,7 @@ export async function startDevSaveSync(): Promise<() => void> {
     SaveSystem.migrateOldSave();
     const sync = new DevSaveSync();
     await sync.initialize();
-    const unsubscribe = SaveSystem.observeChanges(() => sync.changed());
+    const unsubscribe = SaveSystem.observeChanges(change => sync.changed(change));
     const unguard = SaveSystem.guardWrites(() => {
         if (sync.acceptsWrites()) return true;
         // An old game tab must reload before it can save over a parent's explicit restore.
@@ -243,7 +298,20 @@ export async function startDevSaveSync(): Promise<() => void> {
         return false;
     });
     const flush = () => { void sync.flush(); };
-    const timer = window.setInterval(flush, 5000);
+    let idleFlush: number | undefined;
+    const queueFlush = () => {
+        if (!window.requestIdleCallback) { flush(); return; }
+        if (idleFlush !== undefined) return;
+        idleFlush = window.requestIdleCallback(() => { idleFlush = undefined; flush(); }, { timeout: 500 });
+    };
+    const onVisibility = () => { if (document.hidden) flush(); };
+    const timer = window.setInterval(queueFlush, 5000);
+    document.addEventListener('visibilitychange', onVisibility);
     window.addEventListener('online', flush); window.addEventListener('pagehide', flush);
-    return () => { unsubscribe(); unguard(); clearInterval(timer); window.removeEventListener('online', flush); window.removeEventListener('pagehide', flush); };
+    return () => {
+        unsubscribe(); unguard(); clearInterval(timer);
+        if (idleFlush !== undefined) window.cancelIdleCallback(idleFlush);
+        document.removeEventListener('visibilitychange', onVisibility);
+        window.removeEventListener('online', flush); window.removeEventListener('pagehide', flush);
+    };
 }

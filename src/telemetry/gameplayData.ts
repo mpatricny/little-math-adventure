@@ -1,4 +1,5 @@
 import type { SaveSlotData } from '../types';
+export { createRecordId as gameplayId } from '../utils/recordId';
 
 export type GameplayAttempt = {
     eventKey: string; source: 'mastery' | 'comparison' | 'activity'; sequenceIndex: number | null;
@@ -38,7 +39,7 @@ export function captureGameplay(slot: number, save: SaveSlotData): CapturedGamep
     }
     // Answers have their own append-only table; snapshots stay small throughout a long game.
     const { problemStats: _problemStats, masteryData: _masteryData, ...stats } = save.mathStats;
-    const { problemRecords: _records, comparisonChapter: chapter, ...masteryProgress } = mastery ?? {};
+    const { problemRecords: _records, learningHistory: _history, comparisonChapter: chapter, ...masteryProgress } = mastery ?? {};
     const { attempts: _attempts, ...comparisonProgress } = chapter ?? {};
     return JSON.parse(JSON.stringify({
         id: save.player.gameplayProfileId!, slotNumber: slot + 1, savedAt: save.timestamp,
@@ -47,11 +48,4 @@ export function captureGameplay(slot: number, save: SaveSlotData): CapturedGamep
         attempts: attempts.filter(a => Number.isFinite(a.responseTimeMs) && a.responseTimeMs >= 0
             && a.responseTimeMs <= 86_400_000 && (a.sequenceIndex===null||Number.isSafeInteger(a.sequenceIndex))),
     }));
-}
-
-export function gameplayId(): string {
-    if (typeof globalThis.crypto?.randomUUID === 'function') return crypto.randomUUID();
-    // HTTP LAN play can lack randomUUID; these are record identities, never credentials.
-    return '10000000-1000-4000-8000-100000000000'.replace(/[018]/g, c =>
-        (+c ^ (Math.random() * 16 >> 0) >> (+c / 4)).toString(16));
 }

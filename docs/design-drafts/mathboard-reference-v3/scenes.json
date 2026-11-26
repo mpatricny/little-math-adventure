@@ -1,0 +1,255 @@
+{
+  "version": 1,
+  "scenes": {
+    "MathBoardReference": {
+      "viewport": {
+        "width": 1326,
+        "height": 941
+      },
+      "safeContent": {
+        "question": {
+          "left": 305,
+          "top": 272,
+          "right": 1000,
+          "bottom": 378
+        },
+        "power": {
+          "left": 575,
+          "top": 107,
+          "right": 883,
+          "bottom": 199
+        },
+        "answers": {
+          "left": 319,
+          "top": 421,
+          "right": 1007,
+          "bottom": 535
+        },
+        "feedback": {
+          "left": 348,
+          "top": 540,
+          "right": 978,
+          "bottom": 608
+        },
+        "total": {
+          "left": 630,
+          "top": 800,
+          "right": 824,
+          "bottom": 906
+        }
+      },
+      "elements": [
+        {
+          "id": "board",
+          "asset": "ui.containers.empty",
+          "x": 663,
+          "y": 470.5,
+          "width": 1326,
+          "height": 941,
+          "depth": 100,
+          "visible": false
+        },
+        {
+          "id": "backdrop",
+          "asset": "ui.containers.empty",
+          "x": 663,
+          "y": 470.5,
+          "width": 1672,
+          "height": 941,
+          "depth": 0,
+          "visible": false
+        },
+        {
+          "id": "question",
+          "asset": "ui.containers.empty",
+          "x": 663,
+          "y": 323,
+          "width": 700,
+          "height": 140,
+          "depth": 101,
+          "visible": false
+        },
+        {
+          "id": "operandA",
+          "asset": "ui.containers.empty",
+          "x": 474,
+          "y": 327,
+          "width": 75,
+          "height": 100,
+          "depth": 102,
+          "visible": false
+        },
+        {
+          "id": "operator",
+          "asset": "ui.containers.empty",
+          "x": 560,
+          "y": 327,
+          "width": 75,
+          "height": 100,
+          "depth": 102,
+          "visible": false
+        },
+        {
+          "id": "operandB",
+          "asset": "ui.containers.empty",
+          "x": 645,
+          "y": 327,
+          "width": 75,
+          "height": 100,
+          "depth": 102,
+          "visible": false
+        },
+        {
+          "id": "equals",
+          "asset": "ui.containers.empty",
+          "x": 733,
+          "y": 327,
+          "width": 75,
+          "height": 100,
+          "depth": 102,
+          "visible": false
+        },
+        {
+          "id": "solution",
+          "asset": "ui.containers.empty",
+          "x": 842,
+          "y": 327,
+          "width": 94,
+          "height": 102,
+          "depth": 102,
+          "visible": false
+        },
+        {
+          "id": "answer0",
+          "asset": "ui.containers.empty",
+          "x": 423,
+          "y": 478,
+          "width": 208,
+          "height": 114,
+          "depth": 102,
+          "visible": false
+        },
+        {
+          "id": "answer1",
+          "asset": "ui.containers.empty",
+          "x": 663,
+          "y": 478,
+          "width": 208,
+          "height": 114,
+          "depth": 102,
+          "visible": false
+        },
+        {
+          "id": "answer2",
+          "asset": "ui.containers.empty",
+          "x": 903,
+          "y": 478,
+          "width": 208,
+          "height": 114,
+          "depth": 102,
+          "visible": false
+        },
+        {
+          "id": "power",
+          "asset": "ui.containers.empty",
+          "x": 741,
+          "y": 151,
+          "width": 350,
+          "height": 115,
+          "depth": 102,
+          "visible": false
+        },
+        {
+          "id": "feedback",
+          "asset": "ui.containers.empty",
+          "x": 663,
+          "y": 574,
+          "width": 630,
+          "height": 68,
+          "depth": 103,
+          "visible": false
+        },
+        {
+          "id": "progress0",
+          "asset": "ui.containers.empty",
+          "x": 213,
+          "y": 576,
+          "width": 34,
+          "height": 34,
+          "depth": 102,
+          "visible": false
+        },
+        {
+          "id": "progress1",
+          "asset": "ui.containers.empty",
+          "x": 254,
+          "y": 576,
+          "width": 34,
+          "height": 34,
+          "depth": 102,
+          "visible": false
+        },
+        {
+          "id": "progress2",
+          "asset": "ui.containers.empty",
+          "x": 295,
+          "y": 576,
+          "width": 34,
+          "height": 34,
+          "depth": 102,
+          "visible": false
+        },
+        {
+          "id": "speed",
+          "asset": "ui.containers.empty",
+          "x": 1084,
+          "y": 551,
+          "width": 102,
+          "height": 102,
+          "depth": 102,
+          "visible": false
+        },
+        {
+          "id": "total",
+          "asset": "ui.containers.empty",
+          "x": 718,
+          "y": 846,
+          "width": 160,
+          "height": 100,
+          "depth": 102,
+          "visible": false
+        },
+        {
+          "id": "totalLabel",
+          "asset": "ui.containers.empty",
+          "x": 718,
+          "y": 819,
+          "width": 150,
+          "height": 36,
+          "depth": 102,
+          "visible": false
+        },
+        {
+          "id": "totalValue",
+          "asset": "ui.containers.empty",
+          "x": 718,
+          "y": 874,
+          "width": 110,
+          "height": 70,
+          "depth": 102,
+          "visible": false
+        },
+        {
+          "id": "continue",
+          "asset": "ui.containers.empty",
+          "x": 802,
+          "y": 847,
+          "width": 84,
+          "height": 84,
+          "depth": 103,
+          "visible": false
+        }
+      ]
+    }
+  }
+}

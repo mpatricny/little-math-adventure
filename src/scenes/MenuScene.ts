@@ -8,7 +8,6 @@ import { SceneDebugger } from '../systems/SceneDebugger';
 import { SceneBuilder } from '../systems/SceneBuilder';
 import { requestLandscapeLock } from '../utils/mobileSetup';
 import { CoopSessionManager } from '../systems/CoopSessionManager';
-import { LocalizationService } from '../systems/LocalizationService';
 import { MedievalActionButton } from '../ui/MedievalActionButton';
 import { GameAccountControl } from '../ui/GameAccountControl';
 import { TvFullscreenController, TvFullscreenState } from '../remote/TvFullscreenController';
@@ -54,11 +53,8 @@ export class MenuScene extends Phaser.Scene {
     }
 
     create(): void {
-        // Safety: always end co-op session when returning to menu
-        const coop = CoopSessionManager.getInstance();
-        if (coop.isCoopActive()) {
-            coop.endSession();
-        }
+        // Inspecting profiles from the menu must preserve an active co-op session.
+        // An explicit solo/co-op/new-player action owns session teardown.
         if (GameStateManager.getInstance().endPreview()) MasterySystem.destroyInstance();
 
         // Run migration for old save format (only affects first run after update)
@@ -76,6 +72,7 @@ export class MenuScene extends Phaser.Scene {
             const firstEmptySlot = SaveSystem.findFirstEmptySlot();
 
             if (firstEmptySlot >= 0) {
+                CoopSessionManager.getInstance().endSession();
                 // Go directly to character select with the empty slot
                 this.scene.start('CharacterSelectNewScene', { slotIndex: firstEmptySlot });
             } else {
@@ -101,18 +98,17 @@ export class MenuScene extends Phaser.Scene {
             x: 1110, y: 170, width: 270, height: 112, depth: 40,
         }));
 
-        const localization = LocalizationService.getInstance();
         this.continueButton = this.createMenuButton({
             hostId: 'btnContinue',
             fallbackY: 280,
-            label: localization.resolve('$ui.buttons.BTN_004'),
+            label: 'HRÁČI',
             iconTexture: 'menu-icon-continue',
             onClick: onContinue,
         });
         this.newGameButton = this.createMenuButton({
             hostId: 'btnNewGame',
             fallbackY: 390,
-            label: localization.resolve('$ui.buttons.BTN_005'),
+            label: 'NOVÝ HRÁČ',
             iconTexture: 'menu-icon-new-game',
             onClick: onNewGame,
         });
@@ -335,9 +331,9 @@ export class MenuScene extends Phaser.Scene {
             return;
         }
 
-        this.continueButton.setEnabled(false).root.setVisible(false);
-        this.moveMenuButtonToHost(this.newGameButton, 'btnNewGameNoSave');
-        this.moveMenuButtonToHost(this.coopButton, 'btnCoopNoSave');
+        this.continueButton.setEnabled(true).root.setVisible(true);
+        this.moveMenuButtonToHost(this.newGameButton, 'btnNewGame');
+        this.moveMenuButtonToHost(this.coopButton, 'btnCoop');
         this.exportSavesButton.setEnabled(false).root.setVisible(false);
         this.moveButtonToHost(this.importSavesButton, 'btnImportSavesOnlyHost');
     }

@@ -1,0 +1,430 @@
+{
+  "errors": [],
+  "requests": [],
+  "formats": [
+    {
+      "sample": "addition",
+      "good": 5,
+      "bad": 0
+    },
+    {
+      "sample": "subtraction",
+      "good": 5,
+      "bad": 0
+    },
+    {
+      "sample": "multiplication",
+      "good": 5,
+      "bad": 0
+    },
+    {
+      "sample": "three",
+      "good": 5,
+      "bad": 0
+    },
+    {
+      "sample": "missing",
+      "good": 5,
+      "bad": 0
+    },
+    {
+      "sample": "missing-three",
+      "good": 5,
+      "bad": 0
+    },
+    {
+      "sample": "expression-number",
+      "good": 5,
+      "bad": 0
+    },
+    {
+      "sample": "expression-expression",
+      "good": 5,
+      "bad": 0
+    },
+    {
+      "sample": "long-expression",
+      "good": 5,
+      "bad": 0
+    },
+    {
+      "sample": "size",
+      "good": 5,
+      "bad": 0
+    },
+    {
+      "sample": "count",
+      "good": 5,
+      "bad": 0
+    },
+    {
+      "sample": "numbered",
+      "good": 5,
+      "bad": 0
+    },
+    {
+      "sample": "symbols",
+      "good": 5,
+      "bad": 0
+    },
+    {
+      "sample": "guided",
+      "good": 5,
+      "bad": 0
+    },
+    {
+      "sample": "independent",
+      "good": 5,
+      "bad": 0
+    }
+  ],
+  "modes": [
+    {
+      "mode": "attack",
+      "damage": 5,
+      "blocked": 0,
+      "displayedTotal": 5
+    },
+    {
+      "mode": "sword",
+      "damage": 7,
+      "blocked": 0,
+      "displayedTotal": 7
+    },
+    {
+      "mode": "pet",
+      "damage": 4,
+      "blocked": 0,
+      "displayedTotal": 4
+    },
+    {
+      "mode": "defense",
+      "damage": 0,
+      "blocked": 6,
+      "displayedTotal": 6
+    },
+    {
+      "mode": "practice",
+      "damage": 5,
+      "blocked": 0,
+      "displayedTotal": 5
+    },
+    {
+      "mode": "prep-sword",
+      "damage": 1,
+      "blocked": 0,
+      "displayedTotal": 1
+    },
+    {
+      "mode": "prep-shield",
+      "damage": 1,
+      "blocked": 0,
+      "displayedTotal": 1
+    },
+    {
+      "mode": "exam",
+      "damage": 1,
+      "blocked": 0,
+      "displayedTotal": 1
+    },
+    {
+      "mode": "catacomb",
+      "damage": 1,
+      "blocked": 0,
+      "displayedTotal": 1
+    },
+    {
+      "mode": "coop",
+      "damage": 5,
+      "blocked": 0,
+      "displayedTotal": 5
+    }
+  ],
+  "impacts": [
+    {
+      "which": "normal",
+      "phase": "done",
+      "raw": 13,
+      "defense": 3,
+      "blocked": 3,
+      "damage": 10,
+      "hpBefore": 20,
+      "hpAfter": 10,
+      "hpLost": 10,
+      "target": "enemy"
+    },
+    {
+      "which": "blocked",
+      "phase": "done",
+      "raw": 2,
+      "defense": 8,
+      "blocked": 2,
+      "damage": 0,
+      "hpBefore": 20,
+      "hpAfter": 20,
+      "hpLost": 0,
+      "target": "enemy"
+    },
+    {
+      "which": "zero",
+      "phase": "done",
+      "raw": 0,
+      "defense": 3,
+      "blocked": 0,
+      "damage": 0,
+      "hpBefore": 20,
+      "hpAfter": 20,
+      "hpLost": 0,
+      "target": "enemy"
+    },
+    {
+      "which": "last",
+      "phase": "done",
+      "raw": 13,
+      "defense": 3,
+      "blocked": 3,
+      "damage": 10,
+      "hpBefore": 6,
+      "hpAfter": 0,
+      "hpLost": 6,
+      "target": "enemy"
+    }
+  ],
+  "screens": [
+    "01-ready",
+    "02-hover",
+    "03-pressed",
+    "04-pointer-out",
+    "05-wrong",
+    "06-quick-transfer",
+    "07-correct-total",
+    "08-next-accumulated",
+    "09-complete-impact",
+    "slow-correct",
+    "slow-defense",
+    "format-addition-ready",
+    "format-addition-correct",
+    "format-addition-wrong",
+    "format-subtraction-ready",
+    "format-subtraction-correct",
+    "format-subtraction-wrong",
+    "format-multiplication-ready",
+    "format-multiplication-correct",
+    "format-multiplication-wrong",
+    "format-three-ready",
+    "format-three-correct",
+    "format-three-wrong",
+    "format-missing-ready",
+    "format-missing-correct",
+    "format-missing-wrong",
+    "format-missing-three-ready",
+    "format-missing-three-correct",
+    "format-missing-three-wrong",
+    "format-expression-number-ready",
+    "format-expression-number-correct",
+    "format-expression-number-wrong",
+    "format-expression-expression-ready",
+    "format-expression-expression-correct",
+    "format-expression-expression-wrong",
+    "format-long-expression-ready",
+    "format-long-expression-correct",
+    "format-long-expression-wrong",
+    "format-size-ready",
+    "format-size-correct",
+    "format-size-wrong",
+    "format-count-ready",
+    "format-count-correct",
+    "format-count-wrong",
+    "format-numbered-ready",
+    "format-numbered-correct",
+    "format-numbered-wrong",
+    "format-symbols-ready",
+    "format-symbols-correct",
+    "format-symbols-wrong",
+    "format-guided-ready",
+    "format-guided-correct",
+    "format-guided-wrong",
+    "format-independent-ready",
+    "format-independent-correct",
+    "format-independent-wrong",
+    "mode-attack-ready",
+    "mode-attack-correct",
+    "mode-sword-ready",
+    "mode-sword-correct",
+    "mode-pet-ready",
+    "mode-pet-correct",
+    "mode-defense-ready",
+    "mode-defense-correct",
+    "mode-defense-impact",
+    "mode-practice-ready",
+    "mode-practice-correct",
+    "mode-prep-sword-ready",
+    "mode-prep-sword-correct",
+    "mode-prep-shield-ready",
+    "mode-prep-shield-correct",
+    "mode-exam-ready",
+    "mode-exam-correct",
+    "mode-catacomb-ready",
+    "mode-catacomb-correct",
+    "mode-coop-ready",
+    "mode-coop-correct",
+    "impact-normal-block",
+    "impact-normal-done",
+    "impact-blocked-block",
+    "impact-blocked-done",
+    "impact-zero-block",
+    "impact-zero-done",
+    "impact-last-block",
+    "impact-last-done",
+    "demo-size",
+    "comparison-hints",
+    "six-problems",
+    "tablet-1024-missing",
+    "tablet-1024-wrong",
+    "tablet-1024-comparison",
+    "tablet-768-missing",
+    "tablet-768-wrong",
+    "tablet-768-comparison",
+    "canvas-addition-ready",
+    "canvas-addition-correct",
+    "canvas-missing-three-ready",
+    "canvas-missing-three-correct",
+    "canvas-expression-expression-ready",
+    "canvas-expression-expression-correct",
+    "canvas-size-ready",
+    "canvas-size-correct",
+    "canvas-numbered-ready",
+    "canvas-numbered-correct",
+    "canvas-symbols-ready",
+    "canvas-symbols-correct",
+    "no-words"
+  ],
+  "tablet": [
+    {
+      "viewport": {
+        "width": 1024,
+        "height": 768
+      },
+      "overflow": false,
+      "targets": [
+        {
+          "w": 130.4093137254902,
+          "h": 71.47525903294368
+        },
+        {
+          "w": 130.4093137254902,
+          "h": 71.47525903294368
+        },
+        {
+          "w": 130.4093137254902,
+          "h": 71.47525903294368
+        },
+        {
+          "w": 63.95072115384615,
+          "h": 63.95154755579171
+        },
+        {
+          "w": 52.665299773755656,
+          "h": 52.66598034006376
+        }
+      ]
+    },
+    {
+      "viewport": {
+        "width": 768,
+        "height": 1024
+      },
+      "overflow": false,
+      "targets": [
+        {
+          "w": 120.4656862745098,
+          "h": 66.02550478214665
+        },
+        {
+          "w": 120.4656862745098,
+          "h": 66.02550478214665
+        },
+        {
+          "w": 120.4656862745098,
+          "h": 66.02550478214665
+        },
+        {
+          "w": 59.07451923076923,
+          "h": 59.07545164718385
+        },
+        {
+          "w": 48.64960407239819,
+          "h": 48.65037194473964
+        }
+      ]
+    }
+  ],
+  "batch": {
+    "completions": 1,
+    "damage": 15,
+    "results": [
+      true,
+      true,
+      true
+    ],
+    "timings": [
+      300.18999999999994,
+      541.6999999999996,
+      316.7099999999998
+    ],
+    "bonuses": [
+      {
+        "damage": 1,
+        "baselineMs": 8000,
+        "quick": true
+      },
+      {
+        "damage": 1,
+        "baselineMs": 8000,
+        "quick": true
+      },
+      {
+        "damage": 1,
+        "baselineMs": 8000,
+        "quick": true
+      }
+    ],
+    "mode": "attack",
+    "problem": "addition-2",
+    "accepting": false,
+    "pendingNext": false,
+    "displayedTotal": 15,
+    "blocked": 0,
+    "teaching": false,
+    "completed": false,
+    "phase": "answered",
+    "quick": 1,
+    "quickBlock": false,
+    "impact": {
+      "phase": "done",
+      "raw": 15,
+      "defense": 3,
+      "blocked": 3,
+      "damage": 12,
+      "hpBefore": 20,
+      "hpAfter": 8,
+      "hpLost": 12,
+      "target": "enemy"
+    }
+  },
+  "text": [
+    {
+      "style": 2,
+      "source": 2
+    },
+    {
+      "style": 2,
+      "source": 2
+    },
+    {
+      "style": 2,
+      "source": 2
+    }
+  ],
+  "storage": []
+}

@@ -1,3 +1,5 @@
+import { ADVANCED_NODES, isAdvancedNode } from '../systems/AdvancedCurriculum';
+import { createRecordId } from '../utils/recordId';
 import type { Metric, ReportMeta } from '../../server/src/contracts/analytics';
 import { href, navigate } from './router';
 export function el<K extends keyof HTMLElementTagNameMap>(tag:K,text?:string,className?:string):HTMLElementTagNameMap[K]{const node=document.createElement(tag);
@@ -12,7 +14,7 @@ export function panel(title:string,...nodes:Node[]){const p=el('section',undefin
 export function empty(text='Ve vybraném období nejsou záznamy.'){return el('p',text,'empty');}
 export function badge(text:string,kind='muted'){return el('span',text,'badge '+kind);}
 export const status=(s:string)=>({ended:'Ukončeno',active:'Probíhá',paused:'Pozastaveno',unconfirmed:'Konec nepotvrzen',incomplete:'Neúplné',verified:'Ověřeno',unresolved:'Nejasná identita',locked:'Zamčeno',training:'Procvičování',secure:'Jistota',fluent:'Plynulost',mastery:'Mistrovství'}[s]??s);
-export function skillName(id:string){const match=/^([A-E])([1-4])$/.exec(id);if(!match)return ({size:'Velikost',count:'Počet',objects_number:'Předměty a čísla',number_symbol:'Čísla',expressions_supported:'Výrazy s pomocí',expressions:'Výrazy'}[id]??id);
+export function skillName(id:string){if(isAdvancedNode(id))return `${id} · ${ADVANCED_NODES[id].label}`;const match=/^([A-E])([1-4])$/.exec(id);if(!match)return ({size:'Velikost',count:'Počet',objects_number:'Předměty a čísla',number_symbol:'Čísla',expressions_supported:'Výrazy s pomocí',expressions:'Výrazy'}[id]??id);
     const range={A:'0–5',B:'6–8',C:'0–10',D:'11–20',E:'0–20'}[match[1]];const action={'1':'Sčítání','2':'Odčítání','3':'Tři operandy','4':'Mix'}[match[2]];
     return `${id} · ${action} ${match[1]==='E'&&['1','2'].includes(match[2])?'přes 10':'('+range+')'}`;}
 export const formName=(s:string)=>({result_unknown:'Najdi výsledek',missing_part:'Doplň chybějící část',compare_equation_vs_number:'Příklad a číslo',compare_equation_vs_equation:'Dva příklady'}[s]??s);
@@ -20,7 +22,7 @@ export const sceneNames:Record<string,string>={TownScene:'Město',ArenaScene:'Ar
 export const locationName=(value:string|null|undefined)=>value?(sceneNames[value]??value):'Nezaznamenáno';
 export const deviceName=(value:string|null|undefined)=>value?({desktop:'Počítač',tablet:'Tablet',mobile:'Mobil',unknown:'Nezaznamenáno'}[value]??value):'Nezaznamenáno';
 export function table(headers:string[],rows:Array<Array<string|number|null|Node>>,caption?:string){const host=el('div'),wrap=el('div',undefined,'table-wrap'),t=el('table');if(headers.length>=6)t.className='wide-table';
-    if(caption){const note=el('p',caption,'muted');note.id='table-note-'+crypto.randomUUID();t.setAttribute('aria-describedby',note.id);host.append(note);}
+    if(caption){const note=el('p',caption,'muted');note.id='table-note-'+createRecordId();t.setAttribute('aria-describedby',note.id);host.append(note);}
     const head=el('thead'),tr=el('tr');for(const title of headers){const th=el('th',title);th.scope='col';tr.append(th);}head.append(tr);t.append(head);
     const body=el('tbody');for(const row of rows){const tr=el('tr');for(const value of row){const td=el('td');if(value instanceof Node)td.append(value);else td.textContent=value==null?'Nezaznamenáno':String(value);tr.append(td);}body.append(tr);}t.append(body);wrap.append(t);if(!rows.length)wrap.append(empty());host.append(wrap);return host;}
 export function metricValue(m:Metric){return m.status==='unavailable'?'Ještě neměříme':m.unit==='ms'?duration(m.value):m.unit==='percent'?percent(m.value):number(m.value);}

@@ -1,0 +1,77 @@
+{
+  "records": [
+    {
+      "width": 1280,
+      "screen": "guild",
+      "smallTargets": [],
+      "missing": []
+    },
+    {
+      "width": 1280,
+      "screen": "arena",
+      "smallTargets": [],
+      "missing": []
+    },
+    {
+      "width": 1280,
+      "screen": "board",
+      "smallTargets": [],
+      "missing": []
+    },
+    {
+      "width": 1280,
+      "screen": "coop",
+      "smallTargets": [],
+      "missing": []
+    },
+    {
+      "width": 1024,
+      "screen": "guild",
+      "smallTargets": [],
+      "missing": []
+    },
+    {
+      "width": 1024,
+      "screen": "arena",
+      "smallTargets": [],
+      "missing": []
+    },
+    {
+      "width": 1024,
+      "screen": "board",
+      "smallTargets": [],
+      "missing": []
+    },
+    {
+      "width": 1024,
+      "screen": "coop",
+      "smallTargets": [],
+      "missing": []
+    },
+    {
+      "width": 768,
+      "screen": "guild",
+      "smallTargets": [],
+      "missing": []
+    },
+    {
+      "width": 768,
+      "screen": "arena",
+      "smallTargets": [],
+      "missing": []
+    },
+    {
+      "width": 768,
+      "screen": "board",
+      "smallTargets": [],
+      "missing": []
+    },
+    {
+      "width": 768,
+      "screen": "coop",
+      "smallTargets": [],
+      "missing": []
+    }
+  ],
+  "errors": []
+}

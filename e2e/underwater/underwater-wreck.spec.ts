@@ -1,4 +1,5 @@
 import { test, expect, openSeededGame, activateCoopSession, waitForScene } from '../arena/helpers/arena-harness';
+import { tapPracticeControl } from '../practice/controls';
 import { tap, solveOpenChest } from './hands-on-helpers';
 import type { Page } from 'playwright/test';
 import rooms from '../../public/assets/data/underwater-rooms.json';
@@ -138,30 +139,35 @@ for (const viewport of [{ width: 1280, height: 720, canvas: false }, { width: 10
             const s = (globalThis as any).__LITTLE_MATH_GAME__.scene.keys.UnderwaterRoomScene;
             s.scene.start('VictoryScene', { returnScene: 'UnderwaterRoomScene', returnData: { roomId: 'sp_wreck_hold', entryId: 'wreck' },
                 goldReward: 18, goldRewardA: 18, goldRewardB: 24, coopMode: true, playerAName: 'Alexandra Dlouhé Jméno', playerBName: 'Bartoloměj Druhý Hráč',
-                arenaCompleted: true, nextArenaLevel: 2, cityArenaLevel: 1, nextCityArenaLevel: 2,
                 crystalOverflow: true, unlockedPet: { name: pet.name, spriteKey: pet.spriteKey, animPrefix: pet.animPrefix },
                 crystalDrops: Array.from({ length: 7 }, (_, i) => ({ tier: 'shard', value: i + 1 })),
-                crystalLabels: Array.from({ length: 7 }, (_, i) => i % 2 ? 'Za bezchybný souboj!' : 'Za první dokončení vlny'),
+                crystalLabels: [],
             });
         }, pet);
         await waitForScene(page, 'VictoryScene');
         await page.screenshot({ path: `${prefix}-victory-disabled.png` });
         await page.waitForTimeout(1650);
         const vaudit = async () => expect(await page.evaluate(() => (globalThis as any).__LITTLE_MATH_GAME__.scene.keys.VictoryScene.auditLayout())).toEqual([]);
-        await vaudit(); await page.screenshot({ path: `${prefix}-victory-normal.png` });
-        await move(640, 556); await page.waitForTimeout(160); await vaudit(); await page.screenshot({ path: `${prefix}-victory-hover.png` });
+        await vaudit();
+        const shared = await page.evaluate(() => {
+            const body = (globalThis as any).__LITTLE_MATH_GAME__.scene.keys.VictoryScene.children.getByName('battleVictoryResult');
+            return [body.getByName('victoryRewardTitle').text, ...body.list.flatMap((group: any) => group.list?.map((child: any) => child.text) ?? [])];
+        });
+        expect(shared).toEqual(expect.arrayContaining(['Spolu', '+42']));
+        await page.screenshot({ path: `${prefix}-victory-normal.png` });
+        await move(640, 644); await page.waitForTimeout(160); await vaudit(); await page.screenshot({ path: `${prefix}-victory-hover.png` });
         await page.mouse.down(); await page.screenshot({ path: `${prefix}-victory-pressed.png` });
         await move(1180, 680); await page.mouse.up(); await vaudit();
-        await tap(page, 1044, 397); await vaudit(); await page.screenshot({ path: `${prefix}-victory-page2.png` });
-        expect(await page.evaluate(() => (globalThis as any).__LITTLE_MATH_GAME__.scene.keys.VictoryScene.children.list
-            .find((o: any) => o.name === 'victoryPageHost' && typeof o.text === 'string').text)).toBe('2/2');
-        await tap(page, 640, 556); await ready(page, 'sp_wreck_hold');
+        await tapPracticeControl(page, 'victoryNextHost'); await vaudit(); await page.screenshot({ path: `${prefix}-victory-page2.png` });
+        expect(await page.evaluate(() => (globalThis as any).__LITTLE_MATH_GAME__.scene.keys.VictoryScene.children.getByName('battleVictoryResult')
+            .getAll().find((o: any) => o.getByName?.('victoryPageHost')).getByName('victoryPageHost').text)).toBe('2/3');
+        await tapPracticeControl(page, 'victoryContinueHost'); await ready(page, 'sp_wreck_hold');
         await page.evaluate(() => (globalThis as any).__LITTLE_MATH_GAME__.scene.keys.UnderwaterRoomScene.scene.start('VictoryScene', {
             returnScene: 'UnderwaterRoomScene', returnData: { roomId: 'sp_wreck_hold', entryId: 'wreck' },
             goldReward: 5, enemyName: 'Hlídka vraku', crystalDrops: [], crystalLabels: [], crystalOverflow: false,
         }));
         await waitForScene(page, 'VictoryScene'); await page.waitForTimeout(1600); await vaudit();
         await page.screenshot({ path: `${prefix}-victory-repeat.png` });
-        await tap(page, 640, 556); await ready(page, 'sp_wreck_hold');
+        await tapPracticeControl(page, 'victoryContinueHost'); await ready(page, 'sp_wreck_hold');
     });
 }

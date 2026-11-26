@@ -6,6 +6,7 @@ import { underwaterWordCipher } from '../systems/UnderwaterWordCipher';
 import { cipherWord } from '../systems/puzzles/WordPuzzles';
 import type { PuzzleFamily, PuzzleInstance, PuzzleProfile } from '../types/puzzles';
 import Phaser from 'phaser';
+import { createZyxDialogPortrait } from '../ui/ZyxDialogPortrait';
 import type { EnemyDefinition, PlayerState } from '../types';
 import type { UnderwaterRoom } from '../types/underwater';
 import { GameStateManager } from '../systems/GameStateManager';
@@ -147,7 +148,7 @@ export class UnderwaterRoomScene extends Phaser.Scene {
             if (this.activePuzzle) stopObservingPuzzleViewState(this.activePuzzle.state);
         });
         if (this.loadFailed) {
-            this.ui.dialog('JEZERO SE NENAČETLO', 'Zkontroluj připojení k Wi-Fi. Tvůj postup je v bezpečí.',
+            this.ui.dialog('SPOJENÍ', '📶 ↻',
                 'ZKUSIT ZNOVU', () => this.scene.restart(this.entry), () => this.scene.start('MenuScene'), 'ZPĚT DO MENU');
             return;
         }
@@ -249,15 +250,12 @@ export class UnderwaterRoomScene extends Phaser.Scene {
             this.cameras.main.fadeOut(750, 4, 43, 55);
             this.time.delayedCall(770, () => this.scene.restart({ roomId: UNDERWATER_START, entryId: 'surface' }));
         };
-        this.ui.open('Šupina ti půjčí dech.');
+        this.ui.open('POD HLADINU');
         const hands = new SceneBuilder(this);
         hands.buildScene('UnderwaterHandsOn');
-        const portrait = waterHost(this.ui.builder, 'modalPortraitHost');
-        const zyx = this.add.sprite(portrait.x, portrait.y, 'spritesheet-zyx-transparent2-sheet', 0);
-        zyx.setScale(Math.min(portrait.width / zyx.width, portrait.height / zyx.height));
-        if (this.anims.exists('zyx-idle')) zyx.play('zyx-idle');
+        const zyx = createZyxDialogPortrait(this, waterHost(this.ui.builder, 'modalPortraitHost'));
         this.ui.modal!.add([zyx, waterArtwork(this, 'silverpond-water-breathing-scale', waterHost(hands, 'introScaleHost'))]);
-        this.ui.button(hands, 'iconDiveHost', '↓', dive, true, 40);
+        this.ui.confirmExplanation(dive);
     }
 
     private createParty(): void {
@@ -808,7 +806,7 @@ export class UnderwaterRoomScene extends Phaser.Scene {
                     this.eachPlayer(player => claimUnderwaterDepthCrystal(player));
                     sfx(this, 'reward.crystal');
                     crystal.setVisible(false); glow.setEnabled(false);
-                    this.ui.dialog('Strážce je svobodný.', 'Druhý krystal! Na hladině nás čeká Zyxova loď.', 'K LODI', () => {
+                    this.ui.dialog('KRYSTAL ZACHRÁNĚN', '💎 → 🚀', 'K LODI', () => {
                         this.takeExit('surface', 'surface');
                     }, () => this.ui.close(), 'JEŠTĚ PROZKOUMAT');
                 });

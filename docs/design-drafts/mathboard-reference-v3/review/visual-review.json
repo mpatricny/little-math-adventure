@@ -1,0 +1,39 @@
+{
+  "date": "2026-11-17",
+  "scope": "One functional arithmetic visual slice; independent from production game and saves",
+  "authorApproval": "pending",
+  "baseline": "User attachment codex-clipboard-26a32956-f59a-42ae-b1eb-77cd8a2622e9.png and training-modes-v1/03-mathboard-power-art.png",
+  "reviewedImages": [
+    "review/01-ready.png",
+    "review/answer-states.png",
+    "review/05-wrong.png",
+    "review/06-correct.png",
+    "review/08-quick.png",
+    "review/09-complete.png",
+    "review/tablet-1024-correct.png",
+    "review/tablet-768-correct.png",
+    "review/canvas-correct.png",
+    "review/reference-and-live.png"
+  ],
+  "visualFindings": {
+    "composition": "Original shallow parchment, decorative dark/gold plaques, wooden posts, arena, heroine, fox and turtle retained. Compared side by side with the supplied reference.",
+    "controls": "One canonical wood frame. Numerals optically centered; selected outlines remain inside bevel. Frame, mark and numeral share one moving surface, stable root hit area.",
+    "layout": "No text/button overlap observed in the reviewed desktop and tablet states. Runtime power and total fit their original plaques.",
+    "preReader": "Only Celkem appears as optional player-facing text. Muted and word-hidden tablet captures preserve the full number-selection, sword-strength, check/cross, object correction and continuation flow.",
+    "feedback": "Wrong answer supplies zero strength and demonstrates 2 apples plus 3 apples; correct answer enters the empty slot. Frame outline plus check/cross avoids relying on color alone.",
+    "aspect": "All complete bitmap art uniformly scaled. Intentional symmetric crop of outer scenery only. Original plaque and button proportions retained.",
+    "motion": "Surface lift/press, answer flight, total count and short power particle. No creature warping or fabricated animation.",
+    "renderers": "WebGL and Canvas inspected; text resolution/source resolution both 2."
+  },
+  "functionalReport": "review/functional-review.json",
+  "build": "npx vite build --config docs/design-drafts/mathboard-reference-v3/vite.config.ts passed",
+  "database": "No migration required: no DB middleware or client initialization in this preview. Browser observed zero API calls and zero localStorage writes.",
+  "limitations": [
+    "Only arithmetic is exposed; additional board variants wait for visual approval.",
+    "Decorative plaques and actors remain in the static reference backdrop for this isolated slice. Production scene-editor repositioning/replacement needs separate artwork layers.",
+    "Touch tests use browser emulation at tablet dimensions; no physical Samsung hardware was connected.",
+    "Bundled Gelasio replaces OS-specific Georgia so tablet rendering is deterministic. It is close to the reference, not an identical font.",
+    "No claim of child playtest or author visual approval."
+  ],
+  "tooling": "Playwright MCP was attempted but reported the shared browser in use. A separate Playwright browser performed the isolated visual and interaction checks without closing that browser."
+}

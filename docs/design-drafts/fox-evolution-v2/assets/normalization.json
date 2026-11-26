@@ -1,0 +1,86 @@
+{
+  "tool": "built-in image_gen; deterministic Sharp normalization",
+  "chroma": {
+    "key": "#00ff00",
+    "transparentThreshold": 18,
+    "opaqueThreshold": 180,
+    "despill": true,
+    "edgeContract": 1
+  },
+  "output": [
+    512,
+    512
+  ],
+  "independentTrimming": false,
+  "forms": {
+    "source": "sources/forms-key.png",
+    "grid": [
+      3,
+      2
+    ],
+    "cell": 512,
+    "sharedCrop": [
+      0,
+      0,
+      512,
+      512
+    ],
+    "sharedResize": [
+      432,
+      432
+    ],
+    "padding": 40,
+    "bounds": [
+      {
+        "left": 108,
+        "top": 51,
+        "right": 438,
+        "bottom": 432
+      },
+      {
+        "left": 94,
+        "top": 51,
+        "right": 427,
+        "bottom": 431
+      },
+      {
+        "left": 81,
+        "top": 51,
+        "right": 424,
+        "bottom": 432
+      },
+      {
+        "left": 105,
+        "top": 50,
+        "right": 463,
+        "bottom": 435
+      },
+      {
+        "left": 93,
+        "top": 51,
+        "right": 462,
+        "bottom": 437
+      }
+    ]
+  },
+  "expressions": {
+    "source": "sources/expressions-key.png",
+    "grid": [
+      3,
+      1
+    ],
+    "cell": 724,
+    "sharedResize": [
+      464,
+      464
+    ],
+    "padding": 24,
+    "recommended": 1
+  },
+  "runtime": {
+    "frame": 512,
+    "scale": 0.25,
+    "logicalFramePixels": 128
+  },
+  "status": "Static concepts. Common crop/scale preserves small source pose differences; not interchangeable animation frames."
+}

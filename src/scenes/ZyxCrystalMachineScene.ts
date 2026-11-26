@@ -103,7 +103,7 @@ export class ZyxCrystalMachineScene extends Phaser.Scene {
             }
         }
         if (this.depthCrystal && !this.textures.exists('underwater-depth-crystal')) {
-            new UnderwaterUI(this).dialog('Krystal se nenačetl', 'Zkontroluj připojení. Postup je uložený.',
+            new UnderwaterUI(this).dialog('SPOJENÍ', '📶 ↻',
                 'ZKUSIT ZNOVU', () => this.scene.restart({ crystal: 'depth', testMode: this.testMode }));
             return;
         }

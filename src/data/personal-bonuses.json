@@ -1,0 +1,10 @@
+{
+  "historySize": 10,
+  "minimumHistory": 5,
+  "maximumReferenceTimeMs": 120000,
+  "quickAttackDamage": 1,
+  "minimumPracticeAnswers": 5,
+  "minimumPracticeAccuracy": 0.9,
+  "minimumImprovement": 0.1,
+  "practiceMana": 1
+}

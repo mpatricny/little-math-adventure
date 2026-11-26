@@ -25,6 +25,7 @@ import {
 } from '../ui/PreparationTrainingOverlay';
 import { MathEngine } from '../systems/MathEngine';
 import { MasterySystem } from '../systems/MasterySystem';
+import { isAdvancedNode } from '../systems/AdvancedCurriculum';
 import { PREPARATION_CONFIG, PreparationSystem } from '../systems/PreparationSystem';
 import { CoopSessionManager } from '../systems/CoopSessionManager';
 import { getShopEquipment, type ShopCity } from '../systems/ShopCatalog';
@@ -277,10 +278,25 @@ export class ShopScene extends Phaser.Scene {
         this.preparationOverlay = new PreparationTrainingOverlay(this, {
             root,
             problemProvider: () => this.createPreparationProblems(),
+            nextAdaptiveProblem: () => {
+                const mastery = this.getPreparationMasterySystem();
+                if (!isAdvancedNode(mastery.getFrontierSubAtom())) return undefined;
+                const [key] = mastery.drawPreparationProblems(1);
+                return this.prepMathEngine.generateProblemFromKey(key) ?? undefined;
+            },
+            numberIntroduction: problem => this.getPreparationMasterySystem().getNumberIntroduction(problem, () => {
+                const coop = CoopSessionManager.getInstance();
+                if (coop.isCoopActive()) coop.persistActiveMasteryProgress();
+                else this.saveState();
+            }),
             layout: {
                 title: this.getOverlayPoint(root, 'prepOverlayTitleHost', 640, 100),
                 charges: this.getOverlayPoint(root, 'prepOverlayChargesHost', 640, 205),
                 mathBoard: this.getOverlayPoint(root, 'prepOverlayMathBoardHost', 640, 390),
+                result: this.getOverlayPoint(root, 'prepOverlayResultHost', 640, 350),
+                resultTitle: this.getOverlayPoint(root, 'prepOverlayResultTitleHost', 640, 240),
+                resultCharges: this.getOverlayPoint(root, 'prepOverlayResultChargesHost', 640, 350),
+                resultDetail: this.getOverlayPoint(root, 'prepOverlayResultDetailHost', 640, 450),
                 attempts: this.getOverlayPoint(root, 'prepOverlayAttemptsHost', 640, 535),
                 message: this.getOverlayPoint(root, 'prepOverlayMessageHost', 640, 580),
                 cancelButton: this.getOverlayPoint(root, 'prepOverlayCancelHost', 145, 655),
@@ -404,8 +420,10 @@ export class ShopScene extends Phaser.Scene {
                 attempt.correct,
                 attempt.responseTimeMs,
                 attempt.kind === 'sword' ? 'shop_prep_sword' : 'shop_prep_shield',
+                attempt.assisted,
             );
-            this.saveState();
+            if (coop.isCoopActive()) coop.persistActiveMasteryProgress();
+            else this.saveState();
         }
     }
 

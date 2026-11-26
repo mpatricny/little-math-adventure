@@ -1,0 +1,61 @@
+{
+  "date": "2026-11-18",
+  "scope": "Prototype-only locks, pet reward and Pythia guide",
+  "migrations": "None: in-memory synthetic review profiles; no database or saves",
+  "functional": {
+    "script": "../training-flow-v5/review/journey-verify.mjs",
+    "passed": 50,
+    "screenshots": 21,
+    "runtimeErrors": [],
+    "saveAPIRequests": 0,
+    "localStorage": 0,
+    "sessionStorage": 0
+  },
+  "visual": {
+    "viewports": [
+      {
+        "width": 1440,
+        "height": 1080
+      },
+      {
+        "width": 1024,
+        "height": 900
+      },
+      {
+        "width": 768,
+        "height": 1024
+      }
+    ],
+    "reviewed": [
+      "locks-refined-desktop.png",
+      "locks-open-tablet.png",
+      "locks-complete-portrait.png",
+      "lock-exam-tablet.png",
+      "lock-hover-portrait.png",
+      "lock-pressed-portrait.png",
+      "lock-pointer-out-portrait.png",
+      "lock-disabled-portrait.png",
+      "fox-guide-refined-desktop.png",
+      "fox-guide-refined-tablet.png",
+      "fox-guide-owned-portrait.png",
+      "guide-no-words-portrait.png",
+      "guide-reduced-motion.png",
+      "../../training-flow-v5/review/pet-refined-desktop.png",
+      "../../training-flow-v5/review/pet-refined-tablet.png",
+      "../../training-flow-v5/review/pet-upgrade-portrait.png"
+    ],
+    "stableHitArea": true,
+    "pointerOutTransform": "none",
+    "minimumGuideTarget": [
+      48,
+      48
+    ],
+    "readersGate": "Visual sequence and actual quantities remain when prose is hidden and audio muted.",
+    "corrections": "Repaired stacking context and checkmark size during visual review; replaced door crop with a fully isolated image-model doorway.",
+    "limitations": [
+      "No physical tablet/child playtest.",
+      "HTML prototype; production SceneBuilder/Canvas/WebGL integration is separate.",
+      "Active paw/amulet takes had slight silhouette drift; use canonical normal art with code light animation."
+    ]
+  }
+}

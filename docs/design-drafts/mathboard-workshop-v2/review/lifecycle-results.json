@@ -1,0 +1,37 @@
+{
+  "doubleAnswer": 1,
+  "switchDuringDemo": {
+    "id": "addition-0",
+    "teaching": false,
+    "results": 0,
+    "transients": 0
+  },
+  "slowShield": 3,
+  "coopOwner": 2,
+  "reminders": true,
+  "examNoReminders": true,
+  "textureResolutions": [
+    {
+      "style": 2,
+      "source": 2
+    },
+    {
+      "style": 2,
+      "source": 2
+    },
+    {
+      "style": 2,
+      "source": 2
+    },
+    {
+      "style": 2,
+      "source": 2
+    },
+    {
+      "style": 2,
+      "source": 2
+    }
+  ],
+  "storage": [],
+  "errors": []
+}

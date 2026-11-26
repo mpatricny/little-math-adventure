@@ -100,8 +100,8 @@
     {
         "id": "pet_catacomb_A",
         "name": "Runová liška",
-        "spriteKey": "rune-fox-sheet",
-        "animPrefix": "rune-fox",
+        "spriteKey": "companion-fox-01-idle-sheet",
+        "animPrefix": "companion-fox-01",
         "unlockedByEnemy": "catacomb_creature_A",
         "requiredAmulet": {
             "tier": "shard",

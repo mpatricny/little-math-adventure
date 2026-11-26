@@ -19,7 +19,7 @@ for (const renderer of ['canvas', 'webgl']) {
         await waitForScene(page, 'GuildScene');
         await page.evaluate(() => (window as any).__LITTLE_MATH_GAME__.scene.keys.GuildScene.masteryMapOverlay.show());
         await page.waitForTimeout(300);
-        expect(await page.evaluate(() => (window as any).__LITTLE_MATH_GAME__.scene.keys.GuildScene.masteryMapOverlay.scrollPanel.getContent().getByName('comparisonMapNode') !== null)).toBe(true);
+        expect(await page.evaluate(() => (window as any).__LITTLE_MATH_GAME__.scene.keys.GuildScene.masteryMapOverlay.scrollPanel.getContent().getByName('learningBand:A').getByName('comparisonMapNode') !== null)).toBe(true);
         await page.screenshot({path:`artifacts/learning-qa/map-${renderer}-tablet.png`});
         const cdp = await context.newCDPSession(page);
         const box = (await page.locator('canvas').boundingBox())!;
@@ -31,11 +31,12 @@ for (const renderer of ['canvas', 'webgl']) {
         await page.screenshot({path:`artifacts/learning-qa/map-${renderer}-scrolled.png`});
         await page.evaluate(() => (window as any).__LITTLE_MATH_GAME__.scene.keys.GuildScene.masteryMapOverlay.scrollPanel.setScrollOffset(0));
         const node = await page.evaluate(() => {
-            const root=(window as any).__LITTLE_MATH_GAME__.scene.keys.GuildScene.masteryMapOverlay.scrollPanel.getContent().getByName('comparisonMapNode');
+            const root=(window as any).__LITTLE_MATH_GAME__.scene.keys.GuildScene.masteryMapOverlay.scrollPanel.getContent().getByName('learningBand:A').getByName('comparisonMapNode');
             const p=root.getWorldTransformMatrix().transformPoint(0,0);return {x:p.x,y:p.y};
         });
         const point=touch(node.x,node.y);
         await cdp.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[point]});
+        await page.evaluate(() => new Promise<void>(resolve => (window as any).__LITTLE_MATH_GAME__.events.once('poststep', () => resolve())));
         await cdp.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});
         await page.waitForTimeout(100);
         expect(await page.evaluate(() => (window as any).__LITTLE_MATH_GAME__.scene.keys.GuildScene.masteryMapOverlay.scrollPanel.getContent().getByName('comparisonMapDetail') !== null)).toBe(true);
@@ -47,10 +48,13 @@ for (const renderer of ['canvas', 'webgl']) {
         });
         expect(resolutions).toBe(true);
         const arithmeticNode = await page.evaluate(() => {
-            const node=(window as any).__LITTLE_MATH_GAME__.scene.keys.GuildScene.masteryMapOverlay.scrollPanel.getContent().getByName('masteryMapNode:A1');
+            const overlay=(window as any).__LITTLE_MATH_GAME__.scene.keys.GuildScene.masteryMapOverlay;
+            overlay.scrollPanel.setScrollOffset(0);
+            const node=overlay.scrollPanel.getContent().getByName('learningBand:A').getByName('masteryMapNode:A1');
             const p=node.getWorldTransformMatrix().transformPoint(0,0);return {x:p.x,y:p.y};
         });
         await cdp.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[touch(arithmeticNode.x,arithmeticNode.y)]});
+        await page.evaluate(() => new Promise<void>(resolve => (window as any).__LITTLE_MATH_GAME__.events.once('poststep', () => resolve())));
         await cdp.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});
         await page.waitForTimeout(100);
         expect(await page.evaluate(() => [...(window as any).__LITTLE_MATH_GAME__.scene.keys.GuildScene.masteryMapOverlay.expandedSubAtoms])).toEqual(['A1']);

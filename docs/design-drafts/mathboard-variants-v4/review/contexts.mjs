@@ -1,0 +1,30 @@
+import {chromium} from 'playwright';
+import fs from 'node:fs';
+const dir='docs/design-drafts/mathboard-variants-v4/review',report={errors:[],contexts:[],storage:[]};
+const browser=await chromium.launch({headless:true,args:['--use-gl=angle','--use-angle=swiftshader','--enable-unsafe-swiftshader','--enable-webgl']});
+const page=await browser.newPage({viewport:{width:1024,height:768}});
+page.on('pageerror',e=>report.errors.push(e.message));
+await page.goto('http://localhost:8013/docs/design-drafts/mathboard-variants-v4/index.html');
+await page.waitForFunction(()=>window.variants?.state.accepting);
+for(const mode of ['attack','sword','prep-sword','prep-shield','exam','catacomb']){
+ await page.evaluate(mode=>window.variants.choose('addition',mode,1),mode);
+ await page.waitForFunction(()=>window.variants.state.accepting);await page.waitForTimeout(250);
+ await page.locator('#game').screenshot({path:`${dir}/context-${mode}-tablet.png`});
+ const box=await page.locator('canvas').boundingBox();await page.mouse.click(box.x+663*box.width/1326,box.y+499*box.height/941);
+ await page.waitForFunction(()=>window.variants.state.pendingNext);
+ const state=await page.evaluate(()=>window.variants.state);
+ if(!state.results[0])throw Error(mode+' failed');
+ const combat=['attack','sword'].includes(mode);
+ if(!combat&&(state.quick!==0||!state.context.visible))throw Error(mode+' combat UI leaked');
+ await page.locator('#game').screenshot({path:`${dir}/context-${mode}-correct.png`});
+ await page.evaluate(()=>window.variants.view.advance());
+ await page.waitForFunction(()=>window.variants.state.completed||window.variants.state.impact.phase==='done');
+ await page.locator('#game').screenshot({path:`${dir}/context-${mode}-done.png`});
+ report.contexts.push({mode,state:await page.evaluate(()=>window.variants.state)});
+}
+await page.goto('http://localhost:8013/docs/design-drafts/mathboard-variants-v4/index.html?renderer=canvas&mode=exam');await page.waitForFunction(()=>window.variants?.state.accepting);
+report.canvas=await page.evaluate(()=>window.variants.scene.game.renderer.type);
+report.storage=await page.evaluate(()=>Object.keys(localStorage));
+fs.writeFileSync(dir+'/context-review.json',JSON.stringify(report,null,2));await browser.close();
+console.log(JSON.stringify({contexts:report.contexts.length,errors:report.errors,canvas:report.canvas,storage:report.storage}));
+if(report.errors.length)process.exitCode=1;

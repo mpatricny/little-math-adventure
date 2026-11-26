@@ -1,10 +1,14 @@
+import { knownAdvancedArithmetic } from './AdvancedReview';
+import { advancedCoopWindow, advancedEvidence, advancedExamPlan, advancedIndependent, distinctAdvancedSuccesses, drawAdvancedCoopKeys } from './AdvancedAssessment';
+import { drawAdvancedExamKeys, isAdvancedNode } from './AdvancedCurriculum';
+import { advancedIntroduction, advancedNodeReady, advancedProgressTarget, drawAdvancedKeys, focusAdvancedExamRetry, recordAdvancedAttempt } from './AdvancedScheduler';
 import {
     BandId, SubAtomId, SubAtomNumber, ProblemForm, ExamType, MasteryTargetId,
     MasteryData, SubAtomState, MasteryAttempt, ProblemDefinition,
     TrialTier, ExamConfig, EXAM_CONFIGS, MathProblem,
     ALL_BANDS, ALL_SUB_ATOM_NUMBERS, ALL_PROBLEM_FORMS,
 } from '../types';
-import { getLearningBand, getLearningFrontier, isLearningBandDeferred } from './LearningProgress';
+import { ensureAdvancedLearningBands, getLearningBand, getLearningFrontier, getLearningLevel, isLearningBandDeferred } from './LearningProgress';
 import { GameStateManager } from './GameStateManager';
 import { ProblemDatabase } from './ProblemDatabase';
 import { ManaSystem } from './ManaSystem';
@@ -12,6 +16,12 @@ import { CrystalSystem } from './CrystalSystem';
 import { ProgressionSystem } from './ProgressionSystem';
 import { consumeObservation, observationKey } from '../telemetry/ProblemObservation';
 import { DailyProgressSystem } from './DailyProgressSystem';
+import { retainLearningHistory } from './LearningHistory';
+import { getCatacombReadiness, reconcilePracticeSelection } from './PracticeProgress';
+import { CoopSessionManager } from './CoopSessionManager';
+import { drawPracticeProblemKeys } from './PracticeProblems';
+import { generateComparisonPracticeProblem } from './ComparisonLearningSystem';
+import { canDrawPracticeNumbers, practiceNumberMask, recentPracticeNumbers, rememberPracticeNumbers } from './PracticeNumberLimits';
 
 import { getThresholdsForSubAtom } from './MasteryThresholds';
 import { getPlayerAttackProblemCount } from './CombatAttackSystem';
@@ -92,7 +102,10 @@ export class MasterySystem {
      */
     setActiveData(data: MasteryData | null): void {
         this.activeData = data;
-        if (data) this.ensureComparisonChapter(data);
+        if (data) {
+            ensureAdvancedLearningBands(data);
+            this.ensureComparisonChapter(data);
+        }
     }
 
     private get data(): MasteryData {
@@ -144,8 +157,34 @@ export class MasterySystem {
         return createComparisonTrainingProblems(chapter, count);
     }
 
+    /** Null means Dál; otherwise every combat source uses this child's selected skill. */
+    drawPracticeBattleProblems(count: number, fromKey: (key: string) => MathProblem | null): MathProblem[] | null {
+        const data = this.data;
+        const selection = reconcilePracticeSelection(data, CoopSessionManager.getInstance().getFoxProgressForMastery(data));
+        if (selection.mode === 'progress') return null;
+        const size = Number.isFinite(count) ? Math.max(0, Math.min(20, Math.floor(count))) : 0;
+        if (selection.targetId === 'comparison_symbols') {
+            const chapter = this.getComparisonChapterState();
+            const savedCursor = this.data.practice?.comparisonCursor;
+            const seed = Math.max(this.data.globalSolveSequence, Number.isSafeInteger(savedCursor) ? savedCursor! : 0);
+            const recent = recentPracticeNumbers(this.data);
+            const problems = Array.from({ length: size }, (_, index) => {
+                const problem = generateComparisonPracticeProblem(chapter, seed + index,
+                    candidate => canDrawPracticeNumbers(practiceNumberMask(candidate), recent));
+                rememberPracticeNumbers(recent, practiceNumberMask(problem));
+                return problem;
+            });
+            this.data.practice!.comparisonCursor = seed + size;
+            this.data.practice!.recentNumberMasks = recent;
+            return problems;
+        }
+        return drawPracticeProblemKeys(this.data, selection.targetId, size)
+            .map(fromKey).filter((problem): problem is MathProblem => problem !== null);
+    }
+
     recordComparisonSolve(problem: MathProblem, correct: boolean, responseTimeMs: number, assisted: boolean): void {
         const data = this.data;
+        retainLearningHistory(data);
         data.globalSolveSequence++;
         recordChapterAttempt(
             this.getComparisonChapterState(),
@@ -158,6 +197,7 @@ export class MasterySystem {
         const attempt=this.getComparisonChapterState().attempts.at(-1);
         if(attempt){const key=observationKey(problem);attempt.observation=consumeObservation(key,
             `comparison:${attempt.sequenceIndex}:${attempt.timestamp}:${key}`);}
+        retainLearningHistory(data);
         // Co-op checkpoints use their explicit player tracks in CoopSessionManager.
         if (!this.activeData) this.gameState.save();
     }
@@ -189,6 +229,12 @@ export class MasterySystem {
         return getLearningFrontier(this.data);
     }
 
+    getNumberIntroduction(problem: MathProblem, onComplete: () => void) {
+        const intro = problem.masteryKey && advancedIntroduction(this.data, problem.masteryKey);
+        if (!intro) return undefined;
+        return { lines: intro.lines, complete: () => { intro.complete(); onComplete(); } };
+    }
+
     /** Base problems from the active hero's power, in solo and co-op alike. */
     getProblemsPerTurn(): number {
         const player = this.gameState.getPlayer();
@@ -197,32 +243,7 @@ export class MasterySystem {
 
     /** Calculate player level from mastery progress */
     getPlayerLevel(): number {
-        let level = 1; // Base level
-        for (const band of ALL_BANDS) {
-            // Each sub-atom exam pass (Secure+) = +1
-            for (const num of ALL_SUB_ATOM_NUMBERS) {
-                const id = `${band}${num}` as SubAtomId;
-                const state = this.data.subAtoms[id].state;
-                if (state === 'secure' || state === 'fluent' || state === 'mastery') {
-                    level++;
-                }
-            }
-            // Each band gate pass (Secure+) = +1
-            const bandState = this.data.bands[band].state;
-            if (bandState === 'secure' || bandState === 'fluent' || bandState === 'mastery') {
-                level++;
-            }
-        }
-
-        // Subtract placement-secured levels (band selection shouldn't boost combat stats)
-        const startBand = this.data.selectedStartBand;
-        if (startBand) {
-            const startIndex = ALL_BANDS.indexOf(startBand);
-            const placementLevels = startIndex * 5; // 4 sub-atoms + 1 gate per skipped band
-            level -= placementLevels;
-        }
-
-        return Math.max(1, level); // Max: 1 + 20 sub-atoms + 5 gates = 26 (minus placement)
+        return getLearningLevel(this.data);
     }
 
     // ========================================
@@ -314,6 +335,15 @@ export class MasterySystem {
     /** Progress toward the standard exam for one training sub-atom. */
     getSubAtomExamProgress(subAtomId: SubAtomId): SubAtomExamProgress {
         const sa = this.data.subAtoms[subAtomId];
+        if (isAdvancedNode(subAtomId)) {
+            const evidence = advancedEvidence(this.data, subAtomId);
+            const recent = evidence.slice(-20);
+            const accuracy = recent.length ? recent.filter(advancedIndependent).length / recent.length : 0;
+            const progress = calculateSubAtomExamProgress(subAtomId, evidence.filter(e => e.attempt.correct).length,
+                accuracy, distinctAdvancedSuccesses(evidence));
+            if (progress.ready && !advancedNodeReady(this.data, subAtomId)) return { ...progress, ready: false, percentage: 99 };
+            return progress;
+        }
         return calculateSubAtomExamProgress(
             subAtomId,
             sa.successfulSolves,
@@ -358,49 +388,17 @@ export class MasterySystem {
     }
 
     checkComparisonChallengeEligibility(type: 'fluency_challenge' | 'mastery_challenge'): boolean {
-        if (!this.comparisonChallengeRelevant(type)) return false;
-        const attempts = this.getComparisonChallengeAttempts();
-        const correct = attempts.filter(attempt => attempt.correct && !attempt.assisted);
-        const recent = attempts.slice(-20);
-        const mastery = type === 'mastery_challenge';
-        const thresholds = getThresholdsForSubAtom('A3');
-        const rt = mastery ? thresholds.masteryRT : thresholds.fluentRT;
-        const times = correct.map(attempt => attempt.responseTimeMs).filter(time => time > 0 && time <= RT_IGNORE_THRESHOLD_MS);
-        const forms = [...new Set(attempts.map(attempt => attempt.form))].filter(form => {
-            const sample = attempts.filter(attempt => attempt.form === form).slice(-20);
-            const successes = sample.filter(attempt => attempt.correct && !attempt.assisted);
-            return successes.length / sample.length >= (mastery ? 0.9 : 0.8)
-                && (!mastery || this.median(successes.map(attempt => attempt.responseTimeMs)) <= rt);
-        });
-        return correct.length >= (mastery ? 50 : 30)
-            && recent.filter(attempt => attempt.correct && !attempt.assisted).length / recent.length >= (mastery ? 0.92 : 0.85)
-            && times.length > 0 && this.median(times) <= rt && forms.length >= 2;
+        return getCatacombReadiness(this.data, 'comparison_symbols', type).ready;
     }
 
     /** Check if fluency challenge is available */
     checkFluencyEligibility(subAtomId: SubAtomId): boolean {
-        if (!this.isSubAtomAvailable(subAtomId)) return false;
-        const sa = this.data.subAtoms[subAtomId];
-        if (sa.state !== 'secure') return false;
-
-        const { fluentRT } = getThresholdsForSubAtom(subAtomId);
-        return sa.successfulSolves >= 30
-            && this.getLast20Accuracy(subAtomId) >= 0.85
-            && this.getMedianRT(subAtomId) <= fluentRT
-            && this.getFormsWithFormAccuracy(subAtomId, 0.80) >= 2;
+        return getCatacombReadiness(this.data, subAtomId, 'fluency_challenge').ready;
     }
 
     /** Check if mastery challenge is available */
     checkMasteryChallengeEligibility(subAtomId: SubAtomId): boolean {
-        if (!this.isSubAtomAvailable(subAtomId)) return false;
-        const sa = this.data.subAtoms[subAtomId];
-        if (sa.state !== 'fluent') return false;
-
-        const { masteryRT } = getThresholdsForSubAtom(subAtomId);
-        return sa.successfulSolves >= 50
-            && this.getLast20Accuracy(subAtomId) >= 0.92
-            && this.getMedianRT(subAtomId) <= masteryRT
-            && this.getFormsWithFormAccuracyAndRT(subAtomId, 0.90, masteryRT) >= 2;
+        return getCatacombReadiness(this.data, subAtomId, 'mastery_challenge').ready;
     }
 
     /** Check if band gate exam is available */
@@ -493,6 +491,8 @@ export class MasterySystem {
         const sa = this.data.subAtoms[subAtomId];
         let stateChanged = false;
 
+        if (tier === 'none' && !sessionOnly) focusAdvancedExamRetry(this.data, subAtomId, 'exam', config.itemCount);
+
         // Update best medal
         if (sa.examBestMedal === null || this.tierRank(tier) > this.tierRank(sa.examBestMedal)) {
             sa.examBestMedal = tier;
@@ -541,6 +541,7 @@ export class MasterySystem {
         let stateChanged = false;
 
         sa.fluencyChallengeResult = passed ? 'pass' : 'fail';
+        if (!passed && !sessionOnly) focusAdvancedExamRetry(this.data, subAtomId, 'fluency', config.itemCount);
 
         if (passed && sa.state === 'secure') {
             sa.state = 'fluent';
@@ -570,6 +571,7 @@ export class MasterySystem {
         let stateChanged = false;
 
         sa.masteryChallengeResult = passed ? 'pass' : 'fail';
+        if (!passed && !sessionOnly) focusAdvancedExamRetry(this.data, subAtomId, 'mastery_challenge', config.itemCount);
 
         if (passed && sa.state === 'fluent') {
             sa.state = 'mastery';
@@ -614,6 +616,7 @@ export class MasterySystem {
         const band = this.data.bands[bandId];
         let stateChanged = false;
 
+        if (tier === 'none' && !sessionOnly) focusAdvancedExamRetry(this.data, bandId, 'band_gate', config.itemCount);
         if (band.gateExamBestMedal === null || this.tierRank(tier) > this.tierRank(band.gateExamBestMedal)) {
             band.gateExamBestMedal = tier;
         }
@@ -645,6 +648,7 @@ export class MasterySystem {
         let stateChanged = false;
 
         band.bandMasteryChallengeResult = passed ? 'pass' : 'fail';
+        if (!passed && !sessionOnly) focusAdvancedExamRetry(this.data, bandId, 'band_gate', config.itemCount);
 
         if (passed && band.state === 'fluent') {
             band.state = 'mastery';
@@ -672,7 +676,8 @@ export class MasterySystem {
         problemKey: string,
         correct: boolean,
         responseTimeMs: number,
-        context: MasteryAttempt['context']
+        context: MasteryAttempt['context'],
+        assisted = false,
     ): void {
         const problem = this.problemDb.getProblemByKey(problemKey);
         if (!problem) return;
@@ -699,7 +704,10 @@ export class MasterySystem {
             sequenceIndex: data.globalSolveSequence,
         };
         attempt.observation=consumeObservation(problemKey,`mastery:${attempt.sequenceIndex}:${attempt.timestamp}:${problemKey}`,context);
+        attempt.assisted = assisted || attempt.observation?.assisted === true;
         data.problemRecords[problemKey].attempts.push(attempt);
+        recordAdvancedAttempt(data, problem, attempt);
+        retainLearningHistory(data);
 
         // Update sub-atom stats
         const sa = data.subAtoms[problem.subAtomId];
@@ -835,6 +843,29 @@ export class MasterySystem {
         return pool;
     }
 
+    /** Returns null for ordinary A–E sources. Advanced defense draws from familiar
+     * facts without consuming any pending anchor, transfer or attack slot. */
+    drawKnownAdvancedBlockKeys(count: number): string[] | null {
+        const data = this.data;
+        const selection = reconcilePracticeSelection(data, CoopSessionManager.getInstance().getFoxProgressForMastery(data));
+        const practice = selection.mode === 'practice';
+        const id = selection.mode === 'practice' ? selection.targetId : this.getFrontierSubAtom();
+        if (!isAdvancedNode(id)) return null;
+
+        const candidates = this.shuffle(knownAdvancedArithmetic(data, id, false, practice));
+        const recent = recentPracticeNumbers(data);
+        const keys: string[] = [];
+        for (const problem of candidates) {
+            if (keys.length >= count) break;
+            const mask = practiceNumberMask(problem);
+            if (practice && !canDrawPracticeNumbers(mask, recent)) continue;
+            keys.push(problem.key);
+            if (practice) rememberPracticeNumbers(recent, mask);
+        }
+        if (practice && data.practice) data.practice.recentNumberMasks = recent;
+        return keys;
+    }
+
     /** Draw from [review] pool (Fluent sub-atoms). Does NOT consume from main battle pool. */
     drawFromReviewPool(count: number): string[] {
         return this.selectReviewProblems('fluent', count, new Set());
@@ -852,6 +883,8 @@ export class MasterySystem {
     drawPreparationProblems(count: number): string[] {
         const targetCount = Math.max(0, Math.min(5, Math.round(count)));
         if (targetCount === 0) return [];
+        const node = this.getFrontierSubAtom();
+        if (isAdvancedNode(node)) return drawAdvancedKeys(this.data, node, targetCount);
 
         const data = this.data;
         const used = new Set<string>();
@@ -890,6 +923,11 @@ export class MasterySystem {
      */
     drawFromPool(count: number): string[] {
         const data = this.data;
+        const node = this.getFrontierSubAtom();
+        if (isAdvancedNode(node)) {
+            const exam = this.pendingAdvancedCoopKeys(count);
+            return [...exam, ...drawAdvancedKeys(data, advancedProgressTarget(data, node), count - exam.length)];
+        }
         const result: string[] = [];
 
         // Saves created by older builds can still contain forms that are no
@@ -955,6 +993,7 @@ export class MasterySystem {
     /** Generate problem keys for a sub-atom exam (8 items) */
     generateSubAtomExamProblems(subAtomId: SubAtomId): string[] {
         const itemCount = EXAM_CONFIGS.sub_atom.itemCount;
+        if (isAdvancedNode(subAtomId)) return drawAdvancedExamKeys(subAtomId, itemCount);
         if (!this.isComparisonChapterComplete() && (subAtomId === 'A1' || subAtomId === 'A2')) {
             return this.generateBalancedProblemKeys(subAtomId, itemCount, ['result_unknown', 'missing_part']);
         }
@@ -970,6 +1009,7 @@ export class MasterySystem {
 
     /** Generate a form-balanced fluency/mastery challenge of the requested length. */
     generateChallengeProblemKeys(subAtomId: SubAtomId, count: number, examType: ExamType = 'mastery_challenge'): string[] {
+        if (isAdvancedNode(subAtomId)) return drawAdvancedExamKeys(subAtomId, count);
         // Fluency challenge: player is secure, hasn't seen compare_equation_vs_equation yet
         // Mastery challenge: player is fluent, all 4 forms available
         const desiredForms: ProblemForm[] = examType === 'fluency_challenge'
@@ -981,6 +1021,8 @@ export class MasterySystem {
 
     /** Generate problem keys for band gate exam (12 items: 3 per sub-atom) */
     generateBandGateProblems(bandId: BandId): string[] {
+        const plan = advancedExamPlan('band_gate', bandId);
+        if (plan.length) return this.shuffle(plan.flatMap(q => drawAdvancedExamKeys(q.node, q.count)));
         const problems: string[] = [];
         for (const num of ALL_SUB_ATOM_NUMBERS) {
             const subAtomId = `${bandId}${num}` as SubAtomId;
@@ -993,6 +1035,8 @@ export class MasterySystem {
 
     /** Generate a 14-item band mastery challenge with every sub-atom represented. */
     generateBandMasteryProblems(bandId: BandId): string[] {
+        const plan = advancedExamPlan('band_mastery', bandId);
+        if (plan.length) return this.shuffle(plan.flatMap(q => drawAdvancedExamKeys(q.node, q.count)));
         const problems: string[] = [];
         const perSubAtom = [4, 4, 3, 3];
         for (const [index, num] of ALL_SUB_ATOM_NUMBERS.entries()) {
@@ -1219,6 +1263,24 @@ export class MasterySystem {
         }
     }
 
+    private pendingAdvancedCoopKeys(count: number): string[] {
+        // The active override is set only for a co-op participant. Historic checkpoints can survive into solo.
+        if (!this.activeData) return [];
+        const band = this.getCurrentBand();
+        for (const type of ['band_gate', 'sub_atom', 'band_mastery', 'fluency_challenge', 'mastery_challenge'] as const) {
+            for (const [key, baseline] of Object.entries(this.data.coopAutoPromotionBases)) {
+                const [savedType, target] = key.split(':');
+                if (savedType !== type || target[0] !== band || !this.isCoopAutoPromotionStageRelevant(type, target as MasteryTargetId)) continue;
+                const plan = advancedExamPlan(type, target);
+                if (plan.length) {
+                    const evidence = advancedEvidence(this.data, target, baseline).filter(e => e.attempt.context.startsWith('battle'));
+                    return drawAdvancedCoopKeys(plan, evidence, count);
+                }
+            }
+        }
+        return [];
+    }
+
     private isCoopAutoPromotionReady(type: ExamType, targetId: MasteryTargetId, baseline: number): boolean {
         const config = EXAM_CONFIGS[type];
         if (targetId === 'comparison_symbols') {
@@ -1231,6 +1293,17 @@ export class MasterySystem {
             return correct >= threshold
                 && this.median(buffer.filter(attempt => attempt.correct).map(attempt => attempt.responseTimeMs))
                     <= COOP_AUTO_PROMOTION_RT_MS;
+        }
+        const plan = advancedExamPlan(type, targetId);
+        if (plan.length) {
+            const evidence = advancedEvidence(this.data, targetId, baseline).filter(e => e.attempt.context.startsWith('battle'));
+            const buffer = advancedCoopWindow(plan, evidence);
+            if (buffer.length !== config.itemCount) return false;
+            const correct = buffer.filter(advancedIndependent);
+            const times = correct.map(e => e.attempt.responseTimeMs).filter(t => t > 0 && Number.isFinite(t));
+            const threshold = config.silverThreshold ?? config.passThreshold ?? config.itemCount;
+            return correct.length >= threshold && times.length === correct.length && this.median(times) <= COOP_AUTO_PROMOTION_RT_MS
+                && plan.every(q => [0, 1].every(group => correct.some(e => e.node === q.node && e.group === group)));
         }
         const buffer = this.getScopedAttemptsSince(type, targetId, baseline).slice(-config.itemCount);
 
@@ -1388,6 +1461,7 @@ export class MasterySystem {
             this.data.currentPoolIndex = 0;
             this.data.lastPoolProblems = [];
         }
+        ensureAdvancedLearningBands(this.data);
         const bandIndex = ALL_BANDS.indexOf(bandId);
         if (bandIndex < ALL_BANDS.length - 1) {
             const nextBand = ALL_BANDS[bandIndex + 1];
@@ -1560,7 +1634,7 @@ export class MasterySystem {
     }
 
     private isFormAllowed(subAtomId: SubAtomId, form: ProblemForm): boolean {
-        if (subAtomId[1] === '3' && form === 'missing_part') return false;
+        if (!isAdvancedNode(subAtomId) && subAtomId[1] === '3' && form === 'missing_part') return false;
         if (!this.isComparisonChapterComplete() && form.startsWith('compare_')) return false;
         return true;
     }
@@ -1630,27 +1704,6 @@ export class MasterySystem {
         }
         allAttempts.sort((a, b) => b.sequenceIndex - a.sequenceIndex);
         return allAttempts.slice(0, count);
-    }
-
-    /** Count forms where last 10 accuracy >= threshold */
-    private getFormsWithFormAccuracy(subAtomId: SubAtomId, threshold: number): number {
-        let count = 0;
-        for (const form of ALL_PROBLEM_FORMS) {
-            if (this.getFormAccuracy(subAtomId, form) >= threshold) count++;
-        }
-        return count;
-    }
-
-    /** Count forms where both accuracy AND RT meet thresholds */
-    private getFormsWithFormAccuracyAndRT(subAtomId: SubAtomId, accThreshold: number, rtThreshold: number): number {
-        let count = 0;
-        for (const form of ALL_PROBLEM_FORMS) {
-            if (this.getFormAccuracy(subAtomId, form) >= accThreshold
-                && this.getFormMedianRT(subAtomId, form) <= rtThreshold) {
-                count++;
-            }
-        }
-        return count;
     }
 
     /** Compute exam tier from correct count */

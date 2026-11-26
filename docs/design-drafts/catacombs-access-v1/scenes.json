@@ -1,0 +1,35 @@
+{
+  "width": 1280,
+  "height": 720,
+  "scenes": {
+    "overview": {
+      "safeInset": { "left": 118, "right": 1162, "top": 55, "bottom": 668 },
+      "elements": [
+        { "id": "mainDoor", "x": 189, "y": 158, "width": 269, "height": 262, "depth": 3 },
+        { "id": "mainOpenLock", "parent": "mainDoor", "x": 49, "y": 67, "width": 172, "height": 180, "depth": 1 },
+        { "id": "moduleRow0", "x": 499, "y": 151, "width": 650, "height": 127, "depth": 2 },
+        { "id": "moduleRow1", "x": 499, "y": 295, "width": 650, "height": 127, "depth": 2 },
+        { "id": "moduleRow2", "x": 499, "y": 436, "width": 650, "height": 127, "depth": 2 }
+      ],
+      "moduleGate": { "x": 539, "y": 8, "width": 103, "height": 112, "depth": 2, "safeInset": 8 }
+    },
+    "guide": {
+      "width": 970,
+      "height": 650,
+      "safeInset": { "left": 109, "right": 861, "top": 94, "bottom": 591 },
+      "elements": [
+        { "id": "guidePictures", "x": 112, "y": 182, "width": 746, "height": 298, "depth": 2 },
+        { "id": "guideAction", "x": 285, "y": 487, "width": 400, "height": 110, "depth": 3 }
+      ],
+      "foxSteps": [
+        { "id": "rescue", "x": 2, "y": 0, "width": 214, "height": 290, "depth": 1 },
+        { "id": "amulet", "x": 266, "y": 0, "width": 214, "height": 290, "depth": 1 },
+        { "id": "companion", "x": 530, "y": 0, "width": 214, "height": 290, "depth": 1 }
+      ],
+      "foxArrows": [
+        { "x": 225, "y": 118, "width": 32, "height": 44 },
+        { "x": 489, "y": 118, "width": 32, "height": 44 }
+      ]
+    }
+  }
+}

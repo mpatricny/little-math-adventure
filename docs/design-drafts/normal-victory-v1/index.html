@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="cs">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Výhra v boji · návrh</title>
+  <link rel="stylesheet" href="./style.css">
+</head>
+<body>
+  <header>
+    <h1>Výhra v boji <small>Náhled</small></h1>
+    <nav aria-label="Ukázkové výhry">
+      <button type="button" data-case="wave">Kolo arény</button>
+      <button type="button" data-case="coop">Dva hráči</button>
+      <button type="button" data-case="final">Konec arény</button>
+      <button type="button" data-case="forest">Les</button>
+    </nav>
+    <button type="button" id="words" aria-pressed="false">Bez slov</button>
+  </header>
+  <main><div id="stage" aria-label="Herní náhled"><span id="loading" role="status">Načítání…</span></div></main>
+  <script type="module" src="./main.ts"></script>
+</body>
+</html>

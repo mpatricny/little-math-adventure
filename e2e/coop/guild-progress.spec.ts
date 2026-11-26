@@ -102,8 +102,20 @@ test('real co-op answers appear for both players in the guild', async ({page}) =
     await page.waitForTimeout(700);
     const daily = await texts(page);
     await page.screenshot({path: `${out}/daily-coop.png`});
-    expect(daily).toContain('DNES · CO-OP');
-    expect(daily).toContain(String(clicked.A + clicked.B));
+    expect(daily).toContain('DENNÍ POKROK');
+    const personalDays = await page.evaluate(async () => {
+        const { CoopSessionManager } = await import('/src/systems/CoopSessionManager.ts');
+        const { GameStateManager } = await import('/src/systems/GameStateManager.ts');
+        const overlay = (window as any).__LITTLE_MATH_GAME__.scene.keys.GuildScene.dailyProgressOverlay;
+        const coop = CoopSessionManager.getInstance();
+        const activeSlot = GameStateManager.getInstance().getActiveSlotIndex();
+        const selected = overlay.getSelectedSlotIndex();
+        const second = overlay.contentRoot.getData('day').attempts;
+        overlay.selectProfile(coop.getPlayerASlotIndex());
+        return { selected, second, first: overlay.contentRoot.getData('day').attempts,
+            originalSlot: activeSlot, currentSlot: GameStateManager.getInstance().getActiveSlotIndex() };
+    });
+    expect(personalDays).toMatchObject({ selected: 1, second: clicked.B, first: clicked.A, originalSlot: 1, currentSlot: 1 });
     const saves = await page.evaluate(() => [0,1].map(slot => JSON.parse(localStorage.getItem(`littleMathAdventure_slot_${slot}`)!)));
     for (const [i, player] of ['A','B'].entries()) {
         expect(saves[i].mathStats.totalAttempts).toBe(clicked[player]);

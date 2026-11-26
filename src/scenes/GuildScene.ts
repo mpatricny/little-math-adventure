@@ -16,10 +16,18 @@ import { MasteryMapOverlay } from '../ui/MasteryMapOverlay';
 import { DailyProgressOverlay } from '../ui/DailyProgressOverlay';
 import { CoopSessionManager } from '../systems/CoopSessionManager';
 import { GuildHallUI } from '../ui/GuildHallUI';
+import { CatacombProgressOverlay, takeFoxReward, type FoxRewardArrival } from '../ui/CatacombProgressOverlay';
 import { SilverpondQuestDialog } from '../ui/SilverpondQuestDialog';
 import { MedievalActionButton } from '../ui/MedievalActionButton';
+import { GuideConfirmButton, blockGuidePointer } from '../ui/GuideConfirmButton';
 import { createGuildExamBoard, createGuildExamRule } from '../ui/GuildExamTheme';
 import { getExamPresentation } from '../ui/ExamPresentation';
+import { MathBoard } from '../ui/MathBoard';
+import { createMathBoardView } from '../ui/mathboard/MathBoardView';
+import { PracticeSystem } from '../systems/PracticeSystem';
+import { PracticeChoiceOverlay } from '../ui/PracticeChoiceOverlay';
+import { practiceArt } from '../ui/PracticeChoiceControl';
+import { acknowledgeGuildOffers, guildBoardExam } from '../systems/GuildNotices';
 
 type AvailableGuildExam = {
     type: ExamType;
@@ -57,6 +65,7 @@ export class GuildScene extends Phaser.Scene {
     private gameState!: GameStateManager;
     private mathEngine!: MathEngine;
     private catacombExam: AvailableGuildExam | null = null;
+    private illustratedTrialBoard: MathBoard | null = null;
     private transientSnapshot: { player: PlayerState; mathStats: MathStats } | null = null;
 
     // Trial mode state
@@ -91,7 +100,9 @@ export class GuildScene extends Phaser.Scene {
     private progressFrames: Phaser.GameObjects.Arc[] = [];
     private feedbackOverlay!: Phaser.GameObjects.Container;
     private feedbackVisualizer: TrialFeedbackVisualizer | null = null;
-    private feedbackActionButton!: MedievalActionButton;
+    private feedbackActionButton!: GuideConfirmButton;
+    private feedbackReadyTimer?: Phaser.Time.TimerEvent;
+    private feedbackGeneration = 0;
     private resultsOverlay!: Phaser.GameObjects.Container;
     private overviewOverlay!: Phaser.GameObjects.Container;
     private overviewStartButton!: MedievalActionButton;
@@ -114,6 +125,7 @@ export class GuildScene extends Phaser.Scene {
     // Info overlays
     private dailyProgressOverlay!: DailyProgressOverlay;
     private masteryMapOverlay!: MasteryMapOverlay;
+    private practiceChoice: PracticeChoiceOverlay | null = null;
 
     // Scene Builder
     private sceneBuilder!: SceneBuilder;
@@ -130,7 +142,7 @@ export class GuildScene extends Phaser.Scene {
         this.showGuides = options.showGuides ?? true;
     }
 
-    create(): void {
+    create(data?: { foxReward?: FoxRewardArrival }): void {
         this.gameState = GameStateManager.getInstance();
         this.captureTransientState();
 
@@ -160,14 +172,26 @@ export class GuildScene extends Phaser.Scene {
         this.masteryMapOverlay.setPlacement(learningOverlayHost.x, learningOverlayHost.y, learningOverlayHost.depth);
         this.createHallUI();
 
-        if (this.silverpondStory) {
-            new SilverpondQuestDialog(this, this.sceneBuilder);
-        }
+        const arrival = takeFoxReward(data);
+        const openPaths = this.createZyxPaths();
+        if (this.silverpondStory) new SilverpondQuestDialog(this, this.sceneBuilder, openPaths,
+            () => !arrival && !(this.children.getByName('catacombProgress') as Phaser.GameObjects.Container | null)?.visible);
+        if (this.persistChanges) acknowledgeGuildOffers();
 
         const coopHost = this.getHostLayout('coopSwitchHost', { x: 280, y: 655, width: 260, height: 45, depth: 80 });
         new CoopSwitchUI(this, coopHost.x, coopHost.y);
 
+        if (arrival) {
+            CatacombProgressOverlay.forScene(this).show(arrival.target, arrival.slot, arrival.reward);
+        }
+
         this.setupDebugger();
+        this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+            this.feedbackGeneration++;
+            this.feedbackReadyTimer?.remove();
+            this.feedbackVisualizer?.destroy();
+            this.feedbackVisualizer = null;
+        });
     }
 
     private captureTransientState(): void {
@@ -177,6 +201,47 @@ export class GuildScene extends Phaser.Scene {
             player: this.cloneState(this.gameState.getPlayer()),
             mathStats: this.cloneState(this.gameState.getMathStats()),
         };
+    }
+
+    private createZyxPaths(): (() => void) | undefined {
+        const overview = PracticeSystem.getOverview();
+        if (!this.persistChanges || !overview || !(overview.introductionAvailable || overview.introductionSeen)) return;
+        const host = this.getHostLayout('zyxPathsHost', { x: 385, y: 408, width: 156, height: 76, depth: 94 });
+        const badge = this.add.container(host.x, host.y).setDepth(host.depth).setName('zyxPaths')
+            .setSize(host.width, host.height).setInteractive({ useHandCursor: true });
+        const regions = this.sceneBuilder.getElementDef('zyxPathsHost')!.data!.regions as
+            Record<string, { x: number; y: number; width: number; height: number }>;
+        badge.add(practiceArt(this, 'practice-choice-plaque-v1', { ...host, x: 0, y: 0 }));
+        badge.add(practiceArt(this, 'practice-choice-training-compact-v1', regions.practice));
+        badge.add(practiceArt(this, 'practice-choice-progress-compact-v1', regions.progress));
+        const cue = this.add.text(regions.attention.x, regions.attention.y, '!', { resolution: 2, fontFamily: 'Georgia, serif',
+            fontSize: 30, fontStyle: 'bold', color: '#ffed91', stroke: '#302316', strokeThickness: 4 })
+            .setOrigin(.5).setVisible(overview.introductionAvailable);
+        badge.add(cue);
+        const open = () => {
+            if (this.practiceChoice) return;
+            const prefs = PracticeSystem.getOverview();
+            if (!prefs) return;
+            this.practiceChoice = new PracticeChoiceOverlay(this, {
+                location: 'guild',
+                players: [{ owner: 'active', number: 1, overview: prefs,
+                    portrait: this.gameState.getPlayer().characterType?.startsWith('boy')
+                        ? 'town-hud-hero-portrait' : 'town-hud-heroine-portrait' }],
+                onConfirm: ([choice]) => {
+                    const saved = PracticeSystem.setMode(choice.mode, undefined, 'active', 'guild');
+                    if (saved) cue.setVisible(false);
+                    return saved;
+                },
+                onClose: () => { this.practiceChoice = null; },
+            });
+        };
+        badge.on('pointerup', open);
+        if (!this.silverpondStory) {
+            const hit = this.getHostLayout('silverpondQuestZyxHitHost', { x: 270, y: 462, width: 150, height: 250, depth: 91 });
+            this.add.zone(hit.x, hit.y, hit.width, hit.height).setDepth(hit.depth).setName('guildZyx')
+                .setInteractive({ useHandCursor: true }).on('pointerup', open);
+        }
+        return open;
     }
 
     private cloneState<T>(state: T): T {
@@ -264,9 +329,7 @@ export class GuildScene extends Phaser.Scene {
         this.catacombExam = null;
 
         if (!isCoopReadOnly) {
-            const standardExam = availableExams.find(
-                exam => exam.type !== 'fluency_challenge' && exam.type !== 'mastery_challenge',
-            );
+            const standardExam = guildBoardExam(availableExams, isCoopReadOnly);
             if (standardExam) {
                 this.currentMasteryExamType = standardExam.type;
                 this.currentMasteryExamTarget = standardExam.targetId;
@@ -282,6 +345,18 @@ export class GuildScene extends Phaser.Scene {
         const overlayY = trialOverlayEl?.y ?? 360;
         this.createOverviewOverlay(overlayX, overlayY);
         this.createTrialOverlay(overlayX, overlayY);
+        this.illustratedTrialBoard = new MathBoard(this, () => undefined,
+            (scene, onDemo) => createMathBoardView(scene, onDemo, () => ({mode:'exam',
+                progress:{index:this.trialState.currentProblemIndex,total:this.trialState.totalProblems,
+                    results:this.trialState.results.map(result=>result.wasCorrect)},
+            })));
+        this.illustratedTrialBoard.setDamageDisplayEnabled(false);
+        this.illustratedTrialBoard.setFirstAnswerCallback(answer => {
+            if (this.trialState.phase === 'problem') this.recordTrialAnswer(answer.choice, answer.responseTimeMs);
+        });
+        const blocker=this.add.rectangle(0,0,1280,720,0x080b0d,.72)
+            .setInteractive().setName('illustrated-exam-blocker');
+        this.trialOverlay.add([blocker,this.illustratedTrialBoard.getContainer()]);
         this.createFeedbackOverlay(overlayX, overlayY);
         this.createResultsOverlay(overlayX, overlayY);
     }
@@ -297,8 +372,7 @@ export class GuildScene extends Phaser.Scene {
     }
 
     private addExamBackdrop(container: Phaser.GameObjects.Container): void {
-        const dimmer = this.add.rectangle(0, 0, 1280, 720, 0x080b0d, 0.76)
-            .setInteractive();
+        const dimmer = blockGuidePointer(this.add.rectangle(0, 0, 1280, 720, 0x080b0d, 0.76));
         const vignette = this.add.graphics();
         vignette.fillStyle(0x000000, 0.28);
         vignette.fillRect(-640, -360, 1280, 74);
@@ -691,22 +765,23 @@ export class GuildScene extends Phaser.Scene {
         const actionHost = this.getLocalHost('trialFeedbackActionHost', rootHost.x, rootHost.y, {
             x: 640, y: 585, width: 310, height: 78, depth: 214,
         });
-        this.feedbackActionButton = new MedievalActionButton(this, {
+        this.feedbackActionButton = new GuideConfirmButton(this, {
             x: actionHost.x,
             y: actionHost.y,
             depth: actionHost.depth,
             width: actionHost.width,
             height: actionHost.height,
-            label: 'PŘESKOČIT',
-            accent: this.accentColor,
-            layout: 'text',
-            labelFontSize: 21,
-            onClick: () => this.closeFeedback(),
+            name: 'trialFeedbackConfirm',
+            theme: this.silverpondStory ? 'water' : 'medieval',
+            enabled: false,
+            onConfirm: () => this.closeFeedback(),
         });
         this.feedbackOverlay.add(this.feedbackActionButton.root);
     }
 
     private showFeedback(problem: MathProblem, _playerAnswer: number | null): void {
+        const generation = ++this.feedbackGeneration;
+        this.feedbackReadyTimer?.remove();
         this.trialState.phase = 'feedback';
         if (this.trialTimer) this.trialTimer.paused = true;
         if (this.feedbackVisualizer) {
@@ -718,7 +793,7 @@ export class GuildScene extends Phaser.Scene {
         const visualContainer = this.feedbackOverlay.getData('visualContainer') as Phaser.GameObjects.Container;
         visualContainer.removeAll(true);
         correctLabel.setText(problem.comparisonMeta ? 'Podívej' : formatMathProblem(problem, 'answer'));
-        this.feedbackActionButton.setLabel('PŘESKOČIT');
+        this.feedbackActionButton.setEnabled(false);
         this.feedbackOverlay.setVisible(true);
 
         let animationDone = false;
@@ -727,14 +802,20 @@ export class GuildScene extends Phaser.Scene {
             if (animationDone) return;
             animationDone = true;
             const remaining = Math.max(0, 3000 - (Date.now() - showTime));
-            this.time.delayedCall(remaining, () => {
-                if (this.feedbackActionButton.root.active) this.feedbackActionButton.setLabel('ROZUMÍM');
+            this.feedbackReadyTimer = this.time.delayedCall(remaining, () => {
+                if (generation === this.feedbackGeneration && this.feedbackOverlay.visible && this.feedbackActionButton.root.active) {
+                    this.feedbackActionButton.setEnabled(true);
+                }
             });
         });
         this.feedbackVisualizer.show(problem);
     }
 
     private closeFeedback(): void {
+        if (!this.feedbackOverlay.visible) return;
+        this.feedbackGeneration++;
+        this.feedbackReadyTimer?.remove();
+        this.feedbackActionButton.setEnabled(false);
         this.feedbackOverlay.setVisible(false);
         if (this.feedbackVisualizer) {
             this.feedbackVisualizer.destroy();
@@ -1060,6 +1141,13 @@ export class GuildScene extends Phaser.Scene {
         }
 
         this.trialOverlay.setVisible(true);
+        if (this.illustratedTrialBoard) {
+            for (const child of this.trialOverlay.list) {
+                if (child !== this.illustratedTrialBoard.getContainer() && child.name !== 'illustrated-exam-blocker') {
+                    (child as Phaser.GameObjects.Container).setVisible(false);
+                }
+            }
+        }
         this.showCurrentProblem();
 
         // Per-problem timer
@@ -1079,6 +1167,15 @@ export class GuildScene extends Phaser.Scene {
         }
 
         this.currentTrialProblem = this.trialProblems[idx];
+        if (this.illustratedTrialBoard) {
+            this.trialState.timeRemainingForProblem=this.trialState.timePerProblem;
+            this.trialState.phase='problem';
+            this.problemStartTime=this.time.now;
+            if(this.currentTrialProblem.comparisonMeta)this.currentTrialProblem.comparisonMeta.exam=true;
+            this.illustratedTrialBoard.showSingle(this.currentTrialProblem,()=>this.advanceToNextProblem(),
+                {presentation:'sequential',telemetryContext:this.getMasteryExamContext()});
+            return;
+        }
         this.observation?.abandon();this.observation=observeMathProblem(this.currentTrialProblem,this.getMasteryExamContext());
         this.events.once('shutdown',()=>this.observation?.abandon());
         this.trialState.timeRemainingForProblem = this.trialState.timePerProblem;
@@ -1167,7 +1264,7 @@ export class GuildScene extends Phaser.Scene {
         this.recordTrialAnswer(value);
     }
 
-    private recordTrialAnswer(playerAnswer: number | null): void {
+    private recordTrialAnswer(playerAnswer: number | null, responseTimeMs?: number): void {
         if (!this.currentTrialProblem) return;
 
         const problem = this.currentTrialProblem;
@@ -1175,7 +1272,7 @@ export class GuildScene extends Phaser.Scene {
         if (problem.comparisonMeta && playerAnswer !== null && playerAnswer >= 0 && playerAnswer <= 2) {
             problem.comparisonMeta.selectedRelation = (['less', 'equal', 'greater'] as const)[playerAnswer];
         }
-        const timeSpent = Math.max(0, this.time.now - this.problemStartTime) / 1000;
+        const timeSpent = Math.max(0, responseTimeMs ?? this.time.now - this.problemStartTime) / 1000;
         if(playerAnswer!==null)this.observation?.answer(observedChoice(problem,playerAnswer),isCorrect,timeSpent*1000);
         else this.observation?.abandon('timeout');
         const idx = this.trialState.currentProblemIndex;
@@ -1194,6 +1291,13 @@ export class GuildScene extends Phaser.Scene {
             timeSpent,
         };
         this.trialState.results.push(result);
+
+        if (this.illustratedTrialBoard) {
+            this.trialState.phase='feedback';
+            if(isCorrect)this.trialState.correctCount++;
+            else this.trialState.wrongCount++;
+            return; // The shared board presents feedback and owns the next button.
+        }
 
         // Update progress dot
         if (isCorrect) {
@@ -1235,6 +1339,7 @@ export class GuildScene extends Phaser.Scene {
     }
 
     private endTrial(): void {
+        this.illustratedTrialBoard?.hide();
         this.trialState.isActive = false;
         this.trialState.phase = 'results';
 

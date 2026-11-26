@@ -1,0 +1,96 @@
+{
+  "date": "2026-11-18",
+  "scope": "Visual refinement of the victory journey card in training-flow-v5.",
+  "migrations": "The prototype reads an in-memory synthetic session; no database or unapplied database migration is required.",
+  "generation": {
+    "tool": "built-in image_gen",
+    "prompts": "../assets/journey-prompts.json",
+    "normalization": "../assets/journey-normalization.json",
+    "export": "../assets/build-journey-art.mjs"
+  },
+  "reviewedImages": [
+    "journey-polish-assets.png",
+    "journey-polish-desktop.png",
+    "journey-polish-hover.png",
+    "journey-polish-pressed.png",
+    "journey-polish-disabled.png",
+    "journey-polish-complete.png",
+    "journey-polish-no-words.png",
+    "journey-polish-1024.png",
+    "journey-polish-768-closed.png",
+    "journey-polish-768-open.png",
+    "journey-polish-768-comparison.png",
+    "final-victory.png",
+    "journey-polish-exam-locked.png"
+  ],
+  "changesAfterVisualReview": [
+    "Replaced the generic rounded card with one continuous generated frame in the modal's gold, navy enamel and sapphire style.",
+    "Rejected the first shallow rail composition; regenerated the frame with a taller interior and finer border. The final bitmap is never sliced or stretched.",
+    "Moved current and target times into their own reserved regions, clear of the gold lock, title and footer.",
+    "Created closed/open normal/active lock states together; normalized all cells with the same crop and scale.",
+    "Downsampled the approved fox to 256px wide before display, removing visible aliasing in the tablet card.",
+    "The measured progress transition finishes before the closed lock cross-fades to the open one. No reward logic runs from the animation.",
+    "Preserved all three large comparison signs and their existing font size; their rendered text fits the reserved region."
+  ],
+  "verification": {
+    "sharedFlowReport": "journey-verification.json",
+    "sharedFlowChecks": 50,
+    "sharedFlowScreenshots": 21,
+    "runtimeErrors": 0,
+    "manualBrowsers": [
+      "Playwright Chromium",
+      "in-app browser"
+    ],
+    "viewports": [
+      "1440x1080",
+      "1024x768",
+      "768x1024"
+    ],
+    "playerHitTargetsAtLeast44CssPx": true,
+    "lockAt768": {
+      "hostWidth": 48.6875,
+      "hostHeight": 53.734375,
+      "visibleWidthApprox": 36,
+      "visibleHeightApprox": 44
+    },
+    "comparisonAt768": {
+      "regionWidth": 67.0546875,
+      "textRangeWidth": 62.2265625,
+      "contained": true
+    },
+    "allCardTextWithinRegions": true,
+    "hoverAndPressPreserveRootBounds": true,
+    "pointerOutWhileStillPressed": {
+      "surfaceTransform": "none",
+      "navigation": false
+    },
+    "pointerOutAfterRelease": {
+      "surfaceTransform": "none",
+      "activeIconOpacity": 0
+    },
+    "unlockSequence": {
+      "initialClosedOpacity": 1,
+      "initialOpenOpacity": 0,
+      "finalClosedOpacity": 0,
+      "finalOpenOpacity": 1
+    },
+    "missingExamWithFullBar": {
+      "fill": "100%",
+      "lock": "exam"
+    },
+    "reducedMotion": {
+      "animation": "none",
+      "openOpacity": 1,
+      "previousClosedOpacity": 0
+    },
+    "wordsHiddenAndAudioNotNeeded": "Inspected the problem pictogram, measured bar, clock, lock, arrow and fox without word labels.",
+    "newVisibleLabels": "No new prose or instructional text.",
+    "finalHumanBrowser": "Existing catacombs gallery opened on the revised victory example."
+  },
+  "limits": [
+    "This is the interactive design prototype, not a production Phaser integration.",
+    "Tablet viewport and touch emulation were reviewed; no physical-tablet or child playtest was performed.",
+    "The existing shared model controls thresholds and rewards. Proposed fox abilities and higher speed tiers are outside this visual revision.",
+    "The disabled card was exercised as a visual review state; normal routing leaves the card enabled."
+  ]
+}

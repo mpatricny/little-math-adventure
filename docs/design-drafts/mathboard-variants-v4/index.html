@@ -1,0 +1,15 @@
+<!doctype html>
+<html lang="cs">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>MathBoard · varianty a dopad útoku</title></head>
+<body>
+  <header><div><strong>MathBoard</strong><span>Varianty a dopad útoku</span></div><nav aria-label="Ovládání ukázky"><button id="replay">↻ Znovu</button><button id="fullscreen" aria-label="Celá obrazovka">⛶</button></nav></header>
+  <section class="toolbar" aria-label="Výběr ukázky">
+    <select id="sample" aria-label="Typ příkladu"></select><select id="mode" aria-label="Herní kontext"></select>
+    <select id="count" aria-label="Počet příkladů"><option value="1">1 příklad</option><option value="3" selected>3 příklady</option><option value="6">6 příkladů</option></select>
+    <button id="player" hidden>Hráč 1</button>
+    <div class="impact-controls"><button id="impact">Dopad útoku</button><select id="impact-case" aria-label="Varianta dopadu"><option value="normal">13 − 3</option><option value="blocked">Štít pohltí vše</option><option value="zero">Nulový útok</option><option value="last">Poslední životy</option></select></div>
+  </section>
+  <main><div id="stage"><div id="game" aria-label="Vyber jednu ze tří dřevěných odpovědí"></div><div id="load-status">Načítání…</div></div></main>
+  <footer><span id="status" aria-live="polite"></span><span class="note">Samostatná ukázka · bez zápisu postupu</span><button id="words" aria-pressed="false">Bez slov</button></footer>
+  <script type="module" src="./main.ts"></script>
+</body></html>

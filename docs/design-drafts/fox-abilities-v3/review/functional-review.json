@@ -1,0 +1,80 @@
+{
+  "date": "2026-11-19",
+  "checks": [
+    {
+      "name": "three stable rows and 21 module targets",
+      "pass": true
+    },
+    {
+      "name": "all three abilities initially locked",
+      "pass": true
+    },
+    {
+      "name": "first contribution unlocks just shield at power 1",
+      "pass": true
+    },
+    {
+      "name": "I to II replaces 1 with 2, never 1 plus 2",
+      "pass": true
+    },
+    {
+      "name": "completed module cannot award again",
+      "pass": true
+    },
+    {
+      "name": "second module contributes to the same ability",
+      "pass": true
+    },
+    {
+      "name": "player B has independent progress",
+      "pass": true
+    },
+    {
+      "name": "B award never modifies A",
+      "pass": true
+    },
+    {
+      "name": "hover keeps root target stable",
+      "pass": true
+    },
+    {
+      "name": "pointer out resets entire surface",
+      "pass": true
+    },
+    {
+      "name": "detail retains actual owner and target",
+      "pass": true
+    },
+    {
+      "name": "Escape closes detail and restores module focus",
+      "pass": true
+    },
+    {
+      "name": "all tablet controls at least 44 CSS px",
+      "pass": true
+    },
+    {
+      "name": "portrait has no horizontal page overflow",
+      "pass": true
+    },
+    {
+      "name": "all modules reach II and totals remain 14 per family",
+      "pass": true
+    },
+    {
+      "name": "reduced motion keeps outcome with no running animations",
+      "pass": true
+    },
+    {
+      "name": "all assets loaded",
+      "pass": true
+    },
+    {
+      "name": "no page errors or network writes",
+      "pass": true
+    }
+  ],
+  "passed": true,
+  "errors": [],
+  "writes": []
+}

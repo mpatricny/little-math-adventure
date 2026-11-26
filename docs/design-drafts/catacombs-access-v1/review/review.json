@@ -1,0 +1,21 @@
+{
+  "errors": [],
+  "checks": [
+    {
+      "width": 1280,
+      "minimumTarget": 44
+    },
+    {
+      "width": 1024,
+      "minimumTarget": 44
+    },
+    {
+      "width": 768,
+      "minimumTarget": 44
+    }
+  ],
+  "storage": {
+    "local": 0,
+    "session": 0
+  }
+}

@@ -1,0 +1,43 @@
+{
+  "rail": {
+    "source": "journey-sources/rail-refined.png",
+    "crop": {
+      "left": 48,
+      "top": 184,
+      "width": 2077,
+      "height": 344
+    },
+    "rule": "Complete frame, uniformly resized and rendered with object-fit: contain. No slicing or stretching.",
+    "safeContentInset": {
+      "left": 42,
+      "right": 42,
+      "top": 25,
+      "bottom": 25
+    }
+  },
+  "locks": {
+    "source": "journey-sources/locks.png",
+    "cell": [
+      627,
+      627
+    ],
+    "sharedCrop": {
+      "left": 78,
+      "top": 36,
+      "width": 471,
+      "height": 565
+    },
+    "canvas": [
+      256,
+      256
+    ],
+    "scale": 0.45309734513274336,
+    "independentTrimming": false
+  },
+  "fox": {
+    "source": "fox-reward.webp",
+    "width": 256,
+    "uniformResize": true,
+    "redrawn": false
+  }
+}

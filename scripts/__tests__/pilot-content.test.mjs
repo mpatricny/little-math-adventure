@@ -130,10 +130,16 @@ test('public media is selected from runtime dependencies, with no chapter or edi
 
 test('victory keeps shared frames and both continue-button states despite historical chapter names', () => {
   const textures = new Set(content.report.textureKeys);
-  for (const key of ['silverpond-fairy-reward-frame', 'silverpond-fairy-title-frame',
+  for (const key of ['practice-choice-panel-v1', 'practice-choice-plaque-v1', 'catacomb-detail-laurels', 'green-slime-happy',
     'enamel-control-socket', 'enamel-continue-normal', 'enamel-continue-active']) {
     assert.ok(textures.has(key), `VictoryScene shared resource missing: ${key}`);
   }
+  const scenes = json('scenes.json').scenes;
+  assert.ok(scenes.PracticeChoiceOverlay && scenes.CatacombProgressOverlay);
+  assert.ok(scenes.VictoryScene.elements.some(element => element.id === 'practiceVictoryJourney'));
+  for (const key of ['practice-victory-rail', 'practice-victory-fox', 'practice-victory-coin',
+    'practice-victory-lock-open-active', 'practice-victory-lock-closed-active']) assert.ok(textures.has(key), key);
+  assert.ok(content.publicFiles.has('assets/ui/mathboard-v4/Gelasio.ttf'));
   assert.ok(content.report.sourceFiles.includes('src/ui/UnderwaterTheme.ts'));
   assert.ok(!content.report.sourceFiles.includes('src/scenes/UnderwaterRoomScene.ts'));
   assert.ok(!content.report.textureKeys.some(key => key.startsWith('underwater-')));
@@ -177,5 +183,23 @@ test('comparison artwork is preloaded independently in guild and catacomb trials
     for (const key of ['comparison-apple', 'comparison-equal', 'comparison-greater']) {
       assert.ok(dependencies[scene].includes(key), `${scene} is missing ${key}`);
     }
+  }
+});
+
+test('the guild and fox lesson ship their painted layouts and cold-entry artwork', () => {
+  for (const layout of ['CatacombProgressOverlay', 'FoxLessonScene', 'MathBoardArtLayout']) {
+    assert.deepEqual(json('scenes.json').scenes[layout], original('scenes.json').scenes[layout], layout);
+    assert.ok(content.report.layoutKeys.includes(layout), layout);
+  }
+  const dependencies = collectSceneAssets(rootDir);
+  for (const scene of ['GuildScene', 'FoxLessonScene']) {
+    for (const key of ['catacomb-painted-room', 'catacomb-painted-action']) {
+      assert.ok(dependencies[scene].includes(key), `${scene} is missing ${key}`);
+      assert.ok(content.report.textureKeys.includes(key), key);
+    }
+  }
+  for (const key of ['mathboard-catacomb-v4', 'mathboard-answer-v4']) {
+    assert.ok(dependencies.FoxLessonScene.includes(key), key);
+    assert.ok(content.report.textureKeys.includes(key), key);
   }
 });

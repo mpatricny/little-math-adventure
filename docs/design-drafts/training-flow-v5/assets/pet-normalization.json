@@ -1,0 +1,35 @@
+{
+  "icons": {
+    "source": "pet-sources/icons.png",
+    "cell": [
+      627,
+      627
+    ],
+    "sharedCrop": {
+      "left": 62,
+      "top": 20,
+      "width": 535,
+      "height": 585
+    },
+    "canvas": [
+      384,
+      384
+    ],
+    "independentTrimming": false,
+    "activeState": "Generated active variants have small geometry drift. Runtime deliberately reuses the canonical normal image for light animation instead of swapping silhouettes."
+  },
+  "powerFrame": {
+    "source": "pet-sources/power-frame.png",
+    "width": 1200,
+    "uniformResize": true,
+    "fullFrame": true
+  },
+  "background": {
+    "source": "pet-sources/catacombs-clean.png",
+    "dimensions": [
+      1672,
+      941
+    ],
+    "edits": "Removed only four baked locks/backplates."
+  }
+}

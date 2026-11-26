@@ -1,0 +1,24 @@
+{
+  "date": "2026-11-19",
+  "reviewedImages": [
+    "mixed-desktop.png", "locked-tablet.png", "first-unlock.png",
+    "late-portrait.png", "no-words-portrait.png", "complete-no-words-portrait.png",
+    "detail-comparison-tablet.png", "interaction-contact.png"
+  ],
+  "interactionContactOrder": ["hover-tablet.png", "pressed-tablet.png", "pointer-out-tablet.png"],
+  "findings": [
+    "Three stable families; same large icons remain legible behind locks and after unlock.",
+    "Seven module pairs fit per row at desktop and tablet sizes; labels, symbols, frames and rune art do not overlap.",
+    "The outer and dialog bitmap frames preserve their source aspect ratios; safe content stays within their inner borders.",
+    "Filled/checkmarked stones, outlined next stone with plus and subdued future stones remain distinct with words hidden.",
+    "Comparison glyph is enlarged independently and remains proportionate to the adjacent numerals.",
+    "Hover and press move the entire surface together; pointer-out restores it.",
+    "Friendly fox remains a static portrait; only UI reward effects animate."
+  ],
+  "limitations": [
+    "This is a review prototype; author approval and playtesting with children remain pending.",
+    "Module-to-family assignments and effect values are illustrative, not production balance.",
+    "Below 650 CSS px the full overview scrolls horizontally to preserve tablet-sized controls.",
+    "No production Phaser, Canvas/WebGL, save-system or real battle integration is asserted."
+  ]
+}

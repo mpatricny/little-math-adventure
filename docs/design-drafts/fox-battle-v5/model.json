@@ -1,0 +1,41 @@
+{
+  "illustrativeOnly": true,
+  "approvedMotionForms": [
+    "01",
+    "04"
+  ],
+  "powers": {
+    "shield": 5,
+    "heal": 6,
+    "strike": 4
+  },
+  "hero": {
+    "hp": 14,
+    "maxHp": 24
+  },
+  "enemies": [
+    {
+      "hp": 10,
+      "maxHp": 10,
+      "defense": 0
+    },
+    {
+      "hp": 10,
+      "maxHp": 10,
+      "defense": 0
+    },
+    {
+      "hp": 10,
+      "maxHp": 10,
+      "defense": 0
+    }
+  ],
+  "incoming": 8,
+  "previewShieldHit": 2,
+  "note": "Presentation values only, not new game balance. Three fixed skills, one use per battle per owner.",
+  "restSources": {
+    "2": "/docs/design-drafts/fox-animation-v2/assets/fox-02-rest.webp",
+    "3": "/docs/design-drafts/fox-animation-v2/assets/fox-03-rest.webp",
+    "5": "/docs/design-drafts/fox-animation-v2/assets/fox-05-rest.webp"
+  }
+}

@@ -1,0 +1,10 @@
+import {chromium} from 'playwright';
+const browser=await chromium.launch({headless:true});
+const page=await browser.newPage({viewport:{width:1440,height:1080}});
+page.on('pageerror',err=>console.log('PAGE ERROR',err.message));
+page.on('console',m=>{if(m.type()==='error'||m.type()==='warning')console.log(m.type(),m.text().slice(0,300));});
+await page.goto('http://localhost:8013/docs/design-drafts/mathboard-workshop-v2/index.html');
+await page.waitForFunction(()=>window.workshop?.view?.state.accepting,{timeout:20000});
+await page.screenshot({path:'docs/design-drafts/mathboard-workshop-v2/review/desktop-initial.png'});
+console.log(await page.evaluate(()=>window.workshop.state));
+await browser.close();

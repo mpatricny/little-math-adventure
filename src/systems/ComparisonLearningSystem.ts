@@ -174,11 +174,12 @@ export function generateComparisonTrainingProblems(
     state: ComparisonChapterState,
     count: number,
     diagnosticMode = false,
+    startIndexOverride?: number,
 ): MathProblem[] {
     const stage = getCurrentComparisonStage(state) ?? 'expression_independent';
     const stageProgress = state.stages[COMPARISON_STAGES.indexOf(stage)];
     const supportRelation = getSupportRelation(state, stage);
-    const startIndex = stageProgress?.attempts ?? state.attempts.length;
+    const startIndex = startIndexOverride ?? stageProgress?.attempts ?? state.attempts.length;
 
     return Array.from({ length: count }, (_, index) => {
         const relation = supportRelation ?? RELATIONS[(startIndex + index) % RELATIONS.length];
@@ -189,7 +190,39 @@ export function generateComparisonTrainingProblems(
     });
 }
 
-export function generateComparisonExamProblems(state: ComparisonChapterState, itemCount = EXAM_CONFIGS.comparison_chapter.itemCount): MathProblem[] {
+/** Independent review alternates numbers and expressions after the chapter is complete. */
+export function generateComparisonReviewProblems(state: ComparisonChapterState, count: number,
+    seed = state.attempts.at(-1)?.sequenceIndex ?? 0): MathProblem[] {
+    return Array.from({ length: count }, (_, index) => {
+        const order = seed + index;
+        return createComparisonProblem(order % 2 === 0 ? 'number_symbol' : 'expression_independent',
+            RELATIONS[order % RELATIONS.length], order, { showCrocodile: false });
+    });
+}
+
+/** Focused practice varies values while keeping the lesson, representation and relation intact. */
+export function generateComparisonPracticeProblem(state: ComparisonChapterState, order: number,
+    accept: (problem: MathProblem) => boolean): MathProblem {
+    const complete = state.status === 'complete';
+    const stage = complete ? (order % 2 === 0 ? 'number_symbol' : 'expression_independent')
+        : getCurrentComparisonStage(state) ?? 'expression_independent';
+    const supportRelation = complete ? null : getSupportRelation(state, stage);
+    const relation = supportRelation ?? RELATIONS[order % RELATIONS.length];
+    const progress = state.stages[COMPARISON_STAGES.indexOf(stage)];
+    // The value patterns repeat within 24 variants. Separate ranges also keep
+    // separately drawn sword/pet questions from reusing the same pending ID.
+    for (let variant = order * 24; variant < (order + 1) * 24; variant++) {
+        const problem = createComparisonProblem(stage, relation, variant, {
+            showCrocodile: complete ? false : undefined,
+            supportMode: progress?.supportMode ?? false,
+        });
+        if (accept(problem)) return problem;
+    }
+    throw new Error(`No comparison practice variant for ${stage}/${relation}`);
+}
+
+export function generateComparisonExamProblems(state: ComparisonChapterState, itemCount = EXAM_CONFIGS.comparison_chapter.itemCount,
+    firstVariant = state.attempts.length): MathProblem[] {
     const representations: ComparisonRepresentation[] = [];
     const representationCycle: ComparisonRepresentation[] = ['size', 'count', 'number', 'expression'];
     for (let index = 0; index < itemCount; index++) {
@@ -208,7 +241,7 @@ export function generateComparisonExamProblems(state: ComparisonChapterState, it
 
     const problems = representations.map((representation, index) => {
         const stage = examStageForRepresentation(representation);
-        return createComparisonProblem(stage, relations[index], state.attempts.length + index, {
+        return createComparisonProblem(stage, relations[index], firstVariant + index, {
             exam: true,
             representation,
             showCrocodile: false,

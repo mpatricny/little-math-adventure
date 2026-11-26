@@ -3,6 +3,7 @@ import { SceneAssetPlugin } from './systems/SceneAssetPlugin';
 import { SceneAudioPlugin } from './audio/SceneAudioPlugin';
 import { destroyGameAudio } from './audio/AudioDirector';
 import Phaser from 'phaser';
+import './ui/mathboard/theme.css';
 import { setupMobile, setupMobilePause } from './utils/mobileSetup';
 import { setupGameViewport } from './utils/gameViewport';
 import { setupRendererRecovery } from './utils/rendererRecovery';
@@ -11,6 +12,7 @@ import { mountRemoteControllerApp } from './remote/controllerApp';
 import { isControllerMode, isTvMode } from './remote/remoteMode';
 import { startGameplaySync } from './telemetry/GameplaySync';
 import { SaveSystem } from './systems/SaveSystem';
+import { startLocalPlayTime } from './systems/LocalPlayTimeRuntime';
 import { analytics, startAnalytics, measurementAllowed } from './telemetry/AnalyticsClient';
 
 if (isControllerMode()) {
@@ -63,7 +65,8 @@ async function startGame(): Promise<void> {
                     continue;
                 }
 
-                for (let bandIndex = 0; bandIndex < ALL_BANDS.length; bandIndex++) {
+                // This historical repair covers the original placement through E only.
+                for (let bandIndex = 0; bandIndex <= targetIndex; bandIndex++) {
                     const band = ALL_BANDS[bandIndex];
                     const isBeforeTarget = bandIndex < targetIndex;
                     const isTarget = band === targetBand;
@@ -158,11 +161,12 @@ async function startGame(): Promise<void> {
     };
 
     const game = new Phaser.Game(config);
+    const stopLocalPlayTime = startLocalPlayTime(game);
     setupGameViewport(game);
     setupMobilePause(game);
     setupRendererRecovery(game);
     game.events.once(Phaser.Core.Events.DESTROY, destroyGameAudio);
-    game.events.once(Phaser.Core.Events.DESTROY,()=>{stopDevSaveSync();stopGameplaySync();stopAnalytics();window.removeEventListener('cislokraj-measurement-changed',updateSync);
+    game.events.once(Phaser.Core.Events.DESTROY,()=>{stopLocalPlayTime();stopDevSaveSync();stopGameplaySync();stopAnalytics();window.removeEventListener('cislokraj-measurement-changed',updateSync);
         window.removeEventListener('cislokraj-analytics-config-changed',updateSync);
         window.removeEventListener('error',reportError);window.removeEventListener('unhandledrejection',reportError);});
     if (DEV_TOOLS_ENABLED) (globalThis as any).__LITTLE_MATH_GAME__ = game;

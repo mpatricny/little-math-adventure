@@ -1,0 +1,53 @@
+{
+  "bodies": {
+    "source": "sources/evolution.png",
+    "cell": [
+      724,
+      724
+    ],
+    "sharedCrop": {
+      "left": 62,
+      "top": 50,
+      "width": 620,
+      "height": 620
+    },
+    "output": [
+      512,
+      512
+    ],
+    "baseline": 418,
+    "independentTrimming": false
+  },
+  "abilities": {
+    "source": "sources/abilities.png",
+    "columnWidth": 428,
+    "sharedBands": [
+      {
+        "top": 0,
+        "height": 388
+      },
+      {
+        "top": 390,
+        "height": 380
+      },
+      {
+        "top": 772,
+        "height": 451
+      }
+    ],
+    "output": [
+      384,
+      384
+    ],
+    "independentTrimming": false
+  },
+  "runtimeScale": {
+    "source": "src/scenes/BattleScene.ts:createPetCompanion",
+    "frame": 512,
+    "catalogScale": 0.5,
+    "PET_BASE_SCALE": 0.5,
+    "result": 0.25,
+    "logicalFramePixels": 128
+  },
+  "status": "Concept artwork, not approved production sprites. Body pose and proportion still need reconciliation with canonical production frame before video generation."
+}

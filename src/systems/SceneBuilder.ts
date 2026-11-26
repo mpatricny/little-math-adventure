@@ -181,6 +181,7 @@ export class SceneBuilder {
         origin?: [number, number];
         alpha?: number;
         visible?: boolean;
+        data?: Record<string, unknown>;
     } | undefined {
         if (!this.currentSceneDef) return undefined;
 
@@ -200,6 +201,7 @@ export class SceneBuilder {
                 origin: element.origin,
                 alpha: element.alpha,
                 visible: element.visible,
+                data: element.data,
             };
         }
 
@@ -219,6 +221,7 @@ export class SceneBuilder {
                 origin: uiElement.origin,
                 alpha: uiElement.alpha,
                 visible: uiElement.visible,
+                data: uiElement.data,
             };
         }
 

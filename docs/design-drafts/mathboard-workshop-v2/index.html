@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="cs"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>MathBoard · Výtvarný ateliér</title><link rel="icon" href="data:,"></head>
+<body>
+<header><a class="brand" href="../training-modes-v1/index.html"><span class="brand-mark">✦</span><span>MATHBOARD<small>VÝTVARNÝ ATELIÉR · 02</small></span></a><div class="header-note">Funkční ukázka · bez ukládání postupu</div><button id="inventory-toggle">Přehled prvků</button></header>
+<main><aside><div class="section-heading">VYBER PŘÍKLAD <span>15</span></div><div id="examples"></div></aside>
+<div class="stage-column"><div class="stage-heading"><div><p class="eyebrow" id="mode-title">Útok</p><h1 id="sample-title">Sčítání</h1></div><div class="tools"><button id="replay" title="Začít znovu">↻ Znovu</button><button id="fullscreen" title="Celá obrazovka">⛶</button></div></div>
+<div id="game"><div id="load-status">Připravuji tabuli…</div></div>
+<div class="under-stage"><span id="session-result" aria-live="polite">Vyber odpověď na tabuli</span><div class="tools"><label>Sada <select id="count"><option value="1">1 příklad</option><option value="3">3 příklady</option><option value="6">6 příkladů</option></select></label><button id="words" aria-pressed="false">Skrýt slova</button><button id="audio" aria-pressed="false">Zvuk</button></div></div>
+<div class="mode-section"><div class="section-heading">REŽIM TABULE</div><div id="modes"></div></div>
+<p class="review-note">Klikni na odpověď, prohlédni si výsledek a pokračuj šipkou. Vyzkoušej také chybu. U krokodýla přehraje trojúhelník názornou ukázku. Klávesy 1–3 vybírají odpověď.</p>
+<section id="inventory" hidden><h2>Vizuální prvky a pokrytí</h2><p>Prvních 15 příkladů pokrývá všechny současné formáty MathProblem a šest kroků krokodýlí kapitoly. Režimy přidávají kontext použití stejné tabule. Pravidla produkčního souboje spravuje společný MathBoard.</p>
+<table><thead><tr><th>Prvek</th><th>Varianty a stavy</th></tr></thead><tbody>
+<tr><td>Pergamen a obsah</td><td>Jednotná bezpečná plocha, krátký název, zadání, vyhrazené místo pro pomoc, odpovědi, výsledek, patička.</td></tr>
+<tr><td>Odpověď</td><td>Číslo 0–20 a vyšší; velké &lt;, =, &gt;; tři krokodýlí tvary. Normální, hover, stisk, návrat, disabled, správně, chyba.</td></tr>
+<tr><td>Zadání</td><td>+, −, ×; tři členy; chybějící operand; výraz proti číslu; dva výrazy; dlouhý výraz. Prázdné pole před odpovědí.</td></tr>
+<tr><td>Obrázkové lekce</td><td>Velikost 2:1 → počet → počet s číslem → čísla → výraz s pomocí → samostatný výraz. Ukázka obou směrů i rovnosti.</td></tr>
+<tr><td>Síla</td><td>Meč, mazlíček, obrana. Základní síla, nula při chybě, rychlostní energie, rychlý blok, součet celého tahu.</td></tr>
+<tr><td>Postup a odměna</td><td>Jedna úloha nebo sada 3/6; značky první odpovědi; dokončení; cvičení, runa přípravy, zkouška a čas katakomb.</td></tr>
+<tr><td>Společné hraní</td><td>Portrét a číslo aktivního dítěte; předání tahu po dokončení.</td></tr>
+<tr><td>Pomoc a animace</td><td>Pohyb celého povrchu tlačítka; značky ✓/×; obrázková oprava; přenos bodu; krmení krokodýla; párování při rovnosti.</td></tr>
+</tbody></table><p>Ukázka zachovává nynější rychlostní pravidla: +1/+2 energie, každé čtyři energie přidají bod útoku. Návrh osobního rychlostního bonusu se řeší v implementačním chatu. Zkouška, trénink a příprava zde ukazují odpovědi; neudělují skutečné odměny ani mastery. Katakomby mají funkční limit 15 sekund. Schválený nový vzhled zatím není zapojený do produkčních scén.</p></section>
+</div></main><script type="module" src="./main.ts"></script></body></html>

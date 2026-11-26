@@ -1,0 +1,6 @@
+{
+  "tool": "built-in image_gen",
+  "prompt": "Use case: background-extraction / precise-object-edit.\nInput image is a 3 columns by 2 rows sheet of five friendly orange rune fox forms; bottom right cell empty. Keep ALL five foxes exactly as they are: same kind smiling amber-eyed faces, fur, runes, pose, anatomy, body placement, relative size, five forms and 3x2 grid. Do not redesign, recolor, sharpen their expression, add or remove markings.\nRemove ALL of the brown/gray painted background haze, ALL glow outside the fur and ALL shadows. The complete area outside each fox silhouette, between their legs and inside the curve of the tails must be entirely transparent (genuine RGBA alpha). No matte, no checkerboard, no colored fringe, no white leftovers, no black, brown or gray background pixels. Preserve fine clean fur edge anti-aliasing against transparency.\nThe final image is only five isolated clean fox cutouts in the unchanged 3x2 cell alignment. Keep entire bodies and tails; don't crop, don't move or scale anything. No scenery, labels, letters, numbers, UI or borders. This is bitmap source art for a young child's fantasy game; all UI text and controls are runtime layers. Clean extraction quality is critical.",
+  "reference": "sources/forms-initial.png",
+  "transparent_background": true
+}

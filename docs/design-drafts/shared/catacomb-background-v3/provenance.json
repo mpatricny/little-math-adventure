@@ -1,0 +1,86 @@
+{
+  "generator": "Built-in image_gen",
+  "editType": "Outpaint only the padding around two existing game illustrations",
+  "sources": [
+    {
+      "file": "source/axis-hall-closed.webp",
+      "sha256": "86011feeb8b50bc6c6acd732bcaa019347b10a708b28a1ebac114844152b5625"
+    },
+    {
+      "file": "source/axis-hall-open.webp",
+      "sha256": "a062c747b4e9dae0c00ba887835e63c77c2257154772794e745a7ac1ce2df911"
+    },
+    {
+      "file": "source/catacombs.webp",
+      "sha256": "9b4aa07b0a268421c6d8502640bc4becf1e6e51ac0cf799bc0ebab9d1eb986fc"
+    },
+    {
+      "file": "source/shield-demonstration.webp",
+      "sha256": "e192915b69224eb739e3388f6927b89b4af11471519ec42c5444a4804a1722d4"
+    },
+    {
+      "file": "source/shield-outpaint-input.png",
+      "sha256": "f72d0f6603cb57ea14f51ea25b4eec48322a7bd337e94e0355594fb1e9d46de0"
+    },
+    {
+      "file": "source/shield-outpaint.png",
+      "sha256": "a7bc19a6d00156d4b926924682accd45c20e521190969ff67ce193b51e91fb3f"
+    },
+    {
+      "file": "source/speed-outpaint-input.png",
+      "sha256": "ef3d306b96788f81e48ba84279a8a5a3433cb964440e741a8b5cda4aa4b711e7"
+    },
+    {
+      "file": "source/speed-outpaint.png",
+      "sha256": "30cfa19689c31d63ebcc29f8c944541923cd8d595da08c0e87aa21b9ceb4089e"
+    }
+  ],
+  "script": "scripts/build-catacomb-background-assets.mjs",
+  "panelSize": {
+    "width": 1584,
+    "height": 993
+  },
+  "replacementRect": {
+    "left": 517,
+    "top": 159,
+    "width": 1053,
+    "height": 821
+  },
+  "retained": {
+    "speed": {
+      "left": 0,
+      "top": 150,
+      "width": 1053,
+      "height": 500,
+      "verticalBlend": 24
+    },
+    "shield": {
+      "left": 46,
+      "top": 186,
+      "width": 969,
+      "height": 373,
+      "blend": [
+        30,
+        32
+      ],
+      "actorMatte": "Authored soft boundary in export script keeps actors/effect core and lets outpaint own the side pillars."
+    }
+  },
+  "exports": [
+    {
+      "file": "public/assets/ui/catacomb-background-v3/shield-panel.webp",
+      "bytes": 284754,
+      "sha256": "2f77202c379bd48a56d495a360e63a57a16496428ea982fae1fcefbc3fdf0434"
+    },
+    {
+      "file": "public/assets/ui/catacomb-background-v3/speed-panel-closed.webp",
+      "bytes": 164538,
+      "sha256": "60b8fbcc2620d96e47f14ee8465248477035cd34001211b81827c8bb44b48ef6"
+    },
+    {
+      "file": "public/assets/ui/catacomb-background-v3/speed-panel-open.webp",
+      "bytes": 159002,
+      "sha256": "19d1fb4bb502fa175f6c7e38a5108d15dc23a74c3e185acef4a890212e2d847e"
+    }
+  ]
+}

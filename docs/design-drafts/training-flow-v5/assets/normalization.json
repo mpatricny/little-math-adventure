@@ -1,0 +1,16 @@
+{
+  "runes": {
+    "sharedCrop": {
+      "minX": 181,
+      "minY": 170,
+      "maxX": 695,
+      "maxY": 688
+    },
+    "canvas": [
+      256,
+      256
+    ]
+  },
+  "otherAssets": "Trim alpha padding, preserve aspect ratio, resize uniformly; no repainting.",
+  "coin": "First gold coin extracted from the existing vertical sheet; no new art."
+}

@@ -5,7 +5,7 @@ import { SceneBuilder } from '../systems/SceneBuilder';
 import { GameStateManager } from '../systems/GameStateManager';
 import { PlayerState, PreparationKind } from '../types';
 import preparation from '../data/preparation.json';
-import { MedievalActionButton } from './MedievalActionButton';
+import { GuideConfirmButton, blockGuidePointer } from './GuideConfirmButton';
 
 export type GuideToken = { texture?: string; frame?: number; value?: number; symbol?: string; badge?: string; tint?: number };
 export type GuidePage = {
@@ -32,7 +32,7 @@ export class VisualGuide {
     private index = 0;
     private completed = false;
     private destroyed = false;
-    private next!: MedievalActionButton;
+    private next?: GuideConfirmButton;
     private readonly player: PlayerState;
 
     constructor(
@@ -49,7 +49,8 @@ export class VisualGuide {
 
     private point(id: string) {
         const host = this.builder.get<Phaser.GameObjects.Container>(id)!;
-        return { x: host.x, y: host.y, depth: host.depth };
+        const definition = this.builder.getElementDef(id);
+        return { x: host.x, y: host.y, depth: host.depth, width: definition?.width ?? 0, height: definition?.height ?? 0 };
     }
 
     private show(): void {
@@ -60,10 +61,11 @@ export class VisualGuide {
         const panel = this.point('guidePanelHost');
         this.root = this.scene.add.container(0, 0).setDepth(panel.depth).setName(`guide:${page.id}`);
         // One stable input shield prevents a demonstration click from buying or selecting anything underneath.
-        this.root.add(this.scene.add.rectangle(640, 360, 1280, 720, 0x000000, 0).setInteractive());
+        const shield = this.point('guideShieldHost');
+        this.root.add(blockGuidePointer(this.scene.add.rectangle(shield.x, shield.y, shield.width, shield.height, 0x000000, 0)));
         this.drawSpotlight(page.target);
-        const panelHeight = this.builder.getElementDef('guidePanelHost')?.height ?? 392;
-        this.root.add(createMedievalPanel(this.scene, panel.x, panel.y, 1000, panelHeight, 32));
+        this.root.add(createMedievalPanel(this.scene, panel.x, panel.y, panel.width, panel.height, 32));
+        this.root.setData('safeArea', this.point('guideSafeAreaHost'));
         const title = this.point('guideTitleHost');
         this.root.add(this.text(title.x, title.y, page.title, 27));
         const before = this.point('guideBeforeHost');
@@ -89,27 +91,18 @@ export class VisualGuide {
         });
         this.tweens.push(this.scene.tweens.add({ targets: equationText, alpha: 1, delay: 2500, duration: 350 }));
         if (page.preparation) this.animateCharges(page.preparation, equation.x, equation.y, equationText);
-        const replay = this.point('guideReplayHost');
-        const next = this.point('guideNextHost');
-        const close = this.point('guideCloseHost');
-        const replayButton = new MedievalActionButton(this.scene, {
-            ...replay, width: 122, height: 58, layout: 'text', label: '↻', labelFontSize: 30,
-            accent: 0xd9c27c, onClick: () => this.show(),
+        this.next = new GuideConfirmButton(this.scene, {
+            ...this.point('guideConfirmHost'), name: 'guideConfirm', enabled: false,
+            theme: this.scene.sys.settings.key.startsWith('Silverpond') ? 'water' : 'medieval',
+            onConfirm: () => this.advance(),
         });
-        this.next = new MedievalActionButton(this.scene, {
-            ...next, width: 160, height: 58, layout: 'text', label: this.index < this.pages.length - 1 ? '▶' : '✓',
-            labelFontSize: 27, accent: 0xa5df8c, enabled: false, onClick: () => this.advance(),
-        });
-        const closeButton = new MedievalActionButton(this.scene, {
-            ...close, width: 88, height: 52, layout: 'text', label: '×', labelFontSize: 25,
-            accent: 0xe3b286, onClick: () => this.dismiss(),
-        });
-        this.root.add([replayButton.root, this.next.root, closeButton.root]);
+        this.root.add(this.next.root);
         // Audio is optional: muted players can finish after seeing the same complete demonstration.
         this.timers.push(this.scene.time.delayedCall(page.preparation ? 6500 : 3300, () => {
+            if (this.destroyed) return;
             this.completed = true;
             this.root.setData('ready', true);
-            this.next.setEnabled(true);
+            this.next?.setEnabled(true);
         }));
         void gameAudio().speak(page.voiceId, this);
         // Keep a stable, inspectable description of the current page for accessibility and visual QA.
@@ -185,16 +178,10 @@ export class VisualGuide {
         }
     }
 
-    private dismiss(): void {
-        if (this.destroyed) return;
-        // An explicit × acknowledges only the visible page, even mid-animation.
-        // Scene shutdown still calls destroy() without acknowledging anything.
-        this.rememberCurrentPage();
-        this.destroy();
-    }
-
     private advance(): void {
         if (!this.completed || this.destroyed) return;
+        this.completed = false;
+        this.next?.setEnabled(false);
         const id = this.pages[this.index].id;
         this.rememberCurrentPage();
         this.scene.events.emit('guide-completed', id);
@@ -206,6 +193,7 @@ export class VisualGuide {
         gameAudio().cancel(this);
         this.timers.forEach(timer => timer.remove()); this.timers = [];
         this.tweens.forEach(tween => tween.remove()); this.tweens = [];
+        this.next?.destroy(); this.next = undefined;
         this.root?.destroy();
     }
 

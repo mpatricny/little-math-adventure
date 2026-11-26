@@ -1,0 +1,68 @@
+{
+  "errors": [],
+  "blocked": [],
+  "sizes": [
+    {
+      "label": "overview-1280",
+      "minimum": 80
+    },
+    {
+      "label": "exam-1280",
+      "minimum": 80
+    },
+    {
+      "label": "overview-1024",
+      "minimum": 64
+    },
+    {
+      "label": "exam-1024",
+      "minimum": 64
+    },
+    {
+      "label": "overview-768",
+      "minimum": 47.99999237060547
+    },
+    {
+      "label": "exam-768",
+      "minimum": 48
+    }
+  ],
+  "storage": {
+    "local": 0,
+    "session": 0
+  },
+  "unitTests": 4,
+  "migrations": "Not required: prototype-only in-memory data.",
+  "visualReview": {
+    "reviewedImages": [
+      "journey-overview-1280.png",
+      "journey-overview-768.png",
+      "journey-exam-1280.png",
+      "journey-exam-no-words-768.png",
+      "journey-no-words-768.png",
+      "journey-hover-768.png",
+      "journey-pressed-768.png",
+      "journey-pointer-out-768.png",
+      "journey-victory-768.png",
+      "journey-rescue-768.png",
+      "journey-upgrade-768.png",
+      "journey-pythia-768.png",
+      "journey-mastered-768.png"
+    ],
+    "findings": [
+      "Runtime module selection has one highlighted frame and a check; baked first-card glow is covered with the canonical unlit frame at identical scale.",
+      "Speed-only overview, short exam cue, clear per-child portraits, no overlapping controls at inspected sizes.",
+      "Victory and overview share exact target, median and door state; victory gate enlarged following review.",
+      "Rescue, Pythia binding and real 6 to 7 upgrade are distinct. Completion replaces the large lock with a star and keeps target selection enabled.",
+      "Words-hidden states retain module pictures, speed bars, lock/book demonstration, workshop destination and fox."
+    ],
+    "limitations": [
+      "HTML prototype, not production Phaser release. SceneBuilder hosts and Canvas/WebGL acceptance belong to production integration.",
+      "OS Zuzana voice is a working Czech preview, not final ElevenLabs Zyx audio.",
+      "First child playtest and full module pagination are not covered.",
+      "Higher speed tiers, retention reward and progress-mode mana remain a proposal."
+    ]
+  },
+  "production": false,
+  "typecheck": "Isolated TypeScript invocation reported four diagnostics in SaveSystem/Analytics dependencies (including missing ImportMeta.env configuration), none in the new session file; not a clean project-wide typecheck."
+}

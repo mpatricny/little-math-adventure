@@ -3,6 +3,7 @@ import { analytics, type GameContext } from './AnalyticsClient';
 import { gameplayId, type CapturedGameplay, type GameplayAttempt } from './gameplayData';
 import type { MathProblem } from '../types';
 import { formatMathProblem } from '../utils/formatMathProblem';
+import { getAdvancedProblem } from '../systems/AdvancedCurriculum';
 import { gameContext } from './SceneTelemetry';
 
 type ProblemInfo={key:string;question:string;choices:Array<string|number>;source:'mastery'|'comparison'|'activity';context:string;
@@ -16,7 +17,8 @@ export function observeMathProblem(problem:MathProblem,context:string,override?:
     key:observationKey(problem),question:formatMathProblem(problem,'question'),choices:problem.choices.map(v=>comparison?['<','=','>'][v]:v),
     correctAnswer:comparison?['<','=','>'][problem.answer]:problem.answer,
     source:problem.comparisonMeta?'comparison':problem.masteryKey?'mastery':'activity',context,
-    taskKind:comparison?'comparison':'arithmetic',skill:problem.comparisonMeta?.stage??problem.masteryKey?.split(':')[0],form:problem.masteryKey?.split(':').at(-1),
+    taskKind:comparison?'comparison':'arithmetic',skill:problem.comparisonMeta?.stage??problem.masteryKey?.split(':')[0],
+    form:problem.masteryKey && (getAdvancedProblem(problem.masteryKey)?.form ?? problem.masteryKey.split(':').at(-1)),
     demo:problem.comparisonMeta?.diagnosticMode===true},override);}
 export function observedChoice(problem:MathProblem,value:number){return problem.problemType?.startsWith('comparison')?['<','=','>'][value]:value;}
 export class ProblemObservation {

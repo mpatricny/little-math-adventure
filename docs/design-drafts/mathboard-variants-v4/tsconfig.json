@@ -1,0 +1,11 @@
+{
+  "extends": "../../../tsconfig.json",
+  "include": [
+    "./Art.ts",
+    "./VariantsView.ts",
+    "./ImpactView.ts",
+    "./catalog.ts",
+    "./main.ts",
+    "../../../src/vite-env.d.ts"
+  ]
+}

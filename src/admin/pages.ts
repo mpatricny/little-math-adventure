@@ -1,4 +1,5 @@
 import type { AdminApi } from './api';
+import { createRecordId } from '../utils/recordId';
 import { apiQuery, updateFilters } from './filters';
 import { answerTable, badge, cards, chart, date, duration, el, empty, link, locationName, deviceName, metadata, number, pager, panel, percent, status, skillName, formName, table, timeline, button } from './components';
 
@@ -20,7 +21,7 @@ function annotationButton(api:AdminApi,type:'profile'|'session'|'visit',id:strin
     const from=el('input'),to=el('input');from.type=to.type='datetime-local';const f=el('label','Od (volitelné)'),t=el('label','Do (volitelné)');f.append(from);t.append(to);
     const error=el('p',undefined,'warning'),submit=el('button','Uložit');submit.type='submit';form.append(label,reason,f,t,error,submit,button('Zrušit',()=>dialog.close()));
     form.addEventListener('submit',async e=>{e.preventDefault();if(!!from.value!==!!to.value){error.textContent='Vyplň oba konce intervalu, nebo je nech prázdné.';return;}
-        submit.disabled=true;try{await api.annotate({mutationId:crypto.randomUUID(),targetType:type,targetId:id,label:label.value,reason:reason.value,
+        submit.disabled=true;try{await api.annotate({mutationId:createRecordId(),targetType:type,targetId:id,label:label.value,reason:reason.value,
             ...(from.value?{from:new Date(from.value).toISOString(),to:new Date(to.value).toISOString()}: {})});dialog.close();onRefresh();}
         catch(e){error.textContent=e instanceof Error?e.message:'Uložení se nezdařilo.';}finally{submit.disabled=false;}});
     dialog.addEventListener('close',()=>dialog.remove());document.body.append(dialog);dialog.showModal();});}

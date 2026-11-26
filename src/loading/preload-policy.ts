@@ -31,5 +31,5 @@ export const SPECULATIVE_TEXTURE_BYTES = 64 * 1024 * 1024;
 
 /** No speculative image decoding while a child is solving a timed/measured task. */
 export function canPrepareTextures(scene: string): boolean {
-    return !/Battle|Trial|Puzzle|Riddle|ManaCollection/.test(scene);
+    return !/Battle|Trial|FoxLesson|Puzzle|Riddle|ManaCollection/.test(scene);
 }

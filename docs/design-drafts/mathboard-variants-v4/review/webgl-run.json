@@ -1,0 +1,10 @@
+{
+  "renderer": 2,
+  "formatsChecked": 15,
+  "contextsChecked": 10,
+  "impactsChecked": 4,
+  "desktopAssertions": "passed",
+  "mobileInitializationInSameProcess": "timeout after 30000ms",
+  "isolatedMobileRetry": "passed: real tap, one correct first answer, 5 damage",
+  "details": "See REVIEW.md and final-smoke.json. No cause claimed for the initial timeout."
+}

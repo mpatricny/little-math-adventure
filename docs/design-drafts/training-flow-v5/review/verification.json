@@ -1,0 +1,233 @@
+{
+  "errors": [],
+  "screens": [
+    "01-zyx",
+    "01-hover",
+    "01-pressed",
+    "01-pointer-out",
+    "01-selected",
+    "02-coop-confirmed",
+    "02-mastered",
+    "02-solo",
+    "04-bonus",
+    "04-no-bonus",
+    "05-upgrade",
+    "05-confirmed",
+    "05-first-player2",
+    "tablet-1024-zyx",
+    "tablet-1024-coop",
+    "tablet-1024-victory",
+    "tablet-1024-pet",
+    "tablet-768-zyx",
+    "tablet-768-coop",
+    "tablet-768-victory",
+    "tablet-768-pet",
+    "no-words-coop",
+    "no-words-mastered"
+  ],
+  "checks": [
+    "Pointer-out does not choose a path",
+    "Choosing path enables continuation",
+    "Choice hit target stays stable",
+    "Co-op waits for both children",
+    "One child cannot start co-op",
+    "Both confirmations allow co-op",
+    "Start opens the shared MathBoard directly",
+    "Mastered practice is disabled",
+    "Solo requires only one confirmation",
+    "Mana reward is separate from coins",
+    "No bonus fixture does not show mana earned",
+    "Pet reward cannot be confirmed twice",
+    "Pet reward keeps explicit owner",
+    "Touch targets ≥44px: 1024 zyx",
+    "Touch targets ≥44px: 1024 coop",
+    "Touch targets ≥44px: 1024 victory",
+    "Touch targets ≥44px: 1024 pet",
+    "Touch targets ≥44px: 768 zyx",
+    "Touch targets ≥44px: 768 coop",
+    "Touch targets ≥44px: 768 victory",
+    "Touch targets ≥44px: 768 pet",
+    "Touch confirms both players",
+    "Intro mastered state also blocks practice",
+    "All visible assets loaded",
+    "No save or API mutations",
+    "No runtime errors"
+  ],
+  "touch": [
+    {
+      "viewport": {
+        "width": 1024,
+        "height": 768
+      },
+      "screen": "zyx",
+      "geometry": [
+        {
+          "id": "ui-practice",
+          "w": 262.046875,
+          "h": 364.53125
+        },
+        {
+          "id": "ui-progress",
+          "w": 262.046875,
+          "h": 364.53125
+        },
+        {
+          "id": "ui-action",
+          "w": 262.046875,
+          "h": 65.21875
+        }
+      ]
+    },
+    {
+      "viewport": {
+        "width": 1024,
+        "height": 768
+      },
+      "screen": "coop",
+      "geometry": [
+        {
+          "id": "ui-practice0",
+          "w": 203.8125,
+          "h": 114.125
+        },
+        {
+          "id": "ui-progress0",
+          "w": 203.8125,
+          "h": 114.125
+        },
+        {
+          "id": "ui-practice1",
+          "w": 203.8125,
+          "h": 114.125
+        },
+        {
+          "id": "ui-progress1",
+          "w": 203.8125,
+          "h": 114.125
+        },
+        {
+          "id": "ui-action",
+          "w": 331.9375,
+          "h": 76.859375
+        }
+      ]
+    },
+    {
+      "viewport": {
+        "width": 1024,
+        "height": 768
+      },
+      "screen": "victory",
+      "geometry": [
+        {
+          "id": "ui-action",
+          "w": 331.9375,
+          "h": 76.859375
+        }
+      ]
+    },
+    {
+      "viewport": {
+        "width": 1024,
+        "height": 768
+      },
+      "screen": "pet",
+      "geometry": [
+        {
+          "id": "ui-action",
+          "w": 331.9375,
+          "h": 76.859375
+        }
+      ]
+    },
+    {
+      "viewport": {
+        "width": 768,
+        "height": 1024
+      },
+      "screen": "zyx",
+      "geometry": [
+        {
+          "id": "ui-practice",
+          "w": 206.6875,
+          "h": 287.53125
+        },
+        {
+          "id": "ui-progress",
+          "w": 206.6875,
+          "h": 287.53125
+        },
+        {
+          "id": "ui-action",
+          "w": 206.6875,
+          "h": 51.4375
+        }
+      ]
+    },
+    {
+      "viewport": {
+        "width": 768,
+        "height": 1024
+      },
+      "screen": "coop",
+      "geometry": [
+        {
+          "id": "ui-practice0",
+          "w": 160.75,
+          "h": 90.015625
+        },
+        {
+          "id": "ui-progress0",
+          "w": 160.75,
+          "h": 90.015625
+        },
+        {
+          "id": "ui-practice1",
+          "w": 160.75,
+          "h": 90.015625
+        },
+        {
+          "id": "ui-progress1",
+          "w": 160.75,
+          "h": 90.015625
+        },
+        {
+          "id": "ui-action",
+          "w": 261.8125,
+          "h": 60.625
+        }
+      ]
+    },
+    {
+      "viewport": {
+        "width": 768,
+        "height": 1024
+      },
+      "screen": "victory",
+      "geometry": [
+        {
+          "id": "ui-action",
+          "w": 261.8125,
+          "h": 60.625
+        }
+      ]
+    },
+    {
+      "viewport": {
+        "width": 768,
+        "height": 1024
+      },
+      "screen": "pet",
+      "geometry": [
+        {
+          "id": "ui-action",
+          "w": 261.8125,
+          "h": 60.625
+        }
+      ]
+    }
+  ],
+  "requests": [],
+  "storage": [],
+  "brokenImages": []
+}

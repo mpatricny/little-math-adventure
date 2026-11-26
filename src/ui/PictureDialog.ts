@@ -1,440 +1,127 @@
-import { voice, gameAudio } from '../audio/AudioDirector';
 import Phaser from 'phaser';
+import { gameAudio } from '../audio/AudioDirector';
+import { SceneBuilder } from '../systems/SceneBuilder';
+import { waterHost } from './SceneLayoutHost';
+import { GuideConfirmButton, blockGuidePointer } from './GuideConfirmButton';
+import { createImageNineSlice } from './MedievalPanel';
 
-/**
- * Content item for PictureDialog
- * Can be either an image/sprite or an icon
- */
 export interface DialogContentItem {
     type: 'image' | 'sprite' | 'icon' | 'arrow';
-    key?: string;           // Texture key for image/sprite
-    frame?: number;         // Frame number for spritesheet
-    scale?: number;         // Scale for this specific item
-    text?: string;          // Text to display (for icons like arrows)
-    tint?: number;          // Optional tint color
+    key?: string;
+    frame?: number;
+    scale?: number;
+    text?: string;
+    tint?: number;
 }
 
-/**
- * Configuration for PictureDialog
- */
 export interface PictureDialogConfig {
     voiceId?: string;
-    x?: number;             // Center X position (default: screen center)
-    y?: number;             // Center Y position (default: screen center)
-    width?: number;         // Dialog width (default: auto based on content)
-    height?: number;        // Dialog height (default: auto based on content)
-    padding?: number;       // Internal padding (default: 40)
-    depth?: number;         // Render depth (default: 1000)
-    content: DialogContentItem[];  // Array of content to display horizontally
-    showOverlay?: boolean;  // Show dark overlay behind dialog (default: true)
-    overlayAlpha?: number;  // Overlay alpha (default: 0.7)
-    tapText?: string;       // Text shown below content (default: localized "tap to continue")
-    onDismiss?: () => void; // Callback when dialog is dismissed
+    content: DialogContentItem[];
+    onDismiss?: () => void;
 }
 
-/**
- * PictureDialog - Visual dialog for pre-reader storytelling
- *
- * This component displays images and icons in a horizontal row
- * inside a nine-slice frame. Designed for conveying meaning through
- * pictures rather than text, making it accessible to pre-readers.
- *
- * Key Features:
- * - Uses Frame Grey 9-slice for scalable dialog background
- * - Displays content horizontally (e.g., [😠 slime] → [⚔️] → [😊 slime])
- * - Dark overlay behind dialog for focus
- * - Tap anywhere to dismiss
- * - Callback on dismiss for chaining actions
- *
- * Usage:
- * ```typescript
- * const dialog = new PictureDialog(scene, {
- *     content: [
- *         { type: 'sprite', key: 'slime-sheet', frame: 0, tint: 0xff6666 },
- *         { type: 'arrow' },
- *         { type: 'image', key: 'fight-icon' },
- *         { type: 'arrow' },
- *         { type: 'sprite', key: 'slime-sheet', frame: 0, tint: 0x66ff66 },
- *     ],
- *     onDismiss: () => console.log('Dismissed!')
- * });
- * ```
+/** Picture-led storytelling with one explicit acknowledgement. The overlay is
+ * an input shield, never an alternate dismiss target. Audio is optional.
  */
 export class PictureDialog {
-    private scene: Phaser.Scene;
-    private container: Phaser.GameObjects.Container;
-    private overlay: Phaser.GameObjects.Rectangle | null = null;
-    private frame: Phaser.GameObjects.NineSlice | Phaser.GameObjects.Rectangle;
-    private contentItems: Phaser.GameObjects.GameObject[] = [];
-    private tapText: Phaser.GameObjects.Text | null = null;
-    private onDismiss?: () => void;
-    private isDestroyed = false;
+    private readonly container: Phaser.GameObjects.Container;
+    private readonly confirm: GuideConfirmButton;
+    private readonly layout: SceneBuilder;
+    private timers: Phaser.Time.TimerEvent[] = [];
+    private tweens: Phaser.Tweens.Tween[] = [];
+    private closing = false;
+    private destroyed = false;
 
-    // Nine-slice frame texture key (Frame Grey 9 slice-cropped)
-    private static readonly FRAME_TEXTURE = '991bb46f-0417-4c22-8e3e-04cea0a3079a';
-    private static readonly FRAME_CONFIG = {
-        leftWidth: 41,
-        rightWidth: 57,
-        topHeight: 45,
-        bottomHeight: 50,
-    };
+    constructor(private readonly scene: Phaser.Scene, private readonly config: PictureDialogConfig) {
+        this.layout = new SceneBuilder(scene);
+        this.layout.buildScene('PictureDialogOverlay');
+        const shield = waterHost(this.layout, 'pictureDialogShieldHost');
+        const panel = waterHost(this.layout, 'pictureDialogPanelHost');
+        const contentHost = waterHost(this.layout, 'pictureDialogContentHost');
+        this.container = scene.add.container(0, 0).setDepth(shield.depth).setName('pictureDialog');
+        this.container.setData('safeArea', waterHost(this.layout, 'pictureDialogSafeAreaHost'));
+        this.container.add(blockGuidePointer(scene.add.rectangle(shield.x, shield.y, shield.width, shield.height, 0x08080d, 0.75)));
+        // This is the existing authored nine-slice, so its ornaments retain shape.
+        const frame = createImageNineSlice(scene, panel.x, panel.y, panel.width, panel.height,
+            '991bb46f-0417-4c22-8e3e-04cea0a3079a', { left: 41, right: 57, top: 45, bottom: 50 })
+            .setName('pictureDialogFrame');
+        this.container.add(frame);
+        const pictures = scene.add.container(contentHost.x, contentHost.y).setName('pictureDialogContent');
+        this.container.add(pictures);
+        const entries = config.content.map(item => this.createItem(item));
+        const naturalWidth = entries.reduce((total, item) => total + item.width, 0) + Math.max(0, entries.length - 1) * 28;
+        const naturalHeight = Math.max(1, ...entries.map(item => item.height));
+        const fit = Math.min(1, contentHost.width / Math.max(1, naturalWidth), contentHost.height / naturalHeight);
+        let x = -naturalWidth * fit / 2;
+        entries.forEach(({ object, width }, i) => {
+            object.setScale(object.scaleX * fit).setPosition(x + width * fit / 2, 0).setAlpha(0);
+            pictures.add(object);
+            x += (width + 28) * fit;
+            this.tweens.push(scene.tweens.add({ targets: object, alpha: 1, delay: 180 + i * 280, duration: 350 }));
+        });
+        this.confirm = new GuideConfirmButton(scene, {
+            ...waterHost(this.layout, 'pictureDialogConfirmHost'), name: 'pictureDialogConfirm', enabled: false,
+            onConfirm: () => this.dismiss(),
+        });
+        this.container.add(this.confirm.root);
+        this.timers.push(scene.time.delayedCall(650 + entries.length * 280, () => {
+            if (!this.destroyed && !this.closing) this.confirm.setEnabled(true);
+        }));
+        if (config.voiceId) void gameAudio().speak(config.voiceId, this);
+        scene.events.once(Phaser.Scenes.Events.SHUTDOWN, this.destroy, this);
+    }
 
-    constructor(scene: Phaser.Scene, config: PictureDialogConfig) {
-        this.scene = scene;
-        this.onDismiss = config.onDismiss;
-
-        const padding = config.padding ?? 40;
-        const depth = config.depth ?? 1000;
-
-        // Calculate content dimensions
-        const { contentWidth, contentHeight, items } = this.createContentItems(config.content, padding);
-
-        // Calculate dialog size
-        const dialogWidth = config.width ?? contentWidth + padding * 2;
-        const dialogHeight = config.height ?? contentHeight + padding * 2 + 40; // Extra for tap text
-
-        // Position
-        const x = config.x ?? 640;
-        const y = config.y ?? 360;
-
-        // Create container at position
-        this.container = scene.add.container(x, y).setDepth(depth);
-
-        // Create overlay if enabled (default: true)
-        if (config.showOverlay !== false) {
-            this.overlay = scene.add.rectangle(0, 0, 1280, 720, 0x000000, config.overlayAlpha ?? 0.7)
-                .setOrigin(0.5)
-                .setDepth(depth - 1)
-                .setPosition(x, y);
-
-            // Make overlay interactive to capture all clicks
-            this.overlay.setInteractive();
+    private createItem(item: DialogContentItem): {
+        object: Phaser.GameObjects.Image | Phaser.GameObjects.Sprite | Phaser.GameObjects.Text;
+        width: number; height: number;
+    } {
+        let object: Phaser.GameObjects.Image | Phaser.GameObjects.Sprite | Phaser.GameObjects.Text;
+        if ((item.type === 'image' || item.type === 'sprite') && item.key && this.scene.textures.exists(item.key)) {
+            object = item.type === 'sprite'
+                ? this.scene.add.sprite(0, 0, item.key, item.frame ?? 0)
+                : this.scene.add.image(0, 0, item.key);
+            object.setScale(item.scale ?? 0.5);
+            if (item.tint !== undefined) object.setTint(item.tint);
+        } else {
+            object = this.scene.add.text(0, 0, item.type === 'arrow' ? '→' : item.text ?? '✦', {
+                resolution: 2, fontFamily: 'Arial, sans-serif', fontSize: item.type === 'arrow' ? '64px' : '52px',
+                fontStyle: 'bold', color: '#b9edff', stroke: '#122031', strokeThickness: 2,
+            }).setOrigin(0.5);
         }
-
-        // Create frame (nine-slice or fallback rectangle)
-        this.frame = this.createFrame(dialogWidth, dialogHeight);
-        this.container.add(this.frame);
-
-        // Add content items to container
-        this.positionContentItems(items, contentWidth, dialogHeight, padding);
-
-        // Add tap text
-        const tapTextContent = config.tapText ?? '[ klepni pro pokračování ]';
-        this.tapText = scene.add.text(0, dialogHeight / 2 - 25, tapTextContent, {
-            fontSize: '16px',
-            fontFamily: 'Arial, sans-serif',
-            color: '#aaaaaa',
-            fontStyle: 'italic',
-        }).setOrigin(0.5);
-        this.container.add(this.tapText);
-
-        // Pulse animation for tap text
-        scene.tweens.add({
-            targets: this.tapText,
-            alpha: 0.5,
-            duration: 800,
-            yoyo: true,
-            repeat: -1,
-            ease: 'Sine.easeInOut',
-        });
-
-        // Setup input to dismiss on tap
-        this.setupInput();
-
-        // Entrance animation
-        this.playEntranceAnimation();
-        if (config.voiceId) voice(scene, config.voiceId);
+        return { object, width: object.displayWidth, height: object.displayHeight };
     }
 
-    /**
-     * Create the dialog frame (nine-slice or fallback)
-     */
-    private createFrame(width: number, height: number): Phaser.GameObjects.NineSlice | Phaser.GameObjects.Rectangle {
-        // Try to create nine-slice if texture exists
-        if (this.scene.textures.exists(PictureDialog.FRAME_TEXTURE)) {
-            const config = PictureDialog.FRAME_CONFIG;
-            return this.scene.add.nineslice(
-                0, 0,
-                PictureDialog.FRAME_TEXTURE,
-                undefined,
-                width, height,
-                config.leftWidth, config.rightWidth,
-                config.topHeight, config.bottomHeight
-            ).setOrigin(0.5);
-        }
-
-        // Fallback: simple rectangle with border
-        console.warn('[PictureDialog] Nine-slice texture not found, using fallback');
-        const rect = this.scene.add.rectangle(0, 0, width, height, 0x333344)
-            .setStrokeStyle(4, 0x666688)
-            .setOrigin(0.5);
-        return rect;
-    }
-
-    /**
-     * Create content items from config (before positioning)
-     */
-    private createContentItems(
-        content: DialogContentItem[],
-        padding: number
-    ): { contentWidth: number; contentHeight: number; items: Phaser.GameObjects.GameObject[] } {
-        const items: Phaser.GameObjects.GameObject[] = [];
-        let totalWidth = 0;
-        let maxHeight = 0;
-        const spacing = 20;
-
-        content.forEach((item, index) => {
-            let obj: Phaser.GameObjects.GameObject;
-            let itemWidth = 0;
-            let itemHeight = 0;
-
-            switch (item.type) {
-                case 'image':
-                    if (item.key && this.scene.textures.exists(item.key)) {
-                        const img = this.scene.add.image(0, 0, item.key);
-                        const scale = item.scale ?? 0.5;
-                        img.setScale(scale);
-                        if (item.tint !== undefined) img.setTint(item.tint);
-                        itemWidth = img.displayWidth;
-                        itemHeight = img.displayHeight;
-                        obj = img;
-                    } else {
-                        // Placeholder for missing image
-                        obj = this.createPlaceholder('?');
-                        itemWidth = itemHeight = 80;
-                    }
-                    break;
-
-                case 'sprite':
-                    if (item.key && this.scene.textures.exists(item.key)) {
-                        const sprite = this.scene.add.sprite(0, 0, item.key, item.frame ?? 0);
-                        const scale = item.scale ?? 0.8;
-                        sprite.setScale(scale);
-                        if (item.tint !== undefined) sprite.setTint(item.tint);
-                        itemWidth = sprite.displayWidth;
-                        itemHeight = sprite.displayHeight;
-                        obj = sprite;
-                    } else {
-                        obj = this.createPlaceholder('S');
-                        itemWidth = itemHeight = 80;
-                    }
-                    break;
-
-                case 'arrow':
-                    const arrow = this.scene.add.text(0, 0, '→', {
-                        fontSize: '48px',
-                        fontFamily: 'Arial, sans-serif',
-                        color: '#88ccff',
-                        fontStyle: 'bold',
-                    }).setOrigin(0.5);
-                    itemWidth = arrow.width;
-                    itemHeight = arrow.height;
-                    obj = arrow;
-                    break;
-
-                case 'icon':
-                default:
-                    const icon = this.scene.add.text(0, 0, item.text || '?', {
-                        fontSize: '40px',
-                        fontFamily: 'Arial, sans-serif',
-                        color: '#ffffff',
-                        fontStyle: 'bold',
-                    }).setOrigin(0.5);
-                    itemWidth = icon.width;
-                    itemHeight = icon.height;
-                    obj = icon;
-                    break;
-            }
-
-            items.push(obj);
-            totalWidth += itemWidth + (index > 0 ? spacing : 0);
-            maxHeight = Math.max(maxHeight, itemHeight);
-        });
-
-        // Store item widths for positioning
-        (this as any)._itemWidths = items.map((item, i) => {
-            const config = content[i];
-            if (config.type === 'arrow') return 48;
-            if (config.type === 'icon') return 40;
-            if (item instanceof Phaser.GameObjects.Image) return (item as Phaser.GameObjects.Image).displayWidth;
-            if (item instanceof Phaser.GameObjects.Sprite) return (item as Phaser.GameObjects.Sprite).displayWidth;
-            return 80;
-        });
-
-        return {
-            contentWidth: totalWidth,
-            contentHeight: Math.max(maxHeight, 100),
-            items,
-        };
-    }
-
-    /**
-     * Position content items horizontally within the dialog
-     */
-    private positionContentItems(
-        items: Phaser.GameObjects.GameObject[],
-        contentWidth: number,
-        dialogHeight: number,
-        padding: number
-    ): void {
-        const spacing = 20;
-        const itemWidths = (this as any)._itemWidths || items.map(() => 80);
-
-        // Start position (centered)
-        let currentX = -contentWidth / 2;
-        const centerY = -20; // Slightly above center to make room for tap text
-
-        items.forEach((item, i) => {
-            const itemWidth = itemWidths[i];
-            const itemCenterX = currentX + itemWidth / 2;
-
-            if (item instanceof Phaser.GameObjects.Image ||
-                item instanceof Phaser.GameObjects.Sprite ||
-                item instanceof Phaser.GameObjects.Text) {
-                item.setPosition(itemCenterX, centerY);
-            }
-
-            this.container.add(item);
-            this.contentItems.push(item);
-
-            currentX += itemWidth + spacing;
-        });
-    }
-
-    /**
-     * Create a placeholder for missing content
-     */
-    private createPlaceholder(label: string): Phaser.GameObjects.Container {
-        const container = this.scene.add.container(0, 0);
-        const bg = this.scene.add.circle(0, 0, 40, 0x444466);
-        const text = this.scene.add.text(0, 0, label, {
-            fontSize: '32px',
-            fontFamily: 'Arial, sans-serif',
-            color: '#888888',
-        }).setOrigin(0.5);
-        container.add([bg, text]);
-        container.setSize(80, 80);
-        return container;
-    }
-
-    /**
-     * Setup input handling for dismissal
-     */
-    private setupInput(): void {
-        // Make container interactive
-        const bounds = this.frame.getBounds();
-        this.container.setSize(bounds.width, bounds.height);
-        this.container.setInteractive({ useHandCursor: true });
-
-        // Dismiss on tap (anywhere)
-        const dismissHandler = () => {
-            if (this.isDestroyed) return;
-            this.dismiss();
-        };
-
-        this.container.once('pointerdown', dismissHandler);
-
-        // Also dismiss on overlay tap
-        if (this.overlay) {
-            this.overlay.once('pointerdown', dismissHandler);
-        }
-
-        // Keyboard dismiss (space or enter)
-        const keyHandler = (event: KeyboardEvent) => {
-            if (event.key === ' ' || event.key === 'Enter') {
-                dismissHandler();
-                this.scene.input.keyboard?.off('keydown', keyHandler);
-            }
-        };
-        this.scene.input.keyboard?.on('keydown', keyHandler);
-    }
-
-    /**
-     * Play entrance animation
-     */
-    private playEntranceAnimation(): void {
-        // Start scaled down and fade in
-        this.container.setScale(0.8);
-        this.container.setAlpha(0);
-
-        if (this.overlay) {
-            this.overlay.setAlpha(0);
-            this.scene.tweens.add({
-                targets: this.overlay,
-                alpha: 0.7,
-                duration: 200,
-            });
-        }
-
-        this.scene.tweens.add({
-            targets: this.container,
-            scale: 1,
-            alpha: 1,
-            duration: 250,
-            ease: 'Back.easeOut',
-        });
-    }
-
-    /**
-     * Dismiss the dialog with animation
-     */
     dismiss(): void {
-        gameAudio().cancel(this.scene);
-        if (this.isDestroyed) return;
-        this.isDestroyed = true;
-
-        // Exit animation
-        this.scene.tweens.add({
-            targets: this.container,
-            scale: 0.9,
-            alpha: 0,
-            duration: 150,
-            ease: 'Power2.easeIn',
+        if (this.destroyed || this.closing) return;
+        this.closing = true;
+        this.confirm.setEnabled(false);
+        this.stopMotion();
+        this.tweens.push(this.scene.tweens.add({ targets: this.container, alpha: 0, duration: 160,
             onComplete: () => {
+                if (this.destroyed) return;
                 this.destroy();
-                if (this.onDismiss) {
-                    this.onDismiss();
-                }
-            },
-        });
-
-        if (this.overlay) {
-            this.scene.tweens.add({
-                targets: this.overlay,
-                alpha: 0,
-                duration: 150,
-            });
-        }
+                this.config.onDismiss?.();
+            } }));
     }
 
-    /**
-     * Destroy the dialog and clean up
-     */
+    private stopMotion(): void {
+        gameAudio().cancel(this);
+        this.timers.forEach(timer => timer.remove()); this.timers = [];
+        this.tweens.forEach(tween => tween.remove()); this.tweens = [];
+    }
+
     destroy(): void {
-        this.isDestroyed = true;
-
-        if (this.overlay) {
-            this.overlay.destroy();
-            this.overlay = null;
+        if (this.destroyed) return;
+        this.destroyed = true;
+        this.stopMotion();
+        this.confirm.destroy();
+        this.container.destroy(true);
+        for (const id of ['pictureDialogShieldHost', 'pictureDialogPanelHost', 'pictureDialogSafeAreaHost', 'pictureDialogContentHost', 'pictureDialogConfirmHost']) {
+            this.layout.get(id)?.destroy();
         }
-
-        this.contentItems.forEach(item => item.destroy());
-        this.contentItems = [];
-
-        this.container.destroy();
+        this.scene.events.off(Phaser.Scenes.Events.SHUTDOWN, this.destroy, this);
     }
 
-    /**
-     * Check if dialog is still visible
-     */
-    isVisible(): boolean {
-        return !this.isDestroyed;
-    }
-
-    /**
-     * Get the container for manual positioning
-     */
-    getContainer(): Phaser.GameObjects.Container {
-        return this.container;
-    }
+    isVisible(): boolean { return !this.destroyed && !this.closing; }
+    getContainer(): Phaser.GameObjects.Container { return this.container; }
 }

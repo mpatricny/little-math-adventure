@@ -135,11 +135,18 @@ export function sceneAssetsPlugin(root, dataDir) {
             if (id !== resolvedId) return null;
             return `export default ${JSON.stringify(collectSceneAssets(root, dataDir))};`;
         },
-        handleHotUpdate(context) {
-            if (/\.(ts|json)$/.test(context.file)) {
-                const module = context.server.moduleGraph.getModuleById(resolvedId);
-                if (module) context.server.moduleGraph.invalidateModule(module);
-            }
+        configureServer(server) {
+            // Tablet serving disables HMR to protect active battles. Its next
+            // page load must still get dependencies added by source/data edits.
+            const invalidate = file => {
+                if (!/\.(ts|json)$/.test(file)) return;
+                const module = server.moduleGraph.getModuleById(resolvedId);
+                if (module) server.moduleGraph.invalidateModule(module);
+            };
+            for (const event of ['change', 'add', 'unlink']) server.watcher.on(event, invalidate);
+            server.httpServer?.once('close', () => {
+                for (const event of ['change', 'add', 'unlink']) server.watcher.off(event, invalidate);
+            });
         },
     };
 }

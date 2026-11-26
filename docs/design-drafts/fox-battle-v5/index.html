@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="cs"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="icon" href="data:,"><title>Liška v boji · V5</title></head>
+<body>
+<header><div><span class="eyebrow">PROKLIKNUTELNÝ NÁVRH · V5</span><h1>Liška v boji</h1></div><a href="../fox-journey-v4/index.html">Společná cesta ↗</a></header>
+<div class="review-controls">
+ <label>Hráč <select id="owner"><option value="A">1 · Ada</option><option value="B">2 · Borek</option></select></label>
+ <label>Liška <select id="form"></select></label>
+ <label>Stav <select id="scenario"><option value="ready">Dostupné schopnosti</option><option value="locked">Zamčené schopnosti</option><option value="used">Vše použito</option><option value="full">Plné zdraví</option><option value="last">Poslední protivník</option></select></label>
+ <button id="reset">Nový boj</button><button id="incoming">Příchozí útok</button><button id="hitShield">Zásah do štítu</button><button id="words" aria-pressed="false">Bez popisků</button><button id="reduce" aria-pressed="false">Méně pohybu</button>
+</div>
+<main><div class="stage-scroll"><div id="stage" aria-label="Ukázka bojové scény">
+ <img id="background" class="host" src="/assets/library/originals/ebc13edb-23e15c24.webp" alt="">
+ <img id="heroA" class="host character" src="assets/hero.webp" alt="Hrdinka Ada">
+ <img id="heroB" class="host character" src="assets/hero-b.webp" alt="Hrdina Borek">
+ <canvas id="fox" class="host character" role="img" aria-label="Runová liška hráčky Ady"></canvas>
+ <canvas id="foxB" class="host character" role="img" aria-label="Runová liška hráče Borka"></canvas>
+ <div id="hpA" class="host health actor-hp"></div><div id="hpB" class="host health actor-hp"></div>
+ <button id="enemy0" class="host enemy" aria-label="První protivník"><img src="assets/enemy.webp" alt=""><span class="target-ring"></span><span class="target-marker">⌖</span></button>
+ <button id="enemy1" class="host enemy" aria-label="Druhý protivník"><img src="assets/enemy.webp" alt=""><span class="target-ring"></span><span class="target-marker">⌖</span></button>
+ <button id="enemy2" class="host enemy" aria-label="Třetí protivník"><img src="assets/enemy.webp" alt=""><span class="target-ring"></span><span class="target-marker">⌖</span></button>
+ <div id="enemyHp0" class="host health"></div><div id="enemyHp1" class="host health"></div><div id="enemyHp2" class="host health"></div>
+ <div id="math"></div>
+ <div id="dock" class="host"></div>
+ <div id="ownerPortrait" class="host portrait"></div><strong id="ownerName" class="host word"></strong>
+ <div id="dockHp" class="host health"></div><div id="shieldBadge" class="host"></div>
+ <button id="potion" class="host action" aria-label="Lektvar"></button>
+ <button id="attack" class="host action" aria-label="Běžný útok"></button>
+ <div id="divider" class="host"></div><button id="abilityOwnerA" class="host portrait owner-choice" aria-label="Schopnosti lišky hráčky Ady"></button><button id="abilityOwnerB" class="host portrait owner-choice" aria-label="Schopnosti lišky hráče Borka"></button>
+ <button id="shield" class="host action ability" aria-label="Liščí štít"></button>
+ <button id="heal" class="host action ability" aria-label="Liščí léčení"></button>
+ <button id="strike" class="host action ability" aria-label="Liščí zásah"></button>
+ <button id="help" class="host action" aria-label="Předvést schopnosti"></button>
+ <div id="targetHint" class="host target-hint" hidden><img src="../fox-evolution-v1/assets/strike-1.webp" alt=""><strong class="word">Vyber cíl</strong></div>
+ <button id="cancelTarget" class="host cancel" aria-label="Zrušit výběr cíle" hidden>×</button>
+ <div id="effectLayer"></div>
+ <div id="guide" class="host guide" hidden></div>
+ <div id="victory" class="host victory" hidden><span class="word">Výhra</span><span class="victory-check">✓</span><button id="again" aria-label="Nový boj">↻</button></div>
+ <div id="loading">Načítání…</div>
+</div></div></main>
+<footer><p>Vyzkoušej schopnosti před útokem i při počítání. Zásah nechá vybrat cíl; štít a léčení se projeví u zdraví.</p><p><a href="review/effect-recordings/index.html">Animované ukázky účinků</a> · <a href="../fox-animation-v2/index.html">Pohyby a postoje lišek</a></p><details><summary>Stav ukázky</summary><output id="audit"></output><a href="HANDOFF.md">Podklady pro implementaci</a></details></footer>
+<script>
+// Window-local memory storage prevents imported game helpers from reading or
+// migrating a real profile. No browser storage is read, cleared, or overwritten.
+class PreviewStorage {
+ #values=new Map();
+ get length(){return this.#values.size}
+ key(index){return [...this.#values.keys()][index]??null}
+ getItem(key){return this.#values.get(String(key))??null}
+ setItem(key,value){this.#values.set(String(key),String(value))}
+ removeItem(key){this.#values.delete(String(key))}
+ clear(){this.#values.clear()}
+}
+Object.defineProperty(window,'localStorage',{value:new PreviewStorage()});
+Object.defineProperty(window,'sessionStorage',{value:new PreviewStorage()});
+</script>
+<script type="module" src="main.ts"></script></body></html>

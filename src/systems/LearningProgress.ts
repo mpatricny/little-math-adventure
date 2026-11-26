@@ -1,5 +1,35 @@
 import { ALL_BANDS, ALL_SUB_ATOM_NUMBERS, BandId, MasteryData, SubAtomId } from '../types';
 
+/** Add the three post-E bands to legacy slots and read-only inspection copies. */
+export function ensureAdvancedLearningBands(data: MasteryData): void {
+    for (const band of ['F', 'G', 'H'] as const) {
+        data.bands[band] ??= { id: band, state: 'locked', gateExamBestMedal: null, bandMasteryChallengeResult: null };
+        for (const num of ALL_SUB_ATOM_NUMBERS) {
+            const id: SubAtomId = `${band}${num}`;
+            data.subAtoms[id] ??= { id, state: 'locked', successfulSolves: 0, examBestMedal: null,
+                fluencyChallengeResult: null, masteryChallengeResult: null, fightsSinceSeen: 0 };
+        }
+    }
+    const previous = data.bands.E;
+    if (previous?.gateExamBestMedal && previous.gateExamBestMedal !== 'none'
+        && ['secure', 'fluent', 'mastery'].includes(previous.state)
+        && data.bands.F.state === 'locked' && !getRequiredLearningBand(data)) {
+        data.bands.F.state = 'training';
+        data.subAtoms.F1.state = 'training';
+        data.currentPool = [];
+        data.currentPoolIndex = 0;
+        data.lastPoolProblems = [];
+    }
+}
+
+/** Placement credit opens content but does not grant combat levels. */
+export function getLearningLevel(data: MasteryData): number {
+    const earned = Object.values(data.subAtoms).filter(a => ['secure', 'fluent', 'mastery'].includes(a.state)).length
+        + Object.values(data.bands).filter(b => ['secure', 'fluent', 'mastery'].includes(b.state)).length;
+    const placement = Math.max(0, ALL_BANDS.indexOf(data.selectedStartBand ?? 'A')) * 5;
+    return Math.max(1, 1 + earned - placement);
+}
+
 /** An explicit repair may prioritize an unfinished band without resetting later achievements. */
 export function getRequiredLearningBand(data: MasteryData): BandId | undefined {
     const band = data.requiredBand;

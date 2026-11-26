@@ -1,0 +1,59 @@
+{
+  "date": "2026-11-18",
+  "unitTests": 57,
+  "browserScenarios": 10,
+  "renderers": [
+    "WebGL",
+    "Canvas"
+  ],
+  "realSaveTraffic": "intercepted by isolated context harness",
+  "databaseMigrationRequired": false,
+  "typecheck": {
+    "baselineLines": 136,
+    "currentLines": 136,
+    "newDiagnostics": []
+  },
+  "screenshots": [
+    "bonus-canvas.png",
+    "bonus-webgl.png",
+    "canvas-catacomb-feedback.png",
+    "canvas-catacomb-ready.png",
+    "canvas-comparison-hover.png",
+    "canvas-comparison-pointer-out.png",
+    "canvas-comparison-pressed.png",
+    "canvas-comparison-ready-tablet.png",
+    "canvas-comparison-three-terms.png",
+    "canvas-comparison-wrong.png",
+    "canvas-count-numerals.png",
+    "canvas-guild-ready.png",
+    "canvas-guild-wrong.png",
+    "canvas-large-product-feedback.png",
+    "canvas-prep-complete.png",
+    "canvas-prep-ready.png",
+    "victory-b-only-canvas.png",
+    "victory-b-only-webgl.png",
+    "victory-canvas.png",
+    "victory-solo-canvas.png",
+    "victory-solo-webgl.png",
+    "victory-webgl.png",
+    "webgl-catacomb-feedback.png",
+    "webgl-catacomb-ready.png",
+    "webgl-comparison-hover.png",
+    "webgl-comparison-pointer-out.png",
+    "webgl-comparison-pressed.png",
+    "webgl-comparison-ready-tablet.png",
+    "webgl-comparison-three-terms.png",
+    "webgl-comparison-wrong.png",
+    "webgl-count-numerals.png",
+    "webgl-guild-ready.png",
+    "webgl-guild-wrong.png",
+    "webgl-large-product-feedback.png",
+    "webgl-prep-complete.png",
+    "webgl-prep-ready.png"
+  ],
+  "limitations": [
+    "No child playtest",
+    "Other new training-flow screens remain proposals",
+    "Dense 12 by 12 object model needs pedagogical review"
+  ]
+}

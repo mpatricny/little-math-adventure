@@ -9,10 +9,16 @@ import {
     ExamType,
     EXAM_CONFIGS,
     MasteryTargetId,
+    type PracticeTargetId,
 } from '../types';
 import { MedievalActionButton } from './MedievalActionButton';
 import { UnderwaterHotspot } from './UnderwaterWorldFX';
 import { getExamPresentation } from './ExamPresentation';
+import { CatacombProgressOverlay } from './CatacombProgressOverlay';
+import { retainObservatoryAssets, warmObservatory } from './observatory/assets.js';
+import { guildCatacombEntrance } from '../systems/GuildNotices';
+import { readLearningProfiles } from '../systems/LearningProfileView';
+import { SaveSystem } from '../systems/SaveSystem';
 
 export type GuildAvailableExam = {
     type: ExamType;
@@ -53,10 +59,8 @@ export class GuildHallUI {
     private readonly gameState: GameStateManager;
     private readonly accentColor: number;
     private readonly standardExam: GuildAvailableExam | null;
-    private readonly catacombExam: GuildAvailableExam | null;
     private readonly onStartExam: () => void;
     private readonly onStartManaCollection: () => void;
-    private readonly onStartCatacomb: (exam: GuildAvailableExam) => void;
     private readonly onShowLearning: () => void;
     private readonly onShowDailyProgress: () => void;
 
@@ -66,10 +70,8 @@ export class GuildHallUI {
         this.gameState = options.gameState;
         this.accentColor = options.accentColor;
         this.standardExam = options.standardExam;
-        this.catacombExam = options.catacombExam;
         this.onStartExam = options.onStartExam;
         this.onStartManaCollection = options.onStartManaCollection;
-        this.onStartCatacomb = options.onStartCatacomb;
         this.onShowLearning = options.onShowLearning;
         this.onShowDailyProgress = options.onShowDailyProgress;
 
@@ -401,7 +403,7 @@ export class GuildHallUI {
             onActivate: activateSpring,
             onHover: setSpringHover,
         });
-        springCaption.setAlpha(access.unlocked ? 0.9 : 0.58);
+        springCaption.root.setAlpha(access.unlocked ? 0.9 : 0.58);
 
         const zone = this.scene.add.zone(host.x, host.y, host.width, host.height)
             .setDepth(host.depth + 2)
@@ -440,65 +442,70 @@ export class GuildHallUI {
         const labelHost = this.getHost('catacombLabelHost', {
             x: 1190, y: 535, width: 160, height: 48, depth: 33,
         });
-        const isCoop = CoopSessionManager.getInstance().isCoopActive();
-        const enabled = this.catacombExam !== null && !isCoop;
-
-        const status = isCoop
-            ? 'PŘEHLED V CO-OPU'
-            : enabled
-                ? 'NOVÁ VÝZVA'
-                : 'ZATÍM UZAMČENÉ';
-
+        let entrance: { slotIndex: number; target?: PracticeTargetId } | undefined;
         const activateCatacomb = (): void => {
-            if (isCoop) {
-                this.showToast('Hra ve dvou');
-                return;
-            }
-            if (!this.catacombExam) {
-                this.showToast('Zatím zamčeno');
-                return;
-            }
-            this.onStartCatacomb(this.catacombExam);
+            CatacombProgressOverlay.forScene(this.scene).show(entrance?.target,
+                entrance?.slotIndex ?? this.gameState.getActiveSlotIndex() ?? undefined);
         };
 
         // Reuse Silverpond's continuously lit passage, including its touch and
         // hover feedback. Availability must be visible without a mouse pointer.
         const doorway = new UnderwaterHotspot(this.scene, host, {
-            id: 'catacombDoorway', kind: 'arch', enabled, onClick: activateCatacomb,
+            id: 'catacombDoorway', kind: 'arch', enabled: false, onClick: activateCatacomb,
         });
 
         const catacombCaption = this.createEnvironmentalCaption({
             host: labelHost,
             title: 'KATAKOMBY',
-            status,
+            status: '',
             color: this.accentColor === 0x57ddf2 ? '#bdefff' : '#ffe2a2',
-            enabled,
+            enabled: true,
             onActivate: activateCatacomb,
             onHover: active => doorway.setHovered(active),
         });
-        catacombCaption.setAlpha(enabled ? 0.9 : 0.58);
+        catacombCaption.root.setAlpha(0.9);
 
-        if (enabled) {
-            const notification = this.scene.add.text(host.x, host.y - host.height / 2 + 8, '!', {
-                resolution: 2,
-                fontFamily: 'Arial, sans-serif',
-                fontSize: '34px',
-                fontStyle: 'bold',
-                color: '#fff2a8',
-                stroke: '#5b3108',
-                strokeThickness: 5,
-            }).setOrigin(0.5).setDepth(host.depth + 3);
-            this.scene.tweens.add({
-                targets: notification,
-                alpha: 0.55,
-                y: notification.y - 5,
-                duration: 720,
-                yoyo: true,
-                repeat: -1,
-                ease: 'Sine.easeInOut',
-            });
-        }
-
+        const notification = this.scene.add.text(host.x, host.y - host.height / 2 + 8, '!', {
+            resolution: 2,
+            fontFamily: 'Arial, sans-serif',
+            fontSize: '34px',
+            fontStyle: 'bold',
+            color: '#fff2a8',
+            stroke: '#5b3108',
+            strokeThickness: 5,
+        }).setOrigin(0.5).setDepth(host.depth + 3).setName('catacombTrialReady');
+        this.scene.tweens.add({
+            targets: notification,
+            alpha: 0.55,
+            y: notification.y - 5,
+            duration: 720,
+            yoyo: true,
+            repeat: -1,
+            ease: 'Sine.easeInOut',
+        });
+        let releaseArt: (() => void) | undefined;
+        const refresh = (): void => {
+            entrance = guildCatacombEntrance(readLearningProfiles());
+            if (entrance && !releaseArt) {
+                releaseArt = retainObservatoryAssets();
+                this.scene.time.delayedCall(0, () => warmObservatory());
+            }
+            doorway.setEnabled(!!entrance);
+            notification.setVisible(!!entrance);
+            catacombCaption.status.setText(entrance ? 'VÝZVA' : 'TRÉNINK');
+        };
+        refresh();
+        // A co-op checkpoint writes both slots before restoring the active owner.
+        // Refresh once, after that synchronous transaction has finished.
+        const nextFrame = Phaser.Scenes.Events.PRE_UPDATE;
+        const unsubscribe = SaveSystem.observeChanges(() => {
+            this.scene.events.off(nextFrame, refresh).once(nextFrame, refresh);
+        });
+        this.scene.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+            releaseArt?.();
+            unsubscribe();
+            this.scene.events.off(nextFrame, refresh);
+        });
     }
 
     private createEnvironmentalCaption(options: {
@@ -509,7 +516,7 @@ export class GuildHallUI {
         enabled: boolean;
         onActivate: () => void;
         onHover: (active: boolean) => void;
-    }): Phaser.GameObjects.Container {
+    }): { root: Phaser.GameObjects.Container; status: Phaser.GameObjects.Text } {
         const { host } = options;
         const title = this.scene.add.text(0, -8, options.title, {
             resolution: 2,
@@ -573,7 +580,7 @@ export class GuildHallUI {
             });
         });
         caption.on('pointerup', options.onActivate);
-        return caption;
+        return { root: caption, status };
     }
 
     private showToast(message: string): void {

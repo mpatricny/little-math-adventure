@@ -1,6 +1,7 @@
 import { copyFileSync, existsSync, mkdirSync, readFileSync, readdirSync, renameSync,
   rmSync, statSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
+import { observatoryFiles } from './observatory-files.mjs';
 import { fileURLToPath } from 'node:url';
 import {
   PILOT_SCENE_KEYS, PILOT_LAYOUT_KEYS, PILOT_SCENE_SOURCE_OVERRIDES,
@@ -255,13 +256,13 @@ export function collectPilotContent(rootDir) {
   metadata.set('underwater-puzzles.json', { hints: {} });
   for (const [name, value] of metadata) metadata.set(name, stripEditorMetadata(value));
 
-  const publicFiles = new Set();
+  const publicFiles = new Set(['assets/ui/mathboard-v4/Gelasio.ttf', 'assets/ui/mathboard-v4/Gelasio-OFL.txt']);
   for (const resource of Object.values(textures.images)) publicFiles.add(textureFile(resource));
   for (const resource of Object.values(textures.spritesheets)) publicFiles.add(textureFile(resource));
   for (const resource of [...Object.values(audio.assets), ...Object.values(audio.music)]) {
     publicFiles.add(publicFilePath(resource.url));
   }
-  for (const filename of PILOT_LANDING_FILES) publicFiles.add(publicFilePath(filename));
+  for (const filename of [...PILOT_LANDING_FILES, ...observatoryFiles]) publicFiles.add(publicFilePath(filename));
   // Existing TV support is part of the pilot, but no editor/source directories are copied.
   for (const filename of ['manifest.json', 'sdk/mesa-sdk.js']) {
     if (existsSync(path.join(rootDir, 'public', filename))) publicFiles.add(filename);

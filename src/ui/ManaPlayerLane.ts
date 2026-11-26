@@ -3,6 +3,8 @@ import Phaser from 'phaser';
 import { MathEngine } from '../systems/MathEngine';
 import { GameStateManager } from '../systems/GameStateManager';
 import { CoopSessionManager } from '../systems/CoopSessionManager';
+import { isAdvancedNode } from '../systems/AdvancedCurriculum';
+import { knownAdvancedArithmetic } from '../systems/AdvancedReview';
 import { getLearningFrontier } from '../systems/LearningProgress';
 import { ensureComparisonChapter } from '../systems/ComparisonLearningSystem';
 import { MasterySystem } from '../systems/MasterySystem';
@@ -171,8 +173,9 @@ export class ManaPlayerLane {
     static buildManaPool(mathEngine: MathEngine, masteryData?: MasteryData): PoolProblem[] {
         if (masteryData) ensureComparisonChapter(masteryData);
         const frontierSubAtom = masteryData ? getLearningFrontier(masteryData) : null;
-        if (frontierSubAtom) {
-            const masteryPool = ManaPlayerLane.buildFrontierSubAtomPool(frontierSubAtom);
+        if (frontierSubAtom && masteryData) {
+            const known = isAdvancedNode(frontierSubAtom) ? knownAdvancedArithmetic(masteryData, frontierSubAtom, true) : undefined;
+            const masteryPool = ManaPlayerLane.buildFrontierSubAtomPool(frontierSubAtom, known);
             if (masteryPool.length > 0) {
                 return masteryPool;
             }
@@ -218,11 +221,11 @@ export class ManaPlayerLane {
         return pool;
     }
 
-    private static buildFrontierSubAtomPool(subAtomId: SubAtomId): PoolProblem[] {
+    private static buildFrontierSubAtomPool(subAtomId: SubAtomId, known?: ProblemDefinition[]): PoolProblem[] {
         const sourceSubAtoms = subAtomId.endsWith('3')
             ? ([`${subAtomId[0]}1`, `${subAtomId[0]}2`] as SubAtomId[])
             : [subAtomId];
-        const sourceProblems = sourceSubAtoms
+        const sourceProblems = known ?? sourceSubAtoms
             .flatMap(sourceSubAtom => ProblemDatabase.getInstance().getProblemsForForm(sourceSubAtom, 'result_unknown'))
             .filter(problem => ManaPlayerLane.isSimpleTwoOperand(problem))
             .filter(problem => !ManaPlayerLane.hasZero(problem));
@@ -620,7 +623,7 @@ export class ManaPlayerLane {
     private createAnswerSlots(correctAnswer: number, choices: number[]): void {
         const values: number[] = [];
         for (let i = 0; i < ROW_COUNT; i++) {
-            values.push(choices[i % 3]);
+            values.push(choices[i % choices.length]);
         }
         const shuffled = ManaPlayerLane.shuffle(values);
         const fontSize = `${Math.round(22 * this.fontScale)}px`;

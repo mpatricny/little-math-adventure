@@ -1,0 +1,9 @@
+
+ RUN  v4.1.11 /Users/datamole/little-math-adventure
+
+
+ Test Files  6 passed (6)
+      Tests  57 passed (57)
+   Start at  21:24:40
+   Duration  1.37s (transform 1.46s, setup 0ms, import 1.28s, tests 1.07s, environment 1ms)
+

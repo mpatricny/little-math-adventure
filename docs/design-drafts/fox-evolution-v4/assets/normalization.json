@@ -1,0 +1,92 @@
+[
+  {
+    "id": 1,
+    "source": "/Users/datamole/little-math-adventure/docs/design-drafts/fox-expression-v3/assets/fox-friendly.png",
+    "width": 1386,
+    "height": 1135,
+    "bounds": {
+      "left": 0,
+      "top": 0,
+      "width": 1386,
+      "height": 1130
+    },
+    "clearedNearTransparentPixels": 30077,
+    "canvas": 1200,
+    "fit": 1056,
+    "bottomPadding": 60,
+    "master": "assets/fox-01.png",
+    "preview": "assets/fox-01.webp"
+  },
+  {
+    "id": 2,
+    "source": "/Users/datamole/.codex/generated_images/01a1bfe3-6721-7d33-b884-18d02e756092/exec-1efbcc0b-d12e-4149-813a-b585326018d8.png",
+    "width": 1254,
+    "height": 1254,
+    "bounds": {
+      "left": 40,
+      "top": 39,
+      "width": 1159,
+      "height": 1150
+    },
+    "clearedNearTransparentPixels": 72474,
+    "canvas": 1200,
+    "fit": 1056,
+    "bottomPadding": 60,
+    "master": "assets/fox-02.png",
+    "preview": "assets/fox-02.webp"
+  },
+  {
+    "id": 3,
+    "source": "/Users/datamole/.codex/generated_images/01a1bfe3-6721-7d33-b884-18d02e756092/exec-d82e0a67-7984-40ef-9c87-3afd1cabed85.png",
+    "width": 1254,
+    "height": 1254,
+    "bounds": {
+      "left": 33,
+      "top": 24,
+      "width": 1189,
+      "height": 1196
+    },
+    "clearedNearTransparentPixels": 30258,
+    "canvas": 1200,
+    "fit": 1056,
+    "bottomPadding": 60,
+    "master": "assets/fox-03.png",
+    "preview": "assets/fox-03.webp"
+  },
+  {
+    "id": 4,
+    "source": "/Users/datamole/.codex/generated_images/01a1bfe3-6721-7d33-b884-18d02e756092/exec-812574bd-7b76-4f09-9417-bca6fff12bae.png",
+    "width": 1254,
+    "height": 1254,
+    "bounds": {
+      "left": 18,
+      "top": 139,
+      "width": 1171,
+      "height": 908
+    },
+    "clearedNearTransparentPixels": 59882,
+    "canvas": 1200,
+    "fit": 1056,
+    "bottomPadding": 60,
+    "master": "assets/fox-04.png",
+    "preview": "assets/fox-04.webp"
+  },
+  {
+    "id": 5,
+    "source": "/Users/datamole/.codex/generated_images/01a1bfe3-6721-7d33-b884-18d02e756092/exec-6654f19d-f4ca-4319-982f-32bbc5b41c4d.png",
+    "width": 1254,
+    "height": 1254,
+    "bounds": {
+      "left": 46,
+      "top": 6,
+      "width": 1160,
+      "height": 1226
+    },
+    "clearedNearTransparentPixels": 24961,
+    "canvas": 1200,
+    "fit": 1056,
+    "bottomPadding": 60,
+    "master": "assets/fox-05.png",
+    "preview": "assets/fox-05.webp"
+  }
+]

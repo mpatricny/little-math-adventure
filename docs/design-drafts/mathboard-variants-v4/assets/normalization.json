@@ -1,0 +1,26 @@
+[
+  {
+    "name": "parchment",
+    "source": "/Users/datamole/.codex/generated_images/01a1bfe3-6721-7d33-b884-18d02e756092/exec-ecbe92cd-05b4-4233-a913-0adbe77c6d4a.png",
+    "bounds": {
+      "left": 59,
+      "top": 28,
+      "width": 1602,
+      "height": 859
+    },
+    "width": 1600,
+    "padding": 4
+  },
+  {
+    "name": "plaque",
+    "source": "/Users/datamole/.codex/generated_images/01a1bfe3-6721-7d33-b884-18d02e756092/exec-3a38a9fe-515d-4252-9da7-358e36f8fa33.png",
+    "bounds": {
+      "left": 155,
+      "top": 97,
+      "width": 1860,
+      "height": 528
+    },
+    "width": 1200,
+    "padding": 4
+  }
+]

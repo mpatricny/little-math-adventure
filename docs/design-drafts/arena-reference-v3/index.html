@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="cs"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Aréna — úplný návrh</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#111b24;color:#eee2cb;font:16px system-ui}header{padding:16px 24px;display:flex;gap:20px;align-items:center;flex-wrap:wrap}header p{margin:0;color:#b1bdc8}button,a{color:inherit;background:#213548;border:1px solid #9e7b40;border-radius:8px;padding:12px 18px;font:inherit;cursor:pointer;text-decoration:none}button[aria-pressed=true]{background:#645126}.screen{width:100%;max-width:1672px;margin:auto;position:relative;aspect-ratio:1672/941}.screen img,.screen svg{position:absolute;inset:0;width:100%;height:100%;object-fit:contain}.screen svg{pointer-events:none;font-family:Georgia,serif;font-weight:bold;text-anchor:middle;fill:#fff1c5;filter:drop-shadow(0 2px 1px #071b25)}.original{display:none}.before .original{display:block}.before .concept,.before svg{display:none}.no-words svg{display:none}footer{padding:16px 24px;line-height:1.6;color:#bac6d2}footer p{margin:4px 0}
+</style>
+<header><strong>Aréna · celý návrh</strong><p>Generovaný koncept podle běžící hry.</p><button id="after" aria-pressed="true">Návrh</button><button id="before" aria-pressed="false">Současná hra</button><button id="words" aria-pressed="false">Bez slov</button></header>
+<main class="screen" id="screen">
+<img class="concept" src="arena-coop-concept.png" alt="Celá aréna se všemi pěti vlnami, dvěma hráči, životy, výbavou, mincemi a manou. Dole má každé dítě obrázkovou volbu trénování nebo postupu.">
+<img class="original" src="../practice-choice-v2/review/arena-current-coop.png" alt="Skutečná současná obrazovka arény pro dva hráče.">
+<svg viewBox="0 0 1672 941" aria-hidden="true">
+<g font-size="34"><text x="1090" y="171">KOLO 1/5</text><text x="287" y="440">ARÉNA 1</text></g>
+<g font-size="25"><text x="1090" y="239">První vlna</text><text x="766" y="744">Trénovat</text><text x="1030" y="742">Dál</text><text x="765" y="899">Trénovat</text><text x="1032" y="899">Dál</text><text x="1358" y="860">Do boje</text></g>
+<g font-size="23"><text x="1405" y="67">0</text><text x="1504" y="67">0</text><text x="325" y="690">20/20</text><text x="325" y="839">20/20</text><text x="232" y="733">5</text><text x="328" y="733">0</text><text x="427" y="733">0</text><text x="232" y="881">5</text><text x="328" y="881">0</text><text x="427" y="881">0</text></g>
+</svg></main>
+<footer><p>Každý hráč má vlastní volbu. Meče potvrzují nastavení a spouštějí souboj. Konkrétní modul vybírá dítě v cechu u Zyxe.</p><p>Jde o obrazový návrh, ne o nasazené herní ovládání. Postavy, čísla a texty ve výsledné hře zůstávají samostatnými vrstvami.</p></footer>
+<script>
+const screen=document.getElementById('screen');for(const id of ['before','after'])document.getElementById(id).onclick=()=>{screen.classList.toggle('before',id==='before');document.getElementById('before').setAttribute('aria-pressed',String(id==='before'));document.getElementById('after').setAttribute('aria-pressed',String(id==='after'))};document.getElementById('words').onclick=e=>{const hidden=screen.classList.toggle('no-words');e.currentTarget.setAttribute('aria-pressed',String(hidden))};
+</script></html>

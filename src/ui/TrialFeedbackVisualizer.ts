@@ -43,6 +43,9 @@ export class TrialFeedbackVisualizer {
     private container: Phaser.GameObjects.Container;
     private onComplete: () => void;
     private randomFrame: number;
+    private disposed = false;
+    private timers: Phaser.Time.TimerEvent[] = [];
+    private tweens: Phaser.Tweens.Tween[] = [];
     private chapterCleanup?: () => void;
     private counterText: Phaser.GameObjects.Text | null = null;
     private rightCounterText: Phaser.GameObjects.Text | null = null;
@@ -53,6 +56,7 @@ export class TrialFeedbackVisualizer {
         parent.add(this.container);
         this.onComplete = onComplete;
         this.randomFrame = Phaser.Math.Between(0, HINT_ITEM_COUNT - 1);
+        scene.events.once(Phaser.Scenes.Events.SHUTDOWN, this.destroy, this);
     }
 
     /**
@@ -114,7 +118,7 @@ export class TrialFeedbackVisualizer {
 
         if (operand2 === 0) {
             delay += FINAL_HOLD;
-            this.scene.time.delayedCall(delay, () => this.onComplete());
+            this.schedule(delay, () => this.onComplete());
             return;
         }
 
@@ -137,7 +141,7 @@ export class TrialFeedbackVisualizer {
             const newCount = operand1 + i + 1;
             const newCenterX = this.groupCenterX(posX, 0, newCount);
 
-            this.scene.tweens.add({
+            this.animate({
                 targets: rightItems[i],
                 x: targetX,
                 duration: MOVE_DURATION,
@@ -145,7 +149,7 @@ export class TrialFeedbackVisualizer {
                 ease: 'Quad.easeInOut',
             });
 
-            this.scene.time.delayedCall(delay + MOVE_DURATION, () => {
+            this.schedule(delay + MOVE_DURATION, () => {
                 this.updateCounter(newCount, newCenterX);
             });
 
@@ -153,7 +157,7 @@ export class TrialFeedbackVisualizer {
         }
 
         delay += FINAL_HOLD;
-        this.scene.time.delayedCall(delay, () => this.onComplete());
+        this.schedule(delay, () => this.onComplete());
     }
 
     /**
@@ -164,7 +168,7 @@ export class TrialFeedbackVisualizer {
     private showSubtraction(problem: MathProblem): void {
         const { operand1, operand2, answer } = problem;
         if (operand1 === 0) {
-            this.scene.time.delayedCall(FINAL_HOLD, () => this.onComplete());
+            this.schedule(FINAL_HOLD, () => this.onComplete());
             return;
         }
 
@@ -195,7 +199,7 @@ export class TrialFeedbackVisualizer {
             const newCount = operand1 - i - 1;
             const newCenterX = this.groupCenterX(posX, 0, newCount);
 
-            this.scene.tweens.add({
+            this.animate({
                 targets: items[idx],
                 y: -80,
                 alpha: 0,
@@ -205,7 +209,7 @@ export class TrialFeedbackVisualizer {
                 ease: 'Quad.easeIn',
             });
 
-            this.scene.time.delayedCall(delay + MOVE_DURATION, () => {
+            this.schedule(delay + MOVE_DURATION, () => {
                 this.updateCounter(newCount, newCenterX);
             });
 
@@ -216,7 +220,7 @@ export class TrialFeedbackVisualizer {
         if (answer > 0) {
             delay += 200;
             for (let i = 0; i < answer; i++) {
-                this.scene.tweens.add({
+                this.animate({
                     targets: items[i],
                     scale: ITEM_SCALE * 1.25,
                     duration: 300,
@@ -228,7 +232,7 @@ export class TrialFeedbackVisualizer {
         }
 
         delay += FINAL_HOLD;
-        this.scene.time.delayedCall(delay, () => this.onComplete());
+        this.schedule(delay, () => this.onComplete());
     }
 
     /**
@@ -278,14 +282,14 @@ export class TrialFeedbackVisualizer {
             for (let i = 0; i < operand2; i++) {
                 const idx = operand1 + i;
                 const newCount = operand1 + i + 1;
-                this.scene.tweens.add({
+                this.animate({
                     targets: newItems[i],
                     x: posX(idx),
                     duration: MOVE_DURATION,
                     delay,
                     ease: 'Quad.easeInOut',
                 });
-                this.scene.time.delayedCall(delay + MOVE_DURATION, () => {
+                this.schedule(delay + MOVE_DURATION, () => {
                     this.updateCounter(newCount, this.groupCenterX(posX, 0, newCount));
                 });
                 delay += MOVE_DURATION + BETWEEN_MOVES;
@@ -295,14 +299,14 @@ export class TrialFeedbackVisualizer {
             for (let i = 0; i < operand2; i++) {
                 const idx = operand1 - 1 - i;
                 const newCount = operand1 - i - 1;
-                this.scene.tweens.add({
+                this.animate({
                     targets: items[idx],
                     y: -80, alpha: 0, scale: ITEM_SCALE * 0.4,
                     duration: MOVE_DURATION,
                     delay,
                     ease: 'Quad.easeIn',
                 });
-                this.scene.time.delayedCall(delay + MOVE_DURATION, () => {
+                this.schedule(delay + MOVE_DURATION, () => {
                     this.updateCounter(newCount, this.groupCenterX(posX, 0, newCount));
                 });
                 delay += MOVE_DURATION + BETWEEN_MOVES;
@@ -327,14 +331,14 @@ export class TrialFeedbackVisualizer {
             for (let i = 0; i < operand3; i++) {
                 const idx = intermediate + i;
                 const newCount = intermediate + i + 1;
-                this.scene.tweens.add({
+                this.animate({
                     targets: newItems2[i],
                     x: posX(idx),
                     duration: MOVE_DURATION,
                     delay,
                     ease: 'Quad.easeInOut',
                 });
-                this.scene.time.delayedCall(delay + MOVE_DURATION, () => {
+                this.schedule(delay + MOVE_DURATION, () => {
                     this.updateCounter(newCount, this.groupCenterX(posX, 0, newCount));
                 });
                 delay += MOVE_DURATION + BETWEEN_MOVES;
@@ -344,14 +348,14 @@ export class TrialFeedbackVisualizer {
             for (let i = 0; i < operand3; i++) {
                 const idx = intermediate - 1 - i;
                 const newCount = intermediate - i - 1;
-                this.scene.tweens.add({
+                this.animate({
                     targets: items[idx],
                     y: -80, alpha: 0, scale: ITEM_SCALE * 0.4,
                     duration: MOVE_DURATION,
                     delay,
                     ease: 'Quad.easeIn',
                 });
-                this.scene.time.delayedCall(delay + MOVE_DURATION, () => {
+                this.schedule(delay + MOVE_DURATION, () => {
                     this.updateCounter(newCount, this.groupCenterX(posX, 0, newCount));
                 });
                 delay += MOVE_DURATION + BETWEEN_MOVES;
@@ -359,7 +363,7 @@ export class TrialFeedbackVisualizer {
         }
 
         delay += FINAL_HOLD;
-        this.scene.time.delayedCall(delay, () => this.onComplete());
+        this.schedule(delay, () => this.onComplete());
     }
 
     /**
@@ -453,7 +457,7 @@ export class TrialFeedbackVisualizer {
         // Edge case: unknown === 0 → counters already match
         if (unknown === 0) {
             delay += FINAL_HOLD;
-            this.scene.time.delayedCall(delay, () => this.onComplete());
+            this.schedule(delay, () => this.onComplete());
             return;
         }
 
@@ -469,7 +473,7 @@ export class TrialFeedbackVisualizer {
             const newCount = known + i + 1;
             const newCenterX = (leftPosX(0) + gapPosX(i)) / 2;
 
-            this.scene.time.delayedCall(delay + APPEAR_DURATION, () => {
+            this.schedule(delay + APPEAR_DURATION, () => {
                 this.updateCounter(newCount, newCenterX);
             });
 
@@ -478,10 +482,10 @@ export class TrialFeedbackVisualizer {
 
         // Phase 6: Match highlight — right counter pulses gold
         delay += 200;
-        this.scene.time.delayedCall(delay, () => {
+        this.schedule(delay, () => {
             if (this.rightCounterText) {
                 this.rightCounterText.setColor('#ffdd44');
-                this.scene.tweens.add({
+                this.animate({
                     targets: this.rightCounterText,
                     scale: 1.5,
                     duration: COUNTER_PULSE / 2,
@@ -498,7 +502,7 @@ export class TrialFeedbackVisualizer {
         // Phase 7: Gap items pulse to highlight the answer
         delay += 200;
         for (let i = 0; i < gapItems.length; i++) {
-            this.scene.tweens.add({
+            this.animate({
                 targets: gapItems[i],
                 scale: ITEM_SCALE * 1.25,
                 duration: 300,
@@ -509,7 +513,7 @@ export class TrialFeedbackVisualizer {
         }
 
         delay += FINAL_HOLD;
-        this.scene.time.delayedCall(delay, () => this.onComplete());
+        this.schedule(delay, () => this.onComplete());
     }
 
     /**
@@ -557,7 +561,7 @@ export class TrialFeedbackVisualizer {
             const newCount = known + i + 1;
             const newCenterX = this.groupCenterX(posX, 0, newCount);
 
-            this.scene.time.delayedCall(delay + APPEAR_DURATION, () => {
+            this.schedule(delay + APPEAR_DURATION, () => {
                 this.updateCounter(newCount, newCenterX);
             });
 
@@ -566,10 +570,10 @@ export class TrialFeedbackVisualizer {
 
         // Phase 4: Counter pulses gold when reaching total
         delay += 200;
-        this.scene.time.delayedCall(delay, () => {
+        this.schedule(delay, () => {
             if (this.counterText) {
                 this.counterText.setColor('#ffdd44');
-                this.scene.tweens.add({
+                this.animate({
                     targets: this.counterText,
                     scale: 1.5,
                     duration: COUNTER_PULSE / 2,
@@ -587,7 +591,7 @@ export class TrialFeedbackVisualizer {
         if (newItems.length > 0) {
             delay += 200;
             for (const item of newItems) {
-                this.scene.tweens.add({
+                this.animate({
                     targets: item,
                     scale: ITEM_SCALE * 1.25,
                     duration: 300,
@@ -599,7 +603,7 @@ export class TrialFeedbackVisualizer {
         }
 
         delay += FINAL_HOLD;
-        this.scene.time.delayedCall(delay, () => this.onComplete());
+        this.schedule(delay, () => this.onComplete());
     }
 
     /**
@@ -658,9 +662,9 @@ export class TrialFeedbackVisualizer {
         // Phase 3: Match pairs — pulse both, then dim
         for (let i = 0; i < result; i++) {
             const capturedI = i;
-            this.scene.time.delayedCall(delay, () => {
+            this.schedule(delay, () => {
                 // Pulse both matched items
-                this.scene.tweens.add({
+                this.animate({
                     targets: [topItems[capturedI], bottomItems[capturedI]],
                     scale: ITEM_SCALE * 1.2,
                     duration: 250,
@@ -668,7 +672,7 @@ export class TrialFeedbackVisualizer {
                     ease: 'Sine.easeInOut',
                     onComplete: () => {
                         // Dim both after matching
-                        this.scene.tweens.add({
+                        this.animate({
                             targets: [topItems[capturedI], bottomItems[capturedI]],
                             alpha: 0.3,
                             duration: 300,
@@ -685,7 +689,7 @@ export class TrialFeedbackVisualizer {
         // Phase 4: Unmatched top items pulse larger — these are the answer
         if (answer > 0) {
             for (let i = result; i < operand1; i++) {
-                this.scene.tweens.add({
+                this.animate({
                     targets: topItems[i],
                     scale: ITEM_SCALE * 1.3,
                     duration: 400,
@@ -712,7 +716,7 @@ export class TrialFeedbackVisualizer {
             ).setOrigin(0.5).setAlpha(0).setScale(0.5);
             this.container.add(answerCounter);
 
-            this.scene.tweens.add({
+            this.animate({
                 targets: answerCounter,
                 alpha: 1,
                 scale: 1,
@@ -723,7 +727,7 @@ export class TrialFeedbackVisualizer {
         }
 
         delay += FINAL_HOLD;
-        this.scene.time.delayedCall(delay, () => this.onComplete());
+        this.schedule(delay, () => this.onComplete());
     }
 
     /**
@@ -784,7 +788,7 @@ export class TrialFeedbackVisualizer {
                 const newCount = result + i + 1;
                 const newCenterX = this.groupCenterX(posXA, 0, newCount);
 
-                this.scene.time.delayedCall(delay + APPEAR_DURATION, () => {
+                this.schedule(delay + APPEAR_DURATION, () => {
                     this.updateCounter(newCount, newCenterX);
                 });
 
@@ -797,7 +801,7 @@ export class TrialFeedbackVisualizer {
                 const newCount = result - i - 1;
                 const newCenterX = newCount > 0 ? this.groupCenterX(posXA, 0, newCount) : 0;
 
-                this.scene.tweens.add({
+                this.animate({
                     targets: stepAItems[idx],
                     y: stepAY - 60,
                     alpha: 0,
@@ -807,7 +811,7 @@ export class TrialFeedbackVisualizer {
                     ease: 'Quad.easeIn',
                 });
 
-                this.scene.time.delayedCall(delay + MOVE_DURATION, () => {
+                this.schedule(delay + MOVE_DURATION, () => {
                     this.updateCounter(newCount, newCenterX);
                 });
 
@@ -819,7 +823,7 @@ export class TrialFeedbackVisualizer {
 
         // Fade Step A items to background
         for (const item of stepAItems) {
-            this.scene.tweens.add({
+            this.animate({
                 targets: item,
                 alpha: 0.35,
                 y: stepAY - 15,
@@ -829,7 +833,7 @@ export class TrialFeedbackVisualizer {
             });
         }
         if (this.counterText) {
-            this.scene.tweens.add({
+            this.animate({
                 targets: this.counterText,
                 alpha: 0.35,
                 duration: 400,
@@ -873,7 +877,7 @@ export class TrialFeedbackVisualizer {
                 const newCount = operand1 + i + 1;
                 const newCenterX = this.groupCenterX(posXB, 0, newCount);
 
-                this.scene.time.delayedCall(delay + APPEAR_DURATION, () => {
+                this.schedule(delay + APPEAR_DURATION, () => {
                     this.updateRightCounter(newCount, newCenterX);
                 });
 
@@ -884,7 +888,7 @@ export class TrialFeedbackVisualizer {
             if (gapItems.length > 0) {
                 delay += 200;
                 for (const item of gapItems) {
-                    this.scene.tweens.add({
+                    this.animate({
                         targets: item,
                         scale: ITEM_SCALE * 1.25,
                         duration: 300,
@@ -901,7 +905,7 @@ export class TrialFeedbackVisualizer {
                 const newCount = operand1 - i - 1;
                 const newCenterX = newCount > 0 ? this.groupCenterX(posXB, 0, newCount) : 0;
 
-                this.scene.tweens.add({
+                this.animate({
                     targets: stepBItems[idx],
                     y: stepBY - 60,
                     alpha: 0,
@@ -911,7 +915,7 @@ export class TrialFeedbackVisualizer {
                     ease: 'Quad.easeIn',
                 });
 
-                this.scene.time.delayedCall(delay + MOVE_DURATION, () => {
+                this.schedule(delay + MOVE_DURATION, () => {
                     this.updateRightCounter(newCount, newCenterX);
                 });
 
@@ -923,7 +927,7 @@ export class TrialFeedbackVisualizer {
             if (remaining > 0) {
                 delay += 200;
                 for (let i = 0; i < remaining; i++) {
-                    this.scene.tweens.add({
+                    this.animate({
                         targets: stepBItems[i],
                         scale: ITEM_SCALE * 1.25,
                         duration: 300,
@@ -936,7 +940,7 @@ export class TrialFeedbackVisualizer {
         }
 
         delay += FINAL_HOLD;
-        this.scene.time.delayedCall(delay, () => this.onComplete());
+        this.schedule(delay, () => this.onComplete());
     }
 
     /**
@@ -1036,7 +1040,7 @@ export class TrialFeedbackVisualizer {
             ).setOrigin(0.5).setAlpha(0).setScale(0.5);
             this.container.add(numText);
 
-            this.scene.tweens.add({
+            this.animate({
                 targets: numText,
                 alpha: 1,
                 scale: 1,
@@ -1053,7 +1057,7 @@ export class TrialFeedbackVisualizer {
         delay = this.animateBalanceScale(leftResult, rightResult, symbol, delay);
 
         delay += SCALE_RESULT_HOLD;
-        this.scene.time.delayedCall(delay, () => this.onComplete());
+        this.schedule(delay, () => this.onComplete());
     }
 
     private showChapterComparison(problem: MathProblem): void {
@@ -1067,9 +1071,9 @@ export class TrialFeedbackVisualizer {
         const view = new ComparisonProblemView(this.scene, problem, { left: host('left'), right: host('right'), relation: host('relation') });
         this.container.add(view.root);
         const timers = [
-            this.scene.time.delayedCall(450, () => view.highlightOffer()),
-            this.scene.time.delayedCall(1100, () => view.reveal(false)),
-            this.scene.time.delayedCall(2200, () => { view.clearPairing(); view.reveal(true); this.onComplete(); }),
+            this.schedule(450, () => view.highlightOffer()),
+            this.schedule(1100, () => view.reveal(false)),
+            this.schedule(2200, () => { view.clearPairing(); view.reveal(true); this.onComplete(); }),
         ];
         this.chapterCleanup = () => {
             timers.forEach(timer => timer.remove(false));
@@ -1105,7 +1109,7 @@ export class TrialFeedbackVisualizer {
         ).setOrigin(0.5).setAlpha(0);
         this.container.add(eqText);
 
-        this.scene.tweens.add({
+        this.animate({
             targets: eqText,
             alpha: 1,
             duration: 300,
@@ -1126,7 +1130,7 @@ export class TrialFeedbackVisualizer {
             this.container.add(item);
             items.push(item);
 
-            this.scene.tweens.add({
+            this.animate({
                 targets: item,
                 scale: itemScale,
                 alpha: 1,
@@ -1148,7 +1152,7 @@ export class TrialFeedbackVisualizer {
                 this.container.add(item);
                 items.push(item);
 
-                this.scene.tweens.add({
+                this.animate({
                     targets: item,
                     scale: itemScale,
                     alpha: 1,
@@ -1164,7 +1168,7 @@ export class TrialFeedbackVisualizer {
             // Subtraction: items fly away
             for (let i = 0; i < op2; i++) {
                 const idx = op1 - 1 - i;
-                this.scene.tweens.add({
+                this.animate({
                     targets: items[idx],
                     y: centerY - 60,
                     alpha: 0,
@@ -1180,7 +1184,7 @@ export class TrialFeedbackVisualizer {
         delay += 300;
 
         // Fade equation text, show result number
-        this.scene.tweens.add({
+        this.animate({
             targets: eqText,
             alpha: 0.3,
             duration: 400,
@@ -1189,7 +1193,7 @@ export class TrialFeedbackVisualizer {
 
         // Fade items
         for (const item of items) {
-            this.scene.tweens.add({
+            this.animate({
                 targets: item,
                 alpha: 0,
                 duration: 400,
@@ -1211,7 +1215,7 @@ export class TrialFeedbackVisualizer {
         ).setOrigin(0.5).setAlpha(0).setScale(0.5);
         this.container.add(resultText);
 
-        this.scene.tweens.add({
+        this.animate({
             targets: resultText,
             alpha: 1,
             scale: 1,
@@ -1250,7 +1254,7 @@ export class TrialFeedbackVisualizer {
         ).setOrigin(0.5).setAlpha(0);
         this.container.add(eqText);
 
-        this.scene.tweens.add({
+        this.animate({
             targets: eqText,
             alpha: 1,
             duration: 400,
@@ -1260,7 +1264,7 @@ export class TrialFeedbackVisualizer {
         delay += 800;
 
         // Fade equation, show result
-        this.scene.tweens.add({
+        this.animate({
             targets: eqText,
             alpha: 0.3,
             duration: 400,
@@ -1281,7 +1285,7 @@ export class TrialFeedbackVisualizer {
         ).setOrigin(0.5).setAlpha(0).setScale(0.5);
         this.container.add(resultText);
 
-        this.scene.tweens.add({
+        this.animate({
             targets: resultText,
             alpha: 1,
             scale: 1,
@@ -1345,7 +1349,7 @@ export class TrialFeedbackVisualizer {
         beamContainer.add(rightPan);
 
         // Appear animation for scale
-        this.scene.tweens.add({
+        this.animate({
             targets: [gfx, beamContainer],
             alpha: 1,
             duration: SCALE_APPEAR_DURATION,
@@ -1365,7 +1369,7 @@ export class TrialFeedbackVisualizer {
         }).setOrigin(0.5).setAlpha(0);
         leftPan.add(leftNumText);
 
-        this.scene.tweens.add({
+        this.animate({
             targets: leftNumText,
             alpha: 1,
             y: { from: -40, to: -5 },
@@ -1386,7 +1390,7 @@ export class TrialFeedbackVisualizer {
         }).setOrigin(0.5).setAlpha(0);
         rightPan.add(rightNumText);
 
-        this.scene.tweens.add({
+        this.animate({
             targets: rightNumText,
             alpha: 1,
             y: { from: -40, to: -5 },
@@ -1404,7 +1408,7 @@ export class TrialFeedbackVisualizer {
             targetAngle = SCALE_TIP_ANGLE;  // Right heavier → right side goes down (clockwise)
         }
 
-        this.scene.tweens.add({
+        this.animate({
             targets: beamContainer,
             rotation: targetAngle,
             duration: SCALE_TIP_DURATION,
@@ -1425,7 +1429,7 @@ export class TrialFeedbackVisualizer {
         }).setOrigin(0.5).setAlpha(0).setScale(0.3);
         this.container.add(symbolText);
 
-        this.scene.tweens.add({
+        this.animate({
             targets: symbolText,
             alpha: 1,
             scale: 1,
@@ -1454,7 +1458,7 @@ export class TrialFeedbackVisualizer {
         }).setOrigin(0.5).setAlpha(0);
         this.container.add(label);
 
-        this.scene.tweens.add({
+        this.animate({
             targets: label,
             alpha: 1,
             scale: { from: 0.5, to: 1 },
@@ -1462,7 +1466,7 @@ export class TrialFeedbackVisualizer {
             ease: 'Back.easeOut',
         });
 
-        this.scene.time.delayedCall(1500, () => this.onComplete());
+        this.schedule(1500, () => this.onComplete());
     }
 
     // ─── Helpers ─────────────────────────────────────
@@ -1487,7 +1491,7 @@ export class TrialFeedbackVisualizer {
     }
 
     private animateAppear(item: Phaser.GameObjects.Image, delay: number): void {
-        this.scene.tweens.add({
+        this.animate({
             targets: item,
             scale: ITEM_SCALE,
             alpha: 1,
@@ -1509,7 +1513,7 @@ export class TrialFeedbackVisualizer {
         }).setOrigin(0.5).setAlpha(0).setScale(0.5);
         this.container.add(counter);
 
-        this.scene.tweens.add({
+        this.animate({
             targets: counter,
             alpha: 1,
             scale: 1,
@@ -1528,7 +1532,7 @@ export class TrialFeedbackVisualizer {
         this.counterText.setColor('#ffdd44'); // Gold highlight
 
         // Scale pulse
-        this.scene.tweens.add({
+        this.animate({
             targets: this.counterText,
             scale: 1.5,
             duration: COUNTER_PULSE / 2,
@@ -1540,7 +1544,7 @@ export class TrialFeedbackVisualizer {
         });
 
         // Slide to new center position
-        this.scene.tweens.add({
+        this.animate({
             targets: this.counterText,
             x: newX,
             duration: COUNTER_PULSE,
@@ -1554,7 +1558,7 @@ export class TrialFeedbackVisualizer {
         this.rightCounterText.setText(newValue.toString());
         this.rightCounterText.setColor('#ffdd44');
 
-        this.scene.tweens.add({
+        this.animate({
             targets: this.rightCounterText,
             scale: 1.5,
             duration: COUNTER_PULSE / 2,
@@ -1565,7 +1569,7 @@ export class TrialFeedbackVisualizer {
             },
         });
 
-        this.scene.tweens.add({
+        this.animate({
             targets: this.rightCounterText,
             x: newX,
             duration: COUNTER_PULSE,
@@ -1576,7 +1580,24 @@ export class TrialFeedbackVisualizer {
     /**
      * Clean up all created objects.
      */
+    private schedule(delay: number, callback: () => void): Phaser.Time.TimerEvent {
+        const timer = this.scene.time.delayedCall(delay, () => { if (!this.disposed) callback(); });
+        this.timers.push(timer);
+        return timer;
+    }
+
+    private animate(config: Phaser.Types.Tweens.TweenBuilderConfig): Phaser.Tweens.Tween {
+        const tween = this.scene.tweens.add(config);
+        this.tweens.push(tween);
+        return tween;
+    }
+
     destroy(): void {
+        if (this.disposed) return;
+        this.disposed = true;
+        this.timers.forEach(timer => timer.remove()); this.timers = [];
+        this.tweens.forEach(tween => tween.remove()); this.tweens = [];
+        this.scene.events.off(Phaser.Scenes.Events.SHUTDOWN, this.destroy, this);
         this.chapterCleanup?.();
         this.chapterCleanup = undefined;
         this.counterText = null;

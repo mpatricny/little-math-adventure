@@ -1,5 +1,6 @@
 import { readFileSync, readdirSync, statSync } from 'node:fs';
 import path from 'node:path';
+import { observatoryFiles } from './observatory-files.mjs';
 import sharp from 'sharp';
 import { collectSceneAssets } from './scene-assets.mjs';
 
@@ -32,9 +33,13 @@ export async function collectAssetDownloads(root, dataDir) {
     const soundUrls = [...Object.values(audio.assets), ...Object.values(audio.music)].map(asset => asset.url);
     if (soundUrls.some(url => !url.startsWith('/assets/audio/'))) throw new Error('Offline audio must be a same-origin runtime asset');
     const sounds = soundUrls.map(publicUrl);
-    const all = [...new Set([...data.sort(), ...Object.values(images).map(v => v.url), ...sounds])];
+    const observatory = observatoryFiles.map(file => publicUrl('/' + file));
+    const all = [...new Set([...data.sort(), ...Object.values(images).map(v => v.url), ...sounds, ...observatory])];
     const scenes = Object.fromEntries(Object.entries(keys).map(([key, value]) => [key,
         [...(withAudio[key] ?? []).filter(id => audio.assets[id]).map(id => publicUrl(audio.assets[id].url)), ...value.map(id => images[id].url)]]));
+    for (const key of ['FoxLessonScene', 'CatacombTrialScene']) {
+        if (scenes[key]) scenes[key] = [...new Set([...scenes[key], ...observatory])];
+    }
     return { images, sceneKeys: keys, scenes, all };
 }
 

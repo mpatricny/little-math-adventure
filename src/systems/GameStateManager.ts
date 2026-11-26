@@ -1,8 +1,9 @@
 import { PlayerState, MathStats, ProblemStats, CharacterType, MasteryData, BandId, SubAtomId, ALL_BANDS, ALL_SUB_ATOM_NUMBERS } from '../types';
-import { restoreLearningPlacement } from './LearningProgress';
+import { ensureAdvancedLearningBands, restoreLearningPlacement } from './LearningProgress';
 import { MasteryMigration } from './MasteryMigration';
 import { ProgressionSystem } from './ProgressionSystem';
 import { SaveSystem } from './SaveSystem';
+import { checkpointLocalPlayTime } from './LocalPlayTimeBridge';
 import { createInitialComparisonChapterState, ensureComparisonChapter } from './ComparisonLearningSystem';
 
 /** Deferred level sync — called after GameStateManager is fully constructed */
@@ -89,8 +90,10 @@ export class GameStateManager {
      * Does NOT load data - use loadSlot() for that
      */
     setActiveSlotIndex(slotIndex: number): void {
+        checkpointLocalPlayTime();
         this.activeSlotIndex = slotIndex;
         SaveSystem.setActiveSlot(slotIndex);
+        checkpointLocalPlayTime();
     }
 
     /**
@@ -98,6 +101,7 @@ export class GameStateManager {
      * Returns true if successful, false if slot is empty
      */
     loadSlot(slotIndex: number): boolean {
+        checkpointLocalPlayTime();
         const saveData = SaveSystem.load(slotIndex);
 
         if (!saveData) {
@@ -116,6 +120,8 @@ export class GameStateManager {
         this.player = ProgressionSystem.migratePlayerState(this.player);
 
         this.mathStats = this.migrateMathStats(saveData.mathStats);
+
+        checkpointLocalPlayTime();
 
         // Sync player level from mastery data
         import('./MasterySystem').then(({ MasterySystem }) => {
@@ -154,6 +160,7 @@ export class GameStateManager {
         this.player = ProgressionSystem.migratePlayerState(this.player);
         this.mathStats = this.migrateMathStats(saveData.mathStats);
 
+        checkpointLocalPlayTime();
         return true;
     }
 
@@ -186,6 +193,7 @@ export class GameStateManager {
     /** Isolated, disposable playtest profile; the user's active slot stays untouched. */
     beginUnderwaterPreview(): void {
         if (this.previewSnapshot) return;
+        checkpointLocalPlayTime();
         this.previewSnapshot = { player: this.player, mathStats: this.mathStats, slot: this.activeSlotIndex };
         this.player = ProgressionSystem.createInitialPlayer(this.player.characterType);
         this.player.name = 'Průzkumník';
@@ -197,11 +205,13 @@ export class GameStateManager {
         this.player.potions = 3;
         this.mathStats = this.createInitialMathStats();
         this.activeSlotIndex = null;
+        checkpointLocalPlayTime();
     }
 
     /** Disposable chapter test profile used only by the development-menu shortcut. */
     beginComparisonPreview(): void {
         if (this.previewSnapshot) return;
+        checkpointLocalPlayTime();
         this.previewSnapshot = { player: this.player, mathStats: this.mathStats, slot: this.activeSlotIndex };
         this.player = ProgressionSystem.createInitialPlayer(this.player.characterType);
         this.player.name = 'Tester porovnávání';
@@ -221,16 +231,19 @@ export class GameStateManager {
         mastery.subAtoms.A3.state = 'locked';
         mastery.comparisonChapter = createInitialComparisonChapterState('training');
         this.activeSlotIndex = null;
+        checkpointLocalPlayTime();
     }
 
     isPreviewActive(): boolean { return this.previewSnapshot !== null; }
 
     endPreview(): boolean {
         if (!this.previewSnapshot) return false;
+        checkpointLocalPlayTime();
         this.player = this.previewSnapshot.player;
         this.mathStats = this.previewSnapshot.mathStats;
         this.activeSlotIndex = this.previewSnapshot.slot;
         this.previewSnapshot = null;
+        checkpointLocalPlayTime();
         return true;
     }
 
@@ -250,6 +263,7 @@ export class GameStateManager {
         }
 
         // Create fresh player with name
+        checkpointLocalPlayTime();
         this.player = ProgressionSystem.createInitialPlayer(characterType);
         this.player.name = characterName;
         this.mathStats = this.createInitialMathStats();
@@ -258,6 +272,7 @@ export class GameStateManager {
         this.activeSlotIndex = targetSlot;
         SaveSystem.setActiveSlot(targetSlot);
         this.save();
+        checkpointLocalPlayTime();
 
         console.log(`[GameStateManager] Game reset to slot ${targetSlot} with character "${characterName}"`);
     }
@@ -339,6 +354,7 @@ export class GameStateManager {
     }
 
     private migrateExistingMasteryData(data: MasteryData): MasteryData {
+        ensureAdvancedLearningBands(data);
         restoreLearningPlacement(data);
         ensureComparisonChapter(data);
         return { ...data, coopAutoPromotionBases: data.coopAutoPromotionBases || {} };
@@ -409,6 +425,7 @@ export class GameStateManager {
             return;
         }
 
+        checkpointLocalPlayTime();
         const saveData = SaveSystem.load(this.activeSlotIndex);
         if (saveData) {
             this.player = saveData.player;
@@ -416,6 +433,7 @@ export class GameStateManager {
             this.player = ProgressionSystem.migratePlayerState(this.player);
             this.mathStats = this.migrateMathStats(saveData.mathStats);
         }
+        checkpointLocalPlayTime();
     }
 
     /**

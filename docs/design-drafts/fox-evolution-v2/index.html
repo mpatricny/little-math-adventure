@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="cs">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="icon" href="data:,"><title>Runová liška · přátelský vývoj V2</title><link rel="stylesheet" href="style.css"></head>
+<body>
+<header><div><p class="eyebrow">VÝTVARNÝ NÁVRH V2 · 19. 11. 2026</p><h1>Runová liška</h1></div><a href="../catacombs-access-v1/index.html">← Katakomby</a></header>
+<nav aria-label="Náhledy"><button data-tab="expressions" aria-pressed="false">Výrazy</button><button data-tab="forms" aria-pressed="true">Pět podob</button><button data-tab="growth" aria-pressed="false">Společný růst</button><button data-tab="abilities" aria-pressed="false">Runy I / II</button><button data-tab="battle" aria-pressed="false">Ve hře</button></nav>
+<main>
+<section id="expressions" data-panel hidden>
+ <div class="section-heading"><h2>Kamarád, kterého chceš zachránit</h2><p>Nové otevřené oči, měkké tváře a laskavý úsměv. Doporučený prostřední výraz je základem celé pětice.</p></div>
+ <div class="expression-grid" id="expressionGrid"></div>
+ <div class="reference"><img src="../fox-evolution-v1/assets/source-idle.png" alt="Původní bojový výraz"><div><strong>Jiný výraz po záchraně</strong><p>Původní textura dnes slouží i katakombovému protivníkovi. Nový milý parťák později dostane vlastní asset a animace.</p></div></div>
+</section>
+<section id="forms" data-panel>
+ <div class="section-heading"><h2>Jeden parťák. Společná cesta.</h2><p>Pět podob roste díky novým úspěchům v různých modulech. Každý modul přispěje nejvýše dvakrát. Celou proměnu odliší srst a ocas i bez záře.</p></div>
+ <div class="form-grid" id="formGrid"></div>
+ <div class="milestone-notes" id="milestoneNotes" aria-label="Návrhářské hodnoty milníků"></div>
+ <p class="review-note">Hranice 0 / 4 / 10 / 20 / 32 jsou návrh tempa pro 21 uzlů, nikoli měna ani produkční nastavení. Kratší cesta má vlastní pevné milníky.</p>
+ <div class="comparison-reference"><div><img src="../fox-evolution-v1/assets/source-idle.png" alt="Současný herní snímek"><span>Současný zdroj</span></div><span aria-hidden="true">→</span><div><img src="assets/body-0.webp" alt="Nový přívětivý návrh"><span>Nový parťák</span></div><div class="reference-copy"><strong>Všech pět zůstává milých</strong><p>Stejná nová tvář, oranžový kožíšek a jeden ocas. Velké vzory nahrazují drobné čáry. Jde o statické koncepty pro novou sadu animací.</p></div></div>
+</section>
+<section id="growth" data-panel hidden>
+ <div class="section-heading"><h2>Každý modul pomůže</h2><p>Vyber uzel a přidej mu nový stupeň. I a II jsou dva jedinečné příspěvky; opakování už nic nepřidá. Plynulost a Mistrovství dál odměňují běžný útok.</p></div>
+ <div class="review-controls"><label>Cesta <select id="pathLength"><option value="21">21 uzlů</option><option value="4">Pozdější start · 4 uzly</option></select></label><label>Ukázat milník <select id="milestoneSelect"></select></label><button id="award">Nový stupeň</button><button id="resetGrowth">Od začátku</button><button id="hideGrowthWords" aria-pressed="false">Skrýt slova</button></div>
+ <div class="growth-fit"><div id="growthStage" class="game-stage" aria-label="Obrázková cesta vývoje lišky">
+  <div id="growthTitle" class="placed title-plaque"><img src="../mathboard-variants-v4/assets/plaque.webp" alt=""><span class="word">Společná cesta</span></div>
+  <div id="currentPortrait" class="placed fox-portrait"><img class="portrait-frame" src="../training-flow-v5/assets/tall-frame.webp" alt=""><img class="portrait-fox" src="assets/body-0.webp" alt="Nynější podoba"><span class="word">Nyní</span></div>
+  <div id="nextPortrait" class="placed fox-portrait"><img class="portrait-frame" src="../training-flow-v5/assets/tall-frame.webp" alt=""><img class="portrait-fox" src="assets/body-1.webp" alt="Příští podoba"><span class="word">Příště</span></div>
+  <div id="growthMilestones" class="placed"></div>
+  <div id="progressTrack" class="placed" role="progressbar" aria-label="Cesta k příští podobě"><span id="progressFill"></span><span class="track-arrow" aria-hidden="true">➜</span></div>
+  <div id="selectedReward" class="placed"></div>
+  <div id="moduleGrid" class="placed" role="group" aria-label="Uzly společné cesty"></div>
+  <div id="growthEffect" class="placed" aria-hidden="true"></div>
+ </div></div>
+ <p class="review-note" id="growthSummary" aria-live="polite"></p>
+</section>
+<section id="abilities" data-panel hidden>
+ <div class="section-heading"><h2>Dva nové stupně run</h2><p>Runu I přináší až nový vyšší stupeň; II zlepší stejnou runu. Pracovní názvy Velmistr a Legenda čekají na schválení. Dosavadní Mistrovství zůstává u +1 běžného útoku.</p></div>
+ <div class="ability-grid" id="abilityGrid"></div>
+ <div class="shared-families"><div class="family-contributors" aria-label="Tři různé moduly přispívají do stejné rodiny"><span>1</span><span>4</span><span>7</span></div><span class="family-arrow" aria-hidden="true">→</span><img src="../fox-evolution-v1/assets/shield-2.webp" alt="Společná schopnost štítu"><div><strong>Tři společné schopnosti</strong><p>Další moduly zlepšují štít, léčení nebo zásah. Nepřidávají další řady bojových tlačítek. Přiřazení rodin a jejich společná síla jsou návrh.</p></div></div>
+ <div class="review-actions"><button id="showCombination">Vyzkoušet v aréně →</button></div>
+</section>
+<section id="battle" data-panel hidden>
+ <div class="section-heading"><h2>Tvář i v malém měřítku</h2><p>Buňka 512 px × současná škála 0,25 = 128 herních pixelů. Na tabletu se náhled zmenší stejně jako hra. Zásah I / II zde ukazuje příklad prvního uzlu: 1 / 2 HP.</p></div>
+ <div class="review-controls"><label>Podoba <select id="bodySelect"></select></label><button id="resetBattle">Obnovit souboj</button><button id="defense" aria-pressed="false">Ukázat obranu</button><button id="hideWords" aria-pressed="false">Skrýt slova</button></div>
+ <div class="stage-fit"><div id="battleStage" class="game-stage" aria-label="Bojový náhled ve skutečném měřítku">
+  <img class="arena" src="../fox-evolution-v1/assets/arena-clean.webp" alt="">
+  <div id="battleTitle" class="placed title-plaque"><img src="../mathboard-variants-v4/assets/plaque.webp" alt=""><span class="word">Runová liška</span></div>
+  <img id="combatFox" class="placed" src="assets/body-0.webp" alt="Přátelská runová liška">
+  <div id="abilityDock" class="placed" role="group" aria-label="Schopnosti lišky"></div>
+  <div id="enemyHealth" class="placed health"><span aria-hidden="true">♥</span><strong>12</strong></div>
+  <div id="effectHost" class="placed" aria-hidden="true"></div><div id="heroEffect" class="placed" aria-hidden="true"></div><div id="enemyEffect" class="placed" aria-hidden="true"></div>
+ </div></div>
+ <div class="small-comparison"><h3>Pět podob · stejné měřítko</h3><div id="smallBodies"></div></div>
+ <p class="review-note">Jedno vlastní použití každé rodiny za souboj; v obraně dočasný zámek bez spotřeby. Štít a léčení předvádějí cíl a účinek obrazem, bez dosud neurčených čísel. Liška je statická, animují se pouze UI a efekty.</p>
+</section>
+</main>
+<footer>Samostatná návrhářská galerie · bez ukládání do hry. <a href="HANDOFF.md">Podklady a omezení</a><a href="../fox-evolution-v1/index.html">Archiv V1</a></footer>
+<script type="module" src="main.js"></script>
+</body></html>

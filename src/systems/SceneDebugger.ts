@@ -602,7 +602,7 @@ export class SceneDebugger {
      * Export current element states to clipboard in scene-layouts.json format
      * This makes it easy to update the JSON file with debugged values
      */
-    exportToClipboard(): void {
+    async exportToClipboard(): Promise<void> {
         if (!DEV_TOOLS_ENABLED) return;
 
         const elements: Partial<ElementDef>[] = [];
@@ -642,15 +642,18 @@ export class SceneDebugger {
 
         const jsonStr = JSON.stringify(output, null, 2);
 
-        // Copy to clipboard
-        navigator.clipboard.writeText(jsonStr).then(() => {
-            console.log('📋 Layout copied to clipboard!');
-            console.log(jsonStr);
-            this.showSaveConfirmation('📋 Layout copied to clipboard!');
-        }).catch(err => {
+        try {
+            if (typeof navigator.clipboard?.writeText === 'function') {
+                await navigator.clipboard.writeText(jsonStr);
+                console.log('📋 Layout copied to clipboard!');
+                console.log(jsonStr);
+                this.showSaveConfirmation('📋 Layout copied to clipboard!');
+                return;
+            }
+        } catch (err) {
             console.warn('Failed to copy to clipboard:', err);
-            console.log('Manual copy:\n', jsonStr);
-        });
+        }
+        console.log('Manual copy:\n', jsonStr);
     }
 
     /**
