@@ -7,7 +7,7 @@ import { fileURLToPath } from 'node:url';
 import test from 'node:test';
 import { collectSceneAssets } from '../scene-assets.mjs';
 import { collectPilotContent, preparePilotPublic, publicFilePath } from '../pilot-content.mjs';
-import { PILOT_SCENE_KEYS, SHARED_CHAPTER_TEXTURE_KEYS } from '../pilot-content.config.mjs';
+import { PILOT_SCENE_KEYS } from '../pilot-content.config.mjs';
 
 const rootDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const content = collectPilotContent(rootDir);
@@ -21,24 +21,20 @@ function walk(value, visit) {
   Object.values(value).forEach(child => walk(child, visit));
 }
 
-test('pilot retains complete Mathoria/forest gameplay and excludes later chapters', () => {
-  for (const key of ['MenuNewScene', 'TvPairingScene', 'GuardianLairScene', 'GuildScene',
-    'ForestRiddleScene', 'ZyxCrystalMachineScene']) assert.ok(PILOT_SCENE_KEYS.includes(key), key);
-  assert.ok(content.report.layoutKeys.includes('WalkingHudOverlay'));
-  assert.ok(content.report.layoutKeys.includes('AudioControlHosts'));
-  assert.ok(!content.report.layoutKeys.some(key => /^(Underwater|Silverpond|Testing)/.test(key)));
-  const encounters = json('encounters.json');
-  assert.deepEqual(encounters.sceneOrder, ['ArenaScene', 'ForestRoomScene', 'ForestMapScene']);
-  const arenas = Object.values(encounters.scenes.ArenaScene.arenas);
-  assert.equal(arenas.length, 3);
-  assert.ok(arenas.every(arena => arena.cityId === 'mathoria' && arena.waves.length === 5));
-  const arenaIds = new Set(arenas.map(arena => arena.id));
-  assert.ok(arenas.every(arena => arena.metadata.nextArenaId === null || arenaIds.has(arena.metadata.nextArenaId)));
-  assert.deepEqual(json('underwater-rooms.json').rooms, {});
-  assert.ok(json('scenes.json').scenes.MenuScene.ui.every(element => !/^btn(Silverpond|Underwater)/.test(element.id)));
-  assert.ok(json('items.json').every(item => item.shopCity !== 'silverpond'));
-  assert.ok(json('pets.json').every(pet => !pet.unlockedByEnemy?.startsWith('silverpond_')));
-  assert.ok(json('enemies.json').every(enemy => !enemy.id.startsWith('silverpond_')));
+test('public build includes the playable story, without development scenes or menu shortcuts', () => {
+  for (const key of ['GuardianLairScene', 'ZyxCrystalMachineScene', 'SilverpondTownMockScene',
+    'SilverpondArenaMockScene', 'UnderwaterDescentScene', 'UnderwaterRoomScene']) assert.ok(PILOT_SCENE_KEYS.includes(key), key);
+  for (const key of ['TestingTownScene', 'GuildExamMockScene', 'ArenaUiMockScene', 'BattleUiMockScene']) {
+    assert.ok(!PILOT_SCENE_KEYS.includes(key) && !content.report.layoutKeys.includes(key), key);
+  }
+  for (const key of ['WalkingHudOverlay', 'AudioControlHosts', 'UnderwaterOverlay']) assert.ok(content.report.layoutKeys.includes(key), key);
+  assert.deepEqual(json('encounters.json'), original('encounters.json'));
+  const rooms = original('underwater-rooms.json');
+  assert.deepEqual(json('underwater-rooms.json'), rooms);
+  for (const room of Object.values(rooms.rooms)) assert.ok(content.report.layoutKeys.includes(room.layout), room.layout);
+  const menu = json('scenes.json').scenes.MenuScene;
+  for (const element of [...menu.elements, ...menu.ui]) assert.doesNotMatch(element.id, /^btn(Silverpond|Underwater|ComparisonTest)/);
+  for (const name of ['pets.json', 'items.json']) assert.deepEqual(json(name), original(name));
 });
 
 test('runtime scene registration and packaged pilot scope stay in sync', () => {
@@ -104,14 +100,13 @@ test('retained actor animations, UI templates, nine slices and textures form a c
   });
 });
 
-test('public media is selected from runtime dependencies, with no chapter or editor files', () => {
+test('public media is selected from runtime dependencies, without editor files', () => {
   assert.ok(content.report.counts.pilotTextureBytes < content.report.counts.originalTextureBytes);
   assert.ok(content.report.counts.pilotTextureBytes > 0);
-  assert.deepEqual(content.report.textureKeys.filter(key => /^(underwater|silverpond)-/.test(key)).sort(),
-    [...SHARED_CHAPTER_TEXTURE_KEYS].sort());
+  for (const key of ['underwater-depth-crystal', 'silverpond-fairy-title-frame']) assert.ok(content.report.textureKeys.includes(key), key);
   const audio = json('audio.json');
   assert.ok(audio.music.m04_forest && audio.music.m10_zyx_hope);
-  assert.ok(!audio.music.m08_silverpond && !audio.music.m09_underwater);
+  assert.ok(audio.music.m08_silverpond && audio.music.m09_underwater);
   for (const filename of content.publicFiles) {
     assert.ok(!/\/incoming\/|\/previews\/|\/thumbnails\/|\.db(?:-|$)|\.DS_Store$/.test(filename), filename);
     assert.ok(existsSync(path.join(rootDir, 'public', filename)), filename);
@@ -141,8 +136,8 @@ test('victory keeps shared frames and both continue-button states despite histor
     'practice-victory-lock-open-active', 'practice-victory-lock-closed-active']) assert.ok(textures.has(key), key);
   assert.ok(content.publicFiles.has('assets/ui/mathboard-v4/Gelasio.ttf'));
   assert.ok(content.report.sourceFiles.includes('src/ui/UnderwaterTheme.ts'));
-  assert.ok(!content.report.sourceFiles.includes('src/scenes/UnderwaterRoomScene.ts'));
-  assert.ok(!content.report.textureKeys.some(key => key.startsWith('underwater-')));
+  assert.ok(content.report.sourceFiles.includes('src/scenes/UnderwaterRoomScene.ts'));
+  assert.ok(!content.report.sourceFiles.includes('src/scenes/TestingTownScene.ts'));
 });
 
 test('generated build leaves original catalogs and copied media unchanged', () => {

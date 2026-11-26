@@ -5,9 +5,7 @@ import { observatoryFiles } from './observatory-files.mjs';
 import { fileURLToPath } from 'node:url';
 import {
   PILOT_SCENE_KEYS, PILOT_LAYOUT_KEYS, PILOT_SCENE_SOURCE_OVERRIDES,
-  EXCLUDED_SOURCE_PREFIXES, EXCLUDED_MUSIC_KEYS, EXCLUDED_AUDIO_PREFIXES,
-  EXCLUDED_AUDIO_KEYS, OPTIONAL_CHAPTER_TEXTURE_PREFIXES, PILOT_DATA_FILES,
-  PILOT_LANDING_FILES, SHARED_RUNTIME_SOURCE_FILES, SHARED_CHAPTER_TEXTURE_KEYS,
+  PILOT_DATA_FILES, PILOT_LANDING_FILES,
 } from './pilot-content.config.mjs';
 
 const own = (object, key) => Object.prototype.hasOwnProperty.call(object, key);
@@ -59,9 +57,6 @@ function sourceFiles(rootDir) {
       if (entry.isDirectory()) {
         if (!['simulation', '__tests__', 'test', 'tests'].includes(entry.name)) visit(absolute);
       } else if (/\.tsx?$/.test(entry.name) && !/\.(test|spec)\./.test(entry.name)) {
-        const rootRelative = path.relative(rootDir, absolute).split(path.sep).join('/');
-        if (EXCLUDED_SOURCE_PREFIXES.some(prefix => entry.name.startsWith(prefix))
-            && !SHARED_RUNTIME_SOURCE_FILES.includes(rootRelative)) continue;
         if (/Debugger|DebugOverlay/.test(entry.name) || entry.name === 'main.ts') continue;
         const relative = path.relative(path.join(rootDir, 'src'), absolute).split(path.sep).join('/');
         if (relative.startsWith('scenes/') && !allowedScenes.has(entry.name)) continue;
@@ -95,25 +90,6 @@ function textureFile(resource) {
     ? `assets/library/${relative.slice(8)}` : `assets/${relative}`);
 }
 
-function filterEncounters(original) {
-  const data = clone(original);
-  delete data.scenes.UnderwaterRoomScene;
-  data.sceneOrder = data.sceneOrder.filter(key => own(data.scenes, key));
-  const arenaData = data.scenes.ArenaScene;
-  arenaData.arenas = keepEntries(arenaData.arenas, ([, arena]) => arena.cityId === 'mathoria');
-  const arenaIds = new Set(Object.values(arenaData.arenas).map(arena => arena.id));
-  for (const arena of Object.values(arenaData.arenas)) {
-    if (arena.metadata?.nextArenaId && !arenaIds.has(arena.metadata.nextArenaId)) {
-      arena.metadata.nextArenaId = null;
-    }
-  }
-  const usedStrings = new Set();
-  walk(data.scenes, value => usedStrings.add(value));
-  data.bosses = keepEntries(data.bosses, ([key]) => usedStrings.has(key));
-  data.multiplayerPolicies = keepEntries(data.multiplayerPolicies, ([key]) => usedStrings.has(key));
-  return data;
-}
-
 /** Read-only collection, exported for validation and reporting without starting a build. */
 export function collectPilotContent(rootDir) {
   rootDir = path.resolve(rootDir);
@@ -135,10 +111,7 @@ export function collectPilotContent(rootDir) {
       menu[field] = menu[field].filter(element => !/^btn(Silverpond|Underwater|ComparisonTest)/.test(element.id));
     }
   }
-  const encounters = filterEncounters(original.encounters);
-  // Regional equipment and companions belong to the development chapter, not the pilot.
-  metadata.set('items.json', metadata.get('items.json').filter(item => item.shopCity !== 'silverpond'));
-  metadata.set('pets.json', metadata.get('pets.json').filter(pet => !pet.unlockedByEnemy?.startsWith('silverpond_')));
+  const encounters = original.encounters;
   const enemyIds = new Set();
   const collectEnemies = value => {
     if (!value || typeof value !== 'object') return;
@@ -155,12 +128,7 @@ export function collectPilotContent(rootDir) {
   for (const id of enemyIds) if (!enemies.some(enemy => enemy.id === id)) {
     throw new Error(`Pilot references unknown enemy ${id}`);
   }
-  const audio = {
-    ...original.audio,
-    assets: keepEntries(original.audio.assets, ([key]) => !EXCLUDED_AUDIO_KEYS.includes(key)
-      && !EXCLUDED_AUDIO_PREFIXES.some(prefix => key.startsWith(prefix))),
-    music: keepEntries(original.audio.music, ([key]) => !EXCLUDED_MUSIC_KEYS.includes(key)),
-  };
+  const audio = original.audio;
   metadata.set('scenes.json', scenes);
   metadata.set('encounters.json', encounters);
   metadata.set('enemies.json', enemies);
@@ -183,12 +151,11 @@ export function collectPilotContent(rootDir) {
     if (!name.startsWith('localization/') && name !== 'audio.json') enqueue(value);
   }
 
-  function visit(string, fromSource = false) {
+  function visit(string) {
     if (assets.has(string) && !selected.assets.has(string)) {
       selected.assets.add(string); enqueue(assets.get(string));
     }
-    if (textureKeys.has(string) && !(fromSource && !SHARED_CHAPTER_TEXTURE_KEYS.includes(string)
-        && OPTIONAL_CHAPTER_TEXTURE_PREFIXES.some(prefix => string.startsWith(prefix)))) {
+    if (textureKeys.has(string)) {
       selected.textures.add(string);
     }
     if (templates.has(string) && !selected.templates.has(string)) {
@@ -198,8 +165,7 @@ export function collectPilotContent(rootDir) {
       selected.configs.add(string); enqueue(configs[string]);
     }
     const animation = animNames.get(string);
-    if (animation && !selected.animations.has(animation.key)
-        && !(fromSource && OPTIONAL_CHAPTER_TEXTURE_PREFIXES.some(prefix => animation.value.texture.startsWith(prefix)))) {
+    if (animation && !selected.animations.has(animation.key)) {
       selected.animations.add(animation.key); enqueue(animation.value);
     }
   }
@@ -211,7 +177,7 @@ export function collectPilotContent(rootDir) {
   for (const match of source.matchAll(/(['"`])([^'"`\r\n]*?)\1/g)) {
     if (!match[2].includes('${')) quotedStrings.add(match[2]);
   }
-  for (const string of quotedStrings) visit(string, true);
+  for (const string of quotedStrings) visit(string);
   // Scene code also selects resources such as `arena-${this.arenaLevel}-bg`.
   // Match its static pieces against known catalog keys; never invent paths from source text.
   const resourceKeys = new Set([...textureKeys, ...assets.keys(), ...animNames.keys(), ...templates.keys(), ...Object.keys(configs)]);
@@ -219,7 +185,7 @@ export function collectPilotContent(rootDir) {
     const parts = match[1].split(/\$\{[^}]*\}/g);
     if (parts.length < 2 || parts.join('').length < 4) continue;
     const pattern = new RegExp(`^${parts.map(part => part.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('.+')}$`);
-    for (const key of resourceKeys) if (pattern.test(key)) visit(key, true);
+    for (const key of resourceKeys) if (pattern.test(key)) visit(key);
   }
   const actors = [...enemies, ...metadata.get('pets.json'), ...metadata.get('characters.json'), ...metadata.get('npcs.json')];
   for (const actor of actors) {
@@ -250,10 +216,6 @@ export function collectPilotContent(rootDir) {
   metadata.set('nine-slices.json', {
     ...original.nineSlices, configs: keepEntries(configs, ([key]) => selected.configs.has(key)),
   });
-  // Shared progress helpers import these schemas at module load. Empty data prevents chapter
-  // content leaking into the JS bundle while retaining safe imports for pilot-gated helpers.
-  metadata.set('underwater-rooms.json', { schemaVersion: 1, startRoom: '', rooms: {} });
-  metadata.set('underwater-puzzles.json', { hints: {} });
   for (const [name, value] of metadata) metadata.set(name, stripEditorMetadata(value));
 
   const publicFiles = new Set(['assets/ui/mathboard-v4/Gelasio.ttf', 'assets/ui/mathboard-v4/Gelasio-OFL.txt']);

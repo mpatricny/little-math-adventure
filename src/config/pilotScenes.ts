@@ -1,4 +1,4 @@
-/** Scene classes are separate entry chunks so pilot never imports the next chapter. */
+/** Only playable story scenes are registered in the public build. */
 import { AudioSettingsScene } from '../scenes/AudioSettingsScene';
 import { BootScene, AssetLoaderScene } from '../scenes/BootScene';
 import { MenuScene } from '../scenes/MenuScene';
@@ -37,6 +37,16 @@ import { FoxLessonScene } from '../scenes/FoxLessonScene';
 import { ManaCollectionScene } from '../scenes/ManaCollectionScene';
 import { CoopSetupScene } from '../scenes/CoopSetupScene';
 import { TvPairingScene } from '../scenes/TvPairingScene';
+
+import { SilverpondTownMockScene } from '../scenes/SilverpondTownMockScene';
+import { SilverpondFairyRewardScene } from '../scenes/SilverpondFairyRewardScene';
+import { SilverpondArenaMockScene } from '../scenes/SilverpondArenaMockScene';
+import { SilverpondPythiaWorkshopMockScene } from '../scenes/SilverpondPythiaWorkshopMockScene';
+import { SilverpondShopMockScene } from '../scenes/SilverpondShopMockScene';
+import { SilverpondGuildMockScene } from '../scenes/SilverpondGuildMockScene';
+import { SilverpondCrystalForgeMockScene } from '../scenes/SilverpondCrystalForgeMockScene';
+import { UnderwaterDescentScene } from '../scenes/UnderwaterDescentScene';
+import { UnderwaterRoomScene } from '../scenes/UnderwaterRoomScene';
 
 export const GAME_SCENES = [
     BootScene,
@@ -78,4 +88,13 @@ export const GAME_SCENES = [
     ManaCollectionScene,
     CoopSetupScene,
     TvPairingScene,
+    SilverpondTownMockScene,
+    SilverpondFairyRewardScene,
+    SilverpondArenaMockScene,
+    SilverpondPythiaWorkshopMockScene,
+    SilverpondShopMockScene,
+    SilverpondGuildMockScene,
+    SilverpondCrystalForgeMockScene,
+    UnderwaterDescentScene,
+    UnderwaterRoomScene,
 ];
