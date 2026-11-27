@@ -27,6 +27,26 @@ Funkce neběží v pilotním režimu, sestavené hře ani `vite preview`. Nezáv
 analytice, souhlasu s měřením, Google přihlášení ani databázovém API. Databázová
 migrace není pro tuto úpravu ani její testy potřeba.
 
+## Rodinné profily na veřejném webu
+
+Pro rodinu, které správce výslovně přiřadil konkrétní profily, veřejná hra načítá celé
+uložené hry po přihlášení přes Google. Každý rodič má vlastní přihlášení. Oba pracují se
+stejnou revizí postavy. Přístup určuje ověřená adresa při prvním propojení a potom
+stabilní identifikátor od Googlu. Po odhlášení se hra vrátí k místním slotům hosta.
+
+Mac může tyto profily průběžně synchronizovat přes `scripts/family-save-bridge.mjs`.
+Vývojový server čte soukromou konfiguraci z `.local-saves/development/family-bridge.json`.
+Přenáší jen předem přiřazené identity. Při výpadku zůstává změna uložená v prohlížeči
+nebo na Macu. Přenos pokračuje po obnovení spojení. Při současné hře téže postavy
+rozhoduje potvrzená revize. Rozvětvený postup z prohlížeče se před obnovením uloží
+v jeho IndexedDB `cislokraj-family-conflicts`. Pokud se nezávisle změní Mac i web,
+obě verze zůstanou zachované pro výběr rodičem.
+
+Členství a povolené profily ukládá migrace `0010_family_save_sharing.sql`. Při zavedení
+rodiny může správce předat soukromému API proměnnou `FAMILY_SAVE_GRANT`. Obsahuje
+`familyId`, `members`, `profiles` (položky `id` a `slot` od nuly) a `bridgeDigest`
+(SHA-256 oprávnění Macu). Po zapsání členství do databáze lze proměnnou odebrat.
+
 ## Ochrana postupu
 
 Identitu určuje `gameplayProfileId`, nikoli jméno nebo číslo slotu. Každá změna

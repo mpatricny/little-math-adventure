@@ -22,6 +22,10 @@ if (isControllerMode()) {
 }
 
 async function startGame(): Promise<void> {
+    let atFamilyMenu = () => false;
+    const stopFamilySaves = IS_PILOT
+        ? await (await import('./systems/FamilySaves')).startFamilySaves(() => atFamilyMenu())
+        : () => {};
     const stopAnalytics=startAnalytics('game');
     const reportError=()=>analytics()?.emit('client_error',{code:'runtime_error',scene:analytics()?.contextSnapshot()?.scene??'BootScene',fingerprint:'window',count:1});
     window.addEventListener('error',reportError);window.addEventListener('unhandledrejection',reportError);
@@ -161,12 +165,13 @@ async function startGame(): Promise<void> {
     };
 
     const game = new Phaser.Game(config);
+    atFamilyMenu = () => ['MenuScene','MenuNewScene'].some(key => game.scene.isActive(key));
     const stopLocalPlayTime = startLocalPlayTime(game);
     setupGameViewport(game);
     setupMobilePause(game);
     setupRendererRecovery(game);
     game.events.once(Phaser.Core.Events.DESTROY, destroyGameAudio);
-    game.events.once(Phaser.Core.Events.DESTROY,()=>{stopLocalPlayTime();stopDevSaveSync();stopGameplaySync();stopAnalytics();window.removeEventListener('cislokraj-measurement-changed',updateSync);
+    game.events.once(Phaser.Core.Events.DESTROY,()=>{stopFamilySaves();stopLocalPlayTime();stopDevSaveSync();stopGameplaySync();stopAnalytics();window.removeEventListener('cislokraj-measurement-changed',updateSync);
         window.removeEventListener('cislokraj-analytics-config-changed',updateSync);
         window.removeEventListener('error',reportError);window.removeEventListener('unhandledrejection',reportError);});
     if (DEV_TOOLS_ENABLED) (globalThis as any).__LITTLE_MATH_GAME__ = game;

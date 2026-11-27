@@ -6,9 +6,9 @@ import { addPlayTimeDays, preservePlayTime, type PlayTimeDays } from './LocalPla
 import { checkpointLocalPlayTime } from './LocalPlayTimeBridge';
 
 // Storage keys
-const SAVE_DATA_PREFIX = 'littleMathAdventure_slot_';       // Per-slot: slot_0, slot_1...
-const ACTIVE_SLOT_KEY = 'littleMathAdventure_activeSlot';
-const OLD_SAVE_KEY = 'littleMathAdventure_saveData';        // Legacy single-slot key
+let SAVE_DATA_PREFIX = 'littleMathAdventure_slot_';
+let ACTIVE_SLOT_KEY = 'littleMathAdventure_activeSlot';
+let OLD_SAVE_KEY = 'littleMathAdventure_saveData';
 
 const MAX_SLOTS = 8;
 const SAVE_EXPORT_FORMAT = 'little-math-adventure-save-bundle';
@@ -34,6 +34,21 @@ export type SaveBundleImportResult =
 export type SaveChange = 'progress' | 'slots';
 
 export class SaveSystem {
+    /** Set only after the server has verified this browser's Google session. */
+    static useFamilyStorage(familyId: string): void {
+        const prefix = `littleMathAdventure_family_${familyId}_`;
+        SAVE_DATA_PREFIX = prefix + 'slot_';
+        ACTIVE_SLOT_KEY = prefix + 'activeSlot';
+        OLD_SAVE_KEY = prefix + 'saveData';
+    }
+
+    static restoreFamilySnapshot(slot: number, save: SaveSlotData): void {
+        if (!this.isSlotIndex(slot) || !this.isValidSaveData(save)) throw new Error('Invalid family snapshot');
+        const existing = localStorage.getItem(SAVE_DATA_PREFIX + slot);
+        if (existing !== null && JSON.parse(existing).player?.gameplayProfileId !== save.player.gameplayProfileId)
+            throw new Error('Occupied family slot');
+        localStorage.setItem(SAVE_DATA_PREFIX + slot, JSON.stringify(save));
+    }
     private static changeListeners = new Set<(change: SaveChange) => void>();
     private static writeGuards = new Set<() => boolean>();
 

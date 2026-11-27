@@ -1,6 +1,7 @@
 import path from 'node:path';
 import { DevSaveStore } from './dev-save-store.mjs';
 import { devSaveManagePage, devSaveRecoveryPage } from './dev-save-pages.mjs';
+import { startFamilyBridge } from './family-save-bridge.mjs';
 
 function sameOrigin(request) {
     if (request.headers['sec-fetch-site'] === 'cross-site') return false;
@@ -11,7 +12,8 @@ function sameOrigin(request) {
 }
 
 export function devSavesPlugin(root) {
-    const store = new DevSaveStore(path.join(root, '.local-saves/development'));
+    const directory = path.join(root, '.local-saves/development');
+    const store = new DevSaveStore(directory);
     return {
         name: 'dev-saves', apply: 'serve',
         config(config) {
@@ -19,6 +21,7 @@ export function devSavesPlugin(root) {
             return { server: { fs: { deny: [...(config.server?.fs?.deny ?? ['.env', '.env.*', '*.{crt,pem}', '**/.git/**']), '**/.local-saves/**'] } } };
         },
         configureServer(server) {
+            if (server.httpServer) server.httpServer.once('close', startFamilyBridge(store,directory));
             server.middlewares.use(async (request, response, next) => {
                 const pathname = (request.url ?? '').split('?')[0];
                 if (!pathname.startsWith('/__dev-saves')) return next();

@@ -10,6 +10,8 @@ import type { AppConfig } from './config.js';
 import type { PlayerAccount } from './domain/playerAccounts.js';
 import type { Logger } from './logger.js';
 import { analyticsRoutes, type AnalyticsService } from './admin/routes.js';
+import { familySaveRoutes } from './familySaveRoutes.js';
+import type { FamilySaveStore } from './domain/familySaves.js';
 
 export interface AppDependencies {
   config: AppConfig;
@@ -21,6 +23,7 @@ export interface AppDependencies {
   gameplaySummary?: (accountId: string, parentView: boolean) => Promise<unknown>;
   resolveGameplayBrowser?: (token: string, deviceId?: string) => Promise<{ id: string } | null>;
   analytics?: AnalyticsService;
+  familySaves?: FamilySaveStore;
 }
 
 export function createApp({
@@ -33,6 +36,7 @@ export function createApp({
   gameplaySummary,
   resolveGameplayBrowser,
   analytics,
+  familySaves,
 }: AppDependencies): Hono {
   const app = new Hono();
 
@@ -102,6 +106,7 @@ export function createApp({
   });
 
   if (analytics && resolveGameplayBrowser) app.route('/', analyticsRoutes({ config, auth, service: analytics, resolveBrowser: resolveGameplayBrowser }));
+  if (familySaves) app.route('/v1/family-saves', familySaveRoutes(familySaves, auth, config));
 
   app.use('/v1/gameplay/*', bodyLimit({ maxSize: 2 * 1024 * 1024,
     onError: context => context.json({ error: 'payload_too_large' }, 413) }));

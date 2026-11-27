@@ -10,11 +10,13 @@ import { createAnalyticsService } from './admin/routes.js';
 import { recordGoogleLogin } from './domain/analytics/ingest.js';
 import { recordCapabilities } from './domain/analytics/ingest.js';
 import { requireAppliedMigrations } from './db/preflight.js';
+import { familySaveStore, provisionFamily } from './domain/familySaves.js';
 
 const config = loadConfig();
 const logger = createLogger(config.logLevel);
 const database = createDatabase(config.databaseUrl);
 await requireAppliedMigrations(database,new URL('../migrations/',import.meta.url).pathname);
+if (process.env.FAMILY_SAVE_GRANT) await provisionFamily(database, process.env.FAMILY_SAVE_GRANT);
 await recordCapabilities(database,config.analytics?.collectionEnabled??false);
 const analytics = createAnalyticsService(database, config);
 const auth = config.auth ? createAuthService(config, config.auth, data =>
@@ -30,6 +32,7 @@ const app = createApp({
   gameplaySummary: (accountId, parentView) => gameplaySummary(database, accountId, parentView),
   resolveGameplayBrowser: (token, device) => resolveGameplayBrowser(database, token, device),
   analytics,
+  familySaves: familySaveStore(database),
 });
 
 const server = serve({
